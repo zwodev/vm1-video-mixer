@@ -111,7 +111,7 @@ class HdmiElement(BaseElement):
         self.parse.set_property("format", "uyvy")
         self.parse.set_property("width", 1920)
         self.parse.set_property("height", 1080)
-        self.parse.set_property("framerate", 30/1)
+        self.parse.set_property("framerate", Gst.Fraction(30/1))
         
         self.convert = Gst.ElementFactory.make("v4l2convert")
         self.queue = Gst.ElementFactory.make("queue")
@@ -124,23 +124,23 @@ class HdmiElement(BaseElement):
         container.pipeline.add(self.queue)
         container.pipeline.add(self.sink)
 
-        if not self.source.source(self.filter):
+        if not self.source.link(self.filter):
             logger.error("Link Error: source -> filter")
             return
         
-        if not self.source.filter(self.parse):
+        if not self.filter.link(self.parse):
             logger.error("Link Error: filter -> parse")
             return
         
-        if not self.source.parse(self.convert):
+        if not self.parse.link(self.convert):
             logger.error("Link Error: parse -> convert")
             return
         
-        if not self.source.convert(self.queue):
+        if not self.convert.link(self.queue):
             logger.error("Link Error: convert -> queue")
             return
         
-        if not self.source.queue(self.sink):
+        if not self.queue.link(self.sink):
             logger.error("Link Error: queue -> sink")
             return
         
@@ -176,11 +176,21 @@ class VideoElement(BaseElement):
 def main():
     vmOne = VMOneContainer()
     videoElement0 = VideoElement("./videos/BlenderReel_1080p.mp4")
-    #videoElement1 = VideoElement("./videos/BlenderReel_1080p.mp4")
+    videoElement1 = VideoElement("./videos/BlenderReel_1080p.mp4")
     hdmiElement = HdmiElement()
+    
+    # show video on first display
     vmOne.addElement0(videoElement0)
+
+    # show HDMI input on first display
+    #vmOne.addElement0(hdmiElement)
+
+    # show video on second display
     #vmOne.addElement1(videoElement1)
-    vmOne.addElement1(hdmiElement)
+
+    # show HDMI-input on second display
+    #vmOne.addElement1(hdmiElement)
+    
     vmOne.start()
 
 main()
