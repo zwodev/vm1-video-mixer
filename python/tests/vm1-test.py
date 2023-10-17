@@ -6,6 +6,7 @@ import os
 import platform
 import pykms
 import threading
+import tween
 
 gi.require_version('GLib', '2.0')
 gi.require_version('GObject', '2.0')
@@ -55,6 +56,7 @@ class VMOneContainer:
 
 class BaseElement:
     def __init__(self):
+        self.plane = None
         self.pipeline = Gst.Pipeline.new()       
         self.sink = None
         self.kmssink_fd = None
@@ -107,6 +109,7 @@ class BaseElement:
         #self.pipeline.set_state(Gst.State.READY)
     
     def addDrmInfo(self, fd, plane, conn):
+        self.plane = plane
         self.sink.set_property("fd", fd)
         self.sink.set_property("connector-id", conn.id)
         self.sink.set_property("plane-id", plane.id)
@@ -174,6 +177,7 @@ class VideoElement(BaseElement):
             self.sink = Gst.ElementFactory.make("autovideosink")
         
         #self.addToPipeline()
+        #self.setAlpha(0.5)
 
     def onPadAdded(self, dbin, pad):
         decode = pad.get_parent()
@@ -185,7 +189,15 @@ class VideoElement(BaseElement):
         self.source.set_property('location', srcFileName)
 
     def setAlpha(self, alpha):
-        self.sink.set_property("plane-properties", Gst.Structure("s,alpha=0xf000"))
+        if self.plane == None:
+            return
+        alpha = min(1.0, max(0.0, alpha))
+        gstStruct = Gst.Structure("s")
+        value = int(alpha * 64000.0)
+        self.plane.set_props({"alpha": value})
+        #print(value)
+        #gstStruct.set_value("alpha", value)
+        #self.sink.set_property("plane-properties", gstStruct)
         
     def addToPipeline(self):
         self.pipeline.add(self.source)
@@ -213,6 +225,7 @@ class VideoPlayer(BasePlayer):
     def __init__(self):
         super().__init__()
         element = VideoElement()
+        alpha = 1.0
 
     def play(self, fileName):
         self.element.stop()
@@ -224,26 +237,41 @@ class VideoPlayer(BasePlayer):
     def stop(self):
         self.element.stop()
 
+    def setAlpha(self, alpha):
+        self.element.setAlpha(alpha)
+
+alpha = 0
 index = 0
 videoElements = []
 vmOne = VMOneContainer()
 videoPlayer = VideoPlayer()
 fileNames = ["videos/BlenderReel_1080p.mp4", "videos/BlenderReel2_1080p.mp4"]
 
-
 def test():
     global index
+    global alpha
+    alpha = 0.0
+    videoPlayer.setAlpha(alpha)
+
     fileName = fileNames[index]   
     videoPlayer.play(fileName)
     
     GLib.timeout_add_seconds(2, test)
     index = index + 1
-    index = index % len(fileNames) 
+    index = index % len(fileNames)
+
+def update():
+    global alpha
+    alpha += 0.02
+    videoPlayer.setAlpha(alpha)
+    GLib.timeout_add(int(0.01 * 1000.0), update)
+
 
 def main():
     # show video on first display
     vmOne.addPlayer0(videoPlayer)
     test()
+    GLib.timeout_add(int(2 * 1000.0), update)
 
     # videoElements.append(VideoElement())
     # hdmiElement = HdmiElement()
