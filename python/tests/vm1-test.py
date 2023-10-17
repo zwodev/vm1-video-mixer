@@ -183,6 +183,9 @@ class VideoElement(BaseElement):
     def setSourceFile(self, srcFileName):
         #self.stop()
         self.source.set_property('location', srcFileName)
+
+    def setAlpha(self, alpha):
+        self.sink.set_property("plane-properties", Gst.Structure("s,alpha=0xf000"))
         
     def addToPipeline(self):
         self.pipeline.add(self.source)
