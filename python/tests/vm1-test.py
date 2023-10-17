@@ -5,6 +5,7 @@ import logging
 import os
 import platform
 import pykms
+import threading
 
 gi.require_version('GLib', '2.0')
 gi.require_version('GObject', '2.0')
@@ -38,50 +39,23 @@ class VMOneContainer:
         # Initialize Gst and create pipeline
         Gst.init(sys.argv[1:])
         print("Gst Version: %s", Gst.version())
-        self.pipeline = Gst.Pipeline.new("main-pipeline")
-
+        
         self.mainloop = GLib.MainLoop()
 
-        # Create bus and connect several handlers
-        self.bus = self.pipeline.get_bus()
-        self.bus.add_signal_watch()
-        self.bus.connect('message::eos', self.onEos)
-        #self.bus.connect('message::tag', self.onTag)
-        self.bus.connect('message::error', self.onError)
-    
-    def onEos(self, bus, msg):
-        print ('on_eos')
-        self.mainloop.quit()
-        self.pipeline.set_state(Gst.State.NULL)
-			
-    def onTag(self, bus, msg):
-        taglist = msg.parse_tag()
-        print ('on_tag:')
-        for key in taglist.keys():
-            print ('\t%s = %s' % (key, taglist[key]))
-					
-    def onError(self, bus, msg):
-        error = msg.parse_error()
-        print ('onError:', error[1])
-        self.mainloop.quit()
-        self.pipeline.set_state(Gst.State.NULL)
-
     # Element 0 will be displayed on HDMI0
-    def addElement0(self, element):
-        element.addDrmInfo(self.fd, self.plane0, self.conn0)
-        element.addToPipeline(self)
+    def addPlayer0(self, player):
+        player.addDrmInfo(self.fd, self.plane0, self.conn0)
 
     # Element 1 will be displayed on HDMI1
-    def addElement1(self, element):
+    def addPlayer1(self, element):
         element.addDrmInfo(self.fd, self.plane1, self.conn1)
-        element.addToPipeline(self)
 
     def start(self):
-        self.pipeline.set_state(Gst.State.PLAYING)
         self.mainloop.run()
 
 class BaseElement:
     def __init__(self):
+        self.pipeline = Gst.Pipeline.new()       
         self.sink = None
         self.kmssink_fd = None
         if platform.machine() == "aarch64":
@@ -90,12 +64,54 @@ class BaseElement:
         else:
             self.sink = Gst.ElementFactory.make("autovideosink")
 
+        # Create bus and connect several handlers
+        self.bus = self.pipeline.get_bus()
+        self.bus.add_signal_watch()
+        self.bus.connect('message::state-changed', self.onStateChanged)
+        self.bus.connect('message::eos', self.onEos)
+        self.bus.connect('message::error', self.onError)
+
+    def __del__(self):
+        self.pipeline.set_state(Gst.State.NULL)
+    
+    def onEos(self, bus, msg):
+        print ('on_eos')
+        #self.mainloop.quit()
+        #self.pipeline.set_state(Gst.State.NULL)
+			
+    def onError(self, bus, msg):
+        error = msg.parse_error()
+        print ('onError:', error[1])
+        #self.mainloop.quit()
+        #self.pipeline.set_state(Gst.State.NULL)
+
+    def onStateChanged(self, bus, msg):
+        oldState, newState, pendingState = msg.parse_state_changed()
+        # print((
+        #     f"Bus call: Pipeline state changed from {oldState.value_nick} to {newState.value_nick} "
+        #     f"(pending {pendingState.value_nick})"
+        # ))
+        #if newState == Gst.State.NULL:
+        #    print("State is NULL")
+        #    #self.pipeline.set_state(Gst.State.READY)
+        
+
+    def start(self):
+        self.addToPipeline()
+        self.pipeline.set_state(Gst.State.READY)
+        self.pipeline.set_state(Gst.State.PLAYING)
+
+    def stop(self):
+        self.pipeline.set_state(Gst.State.NULL)
+        #self.pipeline.set_state(Gst.State.PAUSED)
+        #self.pipeline.set_state(Gst.State.READY)
+    
     def addDrmInfo(self, fd, plane, conn):
         self.sink.set_property("fd", fd)
         self.sink.set_property("connector-id", conn.id)
         self.sink.set_property("plane-id", plane.id)
 
-    def addToPipeline(self, container):
+    def addToPipeline(self):
         pass
 
 class HdmiElement(BaseElement):
@@ -117,12 +133,12 @@ class HdmiElement(BaseElement):
         self.queue = Gst.ElementFactory.make("queue")
 
     def addToPipeline(self, container):
-        container.pipeline.add(self.source)
-        container.pipeline.add(self.filter)
-        container.pipeline.add(self.parse)
-        container.pipeline.add(self.convert)
-        container.pipeline.add(self.queue)
-        container.pipeline.add(self.sink)
+        self.pipeline.add(self.source)
+        self.pipeline.add(self.filter)
+        self.pipeline.add(self.parse)
+        self.pipeline.add(self.convert)
+        self.pipeline.add(self.queue)
+        self.pipeline.add(self.sink)
 
         if not self.source.link(self.filter):
             logger.error("Link Error: source -> filter")
@@ -145,10 +161,9 @@ class HdmiElement(BaseElement):
             return
         
 class VideoElement(BaseElement):
-    def __init__(self, file):
+    def __init__(self):
         super().__init__()
         self.source = Gst.ElementFactory.make("filesrc")
-        self.source.set_property('location', file)
         self.decode = Gst.ElementFactory.make("decodebin")
         self.sink = None
         self.kmssink_fd = None
@@ -157,31 +172,79 @@ class VideoElement(BaseElement):
             self.sink.set_property("skip-vsync", "true")
         else:
             self.sink = Gst.ElementFactory.make("autovideosink")
+        
+        #self.addToPipeline()
 
     def onPadAdded(self, dbin, pad):
         decode = pad.get_parent()
         pipeline = decode.get_parent()
         decode.link(self.sink)
+
+    def setSourceFile(self, srcFileName):
+        #self.stop()
+        self.source.set_property('location', srcFileName)
         
-    def addToPipeline(self, container):
-        container.pipeline.add(self.source)
-        container.pipeline.add(self.decode)
-        container.pipeline.add(self.sink)
+    def addToPipeline(self):
+        self.pipeline.add(self.source)
+        self.pipeline.add(self.decode)
+        self.pipeline.add(self.sink)
 
         if not self.source.link(self.decode) :
             logger.error("Link Error: source -> decode")
 
         self.decode.connect("pad-added", self.onPadAdded)
 
-def main():
-    vmOne = VMOneContainer()
-    videoElement0 = VideoElement("./videos/BlenderReel_1080p.mp4")
-    videoElement1 = VideoElement("./videos/BlenderReel_1080p.mp4")
-    hdmiElement = HdmiElement()
-    
-    # show video on first display
-    vmOne.addElement0(videoElement0)
+class BasePlayer():
+    def __init__(self):
+        self.fd = None
+        self.plane = None
+        self.conn = None
+        self.element = VideoElement()
 
+    def addDrmInfo(self, fd, plane, conn):
+        self.fd = fd
+        self.plane = plane
+        self.conn = conn
+        
+class VideoPlayer(BasePlayer):
+    def __init__(self):
+        super().__init__()
+        element = VideoElement()
+
+    def play(self, fileName):
+        self.element.stop()
+        self.element = VideoElement()
+        self.element.addDrmInfo(self.fd, self.plane, self.conn)
+        self.element.setSourceFile(fileName)
+        self.element.start()
+        
+    def stop(self):
+        self.element.stop()
+
+index = 0
+videoElements = []
+vmOne = VMOneContainer()
+videoPlayer = VideoPlayer()
+fileNames = ["videos/BlenderReel_1080p.mp4", "videos/BlenderReel2_1080p.mp4"]
+
+
+def test():
+    global index
+    fileName = fileNames[index]   
+    videoPlayer.play(fileName)
+    
+    GLib.timeout_add_seconds(2, test)
+    index = index + 1
+    index = index % len(fileNames) 
+
+def main():
+    # show video on first display
+    vmOne.addPlayer0(videoPlayer)
+    test()
+
+    # videoElements.append(VideoElement())
+    # hdmiElement = HdmiElement()
+    
     # show HDMI input on first display
     #vmOne.addElement0(hdmiElement)
 
