@@ -7,6 +7,7 @@ import platform
 import pykms
 import threading
 import tween
+import enum
 
 gi.require_version('GLib', '2.0')
 gi.require_version('GObject', '2.0')
@@ -19,75 +20,142 @@ logger = logging.getLogger(__name__)
 
 class VMOneContainer:
     def __init__(self):        
-        self.card = pykms.Card()
-        self.res = pykms.ResourceManager(self.card)
+        self._card = pykms.Card()
+        self._res = pykms.ResourceManager(self._card)
 
-        self.fd = self.card.fd
-        print("File Descriptor: ", self.fd)
+        self._fd = self._card.fd
+        print("File Descriptor: ", self._fd)
         
         # Create plane for first screen
-        self.conn0 = self.res.reserve_connector("HDMI-A-1")
-        self.crtc0 = self.res.reserve_crtc(self.conn0)
-        self.plane0 = self.res.reserve_overlay_plane(self.crtc0)
-        print("HDMI-A-1 Connector ID: ", self.conn0.id)
+        self._conn0 = self._res.reserve_connector("HDMI-A-1")
+        self._crtc0 = self._res.reserve_crtc(self._conn0)
+        self._planes0 = []
+        print("HDMI-A-1 Connector ID: ", self._conn0.id)
 
         # Create plane for second screen
-        self.conn1 = self.res.reserve_connector("HDMI-A-2")
-        self.crtc1 = self.res.reserve_crtc(self.conn1)
-        self.plane1 = self.res.reserve_overlay_plane(self.crtc1)
-        print("HDMI-A-1 Connector ID: ", self.conn1.id)
+        self._conn1 = self._res.reserve_connector("HDMI-A-2")
+        self._crtc1 = self._res.reserve_crtc(self._conn1)
+        self._planes1 = []
+        print("HDMI-A-1 Connector ID: ", self._conn1.id)
 
         # Initialize Gst and create pipeline
         Gst.init(sys.argv[1:])
         print("Gst Version: %s", Gst.version())
-        
-        self.mainloop = GLib.MainLoop()
+
+        # All players for HDMI-A
+        self._players0 = []
+        # All players for HDMI-B
+        self._players1 = []
+
+        # Create players
+        for i in range(2):
+            isFading = True
+            videoPlayer = VideoPlayer(self)
+            videoPlayer.fading = isFading
+            self._addVideoPlayer0(videoPlayer)
+            videoPlayer = VideoPlayer(self)
+            videoPlayer.fading = isFading
+            self._addVideoPlayer1(videoPlayer)
+            
+        self._mainloop = GLib.MainLoop()
 
     # Element 0 will be displayed on HDMI0
-    def addPlayer0(self, player):
-        player.addDrmInfo(self.fd, self.plane0, self.conn0)
+    def _addVideoPlayer0(self, player):
+        plane = self._res.reserve_overlay_plane(self._crtc0)
+        self._planes0.append(plane)
+        player.addDrmInfo(self._fd, plane, self._conn0)
+        self._players0.append(player)
 
     # Element 1 will be displayed on HDMI1
-    def addPlayer1(self, element):
-        element.addDrmInfo(self.fd, self.plane1, self.conn1)
+    def _addVideoPlayer1(self, player):
+        plane = self._res.reserve_overlay_plane(self._crtc1)
+        self._planes1.append(plane)
+        player.addDrmInfo(self._fd, plane, self._conn1)
+        self._players1.append(player)
 
     def start(self):
-        self.mainloop.run()
+        self.update()
+        self._mainloop.run()
+
+    def playVideo0(self, fileName):
+        for player in self._players0:
+            if player.state == BasePlayer.State.DEACTIVATED:
+                player.play(fileName)
+                break
+
+    def playVideo1(self, fileName):
+        for player in self._players1:
+            if player.state == BasePlayer.State.DEACTIVATED:
+                player.play(fileName)
+                break
+
+    def update(self):
+        dt = 0.016
+        for player in self._players0:
+           player.update(dt)
+
+        for player in self._players1:
+           player.update(dt)
+
+        GLib.timeout_add(int(dt * 1000.0), self.update)
+
+    def onPlayerActivated(self, player):
+        playersToDeactivate = [BasePlayer]
+        found = False
+        for p in self._players0:
+            if p == player:
+                p.state = BasePlayer.State.ACTIVATING
+                found = True
+            else:
+                playersToDeactivate.append(p)
+        
+        if not found:
+            playersToDeactivate.clear()
+            for p in self._players1:
+                if p == player:
+                    p.state = BasePlayer.State.ACTIVATING
+                    found = True
+                else:
+                    playersToDeactivate.append(p)
+
+        if found:
+            for p in playersToDeactivate:
+                p.state = BasePlayer.State.DEACTIVATING 
 
 class BaseElement:
     def __init__(self):
-        self.plane = None
-        self.pipeline = Gst.Pipeline.new()       
-        self.sink = None
-        self.kmssink_fd = None
+        self._plane = None
+        self._pipeline = Gst.Pipeline.new()       
+        self._sink = None
+        self._kmssink_fd = None
         if platform.machine() == "aarch64":
-            self.sink = Gst.ElementFactory.make("kmssink")
-            self.sink.set_property("skip-vsync", "true")
+            self._sink = Gst.ElementFactory.make("kmssink")
+            self._sink.set_property("skip-vsync", "true")
         else:
-            self.sink = Gst.ElementFactory.make("autovideosink")
+            self._sink = Gst.ElementFactory.make("autovideosink")
 
         # Create bus and connect several handlers
-        self.bus = self.pipeline.get_bus()
-        self.bus.add_signal_watch()
-        self.bus.connect('message::state-changed', self.onStateChanged)
-        self.bus.connect('message::eos', self.onEos)
-        self.bus.connect('message::error', self.onError)
+        self._bus = self._pipeline.get_bus()
+        self._bus.add_signal_watch()
+        self._bus.connect('message::state-changed', self._onStateChanged)
+        self._bus.connect('message::eos', self._onEos)
+        self._bus.connect('message::error', self._onError)
 
     def __del__(self):
-        self.pipeline.set_state(Gst.State.NULL)
+        self._pipeline.set_state(Gst.State.NULL)
     
-    def onEos(self, bus, msg):
+    def _onEos(self, bus, msg):
         print ('on_eos')
         #self.mainloop.quit()
         #self.pipeline.set_state(Gst.State.NULL)
 			
-    def onError(self, bus, msg):
+    def _onError(self, bus, msg):
         error = msg.parse_error()
         print ('onError:', error[1])
         #self.mainloop.quit()
         #self.pipeline.set_state(Gst.State.NULL)
 
-    def onStateChanged(self, bus, msg):
+    def _onStateChanged(self, bus, msg):
         oldState, newState, pendingState = msg.parse_state_changed()
         # print((
         #     f"Bus call: Pipeline state changed from {oldState.value_nick} to {newState.value_nick} "
@@ -97,194 +165,204 @@ class BaseElement:
         #    print("State is NULL")
         #    #self.pipeline.set_state(Gst.State.READY)
         
+    def _addToPipeline(self):
+        pass
 
     def start(self):
-        self.addToPipeline()
-        self.pipeline.set_state(Gst.State.READY)
-        self.pipeline.set_state(Gst.State.PLAYING)
+        self._addToPipeline()
+        self._pipeline.set_state(Gst.State.READY)
+        self._pipeline.set_state(Gst.State.PLAYING)
 
     def stop(self):
-        self.pipeline.set_state(Gst.State.NULL)
-        #self.pipeline.set_state(Gst.State.PAUSED)
-        #self.pipeline.set_state(Gst.State.READY)
+        self._pipeline.set_state(Gst.State.NULL)
     
     def addDrmInfo(self, fd, plane, conn):
-        self.plane = plane
-        self.sink.set_property("fd", fd)
-        self.sink.set_property("connector-id", conn.id)
-        self.sink.set_property("plane-id", plane.id)
-
-    def addToPipeline(self):
-        pass
+        self._plane = plane
+        self._sink.set_property("fd", fd)
+        self._sink.set_property("connector-id", conn.id)
+        self._sink.set_property("plane-id", plane.id)
 
 class HdmiElement(BaseElement):
     def __init__(self):
         super().__init__()
-        self.source = Gst.ElementFactory.make("v4l2src")
+        self._source = Gst.ElementFactory.make("v4l2src")
         
         caps = Gst.Caps("video/x-raw,framerate=30/1,colorimetry=bt601")
-        self.filter = Gst.ElementFactory.make("capsfilter")
-        self.filter.set_property("caps", caps)
+        self._filter = Gst.ElementFactory.make("capsfilter")
+        self._filter.set_property("caps", caps)
         
-        self.parse = Gst.ElementFactory.make("rawvideoparse")
-        self.parse.set_property("format", "uyvy")
-        self.parse.set_property("width", 1920)
-        self.parse.set_property("height", 1080)
-        self.parse.set_property("framerate", Gst.Fraction(30/1))
+        self._parse = Gst.ElementFactory.make("rawvideoparse")
+        self._parse.set_property("format", "uyvy")
+        self._parse.set_property("width", 1920)
+        self._parse.set_property("height", 1080)
+        self._parse.set_property("framerate", Gst.Fraction(30/1))
         
-        self.convert = Gst.ElementFactory.make("v4l2convert")
-        self.queue = Gst.ElementFactory.make("queue")
+        self._convert = Gst.ElementFactory.make("v4l2convert")
+        self._queue = Gst.ElementFactory.make("queue")
 
-    def addToPipeline(self, container):
-        self.pipeline.add(self.source)
-        self.pipeline.add(self.filter)
-        self.pipeline.add(self.parse)
-        self.pipeline.add(self.convert)
-        self.pipeline.add(self.queue)
-        self.pipeline.add(self.sink)
+    def _addToPipeline(self, container):
+        self._pipeline.add(self._source)
+        self._pipeline.add(self._filter)
+        self._pipeline.add(self._parse)
+        self._pipeline.add(self._convert)
+        self._pipeline.add(self._queue)
+        self._pipeline.add(self._sink)
 
-        if not self.source.link(self.filter):
+        if not self._source.link(self._filter):
             logger.error("Link Error: source -> filter")
             return
         
-        if not self.filter.link(self.parse):
+        if not self._filter.link(self._parse):
             logger.error("Link Error: filter -> parse")
             return
         
-        if not self.parse.link(self.convert):
+        if not self._parse.link(self._convert):
             logger.error("Link Error: parse -> convert")
             return
         
-        if not self.convert.link(self.queue):
+        if not self._convert.link(self._queue):
             logger.error("Link Error: convert -> queue")
             return
         
-        if not self.queue.link(self.sink):
+        if not self._queue.link(self._sink):
             logger.error("Link Error: queue -> sink")
             return
         
 class VideoElement(BaseElement):
     def __init__(self):
         super().__init__()
-        self.source = Gst.ElementFactory.make("filesrc")
-        self.decode = Gst.ElementFactory.make("decodebin")
-        self.sink = None
-        self.kmssink_fd = None
+        self._source = Gst.ElementFactory.make("filesrc")
+        self._decode = Gst.ElementFactory.make("decodebin")
+        self._sink = None
+        self._kmssink_fd = None
         if platform.machine() == "aarch64":
-            self.sink = Gst.ElementFactory.make("kmssink")
-            self.sink.set_property("skip-vsync", "true")
+            self._sink = Gst.ElementFactory.make("kmssink")
+            self._sink.set_property("skip-vsync", "true")
         else:
-            self.sink = Gst.ElementFactory.make("autovideosink")
+            self._sink = Gst.ElementFactory.make("autovideosink")
         
-        #self.addToPipeline()
-        #self.setAlpha(0.5)
+    def _onPadAdded(self, dbin, pad):
+        self._decode.link(self._sink)
 
-    def onPadAdded(self, dbin, pad):
-        decode = pad.get_parent()
-        pipeline = decode.get_parent()
-        decode.link(self.sink)
+    def _addToPipeline(self):
+        self._pipeline.add(self._source)
+        self._pipeline.add(self._decode)
+        self._pipeline.add(self._sink)
 
-    def setSourceFile(self, srcFileName):
-        #self.stop()
-        self.source.set_property('location', srcFileName)
-
-    def setAlpha(self, alpha):
-        if self.plane == None:
-            return
-        alpha = min(1.0, max(0.0, alpha))
-        gstStruct = Gst.Structure("s")
-        value = int(alpha * 64000.0)
-        self.plane.set_props({"alpha": value})
-        #print(value)
-        #gstStruct.set_value("alpha", value)
-        #self.sink.set_property("plane-properties", gstStruct)
-        
-    def addToPipeline(self):
-        self.pipeline.add(self.source)
-        self.pipeline.add(self.decode)
-        self.pipeline.add(self.sink)
-
-        if not self.source.link(self.decode) :
+        if not self._source.link(self._decode) :
             logger.error("Link Error: source -> decode")
 
-        self.decode.connect("pad-added", self.onPadAdded)
+        self._decode.connect("pad-added", self._onPadAdded)
+        
+    def setSourceFile(self, srcFileName):
+        self._source.set_property('location', srcFileName)
 
+        
 class BasePlayer():
-    def __init__(self):
-        self.fd = None
-        self.plane = None
-        self.conn = None
-        self.element = VideoElement()
+    class State(enum.Enum):
+        PREROLL = 0
+        ACTIVATING = 1
+        ACTIVE = 2
+        DEACTIVATING = 3
+        DEACTIVATED = 4
 
+    def __init__(self, vmOne: VMOneContainer):
+        self._vmOne = vmOne
+        self._fd = None
+        self._plane = None
+        self._conn = None
+        self._element = VideoElement()
+        self._alpha = 0.0
+        
+        self.state = self.State.DEACTIVATED
+        self.fading = False
+        
     def addDrmInfo(self, fd, plane, conn):
-        self.fd = fd
-        self.plane = plane
-        self.conn = conn
-        
-class VideoPlayer(BasePlayer):
-    def __init__(self):
-        super().__init__()
-        element = VideoElement()
-        alpha = 1.0
-
-    def play(self, fileName):
-        self.element.stop()
-        self.element = VideoElement()
-        self.element.addDrmInfo(self.fd, self.plane, self.conn)
-        self.element.setSourceFile(fileName)
-        self.element.start()
-        
-    def stop(self):
-        self.element.stop()
+        self._fd = fd
+        self._plane = plane
+        self._conn = conn
 
     def setAlpha(self, alpha):
-        self.element.setAlpha(alpha)
+        if self._plane == None:
+            return
+        
+        self._alpha = min(1.0, max(0.0, alpha))
+        gstStruct = Gst.Structure("s")
+        value = int(self._alpha * 64000.0)
+        self._plane.set_props({"alpha": value})
 
-alpha = 0
+    def setZPos(self, zPos):
+        if self._plane == None:
+            return
+        
+        self._plane.set_props({"zpos": zPos})
+
+    def update(self, dt):
+        if self.state == self.State.DEACTIVATED:
+            pass
+        elif self.state == self.State.DEACTIVATING:
+            if self.fading:
+                alpha = self._alpha - (dt * 4.0)
+                if (alpha > 0.0):
+                    self.setAlpha(alpha)
+                else:
+                    self.setZPos(1)
+                    self.state = self.State.DEACTIVATED
+            else:
+                self.setAlpha(0.0)
+                self.state = self.State.DEACTIVATED
+        elif self.state == self.State.ACTIVATING:
+            if self.fading:
+                alpha = self._alpha + (dt * 4.0)
+                print(alpha)
+                if (alpha < 1.0):
+                    self.setAlpha(alpha)
+                else:
+                    self.setZPos(2)
+                    self.state = self.State.ACTIVE
+            else:
+                self.setAlpha(1.0)
+                self.state = self.State.ACTIVE
+        elif self.state == self.State.ACTIVE:
+            pass
+
+class VideoPlayer(BasePlayer):
+    def __init__(self, vmOne: VMOneContainer):
+        super().__init__(vmOne)
+        self.element = VideoElement()
+
+    def play(self, fileName):
+        self.setAlpha(0.0)
+        self._element.stop()
+        self._element = VideoElement()
+        self._element.addDrmInfo(self._fd, self._plane, self._conn)
+        self._element.setSourceFile(fileName)
+        self._element.start()
+        vmOne.onPlayerActivated(self)
+        
+    def stop(self):
+        self._element.stop()
+
 index = 0
 videoElements = []
 vmOne = VMOneContainer()
-videoPlayer = VideoPlayer()
-fileNames = ["videos/BlenderReel_1080p.mp4", "videos/BlenderReel2_1080p.mp4"]
+fileNames0 = ["videos/BlenderReel_1080p.mp4", "videos/BlenderReel2_1080p.mp4"]
+fileNames1 = ["videos/BlenderReel2_1080p.mp4", "videos/BlenderReel_1080p.mp4"]
 
-def test():
+def switchVideos():
     global index
-    global alpha
-    alpha = 0.0
-    videoPlayer.setAlpha(alpha)
 
-    fileName = fileNames[index]   
-    videoPlayer.play(fileName)
+    fileName0 = fileNames0[index]   
+    vmOne.playVideo0(fileName0)
+    fileName1 = fileNames1[index]   
+    vmOne.playVideo1(fileName1)
     
-    GLib.timeout_add_seconds(2, test)
+    GLib.timeout_add_seconds(6, switchVideos)
     index = index + 1
-    index = index % len(fileNames)
-
-def update():
-    global alpha
-    alpha += 0.02
-    videoPlayer.setAlpha(alpha)
-    GLib.timeout_add(int(0.01 * 1000.0), update)
-
+    index = index % len(fileNames0)
 
 def main():
-    # show video on first display
-    vmOne.addPlayer0(videoPlayer)
-    test()
-    GLib.timeout_add(int(2 * 1000.0), update)
-
-    # videoElements.append(VideoElement())
-    # hdmiElement = HdmiElement()
-    
-    # show HDMI input on first display
-    #vmOne.addElement0(hdmiElement)
-
-    # show video on second display
-    #vmOne.addElement1(videoElement1)
-
-    # show HDMI-input on second display
-    #vmOne.addElement1(hdmiElement)
-    
+    switchVideos()
     vmOne.start()
 
 main()
