@@ -38,95 +38,83 @@ class VMOneContainer:
         self._planes1 = []
         print("HDMI-A-1 Connector ID: ", self._conn1.id)
 
+        mode0 = self._conn0.get_default_mode()
+        w0 = mode0.hdisplay
+        h0 = mode0.vdisplay
+
+        mode1 = self._conn1.get_default_mode()
+        w1 = mode0.hdisplay
+        h1 = mode0.vdisplay
+
+        fb0 = pykms.DumbFramebuffer(self._card, w0, h0, "AR24")
+        pykms.draw_rect(fb0, 0, 0, w0, h0, pykms.RGB(128, 128, 128, 128))
+        bg0 = self._res.reserve_generic_plane(self._crtc0)
+
+        fb1 = pykms.DumbFramebuffer(self._card, w0, h0, "AR24")
+        pykms.draw_rect(fb1, 0, 0, w0, h0, pykms.RGB(128, 128, 128, 128))
+        bg1 = self._res.reserve_generic_plane(self._crtc1)
+
+        self._card.disable_planes()
+
+        bg0.set_props({
+            "FB_ID": fb0.id,
+            "CRTC_ID": self._crtc0.id,
+            "SRC_W": fb0.width << 16,
+            "SRC_H": fb0.height << 16,
+            "CRTC_W": fb0.width,
+            "CRTC_H": fb0.height,
+            "zpos": 0,
+        })
+
+        bg1.set_props({
+            "FB_ID": fb1.id,
+            "CRTC_ID": self._crtc1.id,
+            "SRC_W": fb1.width << 16,
+            "SRC_H": fb1.height << 16,
+            "CRTC_W": fb1.width,
+            "CRTC_H": fb1.height,
+            "zpos": 0,
+        })
+
         # Initialize Gst and create pipeline
         Gst.init(sys.argv[1:])
         print("Gst Version: %s", Gst.version())
 
         # All players for HDMI-A
-        self._players0 = []
-        # All players for HDMI-B
-        self._players1 = []
+        self._player0 = None
+        self._player1 = None
 
-        # Create players
-        isFading = False
-        videoPlayer = VideoPlayer(self, True)
-        videoPlayer.fading = isFading
-        self._addVideoPlayer0(videoPlayer)
-        videoPlayer = VideoPlayer(self, True)
-        videoPlayer.fading = isFading
-        self._addVideoPlayer0(videoPlayer)
+        self._addVideoPlayer0(VideoPlayer(self, True))
+        self._addVideoPlayer1(VideoPlayer(self, True))
 
-        videoPlayer = VideoPlayer(self, True)
-        videoPlayer.fading = isFading
-        self._addVideoPlayer1(videoPlayer)
-        videoPlayer = VideoPlayer(self, True)
-        videoPlayer.fading = isFading
-        self._addVideoPlayer1(videoPlayer)
-            
         self._mainloop = GLib.MainLoop()
 
     # Element 0 will be displayed on HDMI0
     def _addVideoPlayer0(self, player):
         plane = self._res.reserve_overlay_plane(self._crtc0)
+        plane.set_props({"zpos": 2})
         self._planes0.append(plane)
         player.addDrmInfo(self._fd, plane, self._conn0)
-        self._players0.append(player)
+        self._player0 = player
 
     # Element 1 will be displayed on HDMI1
     def _addVideoPlayer1(self, player):
         plane = self._res.reserve_overlay_plane(self._crtc1)
+        plane.set_props({"zpos": 2})
         self._planes1.append(plane)
         player.addDrmInfo(self._fd, plane, self._conn1)
-        self._players1.append(player)
+        self._player1 = player
 
     def start(self):
-        self.update()
         self._mainloop.run()
 
     def playVideo0(self, fileName):
-        for player in self._players0:
-            if player.state == BasePlayer.State.DEACTIVATED:
-                player.play(fileName)
-                break
+        if self._player0 != None:
+            self._player0.play(fileName)
 
     def playVideo1(self, fileName):
-        for player in self._players1:
-            if player.state == BasePlayer.State.DEACTIVATED:
-                player.play(fileName)
-                break
-
-    def update(self):
-        dt = 0.016
-        for player in self._players0:
-           player.update(dt)
-
-        for player in self._players1:
-           player.update(dt)
-
-        GLib.timeout_add(int(dt * 1000.0), self.update)
-
-    def onPlayerActivated(self, player):
-        playersToDeactivate = [BasePlayer]
-        found = False
-        for p in self._players0:
-            if p == player:
-                p.state = BasePlayer.State.ACTIVATING
-                found = True
-            else:
-                playersToDeactivate.append(p)
-        
-        if not found:
-            playersToDeactivate.clear()
-            for p in self._players1:
-                if p == player:
-                    p.state = BasePlayer.State.ACTIVATING
-                    found = True
-                else:
-                    playersToDeactivate.append(p)
-
-        if found:
-            for p in playersToDeactivate:
-                p.state = BasePlayer.State.DEACTIVATING 
+        if self._player1 != None:
+            self._player1.play(fileName)
 
 class BaseElement:
     def __init__(self):
@@ -147,12 +135,6 @@ class BaseElement:
         self._bus.connect('message::eos', self._onEos)
         self._bus.connect('message::error', self._onError)
 
-    def __del__(self):
-        print("Delete BaseElement")
-        self._pipeline.set_state(Gst.State.NULL)
-        del self._pipeline
-        del self._sink
-        
     def _onEos(self, bus, msg):
         print ('on_eos')
         self._pipeline.set_state(Gst.State.NULL)
@@ -162,7 +144,6 @@ class BaseElement:
         error = msg.parse_error()
         print ('onError:', error[1])
         self._pipeline.set_state(Gst.State.NULL)
-        #self.mainloop.quit()
 
     def _onStateChanged(self, bus, msg):
         oldState, newState, pendingState = msg.parse_state_changed()
@@ -183,7 +164,7 @@ class BaseElement:
     def start(self):
         self._pipeline.set_state(Gst.State.READY)
         GLib.timeout_add(100, self._setPlaying)
-        
+
     def stop(self):
         self._pipeline.set_state(Gst.State.NULL)
     
@@ -210,9 +191,6 @@ class HdmiElement(BaseElement):
         
         self._convert = Gst.ElementFactory.make("v4l2convert")
         self._queue = Gst.ElementFactory.make("queue")
-
-    def __del__(self):
-        super().__del__()
 
     def _addToPipeline(self, container):
         self._pipeline.add(self._source)
@@ -257,10 +235,15 @@ class VideoElement(BaseElement):
 
         self._addToPipeline()
 
-    def __del__(self):
-        super().__del__()
-        
     def _onPadAdded(self, dbin, pad):
+        print("Pad added!")
+        if pad.is_linked():
+            print("Is linked!")
+            peer = None
+            peer = pad.get_peer()
+            if (peer != None):
+                print("Unlink!")
+                pad.unlink(peer, pad)
         self._decode.link(self._sink)
 
     def _addToPipeline(self):
@@ -294,16 +277,18 @@ class VideoElement2(BaseElement):
         self._addToPipeline()
         
     def _onDemuxPadAdded(self, dbin, pad):
+        if pad.is_linked():
+            print("Is linked!")
+            peer = None
+            peer = pad.get_peer()
+            if (peer != None):
+                print("Unlink!")
+                pad.unlink(peer, pad)
+                
+        self._decode.link(self._sink)
         if pad.name == "video_0":
             print("video pad added")
             self._demux.link(self._decode)
-
-            #sinkPad = self._sink.get_pad("sink")
-            #pad.link(sinkPad)
-
-    #def _onPadAdded(self, dbin, pad):
-    #    print("decode pad added")
-    #    self._decode.link(self._sink)
 
     def _addToPipeline(self):
         self._pipeline.add(self._source)
@@ -315,12 +300,6 @@ class VideoElement2(BaseElement):
         if not self._source.link(self._demux) :
             logger.error("Link Error: source -> demux")
 
-        #if not self._demux.link(self._decode) :
-        #    logger.error("Link Error: demux -> decode")
-
-        #if not self._parse.link(self._decode) :
-        #    logger.error("Link Error: parse -> decode")
-
         if not self._decode.link(self._sink) :
             logger.error("Link Error: source -> sink")
 
@@ -331,24 +310,12 @@ class VideoElement2(BaseElement):
 
         
 class BasePlayer():
-    class State(enum.Enum):
-        PREROLL = 0
-        ACTIVATING = 1
-        ACTIVE = 2
-        DEACTIVATING = 3
-        DEACTIVATED = 4
-
     def __init__(self, vmOne: VMOneContainer, useHwDecoder: bool):
         self._vmOne = vmOne
         self._useHwDecoder = useHwDecoder
         self._fd = None
         self._plane = None
         self._conn = None
-        self._element = None
-        self._alpha = 0.0
-        
-        self.state = self.State.DEACTIVATED
-        self.fading = False
         self._element: BaseElement = None
 
     def _resetElement():
@@ -360,24 +327,13 @@ class BasePlayer():
         self._conn = conn
 
     def play(self, fileName):
-        self.setAlpha(0.0)
         self._resetElement();
         self._element.addDrmInfo(self._fd, self._plane, self._conn)
         self._element.setSourceFile(fileName)
         self._element.start()
-        vmOne.onPlayerActivated(self)
         
     def stop(self):
         self._element.stop()
-
-    def setAlpha(self, alpha):
-        if self._plane == None:
-            return
-        
-        self._alpha = min(1.0, max(0.0, alpha))
-        gstStruct = Gst.Structure("s")
-        value = int(self._alpha * 64000.0)
-        self._plane.set_props({"alpha": value})
 
     def setZPos(self, zPos):
         if self._plane == None:
@@ -385,54 +341,17 @@ class BasePlayer():
         
         self._plane.set_props({"zpos": zPos})
 
-    def update(self, dt):
-        if self.state == self.State.DEACTIVATED:
-            pass
-        elif self.state == self.State.DEACTIVATING:
-            if self.fading:
-                alpha = self._alpha - (dt * 4.0)
-                if (alpha > 0.0):
-                    self.setAlpha(alpha)
-                else:
-                    self.setZPos(1)
-                    self.state = self.State.DEACTIVATED
-                    print("Deactivated!")
-            else:
-                self.setAlpha(0.0)
-                if self._element != None:
-                    self._element.stop()
-                    del self._element
-                    self._element = None
-                self.state = self.State.DEACTIVATED
-        elif self.state == self.State.ACTIVATING:
-            if self.fading:
-                alpha = self._alpha + (dt * 4.0)
-                print(alpha)
-                if (alpha < 1.0):
-                    self.setAlpha(alpha)
-                else:
-                    self.setZPos(2)
-                    self.state = self.State.ACTIVE
-            else:
-                self.setAlpha(1.0)
-                self.state = self.State.ACTIVE
-        elif self.state == self.State.ACTIVE:
-            pass
-
 class VideoPlayer(BasePlayer):
     def __init__(self, vmOne: VMOneContainer, useHwDecoder = True):
         super().__init__(vmOne, useHwDecoder)
 
     def _resetElement(self):
         if self._element != None:
-            self._element.stop()
-            del self._element
+            self.stop()
         if (self._useHwDecoder):
-           self._element = VideoElement()
+            self._element = VideoElement()
         else:
-           self._element = VideoElement2()
-
-
+            self._element = VideoElement2()
 
 index = 0
 videoElements = []
@@ -448,7 +367,7 @@ def switchVideos():
     fileName1 = fileNames1[index]   
     vmOne.playVideo1(fileName1)
     
-    GLib.timeout_add_seconds(6, switchVideos)
+    GLib.timeout_add_seconds(3, switchVideos)
     index = index + 1
     index = index % len(fileNames0)
 
