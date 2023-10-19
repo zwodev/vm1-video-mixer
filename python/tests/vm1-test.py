@@ -38,6 +38,8 @@ class VMOneContainer:
         self._planes1 = []
         print("HDMI-A-1 Connector ID: ", self._conn1.id)
 
+        self._card.disable_planes()
+
         # Initialize Gst and create pipeline
         Gst.init(sys.argv[1:])
         print("Gst Version: %s", Gst.version())
@@ -147,12 +149,6 @@ class BaseElement:
         self._bus.connect('message::eos', self._onEos)
         self._bus.connect('message::error', self._onError)
 
-    def __del__(self):
-        print("Delete BaseElement")
-        self._pipeline.set_state(Gst.State.NULL)
-        del self._pipeline
-        del self._sink
-        
     def _onEos(self, bus, msg):
         print ('on_eos')
         self._pipeline.set_state(Gst.State.NULL)
@@ -210,9 +206,6 @@ class HdmiElement(BaseElement):
         
         self._convert = Gst.ElementFactory.make("v4l2convert")
         self._queue = Gst.ElementFactory.make("queue")
-
-    def __del__(self):
-        super().__del__()
 
     def _addToPipeline(self, container):
         self._pipeline.add(self._source)
@@ -295,15 +288,7 @@ class VideoElement2(BaseElement):
         
     def _onDemuxPadAdded(self, dbin, pad):
         if pad.name == "video_0":
-            print("video pad added")
             self._demux.link(self._decode)
-
-            #sinkPad = self._sink.get_pad("sink")
-            #pad.link(sinkPad)
-
-    #def _onPadAdded(self, dbin, pad):
-    #    print("decode pad added")
-    #    self._decode.link(self._sink)
 
     def _addToPipeline(self):
         self._pipeline.add(self._source)
@@ -314,12 +299,6 @@ class VideoElement2(BaseElement):
 
         if not self._source.link(self._demux) :
             logger.error("Link Error: source -> demux")
-
-        #if not self._demux.link(self._decode) :
-        #    logger.error("Link Error: demux -> decode")
-
-        #if not self._parse.link(self._decode) :
-        #    logger.error("Link Error: parse -> decode")
 
         if not self._decode.link(self._sink) :
             logger.error("Link Error: source -> sink")
@@ -361,7 +340,7 @@ class BasePlayer():
 
     def play(self, fileName):
         self.setAlpha(0.0)
-        self._resetElement();
+        self._resetElement()
         self._element.addDrmInfo(self._fd, self._plane, self._conn)
         self._element.setSourceFile(fileName)
         self._element.start()
@@ -396,7 +375,7 @@ class BasePlayer():
                 else:
                     self.setZPos(1)
                     self.state = self.State.DEACTIVATED
-                    print("Deactivated!")
+                    #print("Deactivated!")
             else:
                 self.setAlpha(0.0)
                 if self._element != None:
@@ -407,7 +386,7 @@ class BasePlayer():
         elif self.state == self.State.ACTIVATING:
             if self.fading:
                 alpha = self._alpha + (dt * 4.0)
-                print(alpha)
+                #print(alpha)
                 if (alpha < 1.0):
                     self.setAlpha(alpha)
                 else:
@@ -448,7 +427,7 @@ def switchVideos():
     fileName1 = fileNames1[index]   
     vmOne.playVideo1(fileName1)
     
-    GLib.timeout_add_seconds(6, switchVideos)
+    GLib.timeout_add_seconds(3, switchVideos)
     index = index + 1
     index = index % len(fileNames0)
 
