@@ -1,0 +1,19 @@
+# renderer backends
+option('dx9', type : 'feature', value : 'disabled', yield: true, description: 'DirectX 9 renderer')
+option('dx10', type : 'feature', value : 'disabled', yield: true, description: 'DirectX 10 renderer')
+option('dx11', type : 'feature', value : 'disabled', yield: true, description: 'DirectX 11 renderer')
+option('dx12', type : 'feature', value : 'disabled', yield: true, description: 'DirectX 12 renderer')
+option('metal', type : 'feature', value : 'disabled', yield: true, description: 'Metal renderer')
+option('opengl', type : 'feature', value : 'enabled', yield: true, description: 'OpenGL renderer')
+option('vulkan', type : 'feature', value : 'disabled', yield: true, description: 'Vulkan renderer')
+
+# platform backends
+option('glfw', type : 'feature', value : 'disabled', yield: true, description: 'GLFW platform')
+option('sdl2', type : 'feature', value : 'disabled', yield: true, description: 'SDL2 platform')
+option('sdl3', type : 'feature', value : 'enabled', yield: true, description: 'SDL2 platform')
+option('osx', type : 'feature', value : 'disabled', yield: true, description: 'OSX platform')
+option('win', type : 'feature', value : 'disabled', yield: true, description: 'Windows platform')
+
+# frameworks (renderer + platform)
+option('marmalade', type : 'feature', value : 'disabled', yield: true, description: 'Marmalade framework')
+option('allegro5', type : 'feature', value : 'disabled', yield: true, description: 'Allegro5 framework')
