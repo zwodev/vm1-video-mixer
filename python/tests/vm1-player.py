@@ -83,11 +83,12 @@ class VMOneContainer:
         print("Gst Version: %s", Gst.version())
 
         # All players for HDMI-A
-        self._player0 = None
-        self._player1 = None
-
-        self._addVideoPlayer0(VideoPlayer(self, True))
-        self._addVideoPlayer1(VideoPlayer(self, True))
+        self._players0 = []
+        self._players1 = []
+        
+        for i in range(2):
+            self._addVideoPlayer0(VideoPlayer(self, True))
+            self._addVideoPlayer1(VideoPlayer(self, True))
 
         self._mainloop = GLib.MainLoop()
 
@@ -97,7 +98,7 @@ class VMOneContainer:
         plane.set_props({"zpos": 2, "alpha": 0xffff})
         self._planes0.append(plane)
         player.addDrmInfo(self._fd, plane, self._conn0)
-        self._player0 = player
+        self._players0.append(player)
 
     # Element 1 will be displayed on HDMI1
     def _addVideoPlayer1(self, player):
@@ -105,18 +106,18 @@ class VMOneContainer:
         plane.set_props({"zpos": 2, "alpha": 0xffff})
         self._planes1.append(plane)
         player.addDrmInfo(self._fd, plane, self._conn1)
-        self._player1 = player
+        self._players1.append(player)
 
     def start(self):
         self._mainloop.run()
 
-    def playVideo0(self, fileName):
-        if self._player0 != None:
-            self._player0.play(fileName)
+    def playVideo0(self, fileName, index=0):
+        if self._players0[index] != None:
+            self._players0[index].play(fileName)
 
-    def playVideo1(self, fileName):
-        if self._player1 != None:
-            self._player1.play(fileName)
+    def playVideo1(self, fileName, index=0):
+        if self._players1[index] != None:
+            self._players1[index].play(fileName)
 
 class BaseElement:
     instCount = 0
@@ -381,6 +382,18 @@ vmOne = VMOneContainer()
 fileNames0 = ["videos/BlenderReel_1080p.mp4", "videos/BlenderReel2_1080p.mp4", "camera"]
 fileNames1 = ["camera", "videos/BlenderReel2_1080p.mp4", "videos/BlenderReel_1080p.mp4"]
 
+def playVideos():
+    global index0
+    global index1
+
+    fileName0 = "videos/BlenderReel_1080p.mp4"
+    fileName1 = "videos/BlenderReel2_1080p.mp4"
+    
+    vmOne.playVideo0(fileName0, 0)
+    vmOne.playVideo0(fileName1, 1)
+    vmOne.playVideo1(fileName0, 0)
+    vmOne.playVideo1(fileName1, 1)
+
 def switchVideos():
     global index0
     global index1
@@ -398,6 +411,7 @@ def switchVideos():
     index1 = index1 % len(fileNames1)
 
 def main():
+    #playVideos()
     switchVideos()
     vmOne.start()
 
