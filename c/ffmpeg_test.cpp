@@ -16,33 +16,41 @@
 
 #include <stdlib.h>
 #include <time.h>
+#include <iostream>
 
+extern "C"
+{
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #include <SDL3/SDL_test.h>
 #include <SDL3/SDL_properties.h>
+#include <SDL3/SDL_surface.h>
+#include <SDL3_image/SDL_image.h>
+
 
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
 #include <libavutil/pixdesc.h>
 #include <libswscale/swscale.h>
+#include <libavutil/hwcontext_drm.h>
+
 
 #include <SDL3/SDL_opengl.h>
 #include <SDL3/SDL_opengles2.h>
 #include <SDL3/SDL_egl.h>
-
-#include <libavutil/hwcontext_drm.h>
-
-#ifdef av_err2str
-#undef av_err2str
-#include <string>
-av_always_inline std::string av_err2string(int errnum) {
-    char str[AV_ERROR_MAX_STRING_SIZE];
-    return av_make_error_string(str, AV_ERROR_MAX_STRING_SIZE, errnum);
 }
-#define av_err2str(err) av_err2string(err).c_str()
-#endif  // av_err2str
+
+
+// #ifdef av_err2str
+// #undef av_err2str
+// #include <string>
+// av_always_inline std::string av_err2string(int errnum) {
+//     char str[AV_ERROR_MAX_STRING_SIZE];
+//     return av_make_error_string(str, AV_ERROR_MAX_STRING_SIZE, errnum);
+// }
+// #define av_err2str(err) av_err2string(err).c_str()
+// #endif  // av_err2str
 
 #ifndef fourcc_code
 #define fourcc_code(a, b, c, d) ((uint32_t)(a) | ((uint32_t)(b) << 8) | ((uint32_t)(c) << 16) | ((uint32_t)(d) << 24))
@@ -124,7 +132,7 @@ static SDL_bool CreateWindowAndRenderer(Uint32 window_flags, const char *driver)
     return SDL_TRUE;
 }
 
-static Uint32 GetTextureFormat(AVPixelFormat format)
+static Uint32 GetTextureFormat(enum AVPixelFormat format)
 {
     switch (format) {
     case AV_PIX_FMT_RGB8:
@@ -233,7 +241,7 @@ static AVCodecContext *OpenVideoStream(AVFormatContext *ic, int stream, const AV
 
     result = avcodec_parameters_to_context(context, ic->streams[stream]->codecpar);
     if (result < 0) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "avcodec_parameters_to_context failed: %s\n", av_err2str(result));
+        //SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "avcodec_parameters_to_context failed: %s\n", av_err2str(result));
         avcodec_free_context(&context);
         return NULL;
     }
@@ -243,9 +251,9 @@ static AVCodecContext *OpenVideoStream(AVFormatContext *ic, int stream, const AV
     i = 0;
     while (!context->hw_device_ctx &&
            (config = avcodec_get_hw_config(codec, i++)) != NULL) {
-#if 0
+//#if 0
         SDL_Log("Found %s hardware acceleration with pixel format %s\n", av_hwdevice_get_type_name(config->device_type), av_get_pix_fmt_name(config->pix_fmt));
-#endif
+//#endif
 
         if (!(config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX) ||
             !SupportedPixelFormat(config->pix_fmt)) {
@@ -262,7 +270,7 @@ static AVCodecContext *OpenVideoStream(AVFormatContext *ic, int stream, const AV
             {
                 result = av_hwdevice_ctx_create(&context->hw_device_ctx, type, NULL, NULL, 0);
                 if (result < 0) {
-                    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create hardware device context: %s", av_err2str(result));
+                    //SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create hardware device context: %s", av_err2str(result));
                 } else {
                     SDL_Log("Using %s hardware acceleration with pixel format %s\n", av_hwdevice_get_type_name(config->device_type), av_get_pix_fmt_name(config->pix_fmt));
                 }
@@ -275,7 +283,7 @@ static AVCodecContext *OpenVideoStream(AVFormatContext *ic, int stream, const AV
 
     result = avcodec_open2(context, codec, NULL);
     if (result < 0) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't open codec %s: %s", avcodec_get_name(context->codec_id), av_err2str(result));
+        //SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't open codec %s: %s", avcodec_get_name(context->codec_id), av_err2str(result));
         avcodec_free_context(&context);
         return NULL;
     }
@@ -352,7 +360,7 @@ static SDL_bool GetTextureForMemoryFrame(AVFrame *frame, SDL_Texture **texture)
                 SDL_OutOfMemory();
                 return SDL_FALSE;
             }
-            SDL_SetProperty(props, SWS_CONTEXT_CONTAINER_PROPERTY, sws_container, FreeSwsContextContainer, NULL);
+            SDL_SetPropertyWithCleanup(props, SWS_CONTEXT_CONTAINER_PROPERTY, sws_container, FreeSwsContextContainer, NULL);
         }
         sws_container->context = sws_getCachedContext(sws_container->context, frame->width, frame->height, frame->format, frame->width, frame->height, AV_PIX_FMT_BGRA, SWS_POINT, NULL, NULL, NULL);
         if (sws_container->context) {
@@ -402,10 +410,10 @@ static SDL_bool GetTextureForDRMFrame(AVFrame *frame, SDL_Texture **texture)
     for (i = 0; i < desc->nb_layers; ++i) {
         num_planes += desc->layers[i].nb_planes;
     }
-    if (num_planes != 2) {
-        SDL_SetError("Expected NV12 frames with 2 planes, instead got %d planes", num_planes);
-        return SDL_FALSE;
-    }
+    // if (num_planes != 2) {
+    //     SDL_SetError("Expected NV12 frames with 2 planes, instead got %d planes", num_planes);
+    //     return SDL_FALSE;
+    // }
 
     if (*texture) {
         /* Free the previous texture now that we're about to render a new one */
@@ -417,7 +425,13 @@ static SDL_bool GetTextureForDRMFrame(AVFrame *frame, SDL_Texture **texture)
         SetYUVConversionMode(frame);
     }
 
-    *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_NV12, SDL_TEXTUREACCESS_STATIC, frame->width, frame->height);
+    int newWidth = 2048;
+    int newHeight = 2048;
+    //int newHeight = 1024;
+    //std::cout << "W: " << frame->width << std::endl; 
+    //std::cout << "H: " << frame->height << std::endl; 
+    //*texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_NV12, SDL_TEXTUREACCESS_STATIC, frame->width, frame->height);
+    *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_NV12, SDL_TEXTUREACCESS_STATIC, newWidth, newHeight);
     if (!*texture) {
         return SDL_FALSE;
     }
@@ -427,21 +441,43 @@ static SDL_bool GetTextureForDRMFrame(AVFrame *frame, SDL_Texture **texture)
     /* Bind the texture for importing */
     SDL_GL_BindTexture(*texture, NULL, NULL);
 
+    static const EGLint dma_fd[3] = {
+		EGL_DMA_BUF_PLANE0_FD_EXT,
+		EGL_DMA_BUF_PLANE1_FD_EXT,
+		EGL_DMA_BUF_PLANE2_FD_EXT,
+	};
+	static const EGLint dma_offset[3] = {
+		EGL_DMA_BUF_PLANE0_OFFSET_EXT,
+		EGL_DMA_BUF_PLANE1_OFFSET_EXT,
+		EGL_DMA_BUF_PLANE2_OFFSET_EXT,
+	};
+	static const EGLint dma_pitch[3] = {
+		EGL_DMA_BUF_PLANE0_PITCH_EXT,
+		EGL_DMA_BUF_PLANE1_PITCH_EXT,
+		EGL_DMA_BUF_PLANE2_PITCH_EXT,
+	};
+
     /* import the frame into OpenGL */
     image_index = 0;
     for (i = 0; i < desc->nb_layers; ++i) {
         const AVDRMLayerDescriptor *layer = &desc->layers[i];
-        for (j = 0; j < layer->nb_planes; ++j) {
+        for (j = 0; j < 1; ++j) {
             static const uint32_t formats[ 2 ] = { DRM_FORMAT_R8, DRM_FORMAT_GR88 };
             const AVDRMPlaneDescriptor *plane = &layer->planes[j];
             const AVDRMObjectDescriptor *object = &desc->objects[plane->object_index];
+
+            std::cout << "Plane: " << j << std::endl;
+            std::cout << "FD: " << object->fd << std::endl;
+            std::cout << "Offset: " << plane->offset << std::endl;
+            std::cout << "Pitch: " << plane->pitch << std::endl;
+            
             EGLAttrib img_attr[] = {
-                EGL_LINUX_DRM_FOURCC_EXT,      formats[i],
-                EGL_WIDTH,                     frame->width  / ( image_index + 1 ),  /* half size for chroma */
-                EGL_HEIGHT,                    frame->height / ( image_index + 1 ),
-                EGL_DMA_BUF_PLANE0_FD_EXT,     object->fd,
-                EGL_DMA_BUF_PLANE0_OFFSET_EXT, plane->offset,
-                EGL_DMA_BUF_PLANE0_PITCH_EXT,  plane->pitch,
+                EGL_LINUX_DRM_FOURCC_EXT,      formats[j],
+                EGL_WIDTH,                     newWidth  / ( image_index + 1 ),  /* half size for chroma */
+                EGL_HEIGHT,                    newHeight / ( image_index + 1 ),
+                dma_fd[j],                     object->fd,
+                dma_offset[j],                 plane->offset,
+                dma_pitch[j],                  newWidth,
                 EGL_NONE
             };
             EGLImage pImage = eglCreateImage(display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, img_attr);
@@ -500,7 +536,22 @@ static void DisplayVideoTexture(AVFrame *frame)
     if (frame->linesize[0] < 0) {
         SDL_RenderTextureRotated(renderer, video_texture, NULL, NULL, 0.0, NULL, SDL_FLIP_VERTICAL);
     } else {
+        // int width, height;
+        // SDL_Texture* target = SDL_GetRenderTarget(renderer);
+        // SDL_QueryTexture(video_texture, NULL, NULL, &width, &height);
+        // SDL_Texture* renTex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, width, height);
+        // SDL_SetRenderTarget(renderer, renTex);
+        // SDL_Surface* surface = SDL_CreateSurface(width, height, SDL_PIXELFORMAT_RGBA32);
+        
         SDL_RenderTexture(renderer, video_texture, NULL, NULL);
+        
+        // SDL_RenderReadPixels(renderer, NULL, surface->format->format, surface->pixels, surface->pitch);   
+        // int st = IMG_SavePNG(surface, "test_xy.png");
+        // if (st != 0) {
+        //     SDL_Log("Failed saving image: %s\n", SDL_GetError());
+        // }
+        // SDL_SetRenderTarget(renderer, target);    
+        // SDL_DestroySurface(surface);
     }
 }
 
@@ -553,7 +604,7 @@ static AVCodecContext *OpenAudioStream(AVFormatContext *ic, int stream, const AV
 
     result = avcodec_parameters_to_context(context, ic->streams[stream]->codecpar);
     if (result < 0) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "avcodec_parameters_to_context failed: %s\n", av_err2str(result));
+       // SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "avcodec_parameters_to_context failed: %s\n", av_err2str(result));
         avcodec_free_context(&context);
         return NULL;
     }
@@ -561,7 +612,7 @@ static AVCodecContext *OpenAudioStream(AVFormatContext *ic, int stream, const AV
 
     result = avcodec_open2(context, codec, NULL);
     if (result < 0) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't open codec %s: %s", avcodec_get_name(context->codec_id), av_err2str(result));
+        //SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't open codec %s: %s", avcodec_get_name(context->codec_id), av_err2str(result));
         avcodec_free_context(&context);
         return NULL;
     }
@@ -768,6 +819,7 @@ int main(int argc, char *argv[])
         }
     }
     audio_stream = av_find_best_stream(ic, AVMEDIA_TYPE_AUDIO, -1, video_stream, &audio_codec, 0);
+    std::cout << "Check1" << std::endl;
     if (audio_stream >= 0) {
         if (audio_codec_name) {
             audio_codec = avcodec_find_decoder_by_name(audio_codec_name);
@@ -783,6 +835,7 @@ int main(int argc, char *argv[])
             goto quit;
         }
     }
+    std::cout << "Check2" << std::endl;
     pkt = av_packet_alloc();
     if (!pkt) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "av_packet_alloc failed");
@@ -816,6 +869,8 @@ int main(int argc, char *argv[])
     /* We're ready to go! */
     SDL_ShowWindow(window);
 
+    std::cout << "Check3" << std::endl;
+
     /* Main render loop */
     done = 0;
 
@@ -844,12 +899,12 @@ int main(int argc, char *argv[])
                 if (pkt->stream_index == audio_stream) {
                     result = avcodec_send_packet(audio_context, pkt);
                     if (result < 0) {
-                        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "avcodec_send_packet(audio_context) failed: %s", av_err2str(result));
+                        //SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "avcodec_send_packet(audio_context) failed: %s", av_err2str(result));
                     }
                 } else if (pkt->stream_index == video_stream) {
                     result = avcodec_send_packet(video_context, pkt);
                     if (result < 0) {
-                        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "avcodec_send_packet(video_context) failed: %s", av_err2str(result));
+                        //SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "avcodec_send_packet(video_context) failed: %s", av_err2str(result));
                     }
                 }
                 av_packet_unref(pkt);
