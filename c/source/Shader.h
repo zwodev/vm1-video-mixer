@@ -9,6 +9,7 @@ public:
 
 public:
     bool load(const char *vertFilename, const char *fragFilename);
+    bool bindUniformLocation(const char* locName, GLint unit);
     void activate();
     void deactivate();
     

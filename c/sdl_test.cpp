@@ -65,7 +65,6 @@ int SDL_main(int argc, char *args[]) {
 				return EXIT_FAILURE;
 			}
 
-
 	PlaneRenderer planeRenderer;
 
 	// Clear to black

@@ -1,12 +1,26 @@
+//#include "GLHelper.h"
 #include "VideoPlayer.h"
+
 
 #include <SDL3/SDL_opengl.h>
 #include <SDL3/SDL_opengles2.h>
-#include <SDL3/SDL_egl.h>
 
+
+
+#ifndef fourcc_code
+#define fourcc_code(a, b, c, d) ((uint32_t)(a) | ((uint32_t)(b) << 8) | ((uint32_t)(c) << 16) | ((uint32_t)(d) << 24))
+#endif
+#ifndef DRM_FORMAT_R8
+#define DRM_FORMAT_R8 fourcc_code('R', '8', ' ', ' ')
+#endif
+#ifndef DRM_FORMAT_GR88
+#define DRM_FORMAT_GR88 fourcc_code('G', 'R', '8', '8')
+#endif
+
+// VideoPlayer::VideoPlayer(SDL_Renderer* renderer) :
+//  m_renderer(renderer)
 VideoPlayer::VideoPlayer()
 {
-    initialize();
 }
 
 VideoPlayer::~VideoPlayer()
@@ -14,37 +28,12 @@ VideoPlayer::~VideoPlayer()
     
 }
 
-static SDL_bool has_EGL_EXT_image_dma_buf_import;
-static PFNGLACTIVETEXTUREARBPROC glActiveTextureARBFunc;
-static PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOESFunc;
-void VideoPlayer::initialize()
-{
-    const char *extensions = eglQueryString(eglGetCurrentDisplay(), EGL_EXTENSIONS);
-    if (SDL_strstr(extensions, "EGL_EXT_image_dma_buf_import") != NULL) {
-        has_EGL_EXT_image_dma_buf_import = SDL_TRUE;
-    }
-
-    if (SDL_GL_ExtensionSupported("GL_OES_EGL_image")) {
-        glEGLImageTargetTexture2DOESFunc = (PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)eglGetProcAddress("glEGLImageTargetTexture2DOES");
-    }
-
-    glActiveTextureARBFunc = (PFNGLACTIVETEXTUREARBPROC)SDL_GL_GetProcAddress("glActiveTextureARB");
-
-    if (has_EGL_EXT_image_dma_buf_import &&
-        glEGLImageTargetTexture2DOESFunc &&
-        glActiveTextureARBFunc) {
-        m_hasEglCreateImage = true;
-    }
-}
-
-bool VideoPlayer::open(std::string& fileName, bool useH264)
+bool VideoPlayer::open(std::string fileName, bool useH264)
 {
     /* Open the media file */
-    int returnCode = -1;
     int result = avformat_open_input(&m_formatContext, fileName.c_str(), NULL, NULL);
     if (result < 0) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't open %s: %d", fileName.c_str(), result);
-        returnCode = 4;
         return false;
     }
 
@@ -55,13 +44,11 @@ bool VideoPlayer::open(std::string& fileName, bool useH264)
             m_videoCodec = avcodec_find_decoder_by_name(videoCodecName);
             if (!m_videoCodec) {
                 SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't find codec '%s'", videoCodecName);
-                returnCode = 4;
                 return false;
             }
         }
         m_videoContext = openVideoStream();
         if (!m_videoContext) {
-            returnCode = 4;
             return false;
         }
     }
@@ -69,17 +56,8 @@ bool VideoPlayer::open(std::string& fileName, bool useH264)
     m_audioStream = av_find_best_stream(m_formatContext, AVMEDIA_TYPE_AUDIO, -1, m_videoStream, &m_audioCodec, 0);
 
     if (m_audioStream >= 0) {
-        // if (audio_codec_name) {
-        //     audio_codec = avcodec_find_decoder_by_name(audio_codec_name);
-        //     if (!audio_codec) {
-        //         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't find codec '%s'", audio_codec_name);
-        //         return_code = 4;
-        //         goto quit;
-        //     }
-        // }
         m_audioContext = openAudioStream();
         if (!m_audioContext) {
-            returnCode = 4;
             return false;
         }
     }
@@ -87,15 +65,15 @@ bool VideoPlayer::open(std::string& fileName, bool useH264)
     m_packet = av_packet_alloc();
     if (!m_packet) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "av_packet_alloc failed");
-        returnCode = 4;
         return false;
     }
     m_frame = av_frame_alloc();
     if (!m_frame) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "av_frame_alloc failed");
-        returnCode = 4;
         return false;
     }
+
+    return true;
 }
 
 AVCodecContext* VideoPlayer::openVideoStream()
@@ -201,9 +179,9 @@ AVCodecContext* VideoPlayer::openAudioStream()
     }
 
     SDL_AudioSpec spec = { SDL_AUDIO_F32, codecpar->ch_layout.nb_channels, codecpar->sample_rate };
-    SDL_AudioStream* audio = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_OUTPUT, &spec, NULL, NULL);
-    if (audio) {
-        SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(audio));
+    m_audio = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_OUTPUT, &spec, NULL, NULL);
+    if (m_audio) {
+        SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_audio));
     } else {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't open audio: %s", SDL_GetError());
     }
@@ -243,40 +221,212 @@ void VideoPlayer::update()
     bool decoded = false;
     if (m_audioContext) {
         while (avcodec_receive_frame(m_audioContext, m_frame) >= 0) {
-            HandleAudioFrame(m_frame);
+            //HandleAudioFrame(m_frame);
             decoded = true;
         }
-        if (m_audioStream) {
+        if (m_flushing) {
             /* Let SDL know we're done sending audio */
-            SDL_FlushAudioStream(audio);
+            //SDL_FlushAudioStream(m_audio);
         }
     }
     if (m_videoContext) {
         while (avcodec_receive_frame(m_videoContext, m_frame) >= 0) {
             double pts = ((double)m_frame->pts * m_videoContext->pkt_timebase.num) / m_videoContext->pkt_timebase.den;
-            if (first_pts < 0.0) {
-                first_pts = pts;
+            if (m_firstPts < 0.0) {
+                m_firstPts = pts;
             }
-            pts -= first_pts;
+            pts -= m_firstPts;
 
-            HandleVideoFrame(m_frame, pts);
+            handleVideoFrame(m_frame, pts);
             decoded = true;
         }
     } else {
         /* Update video rendering */
-        SDL_SetRenderDrawColor(renderer, 0xA0, 0xA0, 0xA0, 0xFF);
-        SDL_RenderClear(renderer);
-        SDL_RenderPresent(renderer);
+        //SDL_SetRenderDrawColor(m_renderer, 0xA0, 0xA0, 0xA0, 0xFF);
+        //SDL_RenderClear(m_renderer);
+        //SDL_RenderPresent(m_renderer);
     }
 
-    if (m_flushing && !decoded) {
-        if (SDL_GetAudioStreamQueued(audio) > 0) {
-            /* Wait a little bit for the audio to finish */
-            SDL_Delay(10);
+    // if (m_flushing && !decoded) {
+    //     if (SDL_GetAudioStreamQueued(m_audio) > 0) {
+    //         /* Wait a little bit for the audio to finish */
+    //         SDL_Delay(10);
+    //     } else {
+    //         done = 1;
+    //     }
+    // }
+
+    if (m_images.size() > 0) {
+        m_planeRenderer.update(m_images[0]);
+    }
+}
+
+void VideoPlayer::handleVideoFrame(AVFrame *frame, double pts)
+{
+    /* Quick and dirty PTS handling */
+    if (!m_videoStart) {
+        m_videoStart = SDL_GetTicks();
+    }
+    double now = (double)(SDL_GetTicks() - m_videoStart) / 1000.0;
+    while (now < pts - 0.001) {
+        SDL_Delay(1);
+        now = (double)(SDL_GetTicks() - m_videoStart) / 1000.0;
+    }
+
+    displayVideoTexture(frame);
+}
+
+void VideoPlayer::displayVideoTexture(AVFrame *frame)
+{
+    /* Update the video texture */
+    if (!getTextureForFrame(frame)) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't get texture for frame: %s\n", SDL_GetError());
+        return;
+    }
+
+    if (frame->linesize[0] < 0) {
+        //SDL_RenderTextureRotated(m_renderer, m_videoTexture, NULL, NULL, 0.0, NULL, SDL_FLIP_VERTICAL);
+    } else {
+
+        //m_planeRenderer.update(m_videoTexture);
+
+        //SDL_RenderTexture(m_renderer, m_videoTexture, NULL, NULL); 
+
+        // int width = frame->width;
+        // int height = frame->height;
+        // SDL_Texture* oldRenderTarget = SDL_GetRenderTarget(m_renderer);
+
+        // if (!m_renderTexture) {
+        //     m_renderTexture = SDL_CreateTexture(m_renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, width, height);
+        // }
+        // else {
+        //     int oldWidth, oldHeight;
+        //     SDL_QueryTexture(m_renderTexture, NULL, NULL, &oldWidth, &oldHeight);
+        //     if (oldWidth != width || oldHeight != height) {
+        //         m_renderTexture = SDL_CreateTexture(m_renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, width, height);
+        //     }
+        // }
+        //SDL_SetRenderTarget(m_renderer, m_renderTexture);
+        //SDL_RenderTexture(m_renderer, m_videoTexture, NULL, NULL);   
+        //SDL_SetRenderTarget(m_renderer, oldRenderTarget); 
+    }
+}
+
+bool VideoPlayer::getTextureForFrame(AVFrame *frame)
+{
+    // switch (frame->format) {
+    // case AV_PIX_FMT_VAAPI:
+    //     return getTextureForVAAPIFrame(frame, texture);
+    // case AV_PIX_FMT_DRM_PRIME:
+        return getTextureForDRMFrame(frame);
+    // default:
+    //     return getTextureForMemoryFrame(frame, texture);
+    // }
+}
+
+bool VideoPlayer::getTextureForMemoryFrame(AVFrame *frame)
+{
+    SDL_SetError("TextureForMemoryFrame is not supported!");
+    return false;
+}
+
+bool VideoPlayer::getTextureForVAAPIFrame(AVFrame *frame)
+{
+    AVFrame *drm_frame;
+    bool result = false;
+
+    drm_frame = av_frame_alloc();
+    if (drm_frame) {
+        drm_frame->format = AV_PIX_FMT_DRM_PRIME;
+        if (av_hwframe_map(drm_frame, frame, 0) == 0) {
+            result = getTextureForDRMFrame(drm_frame);
         } else {
-            done = 1;
+            SDL_SetError("Couldn't map hardware frame");
+        }
+        av_frame_free(&drm_frame);
+    } else {
+        SDL_OutOfMemory();
+    }
+    return result;
+}
+
+bool VideoPlayer::getTextureForDRMFrame(AVFrame *frame)
+{
+    const AVDRMFrameDescriptor *desc = (const AVDRMFrameDescriptor *)frame->data[0];
+    EGLDisplay display = eglGetCurrentDisplay();
+
+    /* FIXME: Assuming NV12 data format */
+    int numPlanes = 0;
+    for (int i = 0; i < desc->nb_layers; ++i) {
+        numPlanes += desc->layers[i].nb_planes;
+    }
+
+    int newWidth = 2048;
+    int newHeight = 2048;
+
+    static const EGLint dma_fd[3] = {
+		EGL_DMA_BUF_PLANE0_FD_EXT,
+		EGL_DMA_BUF_PLANE1_FD_EXT,
+		EGL_DMA_BUF_PLANE2_FD_EXT,
+	};
+	static const EGLint dma_offset[3] = {
+		EGL_DMA_BUF_PLANE0_OFFSET_EXT,
+		EGL_DMA_BUF_PLANE1_OFFSET_EXT,
+		EGL_DMA_BUF_PLANE2_OFFSET_EXT,
+	};
+	static const EGLint dma_pitch[3] = {
+		EGL_DMA_BUF_PLANE0_PITCH_EXT,
+		EGL_DMA_BUF_PLANE1_PITCH_EXT,
+		EGL_DMA_BUF_PLANE2_PITCH_EXT,
+	};
+
+    for (int i = 0; i < m_images.size(); ++i) {
+        eglDestroyImage(display, m_images[i]);
+    }
+
+    m_images.clear();
+
+    int imageIndex = 0;
+    /* import the frame into OpenGL */
+    for (int i = 0; i < desc->nb_layers; ++i) {
+        const AVDRMLayerDescriptor *layer = &desc->layers[i];
+        for (int j = 0; j < 1; ++j) {
+            static const uint32_t formats[ 2 ] = { DRM_FORMAT_R8, DRM_FORMAT_GR88 };
+            const AVDRMPlaneDescriptor *plane = &layer->planes[j];
+            const AVDRMObjectDescriptor *object = &desc->objects[plane->object_index];
+            
+            EGLAttrib img_attr[] = {
+                EGL_LINUX_DRM_FOURCC_EXT,      formats[j],
+                EGL_WIDTH,                     newWidth  / ( imageIndex + 1 ),  /* half size for chroma */
+                EGL_HEIGHT,                    newHeight / ( imageIndex + 1 ),
+                dma_fd[j],                     object->fd,
+                dma_offset[j],                 plane->offset,
+                dma_pitch[j],                  newWidth,
+                EGL_NONE
+            };
+
+            
+            EGLImage pImage = eglCreateImage(display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, img_attr);
+            m_images.push_back(pImage);
+            imageIndex++;
         }
     }
+
+    return true;
+}
+
+static void setYUVConversionMode(AVFrame *frame)
+{
+    SDL_YUV_CONVERSION_MODE mode = SDL_YUV_CONVERSION_AUTOMATIC;
+    if (frame && (frame->format == AV_PIX_FMT_YUV420P || frame->format == AV_PIX_FMT_YUYV422 || frame->format == AV_PIX_FMT_UYVY422)) {
+        if (frame->color_range == AVCOL_RANGE_JPEG)
+            mode = SDL_YUV_CONVERSION_JPEG;
+        else if (frame->colorspace == AVCOL_SPC_BT709)
+            mode = SDL_YUV_CONVERSION_BT709;
+        else if (frame->colorspace == AVCOL_SPC_BT470BG || frame->colorspace == AVCOL_SPC_SMPTE170M)
+            mode = SDL_YUV_CONVERSION_BT601;
+    }
+    SDL_SetYUVConversionMode(mode); /* FIXME: no support for linear transfer */
 }
 
 static Uint32 getTextureFormat(enum AVPixelFormat format)

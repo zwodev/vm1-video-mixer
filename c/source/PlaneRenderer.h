@@ -2,6 +2,7 @@
 
 #include "Shader.h"
 
+#include <SDL3/SDL_render.h> 
 #include <SDL3/SDL_opengl.h>
 #include <SDL3/SDL_opengles2.h>
 #include <SDL3/SDL_egl.h>
@@ -21,13 +22,15 @@ public:
 
 public:
     bool initialize();
-    void update();
+    void update(EGLImage image);
+    void update(SDL_Texture* texture);
 
 private:
     bool createVboFromVertices(const VertexWithTex* vertices, GLuint numVertices);
     void freeVbo();
 
 private:
+    GLuint m_texture;
     GLuint m_vbo = 0;
     GLuint m_vao = 0;
     Shader m_shader;
