@@ -29,10 +29,11 @@ void NewGlInit()
 
 //Create the triangle
 const VertexWithTex vertices[] = {
-    {{-0.9f, -0.9f}, {0.0f, 0.0f}},
-    {{0.9f, -0.9f}, {1.0f, 0.0f}},
-    {{0.9f, 0.9f}, {1.0f, 1.0f}},
-    {{-0.9f, 0.9f}, {0.0f, 1.0f}}};
+    {{-1.0f, -1.0f}, {0.0f, 1.0f}},
+    {{1.0f, -1.0f}, {1.0f, 1.0f}},
+    {{1.0f, 1.0f}, {1.0f, 0.0f}},
+    {{-1.0f, 1.0f}, {0.0f, 0.0f}}
+};
 
 PlaneRenderer::PlaneRenderer()
 {
@@ -84,16 +85,21 @@ bool PlaneRenderer::initialize()
 
 void PlaneRenderer::update(EGLImage image)
 {
-	std::cout << "Update" << std::endl;
+	//std::cout << "Update" << std::endl;
 	m_shader.activate();
 	glActiveTextureARBFunc(GL_TEXTURE0_ARB);
 	glBindTexture(GL_TEXTURE_2D, m_texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
 	// Bind the texture to unit 0
     glEGLImageTargetTexture2DOESFunc(GL_TEXTURE_2D, image);
 	m_shader.bindUniformLocation("texSampler", 0);
 	
     glBindVertexArray(m_vao);
-	glDrawArrays(GL_TRIANGLE_FAN, 0, 3);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     glBindVertexArray(0);
 
     m_shader.deactivate();
