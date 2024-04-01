@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2023-2024 Nils Zweiling
+ *
+ * This file is part of VM-1 which is released under the MIT license.
+ * See file LICENSE or go to https://github.com/zwodev/vm1-video-mixer/LICENSE
+ * for full license details.
+ */
+
+
 #pragma once
 
 #include <SDL3/SDL.h>
@@ -18,7 +27,7 @@ extern "C"
 #include <libavutil/hwcontext_drm.h>
 }
 
-#include <source/PlaneRenderer.h>
+#include "PlaneRenderer.h"
 
 static void setYUVConversionMode(AVFrame *frame);
 static Uint32 getTextureFormat(enum AVPixelFormat format);
@@ -27,7 +36,6 @@ static enum AVPixelFormat getSupportedPixelFormat(AVCodecContext *s, const enum 
 
 class VideoPlayer {
 public:
-    //VideoPlayer(SDL_Renderer* renderer);
     VideoPlayer();
     ~VideoPlayer();
 

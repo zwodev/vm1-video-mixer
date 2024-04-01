@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2023-2024 Nils Zweiling
+ *
+ * This file is part of VM-1 which is released under the MIT license.
+ * See file LICENSE or go to https://github.com/zwodev/vm1-video-mixer/LICENSE
+ * for full license details.
+ */
+
 #version 300 es
 
 layout(location = 0) in vec2 in_Position;

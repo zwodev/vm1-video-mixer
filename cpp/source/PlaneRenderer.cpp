@@ -1,5 +1,13 @@
+/*
+ * Copyright (c) 2023-2024 Nils Zweiling
+ *
+ * This file is part of VM-1 which is released under the MIT license.
+ * See file LICENSE or go to https://github.com/zwodev/vm1-video-mixer/LICENSE
+ * for full license details.
+ */
+
+
 #include "PlaneRenderer.h"
-//#include "GLHelper.h"
 #include <iostream>
 
 #include <SDL3/SDL.h>

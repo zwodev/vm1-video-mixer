@@ -1,11 +1,15 @@
-// Dear ImGui: standalone example application for SDL3 + OpenGL
-// (SDL is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan/Metal graphics context creation, etc.)
+/*
+ * Copyright (c) 2023-2024 Nils Zweiling
+ *
+ * This file is part of VM-1 which is released under the MIT license.
+ * See file LICENSE or go to https://github.com/zwodev/vm1-video-mixer/LICENSE
+ * for full license details.
+ * 
+ * Parts of this file have been taken from:
+ * https://github.com/ocornut/imgui/blob/master/examples/example_sdl2_opengl3/main.cpp
+ * 
+ */
 
-// Learn about Dear ImGui:
-// - FAQ                  https://dearimgui.com/faq
-// - Getting Started      https://dearimgui.com/getting-started
-// - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
-// - Introduction, links and more at the top of imgui.cpp
 
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
@@ -31,7 +35,6 @@ int main(int, char**)
         return -1;
     }
 
-    // Decide GL+GLSL versions
     // GL ES 2.0 + GLSL 100
     const char* glsl_version = "#version 100";
     SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengles2");
@@ -42,24 +45,20 @@ int main(int, char**)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 
     // Enable native IME.
-    //SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
+    SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
 
     // Create window with graphics context
-    //SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    //SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-    //SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
     SDL_Window *window;
     SDL_Renderer *renderer;
-    //SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN);
     Uint32 window_flags = SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY;
     window_flags |= SDL_WINDOW_OPENGL;
     if (SDL_CreateWindowAndRenderer(320, 200, window_flags, &window, &renderer) < 0) {
         return SDL_FALSE;
     }
-
-    //if (!GLHelper_Init())
-    //   return -1;
 
     SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
@@ -83,7 +82,6 @@ int main(int, char**)
 
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    //PlaneRenderer planeRenderer;
     VideoPlayer videoPlayer;
     videoPlayer.open("/home/vm1/vm1/vm1-video-mixer/videos/jellyfish-15-mbps-hd-hevc.mkv");
 
@@ -93,11 +91,6 @@ int main(int, char**)
 
     while (!done)
     {
-        // Poll and handle events (inputs, window resize, etc.)
-        // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
-        // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
-        // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
-        // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
@@ -115,9 +108,9 @@ int main(int, char**)
 
         if (showWindow)
         {
-            ImGui::Begin("Another Window", &showWindow);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+            ImGui::Begin("Player Control", &showWindow);   
             ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me"))
+            if (ImGui::Button("Play"))
                 showWindow = false;
             ImGui::End();
         }
@@ -128,8 +121,7 @@ int main(int, char**)
         glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // Render GLSL content
-        //planeRenderer.update();
+        // Render video content
         videoPlayer.update();
         
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

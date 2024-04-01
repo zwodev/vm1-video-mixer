@@ -1,4 +1,16 @@
-//#include "GLHelper.h"
+/*
+ * Copyright (c) 2023-2024 Nils Zweiling
+ *
+ * This file is part of VM-1 which is released under the MIT license.
+ * See file LICENSE or go to https://github.com/zwodev/vm1-video-mixer/LICENSE
+ * for full license details.
+ * 
+ * Parts of this file have been taken from:
+ * https://github.com/libsdl-org/SDL/blob/main/test/testffmpeg.c
+ * 
+ */
+
+
 #include "VideoPlayer.h"
 
 
@@ -17,8 +29,6 @@
 #define DRM_FORMAT_GR88 fourcc_code('G', 'R', '8', '8')
 #endif
 
-// VideoPlayer::VideoPlayer(SDL_Renderer* renderer) :
-//  m_renderer(renderer)
 VideoPlayer::VideoPlayer()
 {
 }
