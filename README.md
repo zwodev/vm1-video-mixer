@@ -9,9 +9,9 @@ Think of it as [Sonic Pi](https://github.com/sonic-pi-net/sonic-pi) for moving i
 ## Content
 At the moment this repository consists of 2 main parts:
 
-1. A Python-based proof-of-concept demonstrating hardware-accelerated video playback and camera input: [Python](https://github.com/zwodev/vm1-video-mixer/python)
+1. A Python-based proof-of-concept demonstrating hardware-accelerated video playback and camera input: [Python](https://github.com/zwodev/vm1-video-mixer/tree/master/python)
 
-2. A simple C++ based framework that incorportates libraries like SDL, OpenGL and Dear Imgui. This will be used as starting ground for VM-1's development. Besides hardware-accelerated video playback there is nothing much to see at the moment, but feel free to check it out: [C++](https://github.com/zwodev/vm1-video-mixer/cpp)
+2. A simple C++ based framework that incorportates libraries like SDL, OpenGL and Dear Imgui. This will be used as starting ground for VM-1's development. Besides hardware-accelerated video playback there is nothing much to see at the moment, but feel free to check it out: [C++](https://github.com/zwodev/vm1-video-mixer/tree/master/cpp)
 
 
 
