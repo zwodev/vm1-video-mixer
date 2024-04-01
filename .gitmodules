@@ -1,6 +1,6 @@
 [submodule "c/deps/imgui"]
-	path = c/deps/imgui
+	path = cpp/deps/imgui
 	url = https://github.com/ocornut/imgui.git
 [submodule "c/subprojects/imgui/imgui"]
-	path = c/subprojects/imgui/imgui
+	path = cpp/subprojects/imgui/imgui
 	url = https://github.com/ocornut/imgui.git
