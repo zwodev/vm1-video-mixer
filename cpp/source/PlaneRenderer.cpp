@@ -19,7 +19,7 @@ void NewGlInit()
 {
     const char *extensions = eglQueryString(eglGetCurrentDisplay(), EGL_EXTENSIONS);
     if (SDL_strstr(extensions, "EGL_EXT_image_dma_buf_import") != NULL) {
-        has_EGL_EXT_image_dma_buf_import = SDL_TRUE;
+        has_EGL_EXT_image_dma_buf_import = true;
     }
 
     if (SDL_GL_ExtensionSupported("GL_OES_EGL_image")) {
@@ -114,22 +114,23 @@ void PlaneRenderer::update(EGLImage image)
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void PlaneRenderer::update(SDL_Texture* texture)
-{	
-	m_shader.activate();
+// void PlaneRenderer::update(SDL_Texture* texture)
+// {	
+// 	m_shader.activate();
 
-	// Bind the texture to unit 0
-	glActiveTextureARBFunc(GL_TEXTURE0_ARB);
-	//glActiveTexture(GL_TEXTURE0);
-	SDL_GL_BindTexture(texture, nullptr, nullptr);	
-	m_shader.bindUniformLocation("texSampler", 0);
+// 	// Bind the texture to unit 0
+// 	glActiveTextureARBFunc(GL_TEXTURE0_ARB);
+// 	//glActiveTexture(GL_TEXTURE0);
+// 	//SDL_GL_BindTexture(texture, nullptr, nullptr);	
+// 	glBindTexture(texture, nullptr, nullptr);	
+// 	m_shader.bindUniformLocation("texSampler", 0);
 	
-    glBindVertexArray(m_vao);
-	glDrawArrays(GL_TRIANGLE_FAN, 0, 3);
-    glBindVertexArray(0);
+//     glBindVertexArray(m_vao);
+// 	glDrawArrays(GL_TRIANGLE_FAN, 0, 3);
+//     glBindVertexArray(0);
 
-    m_shader.deactivate();
-}
+//     m_shader.deactivate();
+// }
 
 bool PlaneRenderer::createVboFromVertices(const VertexWithTex* vertices, GLuint numVertices)
 {

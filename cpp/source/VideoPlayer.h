@@ -16,6 +16,11 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include <queue>
+#include <condition_variable>
 
 extern "C"
 {
@@ -29,19 +34,24 @@ extern "C"
 
 #include "PlaneRenderer.h"
 
-static void setYUVConversionMode(AVFrame *frame);
-static Uint32 getTextureFormat(enum AVPixelFormat format);
+static SDL_PixelFormat getTextureFormat(enum AVPixelFormat format);
 static bool isSupportedPixelFormat(enum AVPixelFormat format);
 static enum AVPixelFormat getSupportedPixelFormat(AVCodecContext *s, const enum AVPixelFormat *pix_fmts);
+
+struct VideoFrame {
+    std::vector<EGLImage> images;
+    double pts;
+};
 
 class VideoPlayer {
 public:
     VideoPlayer();
     ~VideoPlayer();
 
-public: 
     bool open(std::string fileName, bool useH264 = false);
     void update();
+    void close();
+    bool isPlaying() const { return m_isPlaying; }
 
 private:
     AVCodecContext* openVideoStream();
@@ -52,6 +62,10 @@ private:
     bool getTextureForMemoryFrame(AVFrame *frame);
     bool getTextureForVAAPIFrame(AVFrame *frame);
     bool getTextureForDRMFrame(AVFrame *frame);
+    void decodingThread();
+    void cleanupResources();
+    void pushFrame(VideoFrame&& frame);
+    bool popFrame(VideoFrame& frame);
 
 private:
     std::vector<EGLImage> m_images;
@@ -71,4 +85,18 @@ private:
     AVFrame*  m_frame = nullptr;
     int m_videoStream = -1;
     int m_audioStream = -1;
+
+    // Synchronization
+    std::thread m_decoderThread;
+    std::mutex m_frameMutex;
+    std::condition_variable m_frameCV;
+    std::queue<VideoFrame> m_frameQueue;
+    static constexpr size_t MAX_QUEUE_SIZE = 3;
+    
+    // State flags
+    std::atomic<bool> m_isPlaying{false};
+    std::atomic<bool> m_shouldStop{false};
+    
+    // Sync objects
+    std::vector<EGLSyncKHR> m_fences;
 };

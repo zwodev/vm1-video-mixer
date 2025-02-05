@@ -16,6 +16,7 @@
 
 #include <SDL3/SDL_opengl.h>
 #include <SDL3/SDL_opengles2.h>
+#include <EGL/eglext.h>
 
 
 
@@ -35,11 +36,25 @@ VideoPlayer::VideoPlayer()
 
 VideoPlayer::~VideoPlayer()
 {
+    close();
+}
+
+void VideoPlayer::close()
+{
+    m_shouldStop = true;
+    m_frameCV.notify_all();
     
+    if (m_decoderThread.joinable()) {
+        m_decoderThread.join();
+    }
+    
+    cleanupResources();
 }
 
 bool VideoPlayer::open(std::string fileName, bool useH264)
 {
+    close(); // Cleanup any existing resources
+    
     /* Open the media file */
     int result = avformat_open_input(&m_formatContext, fileName.c_str(), NULL, NULL);
     if (result < 0) {
@@ -83,7 +98,13 @@ bool VideoPlayer::open(std::string fileName, bool useH264)
         return false;
     }
 
-    return true;
+    if (/* successful open */) {
+        m_shouldStop = false;
+        m_isPlaying = true;
+        m_decoderThread = std::thread(&VideoPlayer::decodingThread, this);
+        return true;
+    }
+    return false;
 }
 
 AVCodecContext* VideoPlayer::openVideoStream()
@@ -189,7 +210,7 @@ AVCodecContext* VideoPlayer::openAudioStream()
     }
 
     SDL_AudioSpec spec = { SDL_AUDIO_F32, codecpar->ch_layout.nb_channels, codecpar->sample_rate };
-    m_audio = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_OUTPUT, &spec, NULL, NULL);
+    m_audio = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, NULL, NULL);
     if (m_audio) {
         SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_audio));
     } else {
@@ -199,76 +220,121 @@ AVCodecContext* VideoPlayer::openAudioStream()
     return context;
 }
 
-void VideoPlayer::update()
-{
-    if (!m_flushing) {
-        int result = av_read_frame(m_formatContext, m_packet);
-        if (result < 0) {
-            SDL_Log("End of stream, finishing decode\n");
-            if (m_audioContext) {
-                avcodec_flush_buffers(m_audioContext);
-            }
-            if (m_videoContext) {
-                avcodec_flush_buffers(m_videoContext);
-            }
-            m_flushing = true;
-        } else {
-            if (m_packet->stream_index == m_audioStream) {
-                result = avcodec_send_packet(m_audioContext, m_packet);
-                if (result < 0) {
-                    //SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "avcodec_send_packet(audio_context) failed: %s", av_err2str(result));
+void VideoPlayer::decodingThread() {
+    while (!m_shouldStop) {
+        if (!m_flushing) {
+            // Read and decode frames
+            int result = av_read_frame(m_formatContext, m_packet);
+            if (result < 0) {
+                SDL_Log("End of stream, finishing decode\n");
+                if (m_audioContext) {
+                    avcodec_flush_buffers(m_audioContext);
                 }
-            } else if (m_packet->stream_index == m_videoStream) {
-                result = avcodec_send_packet(m_videoContext, m_packet);
-                if (result < 0) {
-                    //SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "avcodec_send_packet(video_context) failed: %s", av_err2str(result));
+                if (m_videoContext) {
+                    avcodec_flush_buffers(m_videoContext);
+                }
+                m_flushing = true;
+            } else {
+                if (m_packet->stream_index == m_audioStream) {
+                    result = avcodec_send_packet(m_audioContext, m_packet);
+                    if (result < 0) {
+                        //SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "avcodec_send_packet(audio_context) failed: %s", av_err2str(result));
+                    }
+                } else if (m_packet->stream_index == m_videoStream) {
+                    result = avcodec_send_packet(m_videoContext, m_packet);
+                    if (result < 0) {
+                        //SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "avcodec_send_packet(video_context) failed: %s", av_err2str(result));
+                    }
+                }
+                av_packet_unref(m_packet);
+            }
+        }
+        
+        // Process decoded frames
+        if (m_videoContext) {
+            while (avcodec_receive_frame(m_videoContext, m_frame) >= 0) {
+                double pts = ((double)m_frame->pts * m_videoContext->pkt_timebase.num) / m_videoContext->pkt_timebase.den;
+                if (m_firstPts < 0.0) {
+                    m_firstPts = pts;
+                }
+                pts -= m_firstPts;
+
+                VideoFrame frame;
+                if (getTextureForDRMFrame(m_frame)) {
+                    frame.images = std::move(m_images);
+                    frame.pts = pts;
+                    pushFrame(std::move(frame));
                 }
             }
-            av_packet_unref(m_packet);
         }
     }
+}
 
-    bool decoded = false;
-    if (m_audioContext) {
-        while (avcodec_receive_frame(m_audioContext, m_frame) >= 0) {
-            //HandleAudioFrame(m_frame);
-            decoded = true;
+void VideoPlayer::update() {
+    VideoFrame frame;
+    if (popFrame(frame)) {
+        // Create sync fence for previous frame if exists
+        if (!m_fences.empty()) {
+            EGLDisplay display = eglGetCurrentDisplay();
+            eglClientWaitSync(display, m_fences.back(), EGL_SYNC_FLUSH_COMMANDS_BIT, EGL_FOREVER);
+            eglDestroySync(display, m_fences.back());
+            m_fences.pop_back();
         }
-        if (m_flushing) {
-            /* Let SDL know we're done sending audio */
-            //SDL_FlushAudioStream(m_audio);
+        
+        // Render new frame
+        m_planeRenderer.update(frame.images[0]);
+        
+        // Create new sync fence
+        EGLDisplay display = eglGetCurrentDisplay();
+        EGLSyncKHR fence = eglCreateSync(display, EGL_SYNC_FENCE, NULL);
+        if (fence != EGL_NO_SYNC) {
+            m_fences.push_back(fence);
         }
     }
-    if (m_videoContext) {
-        while (avcodec_receive_frame(m_videoContext, m_frame) >= 0) {
-            double pts = ((double)m_frame->pts * m_videoContext->pkt_timebase.num) / m_videoContext->pkt_timebase.den;
-            if (m_firstPts < 0.0) {
-                m_firstPts = pts;
-            }
-            pts -= m_firstPts;
+}
 
-            handleVideoFrame(m_frame, pts);
-            decoded = true;
+void VideoPlayer::pushFrame(VideoFrame&& frame) {
+    std::unique_lock<std::mutex> lock(m_frameMutex);
+    m_frameCV.wait(lock, [this]() { 
+        return m_frameQueue.size() < MAX_QUEUE_SIZE || m_shouldStop; 
+    });
+    
+    if (!m_shouldStop) {
+        m_frameQueue.push(std::move(frame));
+        m_frameCV.notify_one();
+    }
+}
+
+bool VideoPlayer::popFrame(VideoFrame& frame) {
+    std::unique_lock<std::mutex> lock(m_frameMutex);
+    if (m_frameQueue.empty()) {
+        return false;
+    }
+    
+    frame = std::move(m_frameQueue.front());
+    m_frameQueue.pop();
+    m_frameCV.notify_one();
+    return true;
+}
+
+void VideoPlayer::cleanupResources() {
+    EGLDisplay display = eglGetCurrentDisplay();
+    
+    // Cleanup sync fences
+    for (auto fence : m_fences) {
+        if (fence != EGL_NO_SYNC) {
+            eglDestroySync(display, fence);
         }
-    } else {
-        /* Update video rendering */
-        //SDL_SetRenderDrawColor(m_renderer, 0xA0, 0xA0, 0xA0, 0xFF);
-        //SDL_RenderClear(m_renderer);
-        //SDL_RenderPresent(m_renderer);
     }
-
-    // if (m_flushing && !decoded) {
-    //     if (SDL_GetAudioStreamQueued(m_audio) > 0) {
-    //         /* Wait a little bit for the audio to finish */
-    //         SDL_Delay(10);
-    //     } else {
-    //         done = 1;
-    //     }
-    // }
-
-    if (m_images.size() > 0) {
-        m_planeRenderer.update(m_images[0]);
+    m_fences.clear();
+    
+    // Cleanup images
+    for (auto image : m_images) {
+        eglDestroyImage(display, image);
     }
+    m_images.clear();
+    
+    // ... cleanup other resources ...
 }
 
 void VideoPlayer::handleVideoFrame(AVFrame *frame, double pts)
@@ -425,31 +491,31 @@ bool VideoPlayer::getTextureForDRMFrame(AVFrame *frame)
     return true;
 }
 
-static void setYUVConversionMode(AVFrame *frame)
-{
-    SDL_YUV_CONVERSION_MODE mode = SDL_YUV_CONVERSION_AUTOMATIC;
-    if (frame && (frame->format == AV_PIX_FMT_YUV420P || frame->format == AV_PIX_FMT_YUYV422 || frame->format == AV_PIX_FMT_UYVY422)) {
-        if (frame->color_range == AVCOL_RANGE_JPEG)
-            mode = SDL_YUV_CONVERSION_JPEG;
-        else if (frame->colorspace == AVCOL_SPC_BT709)
-            mode = SDL_YUV_CONVERSION_BT709;
-        else if (frame->colorspace == AVCOL_SPC_BT470BG || frame->colorspace == AVCOL_SPC_SMPTE170M)
-            mode = SDL_YUV_CONVERSION_BT601;
-    }
-    SDL_SetYUVConversionMode(mode); /* FIXME: no support for linear transfer */
-}
+// static void setYUVConversionMode(AVFrame *frame)
+// {
+//     SDL_YUV_CONVERSION_MODE mode = SDL_YUV_CONVERSION_AUTOMATIC;
+//     if (frame && (frame->format == AV_PIX_FMT_YUV420P || frame->format == AV_PIX_FMT_YUYV422 || frame->format == AV_PIX_FMT_UYVY422)) {
+//         if (frame->color_range == AVCOL_RANGE_JPEG)
+//             mode = SDL_YUV_CONVERSION_JPEG;
+//         else if (frame->colorspace == AVCOL_SPC_BT709)
+//             mode = SDL_YUV_CONVERSION_BT709;
+//         else if (frame->colorspace == AVCOL_SPC_BT470BG || frame->colorspace == AVCOL_SPC_SMPTE170M)
+//             mode = SDL_YUV_CONVERSION_BT601;
+//     }
+//     SDL_SetYUVConversionMode(mode); /* FIXME: no support for linear transfer */
+// }
 
-static Uint32 getTextureFormat(enum AVPixelFormat format)
+static SDL_PixelFormat getTextureFormat(enum AVPixelFormat format)
 {
     switch (format) {
     case AV_PIX_FMT_RGB8:
         return SDL_PIXELFORMAT_RGB332;
     case AV_PIX_FMT_RGB444:
-        return SDL_PIXELFORMAT_RGB444;
+        return SDL_PIXELFORMAT_XRGB4444;
     case AV_PIX_FMT_RGB555:
-        return SDL_PIXELFORMAT_RGB555;
+        return SDL_PIXELFORMAT_XRGB1555;
     case AV_PIX_FMT_BGR555:
-        return SDL_PIXELFORMAT_BGR555;
+        return SDL_PIXELFORMAT_XBGR1555;
     case AV_PIX_FMT_RGB565:
         return SDL_PIXELFORMAT_RGB565;
     case AV_PIX_FMT_BGR565:
@@ -480,6 +546,12 @@ static Uint32 getTextureFormat(enum AVPixelFormat format)
         return SDL_PIXELFORMAT_YUY2;
     case AV_PIX_FMT_UYVY422:
         return SDL_PIXELFORMAT_UYVY;
+    case AV_PIX_FMT_NV12:
+        return SDL_PIXELFORMAT_NV12;
+    case AV_PIX_FMT_NV21:
+        return SDL_PIXELFORMAT_NV21;
+    case AV_PIX_FMT_P010:
+        return SDL_PIXELFORMAT_P010;
     default:
         return SDL_PIXELFORMAT_UNKNOWN;
     }
@@ -489,13 +561,13 @@ static bool isSupportedPixelFormat(enum AVPixelFormat format)
 {
     if (/* m_hasEglCreateImage && */
         (format == AV_PIX_FMT_VAAPI || format == AV_PIX_FMT_DRM_PRIME)) {
-        return SDL_TRUE;
+        return true;
     }
 
     if (getTextureFormat(format) != SDL_PIXELFORMAT_UNKNOWN) {
-        return SDL_TRUE;
+        return true;
     }
-    return SDL_FALSE;
+    return false;
 }
 
 static enum AVPixelFormat getSupportedPixelFormat(AVCodecContext *s, const enum AVPixelFormat *pix_fmts)

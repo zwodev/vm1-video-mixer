@@ -28,7 +28,7 @@ deps += c.find_library('SDL3_image', required: true)
 deps += c.find_library('SDL3_test', required: true)
 deps += c.find_library('unwind', required: true)
 
-sources = ['imgui_test.cpp', 'source/PlaneRenderer.cpp', 'source/Shader.cpp', 'source/VideoPlayer.cpp', 'source/GLHelper.cpp']
+sources = ['main.cpp', 'source/PlaneRenderer.cpp', 'source/Shader.cpp', 'source/VideoPlayer.cpp', 'source/GLHelper.cpp']
 
 executable('imgui_test', 
            sources, 

@@ -32,7 +32,7 @@ public:
 public:
     bool initialize();
     void update(EGLImage image);
-    void update(SDL_Texture* texture);
+    //void update(SDL_Texture* texture);
 
 private:
     bool createVboFromVertices(const VertexWithTex* vertices, GLuint numVertices);
