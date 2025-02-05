@@ -67,7 +67,7 @@ int main(int, char**)
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     Uint32 window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN;
-    SDL_Window* window = SDL_CreateWindow("Dear ImGui SDL3+OpenGL3 example", 1280, 720, window_flags);
+    SDL_Window* window = SDL_CreateWindow("Dear ImGui SDL3+OpenGL3 example", 1920, 1080, window_flags);
     if (window == nullptr)
     {
         printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
@@ -109,6 +109,7 @@ int main(int, char**)
     // Video player
     VideoPlayer videoPlayer;
     videoPlayer.open("../videos/jellyfish_1080_10s_h265.mp4");
+    videoPlayer.play();
 
     // Main loop
     bool done = false;

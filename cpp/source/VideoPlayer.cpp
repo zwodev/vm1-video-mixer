@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Nils Zweiling
+ * Copyright (c) 2023-2025 Nils Zweiling
  *
  * This file is part of VM-1 which is released under the MIT license.
  * See file LICENSE or go to https://github.com/zwodev/vm1-video-mixer/tree/master/LICENSE
@@ -41,7 +41,7 @@ VideoPlayer::~VideoPlayer()
 
 void VideoPlayer::close()
 {
-    m_shouldStop = true;
+    m_isRunning = false;
     m_frameCV.notify_all();
     
     if (m_decoderThread.joinable()) {
@@ -98,13 +98,13 @@ bool VideoPlayer::open(std::string fileName, bool useH264)
         return false;
     }
 
-    if (/* successful open */) {
-        m_shouldStop = false;
-        m_isPlaying = true;
-        m_decoderThread = std::thread(&VideoPlayer::decodingThread, this);
-        return true;
-    }
-    return false;
+    return true;
+}
+
+void VideoPlayer::play()
+{
+    m_decoderThread = std::thread(&VideoPlayer::decodingThread, this);
+    m_isRunning = true;
 }
 
 AVCodecContext* VideoPlayer::openVideoStream()
@@ -221,7 +221,7 @@ AVCodecContext* VideoPlayer::openAudioStream()
 }
 
 void VideoPlayer::decodingThread() {
-    while (!m_shouldStop) {
+    while (m_isRunning) {
         if (!m_flushing) {
             // Read and decode frames
             int result = av_read_frame(m_formatContext, m_packet);
@@ -260,10 +260,9 @@ void VideoPlayer::decodingThread() {
                 pts -= m_firstPts;
 
                 VideoFrame frame;
-                if (getTextureForDRMFrame(m_frame)) {
-                    frame.images = std::move(m_images);
+                if (getTextureForDRMFrame(m_frame, frame)) {
                     frame.pts = pts;
-                    pushFrame(std::move(frame));
+                    pushFrame(frame);
                 }
             }
         }
@@ -272,6 +271,7 @@ void VideoPlayer::decodingThread() {
 
 void VideoPlayer::update() {
     VideoFrame frame;
+    // TODO: Use frame.pts to keep playback rate
     if (popFrame(frame)) {
         // Create sync fence for previous frame if exists
         if (!m_fences.empty()) {
@@ -280,12 +280,36 @@ void VideoPlayer::update() {
             eglDestroySync(display, m_fences.back());
             m_fences.pop_back();
         }
-        
+
+        // Create EGL images here in the main thread
+        // TODO: Support for multiple planes and images (see older version)
+        EGLDisplay display = eglGetCurrentDisplay();
+        for (size_t i = 0; i < frame.formats.size(); i++) {
+            EGLAttrib img_attr[] = {
+                EGL_LINUX_DRM_FOURCC_EXT,      frame.formats[i],
+                EGL_WIDTH,                      frame.widths[i],
+                EGL_HEIGHT,                     frame.heights[i],
+                EGL_DMA_BUF_PLANE0_FD_EXT,     frame.fds[i],
+                EGL_DMA_BUF_PLANE0_OFFSET_EXT, frame.offsets[i],
+                EGL_DMA_BUF_PLANE0_PITCH_EXT,  frame.pitches[i],
+                EGL_NONE
+            };
+            
+            EGLImage image = eglCreateImage(display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, img_attr);
+            if (image != EGL_NO_IMAGE) {
+                frame.images.push_back(image);
+            }
+        }
+
         // Render new frame
-        m_planeRenderer.update(frame.images[0]);
+        if (!frame.images.empty()) {
+            m_planeRenderer.update(frame.images[0]);
+            for (int i = 0; i < frame.images.size(); ++i) {
+                eglDestroyImage(display, frame.images[i]);
+            }
+        }
         
         // Create new sync fence
-        EGLDisplay display = eglGetCurrentDisplay();
         EGLSyncKHR fence = eglCreateSync(display, EGL_SYNC_FENCE, NULL);
         if (fence != EGL_NO_SYNC) {
             m_fences.push_back(fence);
@@ -293,14 +317,15 @@ void VideoPlayer::update() {
     }
 }
 
-void VideoPlayer::pushFrame(VideoFrame&& frame) {
+void VideoPlayer::pushFrame(VideoFrame& frame) {
     std::unique_lock<std::mutex> lock(m_frameMutex);
     m_frameCV.wait(lock, [this]() { 
-        return m_frameQueue.size() < MAX_QUEUE_SIZE || m_shouldStop; 
+        return m_frameQueue.size() < MAX_QUEUE_SIZE || !m_isRunning; 
     });
     
-    if (!m_shouldStop) {
-        m_frameQueue.push(std::move(frame));
+    //SDL_Log("Push Frame!");
+    if (m_isRunning) {
+        m_frameQueue.push(frame);
         m_frameCV.notify_one();
     }
 }
@@ -311,7 +336,8 @@ bool VideoPlayer::popFrame(VideoFrame& frame) {
         return false;
     }
     
-    frame = std::move(m_frameQueue.front());
+    //SDL_Log("Pop Frame!");
+    frame = m_frameQueue.front();
     m_frameQueue.pop();
     m_frameCV.notify_one();
     return true;
@@ -327,183 +353,39 @@ void VideoPlayer::cleanupResources() {
         }
     }
     m_fences.clear();
-    
-    // Cleanup images
-    for (auto image : m_images) {
-        eglDestroyImage(display, image);
-    }
-    m_images.clear();
-    
-    // ... cleanup other resources ...
 }
 
-void VideoPlayer::handleVideoFrame(AVFrame *frame, double pts)
+bool VideoPlayer::getTextureForDRMFrame(AVFrame *frame, VideoFrame &dstFrame)
 {
-    /* Quick and dirty PTS handling */
-    if (!m_videoStart) {
-        m_videoStart = SDL_GetTicks();
-    }
-    double now = (double)(SDL_GetTicks() - m_videoStart) / 1000.0;
-    while (now < pts - 0.001) {
-        SDL_Delay(1);
-        now = (double)(SDL_GetTicks() - m_videoStart) / 1000.0;
-    }
-
-    displayVideoTexture(frame);
-}
-
-void VideoPlayer::displayVideoTexture(AVFrame *frame)
-{
-    /* Update the video texture */
-    if (!getTextureForFrame(frame)) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't get texture for frame: %s\n", SDL_GetError());
-        return;
-    }
-
-    if (frame->linesize[0] < 0) {
-        //SDL_RenderTextureRotated(m_renderer, m_videoTexture, NULL, NULL, 0.0, NULL, SDL_FLIP_VERTICAL);
-    } else {
-
-        //m_planeRenderer.update(m_videoTexture);
-
-        //SDL_RenderTexture(m_renderer, m_videoTexture, NULL, NULL); 
-
-        // int width = frame->width;
-        // int height = frame->height;
-        // SDL_Texture* oldRenderTarget = SDL_GetRenderTarget(m_renderer);
-
-        // if (!m_renderTexture) {
-        //     m_renderTexture = SDL_CreateTexture(m_renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, width, height);
-        // }
-        // else {
-        //     int oldWidth, oldHeight;
-        //     SDL_QueryTexture(m_renderTexture, NULL, NULL, &oldWidth, &oldHeight);
-        //     if (oldWidth != width || oldHeight != height) {
-        //         m_renderTexture = SDL_CreateTexture(m_renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, width, height);
-        //     }
-        // }
-        //SDL_SetRenderTarget(m_renderer, m_renderTexture);
-        //SDL_RenderTexture(m_renderer, m_videoTexture, NULL, NULL);   
-        //SDL_SetRenderTarget(m_renderer, oldRenderTarget); 
-    }
-}
-
-bool VideoPlayer::getTextureForFrame(AVFrame *frame)
-{
-    // switch (frame->format) {
-    // case AV_PIX_FMT_VAAPI:
-    //     return getTextureForVAAPIFrame(frame, texture);
-    // case AV_PIX_FMT_DRM_PRIME:
-        return getTextureForDRMFrame(frame);
-    // default:
-    //     return getTextureForMemoryFrame(frame, texture);
-    // }
-}
-
-bool VideoPlayer::getTextureForMemoryFrame(AVFrame *frame)
-{
-    SDL_SetError("TextureForMemoryFrame is not supported!");
-    return false;
-}
-
-bool VideoPlayer::getTextureForVAAPIFrame(AVFrame *frame)
-{
-    AVFrame *drm_frame;
-    bool result = false;
-
-    drm_frame = av_frame_alloc();
-    if (drm_frame) {
-        drm_frame->format = AV_PIX_FMT_DRM_PRIME;
-        if (av_hwframe_map(drm_frame, frame, 0) == 0) {
-            result = getTextureForDRMFrame(drm_frame);
-        } else {
-            SDL_SetError("Couldn't map hardware frame");
-        }
-        av_frame_free(&drm_frame);
-    } else {
-        SDL_OutOfMemory();
-    }
-    return result;
-}
-
-bool VideoPlayer::getTextureForDRMFrame(AVFrame *frame)
-{
-    const AVDRMFrameDescriptor *desc = (const AVDRMFrameDescriptor *)frame->data[0];
-    EGLDisplay display = eglGetCurrentDisplay();
-
-    /* FIXME: Assuming NV12 data format */
-    int numPlanes = 0;
-    for (int i = 0; i < desc->nb_layers; ++i) {
-        numPlanes += desc->layers[i].nb_planes;
-    }
-
     int newWidth = 2048;
     int newHeight = 2048;
-
-    static const EGLint dma_fd[3] = {
-		EGL_DMA_BUF_PLANE0_FD_EXT,
-		EGL_DMA_BUF_PLANE1_FD_EXT,
-		EGL_DMA_BUF_PLANE2_FD_EXT,
-	};
-	static const EGLint dma_offset[3] = {
-		EGL_DMA_BUF_PLANE0_OFFSET_EXT,
-		EGL_DMA_BUF_PLANE1_OFFSET_EXT,
-		EGL_DMA_BUF_PLANE2_OFFSET_EXT,
-	};
-	static const EGLint dma_pitch[3] = {
-		EGL_DMA_BUF_PLANE0_PITCH_EXT,
-		EGL_DMA_BUF_PLANE1_PITCH_EXT,
-		EGL_DMA_BUF_PLANE2_PITCH_EXT,
-	};
-
-    for (int i = 0; i < m_images.size(); ++i) {
-        eglDestroyImage(display, m_images[i]);
-    }
-
-    m_images.clear();
+    
+    const AVDRMFrameDescriptor *desc = (const AVDRMFrameDescriptor *)frame->data[0];
 
     int imageIndex = 0;
-    /* import the frame into OpenGL */
     for (int i = 0; i < desc->nb_layers; ++i) {
         const AVDRMLayerDescriptor *layer = &desc->layers[i];
         for (int j = 0; j < 1; ++j) {
-            static const uint32_t formats[ 2 ] = { DRM_FORMAT_R8, DRM_FORMAT_GR88 };
+            static const uint32_t formats[2] = { DRM_FORMAT_R8, DRM_FORMAT_GR88 };
             const AVDRMPlaneDescriptor *plane = &layer->planes[j];
             const AVDRMObjectDescriptor *object = &desc->objects[plane->object_index];
             
-            EGLAttrib img_attr[] = {
-                EGL_LINUX_DRM_FOURCC_EXT,      formats[j],
-                EGL_WIDTH,                     newWidth  / ( imageIndex + 1 ),  /* half size for chroma */
-                EGL_HEIGHT,                    newHeight / ( imageIndex + 1 ),
-                dma_fd[j],                     object->fd,
-                dma_offset[j],                 plane->offset,
-                dma_pitch[j],                  newWidth,
-                EGL_NONE
-            };
-
+            // Store DRM frame info instead of creating EGL image
+            dstFrame.formats.push_back(formats[j]);
+            // dstFrame.widths.push_back(frame->width / (imageIndex + 1));
+            // dstFrame.heights.push_back(frame->height / (imageIndex + 1));
+            dstFrame.widths.push_back(newWidth / (imageIndex + 1));
+            dstFrame.heights.push_back(newHeight / (imageIndex + 1));
+            dstFrame.fds.push_back(object->fd);
+            dstFrame.offsets.push_back(plane->offset);
+            //dstFrame.pitches.push_back(plane->pitch);
+            dstFrame.pitches.push_back(newWidth);
             
-            EGLImage pImage = eglCreateImage(display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, img_attr);
-            m_images.push_back(pImage);
             imageIndex++;
         }
     }
-
     return true;
 }
-
-// static void setYUVConversionMode(AVFrame *frame)
-// {
-//     SDL_YUV_CONVERSION_MODE mode = SDL_YUV_CONVERSION_AUTOMATIC;
-//     if (frame && (frame->format == AV_PIX_FMT_YUV420P || frame->format == AV_PIX_FMT_YUYV422 || frame->format == AV_PIX_FMT_UYVY422)) {
-//         if (frame->color_range == AVCOL_RANGE_JPEG)
-//             mode = SDL_YUV_CONVERSION_JPEG;
-//         else if (frame->colorspace == AVCOL_SPC_BT709)
-//             mode = SDL_YUV_CONVERSION_BT709;
-//         else if (frame->colorspace == AVCOL_SPC_BT470BG || frame->colorspace == AVCOL_SPC_SMPTE170M)
-//             mode = SDL_YUV_CONVERSION_BT601;
-//     }
-//     SDL_SetYUVConversionMode(mode); /* FIXME: no support for linear transfer */
-// }
 
 static SDL_PixelFormat getTextureFormat(enum AVPixelFormat format)
 {

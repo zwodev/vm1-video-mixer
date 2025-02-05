@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Nils Zweiling
+ * Copyright (c) 2023-2025 Nils Zweiling
  *
  * This file is part of VM-1 which is released under the MIT license.
  * See file LICENSE or go to https://github.com/zwodev/vm1-video-mixer/tree/master/LICENSE
@@ -41,6 +41,14 @@ static enum AVPixelFormat getSupportedPixelFormat(AVCodecContext *s, const enum 
 struct VideoFrame {
     std::vector<EGLImage> images;
     double pts;
+    
+    // Add these fields for DRM frame info
+    std::vector<uint32_t> formats;
+    std::vector<int> widths;
+    std::vector<int> heights;
+    std::vector<int> fds;
+    std::vector<uint32_t> offsets;
+    std::vector<uint32_t> pitches;
 };
 
 class VideoPlayer {
@@ -49,26 +57,21 @@ public:
     ~VideoPlayer();
 
     bool open(std::string fileName, bool useH264 = false);
+    void play();
     void update();
     void close();
-    bool isPlaying() const { return m_isPlaying; }
+    bool isPlaying() const { return m_isRunning; }
 
 private:
     AVCodecContext* openVideoStream();
     AVCodecContext* openAudioStream();
-    void handleVideoFrame(AVFrame *frame, double pts);
-    void displayVideoTexture(AVFrame *frame);
-    bool getTextureForFrame(AVFrame *frame);
-    bool getTextureForMemoryFrame(AVFrame *frame);
-    bool getTextureForVAAPIFrame(AVFrame *frame);
-    bool getTextureForDRMFrame(AVFrame *frame);
+    bool getTextureForDRMFrame(AVFrame *frame, VideoFrame &dstFram);
     void decodingThread();
     void cleanupResources();
-    void pushFrame(VideoFrame&& frame);
+    void pushFrame(VideoFrame& frame);
     bool popFrame(VideoFrame& frame);
 
 private:
-    std::vector<EGLImage> m_images;
     PlaneRenderer m_planeRenderer;
     Uint64 m_videoStart = 0;
     double m_firstPts = -1.0;
@@ -94,8 +97,7 @@ private:
     static constexpr size_t MAX_QUEUE_SIZE = 3;
     
     // State flags
-    std::atomic<bool> m_isPlaying{false};
-    std::atomic<bool> m_shouldStop{false};
+    std::atomic<bool> m_isRunning{false};
     
     // Sync objects
     std::vector<EGLSyncKHR> m_fences;
