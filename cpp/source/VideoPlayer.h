@@ -100,5 +100,5 @@ private:
     std::atomic<bool> m_isRunning{false};
     
     // Sync objects
-    std::vector<EGLSyncKHR> m_fences;
+    std::queue<EGLSyncKHR> m_fences;
 };

@@ -103,8 +103,11 @@ bool VideoPlayer::open(std::string fileName, bool useH264)
 
 void VideoPlayer::play()
 {
-    m_decoderThread = std::thread(&VideoPlayer::decodingThread, this);
+    Uint64 m_videoStart = 0;
+    double m_firstPts = -1.0;
+    bool m_flushing = false;
     m_isRunning = true;
+    m_decoderThread = std::thread(&VideoPlayer::decodingThread, this);
 }
 
 AVCodecContext* VideoPlayer::openVideoStream()
@@ -271,14 +274,13 @@ void VideoPlayer::decodingThread() {
 
 void VideoPlayer::update() {
     VideoFrame frame;
-    // TODO: Use frame.pts to keep playback rate
     if (popFrame(frame)) {
-        // Create sync fence for previous frame if exists
+        // Wait for previous frame's GPU operations to complete
         if (!m_fences.empty()) {
             EGLDisplay display = eglGetCurrentDisplay();
-            eglClientWaitSync(display, m_fences.back(), EGL_SYNC_FLUSH_COMMANDS_BIT, EGL_FOREVER);
-            eglDestroySync(display, m_fences.back());
-            m_fences.pop_back();
+            eglClientWaitSync(display, m_fences.front(), EGL_SYNC_FLUSH_COMMANDS_BIT, EGL_FOREVER);
+            eglDestroySync(display, m_fences.front());
+            m_fences.pop();
         }
 
         // Create EGL images here in the main thread
@@ -309,10 +311,10 @@ void VideoPlayer::update() {
             }
         }
         
-        // Create new sync fence
+        // Create fence for current frame
         EGLSyncKHR fence = eglCreateSync(display, EGL_SYNC_FENCE, NULL);
         if (fence != EGL_NO_SYNC) {
-            m_fences.push_back(fence);
+            m_fences.push(fence);
         }
     }
 }
@@ -347,12 +349,10 @@ void VideoPlayer::cleanupResources() {
     EGLDisplay display = eglGetCurrentDisplay();
     
     // Cleanup sync fences
-    for (auto fence : m_fences) {
-        if (fence != EGL_NO_SYNC) {
-            eglDestroySync(display, fence);
-        }
+    while (!m_fences.empty()) {
+        eglDestroySync(display, m_fences.front()); 
+        m_fences.pop();
     }
-    m_fences.clear();
 }
 
 bool VideoPlayer::getTextureForDRMFrame(AVFrame *frame, VideoFrame &dstFrame)
