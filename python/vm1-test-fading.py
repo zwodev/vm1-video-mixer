@@ -6,7 +6,6 @@ import os
 import platform
 import pykms
 import threading
-import tween
 import enum
 
 gi.require_version('GLib', '2.0')

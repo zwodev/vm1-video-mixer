@@ -6,7 +6,6 @@ import os
 import platform
 import pykms
 import threading
-import tween
 import enum
 
 gi.require_version('GLib', '2.0')
@@ -188,7 +187,7 @@ class HdmiElement(BaseElement):
         super().__init__()
         self._source = Gst.ElementFactory.make("v4l2src")
         
-        caps = Gst.Caps("video/x-raw,framerate=30/1,colorimetry=bt601")
+        caps = Gst.Caps.from_string("video/x-raw,framerate=30/1,colorimetry=bt601")
         self._filter = Gst.ElementFactory.make("capsfilter")
         self._filter.set_property("caps", caps)
         
@@ -379,15 +378,21 @@ index0 = 0
 index1 = 0
 videoElements = []
 vmOne = VMOneContainer()
-fileNames0 = ["videos/BlenderReel_1080p.mp4", "videos/BlenderReel2_1080p.mp4", "camera"]
-fileNames1 = ["camera", "videos/BlenderReel2_1080p.mp4", "videos/BlenderReel_1080p.mp4"]
+
+# with HDMI input
+fileNames0 = ["videos/bigbuckbunny_1080_10s_h264.mp4", "videos/jellyfish_1080_10s_h264.mp4", "camera"]
+fileNames1 = ["camera", "videos/jellyfish_1080_10s_h264.mp4", "videos/bigbuckbunny_1080_10s_h264.mp4"]
+
+# without HDMI input
+fileNames0 = ["videos/bigbuckbunny_1080_10s_h264.mp4", "videos/jellyfish_1080_10s_h264.mp4"]
+fileNames1 = ["videos/jellyfish_1080_10s_h264.mp4", "videos/bigbuckbunny_1080_10s_h264.mp4"]
 
 def playVideos():
     global index0
     global index1
 
-    fileName0 = "videos/BlenderReel_1080p.mp4"
-    fileName1 = "videos/BlenderReel2_1080p.mp4"
+    fileName0 = "videos/bigbuckbunny_1080_10s_h264.mp4"
+    fileName1 = "videos/jellyfish_1080_10s_h264.mp4"
     
     vmOne.playVideo0(fileName0, 0)
     vmOne.playVideo0(fileName1, 1)
