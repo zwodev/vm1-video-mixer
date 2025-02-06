@@ -62,28 +62,62 @@ int main(int, char**)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 #endif
 
+    int num_displays;
+    SDL_DisplayID *displays = SDL_GetDisplays(&num_displays);
+    SDL_Log("Found %d display(s)", num_displays);
+    for (int i = 0; i < num_displays; ++i) {
+        SDL_Log("Display ID for %d: %d", i, displays[i]);
+    }
+
+    SDL_free(displays);
+
     // Create window with graphics context
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-    Uint32 window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN;
-    SDL_Window* window = SDL_CreateWindow("Dear ImGui SDL3+OpenGL3 example", 1920, 1080, window_flags);
-    if (window == nullptr)
-    {
-        printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
-        return -1;
+
+    SDL_PropertiesID props = SDL_CreateProperties();
+    if(props == 0) {
+        SDL_Log("Unable to create properties: %s", SDL_GetError());
+        return 0;
     }
-    SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
-    SDL_GLContext gl_context = SDL_GL_CreateContext(window);
+
+    SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, "Window");
+    SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, 1920);
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, 1080);
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_Y_NUMBER, 0);
+    
+    std::vector<SDL_Window*> windows;
+    for (int i = 0; i < num_displays; ++i) {
+        SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X_NUMBER, 1920 * i);
+        SDL_Window* window = SDL_CreateWindowWithProperties(props);
+        if (window == nullptr)
+        {
+            printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
+            return -1;
+        }
+        windows.push_back(window);
+    }
+
+    if(windows.size() < 1) {
+        SDL_Log("Unable to create an SDL window!");
+        return 0;
+    }
+    
+    SDL_GLContext gl_context = SDL_GL_CreateContext(windows[0]);
     if (gl_context == nullptr)
     {
         printf("Error: SDL_GL_CreateContext(): %s\n", SDL_GetError());
         return -1;
     }
 
-    SDL_GL_MakeCurrent(window, gl_context);
     SDL_GL_SetSwapInterval(1); // Enable vsync
-    SDL_ShowWindow(window);
+    for (int i = 0; i < windows.size(); ++i) { 
+        SDL_ShowWindow(windows[i]);
+    }
+
+    SDL_GL_MakeCurrent(windows[0], gl_context);
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -97,7 +131,7 @@ int main(int, char**)
     //ImGui::StyleColorsLight();
 
     // Setup Platform/Renderer backends
-    ImGui_ImplSDL3_InitForOpenGL(window, gl_context);
+    ImGui_ImplSDL3_InitForOpenGL(windows[0], gl_context);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
 
@@ -106,10 +140,16 @@ int main(int, char**)
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    // Video player
-    VideoPlayer videoPlayer;
-    videoPlayer.open("../videos/jellyfish_1080_10s_h265.mp4");
-    videoPlayer.play();
+    // Video players
+    VideoPlayer videoPlayer0;
+    videoPlayer0.open("../videos/jellyfish_1080_10s_h265.mp4");
+    videoPlayer0.play();
+
+    VideoPlayer videoPlayer1;
+    if (windows.size() > 1) {
+        videoPlayer1.open("../videos/jellyfish_1080_10s_h265.mp4");
+        videoPlayer1.play();
+    }
 
     // Main loop
     bool done = false;
@@ -127,10 +167,10 @@ int main(int, char**)
             ImGui_ImplSDL3_ProcessEvent(&event);
             if (event.type == SDL_EVENT_QUIT)
                 done = true;
-            if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == SDL_GetWindowID(window))
+            if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == SDL_GetWindowID(windows[0]))
                 done = true;
         }
-        if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED)
+        if (SDL_GetWindowFlags(windows[0]) & SDL_WINDOW_MINIMIZED)
         {
             SDL_Delay(10);
             continue;
@@ -178,18 +218,32 @@ int main(int, char**)
             ImGui::End();
         }
 
-        // Rendering
+        // Rendering window 0
+        SDL_GL_MakeCurrent(windows[0], gl_context);
         ImGui::Render();
         glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
         glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Render video content
-        videoPlayer.update();
+        videoPlayer0.update();
         
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        SDL_GL_SwapWindow(window);
+        SDL_GL_SwapWindow(windows[0]);
+
+        // Rendering window 1
+        if (windows.size() > 1) {
+            SDL_GL_MakeCurrent(windows[1], gl_context);
+            glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+            glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            // Render video content
+            videoPlayer1.update();
+
+            SDL_GL_SwapWindow(windows[1]);
+        }
     }
 
     // Cleanup
@@ -198,7 +252,9 @@ int main(int, char**)
     ImGui::DestroyContext();
 
     SDL_GL_DestroyContext(gl_context);
-    SDL_DestroyWindow(window);
+    for (int i = 0; i < windows.size(); ++i) {
+        SDL_DestroyWindow(windows[i]);
+    }
     SDL_Quit();
 
     return 0;
