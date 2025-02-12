@@ -20,6 +20,7 @@
 
 #include "source/PlaneRenderer.h"
 #include "source/VideoPlayer.h"
+#include "source/VideoPlane.h"
 
 // Main code
 int main(int, char**)
@@ -55,11 +56,16 @@ int main(int, char**)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 #else
     // GL 3.0 + GLSL 130
-    const char* glsl_version = "#version 130";
+    // const char* glsl_version = "#version 130";
+    // SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+    // SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    // SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    // SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    const char* glsl_version = "#version 300 es";
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 #endif
 
     int num_displays;
@@ -83,6 +89,8 @@ int main(int, char**)
     }
 
     SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, "Window");
+    SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_WAYLAND_CREATE_EGL_WINDOW_BOOLEAN, true);
+    SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
     SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, 1920);
     SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, 1080);
@@ -91,6 +99,8 @@ int main(int, char**)
     std::vector<SDL_Window*> windows;
     for (int i = 0; i < num_displays; ++i) {
         SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X_NUMBER, 1920 * i);
+        //SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_MOUSE_GRABBED_BOOLEAN, (i == 0));
+        
         SDL_Window* window = SDL_CreateWindowWithProperties(props);
         if (window == nullptr)
         {
@@ -117,7 +127,10 @@ int main(int, char**)
         SDL_ShowWindow(windows[i]);
     }
 
-    SDL_GL_MakeCurrent(windows[0], gl_context);
+    // if (windows.size() > 1 ) {
+    //     SDL_SetWindowFocusable(windows[0], false);
+    // }
+    //SDL_GL_MakeCurrent(windows[0], gl_context);
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -134,26 +147,52 @@ int main(int, char**)
     ImGui_ImplSDL3_InitForOpenGL(windows[0], gl_context);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-
     // Our state
     bool show_demo_window = true;
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Video players
-    VideoPlayer videoPlayer0;
-    videoPlayer0.open("../videos/jellyfish_1080_10s_h265.mp4");
-    videoPlayer0.play();
 
-    VideoPlayer videoPlayer1;
-    if (windows.size() > 1) {
-        videoPlayer1.open("../videos/jellyfish_1080_10s_h265.mp4");
-        videoPlayer1.play();
-    }
+    // VideoPlayer videoPlayer0;
+    // videoPlayer0.open("../videos/jellyfish_1080_10s_h265.mp4");
+    // videoPlayer0.play();
 
+    // VideoPlayer videoPlayer1;
+    // VideoPlayer videoPlayer2;
+    // VideoPlayer videoPlayer3;
+    // if (windows.size() > 1) {
+    //     videoPlayer1.open("../videos/jellyfish_1080_10s_h265.mp4");
+    //     videoPlayer1.play();
+    //     videoPlayer2.open("../videos/jellyfish_1080_10s_h265.mp4");
+    //     videoPlayer2.play();
+    //     videoPlayer3.open("../videos/jellyfish_1080_10s_h265.mp4");
+    //     videoPlayer3.play();
+    // }
+    VideoPlane videoPlane0;
+    videoPlane0.players()[0]->open("../videos/jellyfish_1080_10s_h265.mp4");
+    videoPlane0.players()[0]->play();
+    //videoPlane0.players()[1]->open("../videos/jellyfish_1080_10s_h265.mp4");
+    videoPlane0.players()[1]->open("../videos/bigbuckbunny_1080_10s_h265.mp4");
+    videoPlane0.players()[1]->play();
+    
+
+    VideoPlane videoPlane1;
+    videoPlane1.players()[0]->open("../videos/jellyfish_1080_10s_h265.mp4");
+    videoPlane1.players()[0]->play();
+    //videoPlane1.players()[1]->open("../videos/jellyfish_1080_10s_h265.mp4");
+    videoPlane1.players()[1]->open("../videos/bigbuckbunny_1080_10s_h265.mp4");
+    videoPlane1.players()[1]->play();
+
+    //ImGui::SetMouseCursor(ImGuiMouseCursor_None);
+    //ImGui_ImplSDL3_Data* bd = ImGui_ImplSDL3_GetBackendData();
+    //io.BackendPlatformUserData->MouseWindowID = windows[0];
+    SDL_RaiseWindow(windows[0]);
+    //SDL_Mouse *mouse = SDL_GetMouse();
+    
+    float mixValue = 0.0f;
     // Main loop
     bool done = false;
-
     while (!done)
     {
         // Poll and handle events (inputs, window resize, etc.)
@@ -164,11 +203,22 @@ int main(int, char**)
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
+            // if (event.type == SDL_EVENT_MOUSE_MOTION) {
+            //     event.motion.windowID = SDL_GetWindowID(windows[0]);
+            // }
+            // else if (event.type == SDL_EVENT_MOUSE_WHEEL) {
+            //     event.wheel.windowID = SDL_GetWindowID(windows[0]);
+            // }
+            // else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN || event.type == SDL_EVENT_MOUSE_BUTTON_UP) {
+            //     event.button.windowID = SDL_GetWindowID(windows[0]);
+            // }
             ImGui_ImplSDL3_ProcessEvent(&event);
-            if (event.type == SDL_EVENT_QUIT)
+            if (event.type == SDL_EVENT_QUIT) {
                 done = true;
-            if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == SDL_GetWindowID(windows[0]))
+            }
+            else if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == SDL_GetWindowID(windows[0])) {
                 done = true;
+            }
         }
         if (SDL_GetWindowFlags(windows[0]) & SDL_WINDOW_MINIMIZED)
         {
@@ -176,18 +226,14 @@ int main(int, char**)
             continue;
         }
 
-        // Start the Dear ImGui frame
+        // // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
 
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
         {
-            static float f = 0.0f;
             static int counter = 0;
 
             ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
@@ -196,7 +242,7 @@ int main(int, char**)
             ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
             ImGui::Checkbox("Another Window", &show_another_window);
 
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+            ImGui::SliderFloat("Mix Value", &mixValue, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
             ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
             if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
@@ -208,15 +254,6 @@ int main(int, char**)
             ImGui::End();
         }
 
-        // 3. Show another simple window.
-        if (show_another_window)
-        {
-            ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me"))
-                show_another_window = false;
-            ImGui::End();
-        }
 
         // Rendering window 0
         SDL_GL_MakeCurrent(windows[0], gl_context);
@@ -226,8 +263,7 @@ int main(int, char**)
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Render video content
-        videoPlayer0.update();
-        
+        videoPlane0.update(mixValue);
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(windows[0]);
@@ -240,7 +276,7 @@ int main(int, char**)
             glClear(GL_COLOR_BUFFER_BIT);
 
             // Render video content
-            videoPlayer1.update();
+            videoPlane1.update(mixValue);
 
             SDL_GL_SwapWindow(windows[1]);
         }

@@ -140,9 +140,8 @@ AVCodecContext* VideoPlayer::openVideoStream()
     i = 0;
     while (!context->hw_device_ctx &&
            (config = avcodec_get_hw_config(m_videoCodec, i++)) != NULL) {
-//#if 0
+        
         SDL_Log("Found %s hardware acceleration with pixel format %s\n", av_hwdevice_get_type_name(config->device_type), av_get_pix_fmt_name(config->pix_fmt));
-//#endif
 
         if (!(config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX) ||
             !isSupportedPixelFormat(config->pix_fmt)) {
@@ -176,8 +175,6 @@ AVCodecContext* VideoPlayer::openVideoStream()
         avcodec_free_context(&context);
         return nullptr;
     }
-
-    //FIXME_SDL_SetWindowSize(window, codecpar->width, codecpar->height);
 
     return context;
 }
@@ -272,20 +269,20 @@ void VideoPlayer::decodingThread() {
     }
 }
 
-void VideoPlayer::update() {
+const VideoFrame& VideoPlayer::update() {
     VideoFrame frame;
     if (popFrame(frame)) {
         // Wait for previous frame's GPU operations to complete
+        EGLDisplay display = eglGetCurrentDisplay();
         if (!m_fences.empty()) {
-            EGLDisplay display = eglGetCurrentDisplay();
             eglClientWaitSync(display, m_fences.front(), EGL_SYNC_FLUSH_COMMANDS_BIT, EGL_FOREVER);
             eglDestroySync(display, m_fences.front());
             m_fences.pop();
         }
+        m_currentFrame = frame;
 
         // Create EGL images here in the main thread
         // TODO: Support for multiple planes and images (see older version)
-        EGLDisplay display = eglGetCurrentDisplay();
         for (size_t i = 0; i < frame.formats.size(); i++) {
             EGLAttrib img_attr[] = {
                 EGL_LINUX_DRM_FOURCC_EXT,      frame.formats[i],
@@ -317,6 +314,7 @@ void VideoPlayer::update() {
             m_fences.push(fence);
         }
     }
+    return m_currentFrame;
 }
 
 void VideoPlayer::pushFrame(VideoFrame& frame) {
@@ -325,7 +323,6 @@ void VideoPlayer::pushFrame(VideoFrame& frame) {
         return m_frameQueue.size() < MAX_QUEUE_SIZE || !m_isRunning; 
     });
     
-    //SDL_Log("Push Frame!");
     if (m_isRunning) {
         m_frameQueue.push(frame);
         m_frameCV.notify_one();
@@ -338,7 +335,6 @@ bool VideoPlayer::popFrame(VideoFrame& frame) {
         return false;
     }
     
-    //SDL_Log("Pop Frame!");
     frame = m_frameQueue.front();
     m_frameQueue.pop();
     m_frameCV.notify_one();
@@ -358,27 +354,24 @@ void VideoPlayer::cleanupResources() {
 bool VideoPlayer::getTextureForDRMFrame(AVFrame *frame, VideoFrame &dstFrame)
 {
     int newWidth = 2048;
-    int newHeight = 2048;
+    int newHeight = 1530;
     
     const AVDRMFrameDescriptor *desc = (const AVDRMFrameDescriptor *)frame->data[0];
 
     int imageIndex = 0;
     for (int i = 0; i < desc->nb_layers; ++i) {
         const AVDRMLayerDescriptor *layer = &desc->layers[i];
-        for (int j = 0; j < 1; ++j) {
+        for (int j = 0; j < layer->nb_planes; ++j) {
             static const uint32_t formats[2] = { DRM_FORMAT_R8, DRM_FORMAT_GR88 };
             const AVDRMPlaneDescriptor *plane = &layer->planes[j];
             const AVDRMObjectDescriptor *object = &desc->objects[plane->object_index];
             
             // Store DRM frame info instead of creating EGL image
             dstFrame.formats.push_back(formats[j]);
-            // dstFrame.widths.push_back(frame->width / (imageIndex + 1));
-            // dstFrame.heights.push_back(frame->height / (imageIndex + 1));
             dstFrame.widths.push_back(newWidth / (imageIndex + 1));
             dstFrame.heights.push_back(newHeight / (imageIndex + 1));
             dstFrame.fds.push_back(object->fd);
             dstFrame.offsets.push_back(plane->offset);
-            //dstFrame.pitches.push_back(plane->pitch);
             dstFrame.pitches.push_back(newWidth);
             
             imageIndex++;

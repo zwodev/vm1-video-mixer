@@ -152,12 +152,24 @@ GLuint Shader::loadShaderByType(const char *filename, GLenum shaderType)
 
 bool Shader::bindUniformLocation(const char* locName, GLint unit)
 {
-	GLint texSamplerUniformLoc = glGetUniformLocation(m_shaderProgram, "texSampler");
+	GLint texSamplerUniformLoc = glGetUniformLocation(m_shaderProgram, locName);
 	if (texSamplerUniformLoc < 0) {
 		SDL_Log("ERROR: Couldn't get uniform location with this name: %s", locName);
 		return false;
 	}
 	glUniform1i(texSamplerUniformLoc, unit);
+	return true;
+}
+
+bool Shader::setValue(const char* locName, GLfloat value)
+{
+	GLint uniformLoc = glGetUniformLocation(m_shaderProgram, locName);
+	if (uniformLoc < 0) {
+		SDL_Log("ERROR: Couldn't get uniform location with this name: %s", locName);
+		return false;
+	}
+	glUniform1f(uniformLoc, value);
+	return true;
 }
 
 void Shader::activate()

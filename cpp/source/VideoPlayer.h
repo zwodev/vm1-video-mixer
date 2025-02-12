@@ -58,9 +58,10 @@ public:
 
     bool open(std::string fileName, bool useH264 = false);
     void play();
-    void update();
+    const VideoFrame& update();
     void close();
     bool isPlaying() const { return m_isRunning; }
+    bool popFrame(VideoFrame& frame);
 
 private:
     AVCodecContext* openVideoStream();
@@ -69,7 +70,7 @@ private:
     void decodingThread();
     void cleanupResources();
     void pushFrame(VideoFrame& frame);
-    bool popFrame(VideoFrame& frame);
+    
 
 private:
     PlaneRenderer m_planeRenderer;
@@ -100,5 +101,7 @@ private:
     std::atomic<bool> m_isRunning{false};
     
     // Sync objects
+    VideoFrame m_currentFrame;
+    std::vector<VideoFrame> m_framesToDelete;
     std::queue<EGLSyncKHR> m_fences;
 };

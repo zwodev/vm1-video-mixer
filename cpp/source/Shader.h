@@ -18,6 +18,7 @@ public:
 public:
     bool load(const char *vertFilename, const char *fragFilename);
     bool bindUniformLocation(const char* locName, GLint unit);
+    bool setValue(const char* locName, GLfloat value);
     void activate();
     void deactivate();
     
