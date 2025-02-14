@@ -29,6 +29,9 @@
 #ifndef DRM_FORMAT_GR88
 #define DRM_FORMAT_GR88 fourcc_code('G', 'R', '8', '8')
 #endif
+#ifndef DRM_FORMAT_RGBA8888
+#define DRM_FORMAT_RGBA8888 fourcc_code('R', 'A', '2', '4')
+#endif
 
 VideoPlayer::VideoPlayer()
 {
@@ -269,54 +272,6 @@ void VideoPlayer::decodingThread() {
     }
 }
 
-const VideoFrame& VideoPlayer::update() {
-    VideoFrame frame;
-    if (popFrame(frame)) {
-        // Wait for previous frame's GPU operations to complete
-        EGLDisplay display = eglGetCurrentDisplay();
-        if (!m_fences.empty()) {
-            eglClientWaitSync(display, m_fences.front(), EGL_SYNC_FLUSH_COMMANDS_BIT, EGL_FOREVER);
-            eglDestroySync(display, m_fences.front());
-            m_fences.pop();
-        }
-        m_currentFrame = frame;
-
-        // Create EGL images here in the main thread
-        // TODO: Support for multiple planes and images (see older version)
-        for (size_t i = 0; i < frame.formats.size(); i++) {
-            EGLAttrib img_attr[] = {
-                EGL_LINUX_DRM_FOURCC_EXT,      frame.formats[i],
-                EGL_WIDTH,                      frame.widths[i],
-                EGL_HEIGHT,                     frame.heights[i],
-                EGL_DMA_BUF_PLANE0_FD_EXT,     frame.fds[i],
-                EGL_DMA_BUF_PLANE0_OFFSET_EXT, frame.offsets[i],
-                EGL_DMA_BUF_PLANE0_PITCH_EXT,  frame.pitches[i],
-                EGL_NONE
-            };
-            
-            EGLImage image = eglCreateImage(display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, img_attr);
-            if (image != EGL_NO_IMAGE) {
-                frame.images.push_back(image);
-            }
-        }
-
-        // Render new frame
-        if (!frame.images.empty()) {
-            m_planeRenderer.update(frame.images[0]);
-            for (int i = 0; i < frame.images.size(); ++i) {
-                eglDestroyImage(display, frame.images[i]);
-            }
-        }
-        
-        // Create fence for current frame
-        EGLSyncKHR fence = eglCreateSync(display, EGL_SYNC_FENCE, NULL);
-        if (fence != EGL_NO_SYNC) {
-            m_fences.push(fence);
-        }
-    }
-    return m_currentFrame;
-}
-
 void VideoPlayer::pushFrame(VideoFrame& frame) {
     std::unique_lock<std::mutex> lock(m_frameMutex);
     m_frameCV.wait(lock, [this]() { 
@@ -373,7 +328,6 @@ bool VideoPlayer::getTextureForDRMFrame(AVFrame *frame, VideoFrame &dstFrame)
             dstFrame.fds.push_back(object->fd);
             dstFrame.offsets.push_back(plane->offset);
             dstFrame.pitches.push_back(newWidth);
-            
             imageIndex++;
         }
     }

@@ -14,6 +14,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_opengles2.h>
+#include <GLES3/gl31.h>
 
 static size_t fileGetLength(FILE *file) {
 	
@@ -38,6 +39,33 @@ Shader::~Shader()
 	}
 }
 
+bool Shader::link()
+{
+	glLinkProgram(m_shaderProgram);
+	GLint linkingSucceeded = GL_FALSE;
+	glGetProgramiv(m_shaderProgram, GL_LINK_STATUS, &linkingSucceeded);
+	if (!linkingSucceeded) {
+		//SDL_Log("Linking shader failed (vert. shader: %s, frag. shader: %s\n", vertFilename, fragFilename);
+		SDL_Log("Linking shader failed!");
+		GLint logLength = 0;
+		glGetProgramiv(m_shaderProgram, GL_INFO_LOG_LENGTH, &logLength);
+		GLchar *errLog = (GLchar*)malloc(logLength);
+		if(errLog) {
+			glGetProgramInfoLog(m_shaderProgram, logLength, &logLength, errLog);
+			SDL_Log("%s\n", errLog);
+			free(errLog);
+		}
+		else {
+			SDL_Log("Couldn't get shader link log; out of memory\n");
+		}
+		glDeleteProgram(m_shaderProgram);
+		m_shaderProgram = 0;
+		return false;
+	}
+
+	return true;
+}
+
 bool Shader::load(const char *vertFilename, const char *fragFilename){
 	
 	GLuint vertShader = loadShaderByType(vertFilename, GL_VERTEX_SHADER);
@@ -59,34 +87,33 @@ bool Shader::load(const char *vertFilename, const char *fragFilename){
 
 	glAttachShader(m_shaderProgram, vertShader);
 	glAttachShader(m_shaderProgram, fragShader);
-	glLinkProgram(m_shaderProgram);
-	
-	GLint linkingSucceeded = GL_FALSE;
-	glGetProgramiv(m_shaderProgram, GL_LINK_STATUS, &linkingSucceeded);
-	if (!linkingSucceeded) {
-		SDL_Log("Linking shader failed (vert. shader: %s, frag. shader: %s\n",
-			vertFilename, fragFilename);
-		GLint logLength = 0;
-		glGetProgramiv(m_shaderProgram, GL_INFO_LOG_LENGTH, &logLength);
-		GLchar *errLog = (GLchar*)malloc(logLength);
-		if(errLog) {
-			glGetProgramInfoLog(m_shaderProgram, logLength, &logLength, errLog);
-			SDL_Log("%s\n", errLog);
-			free(errLog);
-		}
-		else {
-			SDL_Log("Couldn't get shader link log; out of memory\n");
-		}
-		glDeleteProgram(m_shaderProgram);
-		m_shaderProgram = 0;
-		return false;
-	}
-
+	link();
 	glBindAttribLocation(m_shaderProgram, 0, "in_Position");
 	glBindAttribLocation(m_shaderProgram, 1, "in_TexCoord");
 
 	glDeleteShader(vertShader);
 	glDeleteShader(fragShader);
+
+	return true;
+}
+
+bool Shader::load(const char *compFilename)
+{
+	GLuint compShader = loadShaderByType(compFilename, GL_COMPUTE_SHADER);
+	if(!compShader) {
+		SDL_Log("Couldn't load compute shader: %s\n", compFilename);
+		return false;
+	}
+	
+	m_shaderProgram = glCreateProgram();
+	if (!m_shaderProgram) {
+		SDL_Log("Couldn't create compute shader program\n");
+	}
+
+	glAttachShader(m_shaderProgram, compShader);
+	link();
+
+	glDeleteShader(compShader);
 
 	return true;
 }

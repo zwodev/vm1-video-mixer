@@ -58,7 +58,7 @@ public:
 
     bool open(std::string fileName, bool useH264 = false);
     void play();
-    const VideoFrame& update();
+    //const VideoFrame& update();
     void close();
     bool isPlaying() const { return m_isRunning; }
     bool popFrame(VideoFrame& frame);

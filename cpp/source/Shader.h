@@ -17,6 +17,7 @@ public:
 
 public:
     bool load(const char *vertFilename, const char *fragFilename);
+    bool load(const char *compFilename);
     bool bindUniformLocation(const char* locName, GLint unit);
     bool setValue(const char* locName, GLfloat value);
     void activate();
@@ -24,6 +25,7 @@ public:
     
 private:
     GLuint loadShaderByType(const char *filename, GLenum shaderType);
+    bool link();
     void destroyShaderProg(GLuint shaderProg);
 
 private:

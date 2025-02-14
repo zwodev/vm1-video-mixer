@@ -1,0 +1,14 @@
+#version 310 es
+
+layout(local_size_x = 16, local_size_y = 16) in;
+layout(rgba8, binding = 0) uniform readonly mediump image2D inputImage;
+layout(rgba8, binding = 1) uniform writeonly mediump image2D outputImage;
+
+void main() {
+	ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y);
+	//ivec2 pixelCoords = ivec2(0, 0);
+	//vec4 texel = vec4(1.0, 1.0, 1.0, 1.0);
+	vec4 texel = imageLoad(inputImage, pixelCoords);
+	vec4 color = vec4(texel.r, texel.r, texel.r, 1.0f); 
+	imageStore(outputImage, pixelCoords, color);
+}

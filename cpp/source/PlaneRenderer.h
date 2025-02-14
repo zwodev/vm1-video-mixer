@@ -31,8 +31,20 @@ struct vec2
 
 struct VertexWithTex
 {
-    float position[2];
-    float texCoord[2];
+    VertexWithTex(float p_x, float p_y, float p_u, float p_v, float p_offset) {
+        x = p_x * 2.0f - 1.0f;
+        y = p_y * 2.0f - 1.0f;
+        u = p_u;
+        v = p_v;
+        offset = p_offset;
+    }
+
+    float x;
+    float y;
+    float u;
+    float v;
+    float offset;
+
 };
 
 struct YUVImage {
@@ -48,19 +60,28 @@ public:
 
 public:
     bool initialize();
-    void update(EGLImage image);
     void update(std::vector<YUVImage> yuvImages, float mixValue);
-    //void update(SDL_Texture* texture);
 
 private:
-    void createAndFillTexture();
-    bool createVboFromVertices(const VertexWithTex* vertices, GLuint numVertices);
+    void createGeometryBuffers();
+    void runComputeShader();
+    bool createVbo();
+    bool createIbo();
     void freeVbo();
 
 private:
     GLuint m_coordTexture;
+    std::vector<VertexWithTex> m_vertices;
+    std::vector<GLuint> m_indices;
     std::vector<GLuint> m_yuvTextures;
+    std::vector<GLuint> m_compTextures;
+    std::vector<GLuint> m_inputTextures;
+    GLuint m_compTexture;
+    GLuint m_frameBuffer;
+    GLuint m_ibo = 0;
     GLuint m_vbo = 0;
     GLuint m_vao = 0;
     Shader m_shader;
+    Shader m_compShader;
+    Shader m_mixShader;
 };
