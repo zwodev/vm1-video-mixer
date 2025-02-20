@@ -59,7 +59,9 @@ bool VideoPlayer::open(std::string fileName, bool useH264)
     close(); // Cleanup any existing resources
     
     /* Open the media file */
-    int result = avformat_open_input(&m_formatContext, fileName.c_str(), NULL, NULL);
+    AVDictionary* opts = NULL;
+    av_dict_set(&opts, "rtsp_transport", "tcp", 0);
+    int result = avformat_open_input(&m_formatContext, fileName.c_str(), NULL, &opts);
     if (result < 0) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't open %s: %d", fileName.c_str(), result);
         return false;
@@ -82,6 +84,10 @@ bool VideoPlayer::open(std::string fileName, bool useH264)
     }
     
     m_audioStream = av_find_best_stream(m_formatContext, AVMEDIA_TYPE_AUDIO, -1, m_videoStream, &m_audioCodec, 0);
+    m_formatContext->max_analyze_duration = 5 * AV_TIME_BASE;
+    m_formatContext->probesize = 5 * 1024 * 1024;
+    //av_dump_format(m_formatContext, 0, "format_dump.txt", 0);
+
 
     if (m_audioStream >= 0) {
         m_audioContext = openAudioStream();

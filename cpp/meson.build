@@ -16,8 +16,9 @@ swscale_dep = c.find_library('swscale', required: true)
 
 egl_dep = c.find_library('EGL', required: true)
 gl_dep = c.find_library('GLESv2', required: true)
+drm_dep = c.find_library('drm', required: true)
 
-deps = [imgui_dep, avcodec_dep, avfilter_dep, avutil_dep, avformat_dep, swscale_dep, dl_dep, gl_dep, egl_dep]
+deps = [imgui_dep, avcodec_dep, avfilter_dep, avutil_dep, avformat_dep, swscale_dep, dl_dep, gl_dep, egl_dep, drm_dep]
 
 deps += dependency('sdl3',
   required: true,
@@ -28,7 +29,7 @@ deps += c.find_library('SDL3_image', required: true)
 deps += c.find_library('SDL3_test', required: true)
 deps += c.find_library('unwind', required: true)
 
-sources = ['main.cpp', 'source/PlaneRenderer.cpp', 'source/Shader.cpp', 'source/VideoPlayer.cpp', 'source/VideoPlane.cpp','source/GLHelper.cpp']
+sources = ['main.cpp', 'source/CameraRenderer.cpp', 'source/PlaneRenderer.cpp', 'source/Shader.cpp', 'source/VideoPlayer.cpp', 'source/VideoPlane.cpp','source/GLHelper.cpp']
 
 executable('imgui_test', 
            sources, 

@@ -59,9 +59,9 @@ PlaneRenderer::~PlaneRenderer()
 
 void PlaneRenderer::createGeometryBuffers()
 {   
-    //int cols = 1;
+    int cols = 1;
     //float offset = 0.0f;
-    int cols = 1920 / 128;    
+    //int cols = 1920 / 128;    
     float stepX = 1.0f / 1.0f;
     for (int i = 0; i < cols; ++i) {
         float offset = float(cols * 102) / float(1530);

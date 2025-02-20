@@ -21,6 +21,7 @@
 #include "source/PlaneRenderer.h"
 #include "source/VideoPlayer.h"
 #include "source/VideoPlane.h"
+#include "source/CameraRenderer.h"
 
 // Main code
 int main(int, char**)
@@ -153,24 +154,9 @@ int main(int, char**)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Video players
-
-    // VideoPlayer videoPlayer0;
-    // videoPlayer0.open("../videos/jellyfish_1080_10s_h265.mp4");
-    // videoPlayer0.play();
-
-    // VideoPlayer videoPlayer1;
-    // VideoPlayer videoPlayer2;
-    // VideoPlayer videoPlayer3;
-    // if (windows.size() > 1) {
-    //     videoPlayer1.open("../videos/jellyfish_1080_10s_h265.mp4");
-    //     videoPlayer1.play();
-    //     videoPlayer2.open("../videos/jellyfish_1080_10s_h265.mp4");
-    //     videoPlayer2.play();
-    //     videoPlayer3.open("../videos/jellyfish_1080_10s_h265.mp4");
-    //     videoPlayer3.play();
-    // }
     VideoPlane videoPlane0;
     videoPlane0.players()[0]->open("../videos/jellyfish_1080_10s_h265.mp4");
+    //videoPlane0.players()[0]->open("rtsp://192.168.178.23:8554/test");
     videoPlane0.players()[0]->play();
     //videoPlane0.players()[1]->open("../videos/jellyfish_1080_10s_h265.mp4");
     videoPlane0.players()[1]->open("../videos/bigbuckbunny_1080_10s_h265.mp4");
@@ -183,6 +169,11 @@ int main(int, char**)
     //videoPlane1.players()[1]->open("../videos/jellyfish_1080_10s_h265.mp4");
     videoPlane1.players()[1]->open("../videos/bigbuckbunny_1080_10s_h265.mp4");
     videoPlane1.players()[1]->play();
+
+    // Camera
+    CameraRenderer cameraRenderer0;
+    cameraRenderer0.start();
+
 
     //ImGui::SetMouseCursor(ImGuiMouseCursor_None);
     //ImGui_ImplSDL3_Data* bd = ImGui_ImplSDL3_GetBackendData();
@@ -264,6 +255,7 @@ int main(int, char**)
 
         // Render video content
         videoPlane0.update(mixValue);
+        cameraRenderer0.update();
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(windows[0]);
