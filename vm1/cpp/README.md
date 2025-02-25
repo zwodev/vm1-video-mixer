@@ -42,7 +42,7 @@ sudo cmake --install build --prefix /usr/local
 
 ```
 # Clone VM-1
-git clone https://github.com/zwodev/vm1-video-mixer.git
+git clone --recursive https://github.com/zwodev/vm1-video-mixer.git
 
 # Update the submodules
 git submodule update --recursive
@@ -51,8 +51,9 @@ git submodule update --recursive
 
 ### Compiling
 ```
+cd cpp
 meson setup builddir
-meson compile
+meson compile -C builddir
 
 ```
 
