@@ -70,6 +70,7 @@ private:
     void decodingThread();
     void cleanupResources();
     void pushFrame(VideoFrame& frame);
+    void clearFrames();
     
 
 private:

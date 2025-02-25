@@ -45,6 +45,7 @@ VideoPlayer::~VideoPlayer()
 void VideoPlayer::close()
 {
     m_isRunning = false;
+    m_flushing = false;
     m_frameCV.notify_all();
     
     if (m_decoderThread.joinable()) {
@@ -278,6 +279,13 @@ void VideoPlayer::decodingThread() {
     }
 }
 
+void VideoPlayer::clearFrames() {
+    std::unique_lock<std::mutex> lock(m_frameMutex);
+    while (!m_frameQueue.empty()) {
+        m_frameQueue.pop();
+    }
+}
+
 void VideoPlayer::pushFrame(VideoFrame& frame) {
     std::unique_lock<std::mutex> lock(m_frameMutex);
     m_frameCV.wait(lock, [this]() { 
@@ -310,6 +318,8 @@ void VideoPlayer::cleanupResources() {
         eglDestroySync(display, m_fences.front()); 
         m_fences.pop();
     }
+
+    clearFrames();
 }
 
 bool VideoPlayer::getTextureForDRMFrame(AVFrame *frame, VideoFrame &dstFrame)
