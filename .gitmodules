@@ -2,5 +2,5 @@
 	path = cpp/deps/imgui
 	url = https://github.com/ocornut/imgui.git
 [submodule "c/subprojects/imgui/imgui"]
-	path = cpp/subprojects/imgui/imgui
+	path = vm1/cpp/subprojects/imgui/imgui
 	url = https://github.com/ocornut/imgui.git
