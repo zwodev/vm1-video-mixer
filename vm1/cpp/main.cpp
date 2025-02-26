@@ -198,7 +198,7 @@ int main(int, char**)
             continue;
         }
 
-        // // Start the Dear ImGui frame
+        // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
@@ -210,11 +210,7 @@ int main(int, char**)
             static int counter = 0;
 
             ImGui::Begin("Development");
-
             ImGui::SliderFloat("Mix Value", &mixValue, 0.0f, 1.0f);
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
-
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
             ImGui::End();
         }
