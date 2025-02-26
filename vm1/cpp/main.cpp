@@ -102,7 +102,6 @@ int main(int, char**)
     std::vector<SDL_Window*> windows;
     for (int i = 0; i < num_displays; ++i) {
         SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X_NUMBER, 1920 * i);
-        //SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_MOUSE_GRABBED_BOOLEAN, (i == 0));
         
         SDL_Window* window = SDL_CreateWindowWithProperties(props);
         if (window == nullptr)
@@ -134,8 +133,8 @@ int main(int, char**)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
@@ -169,27 +168,22 @@ int main(int, char**)
     
     float mixValue = 0.0f;
 
+    // Prepared delta time
+    Uint64 lastTime = SDL_GetTicks();
+
     // Main loop
     bool done = false;
     while (!done)
     {
+        // Calculate delta time
+        Uint64 currentTime = SDL_GetTicks();
+        double deltaTime = (currentTime - lastTime) / 1000.0; 
+        lastTime = currentTime;
+
         // Poll and handle events (inputs, window resize, etc.)
-        // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
-        // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
-        // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
-        // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
-            // if (event.type == SDL_EVENT_MOUSE_MOTION) {
-            //     event.motion.windowID = SDL_GetWindowID(windows[0]);
-            // }
-            // else if (event.type == SDL_EVENT_MOUSE_WHEEL) {
-            //     event.wheel.windowID = SDL_GetWindowID(windows[0]);
-            // }
-            // else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN || event.type == SDL_EVENT_MOUSE_BUTTON_UP) {
-            //     event.button.windowID = SDL_GetWindowID(windows[0]);
-            // }
             ImGui_ImplSDL3_ProcessEvent(&event);
             if (event.type == SDL_EVENT_QUIT) {
                 done = true;
@@ -236,7 +230,7 @@ int main(int, char**)
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Render video content
-        videoPlane0.update(mixValue);
+        videoPlane0.update(deltaTime);
         //cameraRenderer0.update();
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -250,7 +244,7 @@ int main(int, char**)
             glClear(GL_COLOR_BUFFER_BIT);
 
             // Render video content
-            videoPlane1.update(mixValue);
+            videoPlane1.update(deltaTime);
 
             SDL_GL_SwapWindow(windows[1]);
         }

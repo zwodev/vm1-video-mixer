@@ -57,11 +57,14 @@ void VideoPlayer::close()
 
 bool VideoPlayer::open(std::string fileName, bool useH264)
 {
-    close(); // Cleanup any existing resources
+    // Cleanup any existing resources
+    close(); 
     
-    /* Open the media file */
+    // This is just for rtsp steams. Necessary?
     AVDictionary* opts = NULL;
     av_dict_set(&opts, "rtsp_transport", "tcp", 0);
+
+    // Open the video file
     int result = avformat_open_input(&m_formatContext, fileName.c_str(), NULL, &opts);
     if (result < 0) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't open %s: %d", fileName.c_str(), result);
@@ -85,6 +88,8 @@ bool VideoPlayer::open(std::string fileName, bool useH264)
     }
     
     m_audioStream = av_find_best_stream(m_formatContext, AVMEDIA_TYPE_AUDIO, -1, m_videoStream, &m_audioCodec, 0);
+    
+    // This is just for rtsp steams. Necessary?
     m_formatContext->max_analyze_duration = 5 * AV_TIME_BASE;
     m_formatContext->probesize = 5 * 1024 * 1024;
     //av_dump_format(m_formatContext, 0, "format_dump.txt", 0);

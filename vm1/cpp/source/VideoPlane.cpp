@@ -43,14 +43,49 @@ void VideoPlane::finalize()
     m_videoPlayers.clear();
 }
 
-// void VideoPlane::update()
-// {
-//     for (int i = 0; i < m_videoPlayers.size(); ++i) {
-//         m_videoPlayers[i]->update();
-//     }
-// }
+void VideoPlane::playAndFade(const std::string& fileName)
+{
+    if (m_isFading) return;
 
-void VideoPlane::update(float mixValue) {
+    int freePlayerIndex = 1;
+    if (m_mixValue > 0.0f) freePlayerIndex = 0;
+
+    VideoPlayer* videoPlayer = m_videoPlayers[freePlayerIndex];
+    if (videoPlayer->open(fileName)) {
+        videoPlayer->play();
+        startFade();
+    }
+}
+
+void VideoPlane::startFade() {
+    m_isFading = true;
+
+    m_fadeDir = 1.0f;
+    if (m_mixValue > 0.0f) m_fadeDir = -1.0f;
+}
+
+void VideoPlane::updateFade(float deltaTime)
+{
+    if (!m_isFading) return;
+
+    m_mixValue = m_mixValue + ((deltaTime / m_fadeTime) * m_fadeDir);
+    if (m_mixValue <= 0.0f) {
+        m_mixValue = 0.0f;
+        m_isFading = false;
+    } 
+    else if (m_mixValue >= 1.0f) {
+        m_mixValue = 1.0f;
+        m_isFading = false;
+    }
+}
+
+void VideoPlane::update(float deltaTime) {
+    updateFade(deltaTime);
+    updateVideoFrames(m_mixValue);
+}
+
+void VideoPlane::updateVideoFrames(float mixValue)
+{
     EGLDisplay display = eglGetCurrentDisplay();
 
     // Wait for fence and delete it
@@ -88,23 +123,6 @@ void VideoPlane::update(float mixValue) {
                     m_yuvImages[i].yImage = image;
                 }
             }
-            // if (frame.formats.size() > 1) {
-            //     int j = 1;
-            //     EGLAttrib img_attr[] = {
-            //         EGL_LINUX_DRM_FOURCC_EXT,      frame.formats[j],
-            //         EGL_WIDTH,                     frame.widths[j],
-            //         EGL_HEIGHT,                    frame.heights[j],
-            //         EGL_DMA_BUF_PLANE0_FD_EXT,     frame.fds[j],
-            //         EGL_DMA_BUF_PLANE0_OFFSET_EXT, frame.offsets[j],
-            //         EGL_DMA_BUF_PLANE0_PITCH_EXT,  frame.pitches[j],
-            //         EGL_NONE
-            //     };
-                
-            //     EGLImage image = eglCreateImage(display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, img_attr);
-            //     if (image != EGL_NO_IMAGE) {
-            //         m_yuvImages[i].uvImage = image;
-            //     }
-            // }
         }
     }
 

@@ -10,6 +10,7 @@ private:
     static const int SPACING = 6;
     static const int WIDTH = 8;
     static const int HEIGHT = 2;
+    
     VideoPlane* m_videoPlaneLeft = nullptr;
     VideoPlane* m_videoPlaneRight = nullptr;
     std::string m_directory;
@@ -27,9 +28,9 @@ private:
     ImGuiKey m_keyboardShortcuts[HEIGHT][WIDTH] = { {ImGuiKey_Q, ImGuiKey_W, ImGuiKey_E, ImGuiKey_R, ImGuiKey_T, ImGuiKey_Z, ImGuiKey_U, ImGuiKey_I}, 
                                                     {ImGuiKey_A, ImGuiKey_S, ImGuiKey_D, ImGuiKey_F, ImGuiKey_G, ImGuiKey_H, ImGuiKey_J, ImGuiKey_K} };
 
-
 public:
     FileAssignmentWidget(const std::string& directory, VideoPlane* videoPlaneLeft, VideoPlane* videoPlaneRight);
+    
     void render();
 
 private:

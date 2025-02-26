@@ -26,13 +26,22 @@ public:
 
 public:
     const std::vector<VideoPlayer*>& players() const;
+    void playAndFade(const std::string& fileName);
     void update(float mixValue);
 
 private:
     void initialize();
     void finalize();
-
+    void startFade();
+    void updateFade(float deltaTime);
+    void updateVideoFrames(float mixValue);
+    
 private:
+    bool m_isFading = false;
+    float m_fadeTime = 2.0f;
+    float m_fadeDir = 1.0f;
+    float m_mixValue = 0.0f;
+
     std::vector<YUVImage> m_yuvImages;
     PlaneRenderer m_planeRenderer;
     std::vector<VideoPlayer*> m_videoPlayers;

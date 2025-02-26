@@ -92,14 +92,16 @@ void FileAssignmentWidget::handleButtonClick(int x, int y) {
 
         // Add your custom logic here
         if (y == 0) {
-            m_videoPlaneLeft->players()[0]->close();
-            m_videoPlaneLeft->players()[0]->open(m_directory + "/" + fileName);
-            m_videoPlaneLeft->players()[0]->play();      
+            m_videoPlaneLeft->playAndFade(m_directory + "/" + fileName);
+            //m_videoPlaneLeft->players()[0]->close();
+            //m_videoPlaneLeft->players()[0]->open(m_directory + "/" + fileName);
+            //m_videoPlaneLeft->players()[0]->play();      
         } 
         else {
-            m_videoPlaneRight->players()[0]->close();
-            m_videoPlaneRight->players()[0]->open(m_directory + "/" + fileName);
-            m_videoPlaneRight->players()[0]->play();
+            m_videoPlaneRight->playAndFade(m_directory + "/" + fileName);
+            //m_videoPlaneRight->players()[0]->close();
+            //m_videoPlaneRight->players()[0]->open(m_directory + "/" + fileName);
+            //m_videoPlaneRight->players()[0]->play();
         }
     }
 }
