@@ -44,6 +44,7 @@ sudo cmake --install build --prefix /usr/local
 # Clone VM-1
 git clone --recursive https://github.com/zwodev/vm1-video-mixer.git
 
+# If repo is already cloned without submodules (--recursive):
 # Update the submodules
 git submodule update --recursive
 
@@ -51,11 +52,23 @@ git submodule update --recursive
 
 ### Compiling
 ```
-cd cpp
+cd vm1/cpp
 meson setup builddir
 meson compile -C builddir
 
 ```
 
+### Running VM-1
+```
+# If desktop/window manager is running:
+sudo systemctl stop lightdm.service
+
+# Fetch test videos
+../scripts/get-test-videos.sh
+
+# Start VM-1
+./builddir/vm1
+
+```
 
  

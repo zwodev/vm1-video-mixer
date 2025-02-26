@@ -31,7 +31,7 @@ deps += c.find_library('unwind', required: true)
 
 sources = ['main.cpp', 'source/FileAssignmentWidget.cpp', 'source/CameraRenderer.cpp', 'source/PlaneRenderer.cpp', 'source/Shader.cpp', 'source/VideoPlayer.cpp', 'source/VideoPlane.cpp','source/GLHelper.cpp']
 
-executable('imgui_test', 
+executable('vm1', 
            sources, 
            dependencies : deps
            )
