@@ -320,6 +320,22 @@ void VideoPlayer::cleanupResources() {
     }
 
     clearFrames();
+
+    if (m_audioContext) {
+        avcodec_free_context(&m_audioContext);
+        m_audioContext = nullptr;
+    }
+    if (m_videoContext) {
+        avcodec_free_context(&m_videoContext);
+        m_videoContext = nullptr;
+    }
+    if (m_formatContext) {
+        avformat_close_input(&m_formatContext);
+        avformat_free_context(m_formatContext);
+        m_formatContext = nullptr;
+    }
+    m_audioCodec = nullptr;
+    m_videoCodec = nullptr;
 }
 
 bool VideoPlayer::getTextureForDRMFrame(AVFrame *frame, VideoFrame &dstFrame)

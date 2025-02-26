@@ -94,7 +94,8 @@ void FileAssignmentWidget::render() {
     // Right column: Button matrix
     const int WIDTH = 8;
     const int HEIGHT = 2;
-    float buttonSize = ImGui::GetContentRegionAvail().x / WIDTH;
+    const int SPACING = 6;
+    float buttonSize = (ImGui::GetContentRegionAvail().x - ((WIDTH + 1) * SPACING)) / WIDTH;
     for (int y = 0; y < HEIGHT; y++) {
         for (int x = 0; x < WIDTH; x++) {
             int id = y * WIDTH + x;

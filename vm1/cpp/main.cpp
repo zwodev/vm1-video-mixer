@@ -130,11 +130,6 @@ int main(int, char**)
         SDL_ShowWindow(windows[i]);
     }
 
-    // if (windows.size() > 1 ) {
-    //     SDL_SetWindowFocusable(windows[0], false);
-    // }
-    //SDL_GL_MakeCurrent(windows[0], gl_context);
-
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -159,35 +154,21 @@ int main(int, char**)
     //videoPlane0.players()[1]->open("../videos/jellyfish_1080_10s_h265.mp4");
     //videoPlane0.players()[0]->open("rtsp://192.168.178.23:8554/test");
     //videoPlane1.players()[1]->open("../videos/jellyfish_1080_10s_h265.mp4");
-
     VideoPlane videoPlane0;
-    // videoPlane0.players()[0]->open("../videos/jellyfish_1080_10s_h265.mp4");
-    // videoPlane0.players()[0]->play();
-    // videoPlane0.players()[1]->open("../videos/bigbuckbunny_1080_10s_h265.mp4");
-    // videoPlane0.players()[1]->play();
-    
-
     VideoPlane videoPlane1;
-    // videoPlane1.players()[0]->open("../videos/jellyfish_1080_10s_h265.mp4");
-    // videoPlane1.players()[0]->play();
-    // videoPlane1.players()[1]->open("../videos/bigbuckbunny_1080_10s_h265.mp4");
-    // videoPlane1.players()[1]->play();
 
     // File Assignment Widget
     FileAssignmentWidget fileAssignmentWidget("../videos/", &videoPlane0, &videoPlane1);
 
     // Camera
-    CameraRenderer cameraRenderer0;
-    cameraRenderer0.start();
+    //CameraRenderer cameraRenderer0;
+    //cameraRenderer0.start();
 
-
-    //ImGui::SetMouseCursor(ImGuiMouseCursor_None);
-    //ImGui_ImplSDL3_Data* bd = ImGui_ImplSDL3_GetBackendData();
-    //io.BackendPlatformUserData->MouseWindowID = windows[0];
+    // TODO: This was not implemented in SDL3 yet. I did it. Another way or PR?
     SDL_RaiseWindow(windows[0]);
-    //SDL_Mouse *mouse = SDL_GetMouse();
     
     float mixValue = 0.0f;
+
     // Main loop
     bool done = false;
     while (!done)
@@ -229,21 +210,14 @@ int main(int, char**)
         ImGui::NewFrame();
 
 
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
+        // Development Window
+        // TODO: Put in own class.
         {
             static int counter = 0;
 
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+            ImGui::Begin("Development");
 
-            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
-
-            ImGui::SliderFloat("Mix Value", &mixValue, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-            if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
+            ImGui::SliderFloat("Mix Value", &mixValue, 0.0f, 1.0f);
             ImGui::SameLine();
             ImGui::Text("counter = %d", counter);
 
