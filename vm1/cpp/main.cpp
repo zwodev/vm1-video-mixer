@@ -145,10 +145,11 @@ int main(int, char**)
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Our state
-    bool show_demo_window = true;
-    bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+    // TODO: This was not implemented in SDL3 yet. I did it. Another way or PR?
+    SDL_RaiseWindow(windows[0]);
+    
     // Video players
     //videoPlane0.players()[1]->open("../videos/jellyfish_1080_10s_h265.mp4");
     //videoPlane0.players()[0]->open("rtsp://192.168.178.23:8554/test");
@@ -156,20 +157,17 @@ int main(int, char**)
     VideoPlane videoPlane0;
     VideoPlane videoPlane1;
 
+    // Camera
+    CameraRenderer cameraRenderer0;
+    cameraRenderer0.start();
+
     // File Assignment Widget
     FileAssignmentWidget fileAssignmentWidget("../videos/", &videoPlane0, &videoPlane1);
 
-    // Camera
-    //CameraRenderer cameraRenderer0;
-    //cameraRenderer0.start();
-
-    // TODO: This was not implemented in SDL3 yet. I did it. Another way or PR?
-    SDL_RaiseWindow(windows[0]);
-    
-    float mixValue = 0.0f;
-
     // Prepared delta time
     Uint64 lastTime = SDL_GetTicks();
+    bool isVideoEnabled = true;
+    bool isCameraEnabled = false;
 
     // Main loop
     bool done = false;
@@ -207,10 +205,15 @@ int main(int, char**)
         // Development Window
         // TODO: Put in own class.
         {
-            static int counter = 0;
-
             ImGui::Begin("Development");
-            ImGui::SliderFloat("Mix Value", &mixValue, 0.0f, 1.0f);
+            static float fadeTimeInSecs = 2.0f;
+            if (ImGui::SliderFloat("Fade Time", &fadeTimeInSecs, 0.0f, 5.0f)) {
+                videoPlane0.setFadeTime(fadeTimeInSecs);
+                videoPlane1.setFadeTime(fadeTimeInSecs);
+            }
+            ImGui::Checkbox("Enable Video", &isVideoEnabled);
+            ImGui::Checkbox("Enable Camera", &isCameraEnabled);
+            
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
             ImGui::End();
         }
@@ -226,8 +229,10 @@ int main(int, char**)
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Render video content
-        videoPlane0.update(deltaTime);
-        //cameraRenderer0.update();
+        if (isVideoEnabled) videoPlane0.update(deltaTime);
+
+        // Render camera content
+        if (isCameraEnabled) cameraRenderer0.update();
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(windows[0]);
@@ -240,7 +245,7 @@ int main(int, char**)
             glClear(GL_COLOR_BUFFER_BIT);
 
             // Render video content
-            videoPlane1.update(deltaTime);
+            if (isVideoEnabled) videoPlane1.update(deltaTime);
 
             SDL_GL_SwapWindow(windows[1]);
         }

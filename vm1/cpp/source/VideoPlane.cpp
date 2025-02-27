@@ -44,6 +44,16 @@ void VideoPlane::finalize()
     m_videoPlayers.clear();
 }
 
+float VideoPlane::fadeTime() const
+{
+    return m_fadeTime;
+}
+
+void VideoPlane::setFadeTime(int fadeTime)
+{
+    m_fadeTime = fadeTime;
+}
+
 void VideoPlane::playAndFade(const std::string& fileName)
 {
     if (m_isFading) return;

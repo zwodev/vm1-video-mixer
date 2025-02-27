@@ -314,32 +314,32 @@ void CameraRenderer::update()
     if (!m_isRunning) return;
 
     glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_EXTERNAL_OES, m_rgbTexture);
-	glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glBindTexture(GL_TEXTURE_2D, m_rgbTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     
     int index = dequeueBuffer(m_fd);
     if (index >= 0) {
         printf("Dequeue! \n");
         Buffer& buffer = m_buffers[index];
-        glEGLImageTargetTexture2DOESFunc(GL_TEXTURE_EXTERNAL_OES, buffer.image);
+        glEGLImageTargetTexture2DOESFunc(GL_TEXTURE_2D, buffer.image);
         queueBuffer(m_fd, index);
     }
 
     // // RENDER TO SCREEN: Convert YUV to RGB
-    // glViewport(0, 0, 1920, 1080);
-    // glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    // glClear(GL_COLOR_BUFFER_BIT);
-    // m_shader.activate();
-    // std::string locName("rgbTexture");
-    // m_shader.bindUniformLocation(locName.c_str(), 0);
+    glViewport(0, 0, 1920, 1080);
+    glClearColor(0.5f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    m_shader.activate();
+    std::string locName("rgbTexture");
+    m_shader.bindUniformLocation(locName.c_str(), 0);
 
-    // glBindVertexArray(m_vao);
-    // glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, NULL);
-    // glBindVertexArray(0);
-    // m_shader.deactivate();
+    glBindVertexArray(m_vao);
+    glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, NULL);
+    glBindVertexArray(0);
+    m_shader.deactivate();
 
     // Unbind textures
     glActiveTexture(GL_TEXTURE0);

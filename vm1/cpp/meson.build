@@ -29,7 +29,16 @@ deps += c.find_library('SDL3_image', required: true)
 deps += c.find_library('SDL3_test', required: true)
 deps += c.find_library('unwind', required: true)
 
-sources = ['main.cpp', 'source/FileAssignmentWidget.cpp', 'source/CameraRenderer.cpp', 'source/PlaneRenderer.cpp', 'source/Shader.cpp', 'source/VideoPlayer.cpp', 'source/VideoPlane.cpp','source/GLHelper.cpp']
+sources = [ 'main.cpp', 
+            'source/FileAssignmentWidget.cpp', 
+            'source/CameraRenderer.cpp', 
+            'source/PlaneRenderer.cpp', 
+            'source/Shader.cpp', 
+            'source/VideoPlayer.cpp', 
+            'source/VideoPlane.cpp',
+            'source/GLHelper.cpp',
+            'source/MediaController.cpp'          
+          ]
 
 executable('vm1', 
            sources, 

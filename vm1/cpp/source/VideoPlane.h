@@ -25,6 +25,8 @@ public:
     ~VideoPlane();
 
 public:
+    float fadeTime() const;
+    void setFadeTime(int fadeTime);
     const std::vector<VideoPlayer*>& players() const;
     void playAndFade(const std::string& fileName);
     void update(float mixValue);

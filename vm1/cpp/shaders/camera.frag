@@ -22,5 +22,6 @@ void main() {
 	vec2 coord = vec2(texCoord.x, texCoord.y);	
 
 	vec3 col = texture(rgbTexture, coord).rgb;
+	//vec3 col = vec3(1.0, 0.0, 0.0);
 	fragColor = vec4(col, 1.0f);
 }
