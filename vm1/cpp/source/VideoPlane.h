@@ -42,6 +42,7 @@ private:
     float m_fadeDir = 1.0f;
     float m_mixValue = 0.0f;
 
+    std::vector<Uint64> m_startTimes;
     std::vector<YUVImage> m_yuvImages;
     PlaneRenderer m_planeRenderer;
     std::vector<VideoPlayer*> m_videoPlayers;

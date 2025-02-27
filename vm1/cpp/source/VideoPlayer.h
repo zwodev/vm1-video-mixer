@@ -58,10 +58,10 @@ public:
 
     bool open(std::string fileName, bool useH264 = false);
     void play();
-    //const VideoFrame& update();
     void close();
     bool isPlaying() const { return m_isRunning; }
     bool popFrame(VideoFrame& frame);
+    bool peekFrame(VideoFrame& frame);
 
 private:
     AVCodecContext* openVideoStream();
@@ -74,12 +74,8 @@ private:
     
 
 private:
-    PlaneRenderer m_planeRenderer;
-    Uint64 m_videoStart = 0;
+    // FFMpeg
     double m_firstPts = -1.0;
-    SDL_Texture* m_videoTexture = nullptr;
-    bool m_hasEglCreateImage = false;
-    bool m_flushing = false;
     SDL_AudioStream* m_audio;
     AVFormatContext* m_formatContext = nullptr;
     const AVCodec* m_audioCodec = nullptr;
@@ -91,18 +87,19 @@ private:
     int m_videoStream = -1;
     int m_audioStream = -1;
 
-    // Synchronization
+    // Threading & Synchronization
     std::thread m_decoderThread;
     std::mutex m_frameMutex;
     std::condition_variable m_frameCV;
-    std::queue<VideoFrame> m_frameQueue;
-    static constexpr size_t MAX_QUEUE_SIZE = 3;
-    
-    // State flags
-    std::atomic<bool> m_isRunning{false};
-    
-    // Sync objects
-    VideoFrame m_currentFrame;
-    std::vector<VideoFrame> m_framesToDelete;
     std::queue<EGLSyncKHR> m_fences;
+    
+    // Frames
+    static constexpr size_t MAX_QUEUE_SIZE = 3;
+    VideoFrame m_currentFrame;
+    std::queue<VideoFrame> m_frameQueue;
+    std::vector<VideoFrame> m_framesToDelete;
+
+    // State
+    std::atomic<bool> m_isRunning = false;
+    std::atomic<bool> m_flushing = false;
 };

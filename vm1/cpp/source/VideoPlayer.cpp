@@ -118,7 +118,6 @@ bool VideoPlayer::open(std::string fileName, bool useH264)
 
 void VideoPlayer::play()
 {
-    Uint64 m_videoStart = 0;
     double m_firstPts = -1.0;
     bool m_flushing = false;
     m_isRunning = true;
@@ -312,6 +311,16 @@ bool VideoPlayer::popFrame(VideoFrame& frame) {
     frame = m_frameQueue.front();
     m_frameQueue.pop();
     m_frameCV.notify_one();
+    return true;
+}
+
+bool VideoPlayer::peekFrame(VideoFrame& frame) {
+    std::unique_lock<std::mutex> lock(m_frameMutex);
+    if (m_frameQueue.empty()) {
+        return false;
+    }
+    
+    frame = m_frameQueue.front();
     return true;
 }
 

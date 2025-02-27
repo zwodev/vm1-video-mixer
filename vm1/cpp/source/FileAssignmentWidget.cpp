@@ -26,7 +26,7 @@ void FileAssignmentWidget::renderFileList() {
 
 void FileAssignmentWidget::renderButtonMatrix() {
     float buttonSize = (ImGui::GetContentRegionAvail().x - ((WIDTH + 1) * SPACING)) / WIDTH;
-    //float buttonSize = ImGui::GetContentRegionAvail().x / WIDTH;
+    
     for (int y = 0; y < HEIGHT; y++) {
         for (int x = 0; x < WIDTH; x++) {
             ImGui::PushID(y * WIDTH + x);
@@ -90,18 +90,12 @@ void FileAssignmentWidget::handleButtonClick(int x, int y) {
         
         printf("Play: (%d, %d)\n", x, y);
 
-        // Add your custom logic here
+        // Select plane
         if (y == 0) {
             m_videoPlaneLeft->playAndFade(m_directory + "/" + fileName);
-            //m_videoPlaneLeft->players()[0]->close();
-            //m_videoPlaneLeft->players()[0]->open(m_directory + "/" + fileName);
-            //m_videoPlaneLeft->players()[0]->play();      
         } 
         else {
             m_videoPlaneRight->playAndFade(m_directory + "/" + fileName);
-            //m_videoPlaneRight->players()[0]->close();
-            //m_videoPlaneRight->players()[0]->open(m_directory + "/" + fileName);
-            //m_videoPlaneRight->players()[0]->play();
         }
     }
 }

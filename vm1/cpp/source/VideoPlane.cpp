@@ -31,6 +31,7 @@ void VideoPlane::initialize()
         VideoPlayer* player = new VideoPlayer();
         m_videoPlayers.push_back(player);
         m_yuvImages.push_back(YUVImage());
+        m_startTimes.push_back(0);
     }
 }
 
@@ -52,6 +53,7 @@ void VideoPlane::playAndFade(const std::string& fileName)
 
     VideoPlayer* videoPlayer = m_videoPlayers[freePlayerIndex];
     if (videoPlayer->open(fileName)) {
+        m_startTimes[freePlayerIndex] = 0;
         videoPlayer->play();
         startFade();
     }
@@ -103,6 +105,23 @@ void VideoPlane::updateVideoFrames(float mixValue)
 
     for (int i = 0; i < m_videoPlayers.size(); ++i) {
         VideoFrame frame;
+        
+        // Check PTS
+        if (m_videoPlayers[i]->peekFrame(frame)) {
+            if (!m_startTimes[i]) {
+                m_startTimes[i] = SDL_GetTicks();
+            }
+
+            double pts = frame.pts;
+            double now = (double)(SDL_GetTicks() - m_startTimes[i]) / 1000.0;
+            
+            // Do not pop and display frame when PTS is ahead 
+            if (now < (pts - 0.001)) {
+                //printf("Skipping frame because of PTS.\n");
+                continue;
+            } 
+        }
+
         if (m_videoPlayers[i]->popFrame(frame)) {
             // Create EGL images here in the main thread
             // TODO: Support for multiple planes and images (see older version)
