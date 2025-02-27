@@ -43,8 +43,11 @@ private:
     std::vector<LinkInfo> links;
 
 public:
-    MediaController(const std::string& mediaDevice);
+    MediaController(const std::string& devicePath);
     ~MediaController();
+
+    static void listDevices();
+    static std::string getDevicePath(const std::string& deviceName);
     void getTopology();
     void resetLinks();
     void setupLink(const std::string& source, const std::string& sink, int flags);
@@ -52,5 +55,6 @@ public:
     void printTopology();
 
 private:
+    static std::map<std::string, std::string> fetchDevices();
     __u32 findEntityId(const std::string& name);
 };

@@ -9,9 +9,8 @@
 
 #include "MediaController.h"
 
-MediaController::MediaController(const std::string& mediaDevice) {
-    device_path = "/dev/media" + mediaDevice;
-    fd = open(device_path.c_str(), O_RDWR);
+MediaController::MediaController(const std::string& devicePath) {
+    fd = open(devicePath.c_str(), O_RDWR);
     if (fd < 0) {
         throw std::runtime_error("Failed to open media device: " + std::string(strerror(errno)));
     }
@@ -21,6 +20,24 @@ MediaController::~MediaController() {
     if (fd >= 0) {
         close(fd);
     }
+}
+
+void MediaController::listDevices() {
+    auto deviceMap = fetchDevices();
+    for (const auto& [key, value] : deviceMap) {
+        std::cout << key << ": " << value << std::endl;
+    }
+}
+
+std::string MediaController::getDevicePath(const std::string& deviceName) {
+    std::string devicePath;
+    auto deviceMap = fetchDevices();
+
+    if (deviceMap.find(deviceName) != deviceMap.end()) {
+        devicePath = deviceMap[deviceName];
+    }
+
+    return devicePath;
 }
 
 void MediaController::getTopology() {
@@ -213,6 +230,27 @@ void MediaController::printTopology() {
 
 
 // PRIVATE
+std::map<std::string, std::string>
+MediaController::fetchDevices() {
+    std::map<std::string, std::string> deviceMap;
+
+    for (int i = 0; i < 64; i++) {
+        std::string devicePath = "/dev/media" + std::to_string(i);
+        
+        int fd = open(devicePath.c_str(), O_RDWR);
+        if (fd == -1) continue;
+
+        struct media_device_info mdi;
+        if (ioctl(fd, MEDIA_IOC_DEVICE_INFO, &mdi) == 0) {
+            deviceMap[std::string(mdi.model)] = std::string(devicePath);
+        }
+        
+        close(fd);
+    }
+
+    return deviceMap;
+}
+
 __u32 MediaController::findEntityId(const std::string& name) {
     auto it = std::find_if(entities.begin(), entities.end(),
         [&name](const auto& pair) { return pair.second.name == name; });

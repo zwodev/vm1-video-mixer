@@ -23,6 +23,8 @@
 #include "source/VideoPlane.h"
 #include "source/CameraRenderer.h"
 #include "source/FileAssignmentWidget.h"
+#include "source/V4L2Controller.h"
+#include "source/MediaController.h"
 
 
 // Main code
@@ -158,6 +160,13 @@ int main(int, char**)
     VideoPlane videoPlane1;
 
     // Camera
+    V4L2Controller::listDevices();
+    MediaController::listDevices();
+    std::string deviceName = MediaController::getDevicePath("rp1-cfe");
+    printf("Media Device Name: %s\n", deviceName.c_str());
+    MediaController mediaController(deviceName);
+    mediaController.getTopology();
+    mediaController.printTopology();
     CameraRenderer cameraRenderer0;
     cameraRenderer0.start();
 
