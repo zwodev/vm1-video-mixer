@@ -10,18 +10,16 @@
 
 OledController::OledController()
 {
-
 }
 
 OledController::~OledController()
 {
-
 }
 
-void OledController::initialize() {
-
+void OledController::initialize()
+{
 }
 
-void OledController::upateImage() {
-
+void OledController::updateImage()
+{
 }

@@ -6,16 +6,16 @@
  * for full license details.
  */
 
-
 #pragma once
 
-class OledController {
+class OledController
+{
 public:
     OledController();
     ~OledController();
 
     void initialize();
-    void upateImage();
+    void updateImage();
 
 private:
     // Internal members and variables
