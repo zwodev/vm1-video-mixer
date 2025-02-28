@@ -131,10 +131,10 @@ int main(int, char**)
 
     // Camera
     CameraController cameraController;
-    cameraController.setup();
+    //cameraController.setup();
 
     CameraRenderer cameraRenderer0;
-    cameraRenderer0.start();
+    //cameraRenderer0.start();
 
     // Oled
     OledController oledController;
@@ -158,7 +158,7 @@ int main(int, char**)
         lastTime = currentTime;
 
         // Oled
-        oledController.upateImage();
+        oledController.updateImage();
 
         // Poll and handle events (inputs, window resize, etc.)
         SDL_Event event;
@@ -194,8 +194,13 @@ int main(int, char**)
                 videoPlane1.setFadeTime(fadeTimeInSecs);
             }
             ImGui::Checkbox("Enable Video", &isVideoEnabled);
-            ImGui::Checkbox("Enable Camera", &isCameraEnabled);
-            
+            if (ImGui::Button("Setup HDMI2CSI")) {
+                cameraController.setup();
+            }
+            if (ImGui::Button("Start HDMI2CSI")) {
+                cameraRenderer0.start();
+            }
+            ImGui::Checkbox("Show HDMI2CSI", &isCameraEnabled);
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
             ImGui::End();
         }

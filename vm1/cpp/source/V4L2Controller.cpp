@@ -50,6 +50,23 @@ void V4L2Controller::listDevices() {
 
 }
 
+bool V4L2Controller::setEdid(const std::vector<unsigned char>& edid) {
+    struct v4l2_edid v4l2_edid = {};
+    v4l2_edid.pad = 0;
+    v4l2_edid.start_block = 0;
+    v4l2_edid.blocks = edid.size() / 128;
+    v4l2_edid.edid = const_cast<unsigned char*>(edid.data());
+
+    if (ioctl(fd, VIDIOC_S_EDID, &v4l2_edid) < 0) {
+        close(fd);
+        std::cout << "Failed to set EDID data" << std::endl;
+        return false;
+    }
+
+    std::cout << "EDID set successfully" << std::endl;
+    return true;
+}
+
 bool V4L2Controller::setEdid(const std::string& edidFile) {
     std::vector<unsigned char> edid_data(MAX_EDID_SIZE);
     struct v4l2_subdev_edid edid = {0};

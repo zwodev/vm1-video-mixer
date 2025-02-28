@@ -7,6 +7,8 @@
  */
 
 #include "CameraController.h"
+#include <SDL3/SDL.h>
+#include "edid/1080p30edid.h"
 
 CameraController::CameraController() {
     // 
@@ -24,24 +26,29 @@ bool CameraController::setup() {
         return false;
     }
 
-    //
-    std::string subdevName = "/dev/v4l-subdev2";
-    if (!m_v4l2Controller.openDevice(subdevName)) return false;
-    if (!m_v4l2Controller.setEdid("resources/edid/1080p30edid")) return false;
-    if (!m_v4l2Controller.setDvTimings()) return false;
-    v4l2_dv_timings timings =  m_v4l2Controller.queryDvTimings();
-    m_v4l2Controller.printDvTimings(timings);
-    
-
     // Media Controller
     if (!m_mediaController.openDevice(mediaPath)) return false;
     if (!m_mediaController.getTopology()) return false;
     //m_mediaController.printTopology();
 
+    // V4L2 Controller
+    //std::string subdevName = "/dev/v4l-subdev2";
+    std::string subdevPath = m_mediaController.getSubdeviceFromName("tc358743");
+    if (!m_v4l2Controller.openDevice(subdevPath)) return false;
+    if (!m_v4l2Controller.setEdid(edid_1080p30)) return false;
+    SDL_Delay(3000);
+    if (!m_v4l2Controller.setDvTimings()) return false;
+    v4l2_dv_timings timings =  m_v4l2Controller.queryDvTimings();
+    m_v4l2Controller.printDvTimings(timings);
+    m_v4l2Controller.closeDevice();
+    
+
     //if (!m_mediaController.resetLinks()) return false;
     if (!m_mediaController.setupLink("csi2", "rp1-cfe-csi2_ch0", MEDIA_LNK_FL_ENABLED)) return false;
+    m_mediaController.closeDevice();
+
     if (!m_mediaController.setFormat("csi2", 0, "UYVY8_1X16", 1920, 1080)) return false;
     if (!m_mediaController.setFormat("csi2", 4, "UYVY8_1X16", 1920, 1080)) return false;
-    if (!m_mediaController.setFormat("tc358743 11-000f", 0, "UYVY8_1X16", 1920, 1080)) return false;
-    m_mediaController.closeDevice();
+    if (!m_mediaController.setFormat("tc358743", 0, "UYVY8_1X16", 1920, 1080)) return false;
+    
 }

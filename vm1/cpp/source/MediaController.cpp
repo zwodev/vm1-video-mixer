@@ -59,6 +59,7 @@ bool MediaController::getTopology() {
     std::vector<media_v2_entity> entity_array;
     std::vector<media_v2_pad> pad_array;
     std::vector<media_v2_link> link_array;
+    std::vector<media_v2_interface> interface_array;
 
     if (ioctl(m_fd, MEDIA_IOC_G_TOPOLOGY, &topology) < 0) {
         std::cout << "Failed to get topology: " <<  std::string(strerror(errno)) << std::endl;
@@ -68,10 +69,12 @@ bool MediaController::getTopology() {
     entity_array.resize(topology.num_entities);
     pad_array.resize(topology.num_pads);
     link_array.resize(topology.num_links);
+    interface_array.resize(topology.num_interfaces);
 
     topology.ptr_entities = reinterpret_cast<__u64>(entity_array.data());
     topology.ptr_pads = reinterpret_cast<__u64>(pad_array.data());
     topology.ptr_links = reinterpret_cast<__u64>(link_array.data());
+    topology.ptr_interfaces = reinterpret_cast<__u64>(interface_array.data());
 
     if (ioctl(m_fd, MEDIA_IOC_G_TOPOLOGY, &topology) < 0) {
         std::cout << "Failed to get topology: " << std::string(strerror(errno)) << std::endl;
@@ -80,6 +83,7 @@ bool MediaController::getTopology() {
 
     m_idToEntity.clear();
     m_links.clear();
+    m_interfaces.clear();
 
     // Process entities and their pads
     for (const auto& entity : entity_array) {
@@ -97,7 +101,23 @@ bool MediaController::getTopology() {
         m_links.push_back({link.id, link.source_id, link.sink_id, link.flags});
     }
 
+    // Process interfaces
+    for (const auto& interface : interface_array) {
+        m_interfaces.push_back({interface.id, interface.intf_type, interface.flags, interface.devnode.major, interface.devnode.minor});
+    }
+
     return true;
+}
+
+std::string MediaController::getSubdeviceFromName(const std::string& entityName) {
+    __u32 entity_id;
+    if (!findEntityId(entityName, entity_id)) {
+        std::cout << "Invalid entity name: " << entityName << std::endl;
+        return std::string();
+    }
+
+    std::string subdevPath =  MediaController::getSubdevPath((u_int32_t) entity_id);
+    return subdevPath;
 }
 
 bool MediaController::resetLinks() {
@@ -161,20 +181,9 @@ bool MediaController::setupLink(const std::string& source, const std::string& si
     struct media_link_desc link_desc = {0};
     link_desc.source.entity = source_entity_id;
     link_desc.sink.entity = sink_entity_id;
-    link_desc.flags = flags;
-
-    auto source_pad = std::find_if(source_entity.pads.begin(), source_entity.pads.end(),
-        [](const media_v2_pad& pad) { return pad.flags & MEDIA_PAD_FL_SOURCE; });
-    auto sink_pad = std::find_if(sink_entity.pads.begin(), sink_entity.pads.end(),
-        [](const media_v2_pad& pad) { return pad.flags & MEDIA_PAD_FL_SINK; });
-
-    if (source_pad == source_entity.pads.end() || sink_pad == sink_entity.pads.end()) {
-        std::cout << "Unable to find appropriate source or sink pad" << std::endl;
-        return false;
-    }
-
-    link_desc.source.index = source_pad->index;
-    link_desc.sink.index = sink_pad->index;
+    link_desc.source.index = 4;
+    link_desc.sink.index = 0;
+    link_desc.flags = 1;
 
     if (ioctl(m_fd, MEDIA_IOC_SETUP_LINK, &link_desc) < 0) {
         std::cout << "Failed to setup link: " << std::string(strerror(errno)) << std::endl;
@@ -201,27 +210,18 @@ bool MediaController::setFormat(const std::string& entity, int padIndex, const s
         return false;
     }
 
-    struct v4l2_subdev_format fmt;
-    memset(&fmt, 0, sizeof(fmt));
-
+    v4l2_subdev_format fmt = {0};
     fmt.pad = padIndex;
     fmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
     fmt.format.width = width;
     fmt.format.height = height;
+    fmt.format.code = V4L2_MBUS_FMT_UYVY8_1X16;
+    fmt.format.colorspace = V4L2_COLORSPACE_SMPTE170M;
+    fmt.format.field = V4L2_FIELD_NONE;
     
-    // Set the format code based on the string input
-    // This is a simplified example; you might need to expand this
-    if (format == "UYVY8_1X16") {
-        fmt.format.code = MEDIA_BUS_FMT_UYVY8_1X16;
-    } else {
-        std::cout << "Unsupported format: "  << format << std::endl;
-        return false;
-    }
-
-    std::cout << "Finding subdev: " << entity_id << std::endl;
     std::string subdev_path = getSubdevPath(entity_id);
+    std::cout << "Set format on subdev: " << subdev_path << std::endl;
     if (subdev_path.empty()) return false;
-    //std::string subdev_path = "/dev/v4l-subdev" + std::to_string(entity_id);
     int subdev_fd = open(subdev_path.c_str(), O_RDWR);
     if (subdev_fd < 0) {
         std::cout << "Failed to open subdevice: " << subdev_path << " " << std::string(strerror(errno)) << std::endl;
@@ -298,9 +298,16 @@ MediaController::fetchDevices() {
     return deviceMap;
 }
 
+bool starts_with(const std::string& str, const std::string& prefix) {
+    return str.compare(0, prefix.length(), prefix) == 0;
+}
+
 bool MediaController::findEntityId(const std::string& name, __u32& outId) {
+    //auto it = std::find_if(m_idToEntity.begin(), m_idToEntity.end(),
+    //    [&name](const auto& pair) { return pair.second.name == name; });
+    
     auto it = std::find_if(m_idToEntity.begin(), m_idToEntity.end(),
-        [&name](const auto& pair) { return pair.second.name == name; });
+        [&name](const auto& pair) { return starts_with(pair.second.name, name); });
     
     if (it != m_idToEntity.end()) {
         outId = it->first;
@@ -328,35 +335,10 @@ std::string readSymlink(const std::string& path) {
 }
 
 std::string MediaController::getSubdevPath(uint32_t entity_id) {
-    struct media_v2_topology topology = {0};
-    std::vector<media_v2_entity> entities;
-    std::vector<media_v2_interface> interfaces;
-    std::vector<media_v2_link> links;
-
-    // First query to get counts
-    if (ioctl(m_fd, MEDIA_IOC_G_TOPOLOGY, &topology) < 0) {
-        std::cout << "Failed to query topology: " << std::string(strerror(errno)) << std::endl;
-        return std::string();
-    }
-
-    // Resize vectors based on counts
-    entities.resize(topology.num_entities);
-    interfaces.resize(topology.num_interfaces);
-    links.resize(topology.num_links);
-
-    // Second query to retrieve actual data
-    topology.ptr_entities = reinterpret_cast<__u64>(entities.data());
-    topology.ptr_interfaces = reinterpret_cast<__u64>(interfaces.data());
-    topology.ptr_links = reinterpret_cast<__u64>(links.data());
-    if (ioctl(m_fd, MEDIA_IOC_G_TOPOLOGY, &topology) < 0) {
-        std::cout << "Failed to retrieve topology data: " << std::string(strerror(errno)) << std::endl;
-        return std::string();
-    }
-
     // Find the interface connected to the given entity
     bool found = false;
     uint32_t interface_id = 0;
-    for (const auto& link : links) {
+    for (const auto& link : m_links) {
         if (link.sink_id == entity_id && (link.flags & MEDIA_LNK_FL_INTERFACE_LINK)) {
             interface_id = link.source_id;
             found = true;
@@ -370,11 +352,10 @@ std::string MediaController::getSubdevPath(uint32_t entity_id) {
     }
 
     // Find the interface with the matching ID
-    for (const auto& intf : interfaces) {
+    for (const auto& intf : m_interfaces) {
         if (intf.id == interface_id && intf.intf_type == MEDIA_INTF_T_V4L_SUBDEV) {
-            struct media_v2_intf_devnode devnode = intf.devnode;
-            int major = intf.devnode.major;
-            int minor = intf.devnode.minor;
+            int major = intf.major;
+            int minor = intf.minor;
             std::string symLink = "/sys/dev/char/" + std::to_string(major) + ":" + std::to_string(minor);
             std::string dest = readSymlink(symLink);
             size_t pos = dest.find_last_of("/");

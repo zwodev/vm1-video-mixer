@@ -39,9 +39,18 @@ private:
         __u32 flags;
     };
 
+    struct InterfaceInfo {
+        __u32 id;
+        __u32 intf_type;
+	    __u32 flags;
+        __u32 major;
+	    __u32 minor;
+    };
+
     std::map<__u32, EntityInfo> m_idToEntity;
     std::map<__u32, EntityInfo> m_padIdToEntity;
     std::vector<LinkInfo> m_links;
+    std::vector<InterfaceInfo> m_interfaces;
 
 public:
     MediaController();
@@ -53,6 +62,7 @@ public:
     bool openDevice(const std::string& devicePath);
     void closeDevice();
     bool getTopology();
+    std::string getSubdeviceFromName(const std::string& devieName);
     bool resetLinks();
     bool setupLink(const std::string& source, const std::string& sink, int flags);
     bool setFormat(const std::string& entity, int pad_index, const std::string& format, int width, int height);

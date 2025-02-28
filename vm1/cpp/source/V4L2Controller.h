@@ -34,6 +34,7 @@ public:
 
     bool openDevice(const std::string& devicePath);
     void closeDevice();
+    bool setEdid(const std::vector<unsigned char>& edid);
     bool setEdid(const std::string& edid_file);
     v4l2_dv_timings queryDvTimings();
     bool setDvTimings();
