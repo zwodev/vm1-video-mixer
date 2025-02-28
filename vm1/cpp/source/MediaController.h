@@ -6,6 +6,7 @@
  * for full license details.
  */
 
+#pragma once
 
 #include <iostream>
 #include <string>
@@ -23,8 +24,7 @@
 class MediaController {
 
 private:
-    int fd;
-    std::string device_path;
+    int m_fd;
 
     struct EntityInfo {
         __u32 id;
@@ -39,22 +39,27 @@ private:
         __u32 flags;
     };
 
-    std::map<__u32, EntityInfo> entities;
-    std::vector<LinkInfo> links;
+    std::map<__u32, EntityInfo> m_idToEntity;
+    std::map<__u32, EntityInfo> m_padIdToEntity;
+    std::vector<LinkInfo> m_links;
 
 public:
-    MediaController(const std::string& devicePath);
+    MediaController();
     ~MediaController();
 
     static void listDevices();
     static std::string getDevicePath(const std::string& deviceName);
-    void getTopology();
-    void resetLinks();
-    void setupLink(const std::string& source, const std::string& sink, int flags);
-    void setFormat(const std::string& entity, int pad_index, const std::string& format, int width, int height);
+
+    bool openDevice(const std::string& devicePath);
+    void closeDevice();
+    bool getTopology();
+    bool resetLinks();
+    bool setupLink(const std::string& source, const std::string& sink, int flags);
+    bool setFormat(const std::string& entity, int pad_index, const std::string& format, int width, int height);
     void printTopology();
 
 private:
     static std::map<std::string, std::string> fetchDevices();
-    __u32 findEntityId(const std::string& name);
+    bool findEntityId(const std::string& name, __u32& outId);
+    std::string getSubdevPath(uint32_t entity_id);
 };

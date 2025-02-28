@@ -23,8 +23,7 @@
 #include "source/VideoPlane.h"
 #include "source/CameraRenderer.h"
 #include "source/FileAssignmentWidget.h"
-#include "source/V4L2Controller.h"
-#include "source/MediaController.h"
+#include "source/CameraController.h"
 
 
 // Main code
@@ -153,20 +152,13 @@ int main(int, char**)
     SDL_RaiseWindow(windows[0]);
     
     // Video players
-    //videoPlane0.players()[1]->open("../videos/jellyfish_1080_10s_h265.mp4");
-    //videoPlane0.players()[0]->open("rtsp://192.168.178.23:8554/test");
-    //videoPlane1.players()[1]->open("../videos/jellyfish_1080_10s_h265.mp4");
     VideoPlane videoPlane0;
     VideoPlane videoPlane1;
 
     // Camera
-    V4L2Controller::listDevices();
-    MediaController::listDevices();
-    std::string deviceName = MediaController::getDevicePath("rp1-cfe");
-    printf("Media Device Name: %s\n", deviceName.c_str());
-    MediaController mediaController(deviceName);
-    mediaController.getTopology();
-    mediaController.printTopology();
+    CameraController cameraController;
+    cameraController.setup();
+
     CameraRenderer cameraRenderer0;
     cameraRenderer0.start();
 

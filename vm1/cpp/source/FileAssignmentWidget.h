@@ -6,6 +6,8 @@
  * for full license details.
  */
 
+#pragma once
+
 #include <imgui.h>
 #include <filesystem>
 #include <vector>

@@ -1,16 +1,30 @@
 
 #include "V4L2Controller.h"
 
-V4L2Controller::V4L2Controller(const std::string& device) : device_path(device) {
-    fd = open(device_path.c_str(), O_RDWR);
-    if (fd < 0) {
-        throw std::runtime_error("Failed to open device: " + device_path);
-    }
+V4L2Controller::V4L2Controller() {
+
 }
 
 V4L2Controller::~V4L2Controller() {
     if (fd >= 0) {
         close(fd);
+    }
+}
+
+bool V4L2Controller::openDevice(const std::string& devicePath) {
+    fd = open(devicePath.c_str(), O_RDWR);
+    if (fd < 0) {
+        std::cout << "Failed to open device: " << devicePath << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+void V4L2Controller::closeDevice() {
+    if (fd >= 0) {
+        close(fd);
+        fd = -1;
     }
 }
 
@@ -36,14 +50,15 @@ void V4L2Controller::listDevices() {
 
 }
 
-void V4L2Controller::setEdid(const std::string& edidFile) {
+bool V4L2Controller::setEdid(const std::string& edidFile) {
     std::vector<unsigned char> edid_data(MAX_EDID_SIZE);
     struct v4l2_subdev_edid edid = {0};
 
     // Read EDID from file
     std::ifstream file(edidFile, std::ios::binary);
     if (!file) {
-        throw std::runtime_error("Failed to open EDID file: " + edidFile);
+        std::cout << "Failed to open EDID file: " << edidFile;
+        return false;
     }
 
     file.read(reinterpret_cast<char*>(edid_data.data()), MAX_EDID_SIZE);
@@ -51,54 +66,60 @@ void V4L2Controller::setEdid(const std::string& edidFile) {
     file.close();
 
     if (edid.blocks == 0) {
-        throw std::runtime_error("Failed to read EDID data");
+        std::cout << "Failed to read EDID data" << std::endl;
+        return false;
     }
 
-    // Fix EDID checksums
-    for (int i = 0; i < edid.blocks; i++) {
-        unsigned char sum = 0;
-        for (int j = 0; j < 127; j++)
-            sum += edid_data[i * 128 + j];
-        edid_data[i * 128 + 127] = (unsigned char)(256 - sum);
-    }
+    // // Fix EDID checksums
+    // for (int i = 0; i < edid.blocks; i++) {
+    //     unsigned char sum = 0;
+    //     for (int j = 0; j < 127; j++)
+    //         sum += edid_data[i * 128 + j];
+    //     edid_data[i * 128 + 127] = (unsigned char)(256 - sum);
+    // }
 
     // Set EDID
     edid.pad = 0;
     edid.start_block = 0;
     edid.edid = edid_data.data();
 
-    if (ioctl(fd, VIDIOC_SUBDEV_S_EDID, &edid) < 0) {
-        throw std::runtime_error("Failed to set EDID");
+    if (ioctl(fd, VIDIOC_S_EDID, &edid) < 0) {
+        std::cout << "Failed to set EDID" << std::endl;
+        return false;
     }
 
     std::cout << "EDID set successfully\n";
+    return true;
 }
 
 v4l2_dv_timings V4L2Controller::queryDvTimings() {
-    v4l2_dv_timings timings;
+    v4l2_dv_timings timings = {0};
 
     if (ioctl(fd, VIDIOC_QUERY_DV_TIMINGS, &timings) < 0) {
-        throw std::runtime_error("Failed to query DV timings");
+        std::cout << "Failed to query DV timings" << std::endl;
+        return timings;
     }
 
     return timings;
 }
 
-void V4L2Controller::setDvTimings() {
+bool V4L2Controller::setDvTimings() {
     v4l2_dv_timings timings = queryDvTimings();
 
     if (ioctl(fd, VIDIOC_S_DV_TIMINGS, &timings) < 0) {
-        throw std::runtime_error("Failed to set DV timings");
+        std::cout << "Failed to set DV timings" << std::endl;
+        return false;
     }
 
-    std::cout << "DV timings set successfully\n";
+    std::cout << "DV timings set successfully" << std::endl;
+    return true;
 }
 
 void V4L2Controller::printDvTimings(const v4l2_dv_timings& timings) {
-    std::cout << "DV Timings:\n";
-    std::cout << "Type: " << timings.type << "\n";
-    std::cout << "Width: " << timings.bt.width << "\n";
-    std::cout << "Height: " << timings.bt.height << "\n";
-    std::cout << "Interlaced: " << (timings.bt.interlaced ? "Yes" : "No") << "\n";
-    std::cout << "Pixelclock: " << timings.bt.pixelclock << " Hz\n";
+    std::cout << "DV Timings:" << std::endl;
+    std::cout << "Type: " << timings.type << std::endl;
+    std::cout << "Width: " << timings.bt.width << std::endl;
+    std::cout << "Height: " << timings.bt.height << std::endl;
+    std::cout << "Interlaced: " << (timings.bt.interlaced ? "Yes" : "No") << std::endl;
+    std::cout << "Pixelclock: " << timings.bt.pixelclock << " Hz" << std::endl;
 }
