@@ -24,6 +24,7 @@
 #include "source/CameraRenderer.h"
 #include "source/FileAssignmentWidget.h"
 #include "source/CameraController.h"
+#include "source/OledController.h"
 
 
 // Main code
@@ -162,6 +163,10 @@ int main(int, char**)
     CameraRenderer cameraRenderer0;
     cameraRenderer0.start();
 
+    // Oled
+    OledController oledController;
+    oledController.initialize();
+
     // File Assignment Widget
     FileAssignmentWidget fileAssignmentWidget("../videos/", &videoPlane0, &videoPlane1);
 
@@ -178,6 +183,9 @@ int main(int, char**)
         Uint64 currentTime = SDL_GetTicks();
         double deltaTime = (currentTime - lastTime) / 1000.0; 
         lastTime = currentTime;
+
+        // Oled
+        oledController.upateImage();
 
         // Poll and handle events (inputs, window resize, etc.)
         SDL_Event event;

@@ -39,7 +39,8 @@ sources = [ 'main.cpp',
             'source/GLHelper.cpp',
             'source/MediaController.cpp',
             'source/V4L2Controller.cpp',
-            'source/CameraController.cpp'        
+            'source/CameraController.cpp' ,
+            'source/OledController.cpp'       
           ]
 
 executable('vm1', 
