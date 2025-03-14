@@ -8,15 +8,26 @@
 
 #pragma once
 
+#include "oled/OLED_1in5_rgb.h"
+#include "oled/DEV_Config.h"
+#include "oled/GUI_Paint.h"
+#include "oled/GUI_BMPfile.h"
+
 class OledController
 {
 public:
+    UBYTE *oledImage;
+
     OledController();
     ~OledController();
 
-    void initialize();
-    void updateImage();
+    static void Handler(int signo);
+    int initializeOled();
+    int initializeImageBuffer();
+
+    void drawTestBMP();
+    void render();
 
 private:
-    // Internal members and variables
+    UWORD imagesize;
 };

@@ -10,7 +10,7 @@
 
 #include "imgui.h"
 
-#include <SDL3/SDL_render.h> 
+#include <SDL3/SDL_render.h>
 #include <SDL3/SDL_opengl.h>
 #include <SDL3/SDL_opengles2.h>
 #include <SDL3/SDL_egl.h>
@@ -24,8 +24,10 @@ private:
     ImGuiStyle m_oldStyle;
     ImGuiStyle m_style;
 
-    GLuint m_fbo; 
+    GLuint m_fbo;
     GLuint m_fboTexture;
+
+    bool isUpdated;
 
 public:
     OledUiRenderer(int width, int height);
@@ -34,6 +36,8 @@ public:
     GLuint texture();
     void initialize();
     void update();
+    void renderToRGB565(uint8_t *buffer);
+    bool hasUpdate();
 
 private:
     void updateContent();

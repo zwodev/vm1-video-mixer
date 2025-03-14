@@ -4,10 +4,10 @@
  * This file is part of VM-1 which is released under the MIT license.
  * See file LICENSE or go to https://github.com/zwodev/vm1-video-mixer/tree/master/LICENSE
  * for full license details.
- * 
+ *
  * Parts of this file have been taken from:
  * https://github.com/libsdl-org/SDL/blob/main/test/testffmpeg.c
- * 
+ *
  */
 
 #include "imgui.h"
@@ -34,7 +34,7 @@ const int FBO_WIDTH = 128;
 const int FBO_HEIGHT = 128;
 
 // Main code
-int main(int, char**)
+int main(int, char **)
 {
     // Setup SDL
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD))
@@ -44,7 +44,7 @@ int main(int, char**)
     }
 
     // Setup OpenGL context for OpenGL ES 3.1
-    const char* glsl_version = "#version 300 es";
+    const char *glsl_version = "#version 300 es";
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -54,7 +54,8 @@ int main(int, char**)
     int num_displays;
     SDL_DisplayID *displays = SDL_GetDisplays(&num_displays);
     SDL_Log("Found %d display(s)", num_displays);
-    for (int i = 0; i < num_displays; ++i) {
+    for (int i = 0; i < num_displays; ++i)
+    {
         SDL_Log("Display ID for %d: %d", i, displays[i]);
     }
     SDL_free(displays);
@@ -65,7 +66,8 @@ int main(int, char**)
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
     SDL_PropertiesID props = SDL_CreateProperties();
-    if(props == 0) {
+    if (props == 0)
+    {
         SDL_Log("Unable to create properties: %s", SDL_GetError());
         return 0;
     }
@@ -77,14 +79,15 @@ int main(int, char**)
     SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, 1920);
     SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, 1080);
     SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_Y_NUMBER, 0);
-    
-    std::vector<SDL_Window*> windows;
-    for (int i = 0; i < num_displays; ++i) {
+
+    std::vector<SDL_Window *> windows;
+    for (int i = 0; i < num_displays; ++i)
+    {
         // This is the way to associate the second window with the second screen
         // when using the DRM/KMS backend.
         SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X_NUMBER, 1920 * i);
-        
-        SDL_Window* window = SDL_CreateWindowWithProperties(props);
+
+        SDL_Window *window = SDL_CreateWindowWithProperties(props);
         if (window == nullptr)
         {
             printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
@@ -93,30 +96,32 @@ int main(int, char**)
         windows.push_back(window);
     }
 
-    if(windows.size() < 1) {
+    if (windows.size() < 1)
+    {
         SDL_Log("Unable to create an SDL window!");
         return 0;
     }
-    
+
     SDL_GLContext gl_context = SDL_GL_CreateContext(windows[0]);
     if (gl_context == nullptr)
     {
         printf("Error: SDL_GL_CreateContext(): %s\n", SDL_GetError());
         return -1;
     }
-    
+
     // Enable vsync and activate all windows
-    SDL_GL_SetSwapInterval(1); 
-    for (int i = 0; i < windows.size(); ++i) { 
+    SDL_GL_SetSwapInterval(1);
+    for (int i = 0; i < windows.size(); ++i)
+    {
         SDL_ShowWindow(windows[i]);
     }
 
-    
     IMGUI_CHECKVERSION();
 
     // Setup main context for ImGui (screen)
-    ImGuiContext* mainContext = ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGuiContext *mainContext = ImGui::CreateContext();
+    ImGuiIO &io = ImGui::GetIO();
+    (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
@@ -125,9 +130,10 @@ int main(int, char**)
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Setup FBO context for ImGui (off-screen)
-    ImGuiContext* fboContext = ImGui::CreateContext();
+    ImGuiContext *fboContext = ImGui::CreateContext();
     ImGui::SetCurrentContext(fboContext);
-    ImGuiIO& fbo_io = ImGui::GetIO(); (void)fbo_io;
+    ImGuiIO &fbo_io = ImGui::GetIO();
+    (void)fbo_io;
     fbo_io.DisplaySize = ImVec2(FBO_WIDTH, FBO_HEIGHT);
     fbo_io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
@@ -137,30 +143,33 @@ int main(int, char**)
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
-    //ImGui::StyleColorsLight();
+    // ImGui::StyleColorsLight();
 
     // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // TODO: This was not implemented in SDL3 yet. I did it. Another way or PR?
     SDL_RaiseWindow(windows[0]);
-    
+
     // Video players
     VideoPlane videoPlane0;
     VideoPlane videoPlane1;
 
     // Camera
     CameraController cameraController;
-    //cameraController.setup();
+    // cameraController.setup();
 
     CameraRenderer cameraRenderer0;
-    //cameraRenderer0.start();
+    // cameraRenderer0.start();
 
     // Oled
     OledUiRenderer oledUiRenderer(FBO_WIDTH, FBO_HEIGHT);
     oledUiRenderer.initialize();
     OledController oledController;
-    oledController.initialize();
+    oledController.initializeOled();
+    oledController.initializeImageBuffer();
+    // oledController.drawTestBMP();
+    // oledController.initializeExternalFboTexture(&oledUiRenderer.m_fboTexture);
 
     // File Assignment Widget
     FileAssignmentWidget fileAssignmentWidget("../videos/", &videoPlane0, &videoPlane1);
@@ -176,7 +185,7 @@ int main(int, char**)
     {
         // Calculate delta time
         Uint64 currentTime = SDL_GetTicks();
-        double deltaTime = (currentTime - lastTime) / 1000.0; 
+        double deltaTime = (currentTime - lastTime) / 1000.0;
         lastTime = currentTime;
 
         // Poll and handle events (inputs, window resize, etc.)
@@ -184,10 +193,12 @@ int main(int, char**)
         while (SDL_PollEvent(&event))
         {
             ImGui_ImplSDL3_ProcessEvent(&event);
-            if (event.type == SDL_EVENT_QUIT) {
+            if (event.type == SDL_EVENT_QUIT)
+            {
                 done = true;
             }
-            else if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == SDL_GetWindowID(windows[0])) {
+            else if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == SDL_GetWindowID(windows[0]))
+            {
                 done = true;
             }
         }
@@ -196,15 +207,13 @@ int main(int, char**)
             SDL_Delay(10);
             continue;
         }
-
         // START: Render to FBO (OLED) before main gui
         ImGui::SetCurrentContext(fboContext);
         ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL3_NewFrame();        
+        ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
         oledUiRenderer.update();
-        //oledController.updateImage();
-        // END: Render to FBO (OLED) before main gui
+        //  END: Render to FBO (OLED) before main gui
 
         // Start the Dear ImGui frame
         ImGui::SetCurrentContext(mainContext);
@@ -216,17 +225,20 @@ int main(int, char**)
         // TODO: Put in own class.
         {
             ImGui::Begin("Development");
-            //ImGui::Image((ImTextureID)(intptr_t)oledUiRenderer.texture(), ImVec2(128, 128));
+            // ImGui::Image((ImTextureID)(intptr_t)oledUiRenderer.texture(), ImVec2(128, 128));
             static float fadeTimeInSecs = 2.0f;
-            if (ImGui::SliderFloat("Fade Time", &fadeTimeInSecs, 0.0f, 5.0f)) {
+            if (ImGui::SliderFloat("Fade Time", &fadeTimeInSecs, 0.0f, 5.0f))
+            {
                 videoPlane0.setFadeTime(fadeTimeInSecs);
                 videoPlane1.setFadeTime(fadeTimeInSecs);
             }
             ImGui::Checkbox("Enable Video", &isVideoEnabled);
-            if (ImGui::Button("Setup HDMI2CSI")) {
+            if (ImGui::Button("Setup HDMI2CSI"))
+            {
                 cameraController.setup();
             }
-            if (ImGui::Button("Start HDMI2CSI")) {
+            if (ImGui::Button("Start HDMI2CSI"))
+            {
                 cameraRenderer0.start();
             }
             ImGui::Checkbox("Show HDMI2CSI", &isCameraEnabled);
@@ -236,13 +248,13 @@ int main(int, char**)
 
         // OLED debug window
         {
-            //ImGui::SetNextWindowPos(ImVec2(0, 0));
+            // ImGui::SetNextWindowPos(ImVec2(0, 0));
             ImGui::SetNextWindowSize(ImVec2(FBO_WIDTH, FBO_HEIGHT));
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
             ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration;
             ImGui::Begin("OLED Debug Window", nullptr, window_flags);
-            //ImGui::Begin("OLED Debug Window");
-            ImGui::Image((void*)(intptr_t)oledUiRenderer.texture(), ImVec2(FBO_WIDTH, FBO_HEIGHT), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+            // ImGui::Begin("OLED Debug Window");
+            ImGui::Image((void *)(intptr_t)oledUiRenderer.texture(), ImVec2(FBO_WIDTH, FBO_HEIGHT), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
             ImGui::End();
             ImGui::PopStyleVar();
         }
@@ -258,33 +270,47 @@ int main(int, char**)
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Render video content
-        if (isVideoEnabled) videoPlane0.update(deltaTime);
+        if (isVideoEnabled)
+            videoPlane0.update(deltaTime);
 
         // Render camera content
-        if (isCameraEnabled) cameraRenderer0.update();
+        if (isCameraEnabled)
+            cameraRenderer0.update();
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(windows[0]);
 
         // Rendering window 1
-        if (windows.size() > 1) {
+        if (windows.size() > 1)
+        {
             SDL_GL_MakeCurrent(windows[1], gl_context);
             glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
             glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
             glClear(GL_COLOR_BUFFER_BIT);
 
             // Render video content
-            if (isVideoEnabled) videoPlane1.update(deltaTime);
+            if (isVideoEnabled)
+                videoPlane1.update(deltaTime);
 
             SDL_GL_SwapWindow(windows[1]);
         }
+
+        // Render OLED
+        if (oledUiRenderer.hasUpdate())
+        {
+            oledUiRenderer.renderToRGB565(oledController.oledImage);
+            oledController.render();
+        }
+
+        // End the frame
+        ImGui::EndFrame();
     }
 
     // Cleanup
     ImGui::SetCurrentContext(fboContext);
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL3_Shutdown();
-    
+
     ImGui::SetCurrentContext(mainContext);
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL3_Shutdown();
@@ -293,7 +319,8 @@ int main(int, char**)
     ImGui::DestroyContext(mainContext);
 
     SDL_GL_DestroyContext(gl_context);
-    for (int i = 0; i < windows.size(); ++i) {
+    for (int i = 0; i < windows.size(); ++i)
+    {
         SDL_DestroyWindow(windows[i]);
     }
     SDL_Quit();
@@ -301,9 +328,7 @@ int main(int, char**)
     return 0;
 }
 
-
-
-// EXAMPLE: ImGUI + SDL3 + OpenGL ES 
+// EXAMPLE: ImGUI + SDL3 + OpenGL ES
 // (with 2 ImGui Contexts, one rendering to screen and one to FBO)
 
 /*
@@ -313,7 +338,7 @@ int main(int, char**)
 #include <imgui_impl_sdl3.h>
 #include <imgui_impl_opengl3.h>
 
-#include <SDL3/SDL_render.h> 
+#include <SDL3/SDL_render.h>
 #include <SDL3/SDL_opengl.h>
 #include <SDL3/SDL_opengles2.h>
 #include <SDL3/SDL_egl.h>
@@ -367,7 +392,7 @@ int main(int, char**)
     ImGui_ImplOpenGL3_Init(glsl_version);
     ImGui_ImplSDL3_InitForOpenGL(window, gl_context);
     ImGui::SetCurrentContext(mainContext);
-    
+
     GLuint fboTexture;
     GLuint fbo = createFramebuffer(FBO_WIDTH, FBO_HEIGHT, fboTexture);
 
@@ -392,7 +417,7 @@ int main(int, char**)
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        
+
         ImGui::NewFrame();
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSize(ImVec2(FBO_WIDTH, FBO_HEIGHT));
@@ -413,7 +438,7 @@ int main(int, char**)
         glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        
+
         ImGui::NewFrame();
         ImGui::Begin("Screen Window");
         ImGui::Text("This is rendered to screen");

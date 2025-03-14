@@ -13,10 +13,9 @@
 #include <SDL3_image/SDL_image.h>
 
 #include <vector>
-#include <iostream> 
+#include <iostream>
 
-OledUiRenderer::OledUiRenderer(int width, int height) :
-    m_width(width), m_height(height)
+OledUiRenderer::OledUiRenderer(int width, int height) : m_width(width), m_height(height)
 {
     //
 }
@@ -27,13 +26,15 @@ OledUiRenderer::~OledUiRenderer()
 }
 
 void OledUiRenderer::initialize()
-{  
-    ImGuiStyle& style = ImGui::GetStyle();
+{
+    ImGuiStyle &style = ImGui::GetStyle();
     m_style = style;
     m_oldStyle = style;
     createTheme();
-    
+
     createFramebufferAndTexture();
+
+    isUpdated = true;
 }
 
 GLuint OledUiRenderer::texture()
@@ -53,27 +54,33 @@ void OledUiRenderer::createFramebufferAndTexture()
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_fboTexture, 0);
+
+    // debug: get size of the framebuffer
+    GLint internalFormat;
+
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &internalFormat);
+    printf("Pixel Format: %d\n", internalFormat);
 }
 
 void OledUiRenderer::update()
-{       
+{
     // Set OLED theme
     setTheme();
 
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImVec2(m_width, m_height));
- 
+
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-    ImGui::Begin("Framebuffer Window", nullptr, window_flags); 
-    
+    ImGui::Begin("Framebuffer Window", nullptr, window_flags);
+
     updateContent();
-    
+
     ImGui::End();
 
-    renderToFramebuffer(false);   
-    
+    renderToFramebuffer(false);
+
     // Reset to old theme
-    resetTheme(); 
+    resetTheme();
 }
 
 // PRIVATE
@@ -83,18 +90,31 @@ void OledUiRenderer::updateContent()
 {
     // Render the actual UI (flags: no title, borderless, etc)
     ImGui::Text("HELLO World!!");
-    if (ImGui::Button("Button 1")) {
+    if (ImGui::Button("Button 1"))
+    {
+        printf("button has changed\n");
+        isUpdated = true;
     }
-    if (ImGui::Button("Button 2")) {
+    if (ImGui::Button("Button 2"))
+    {
+        isUpdated = true;
     }
-    if (ImGui::Button("Button 3")) {
+    if (ImGui::Button("Button 3"))
+    {
+        isUpdated = true;
     }
-    if (ImGui::Button("Button 4")) {
+    if (ImGui::Button("Button 4"))
+    {
+        isUpdated = true;
     }
-    if (ImGui::Button("Button 5")) {
+    if (ImGui::Button("Button 5"))
+    {
+        isUpdated = true;
     }
-    if (ImGui::Button("Button 6")) {
-    }    
+    if (ImGui::Button("Button 6"))
+    {
+        isUpdated = true;
+    }
 }
 
 void OledUiRenderer::renderToFramebuffer(bool saveAsPng)
@@ -105,38 +125,83 @@ void OledUiRenderer::renderToFramebuffer(bool saveAsPng)
 
     // Render ImGui
     ImGui::Render();
-    ImDrawData* drawData = ImGui::GetDrawData();
+    ImDrawData *drawData = ImGui::GetDrawData();
     drawData->DisplaySize = ImVec2(m_width, m_height);
     ImGui_ImplOpenGL3_RenderDrawData(drawData);
 
-
-    if (saveAsPng) {
+    if (saveAsPng)
+    {
         // Read pixels from the FBO
         std::vector<unsigned char> pixels(m_width * m_height * 4);
-        glReadPixels(0, 0, m_width, m_width, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+        glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
 
         // Save to PNG
         // Create an SDL surface from the pixel data
-        SDL_Surface* surface = SDL_CreateSurfaceFrom(m_width, m_height, SDL_PIXELFORMAT_RGBA32, pixels.data(), m_width * 4);
-        
-        if (surface) {
+        SDL_Surface *surface = SDL_CreateSurfaceFrom(m_width, m_height, SDL_PIXELFORMAT_RGBA32, pixels.data(), m_width * 4);
+
+        if (surface)
+        {
             SDL_FlipSurface(surface, SDL_FLIP_VERTICAL);
             // Save the SDL surface as a PNG using IMG_SavePNG
-            if (IMG_SavePNG(surface, "output.png")) {
+            if (IMG_SavePNG(surface, "output.png"))
+            {
                 printf("Image saved successfully\n");
-            } else {
+            }
+            else
+            {
                 printf("Failed to save image: %s\n", SDL_GetError());
             }
-            
+
             SDL_DestroySurface(surface);
-        } else {
+        }
+        else
+        {
             printf("Failed to create surface: %s\n", SDL_GetError());
         }
     }
 
-
     // Unbind the FBO
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void OledUiRenderer::renderToRGB565(uint8_t *buffer)
+{
+    // ToDo: Falls sich nichts geändert hat, return false
+    if (!isUpdated)
+        return;
+
+    // Bind the FBO
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    // glViewport(0, 0, m_width, m_height);
+
+    // Read pixels from the FBO
+    std::vector<unsigned char> pixels(m_width * m_height * 4);
+    glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+    // Now you can process the data
+    for (int y = 0; y < m_height; ++y)
+    {
+        for (int x = 0; x < m_width; ++x)
+        {
+            // Calculate the flipped y index (flip vertically)
+            int flippedY = m_height - 1 - y;
+
+            // Fetch RGBA values from the texture buffer (no horizontal flip)
+            uint8_t r = pixels[(flippedY * m_width + x) * 4 + 0];
+            uint8_t g = pixels[(flippedY * m_width + x) * 4 + 1];
+            uint8_t b = pixels[(flippedY * m_width + x) * 4 + 2];
+
+            // Convert to RGB565
+            uint16_t rgb565 = (r >> 3) << 11 | (g >> 2) << 5 | (b >> 3);
+
+            // Store the 16-bit RGB565 into the buffer as two bytes
+            buffer[(y * m_width + x) * 2 + 0] = (uint8_t)(rgb565 >> 8);   // High byte (most significant byte)
+            buffer[(y * m_width + x) * 2 + 1] = (uint8_t)(rgb565 & 0xFF); // Low byte (least significant byte)
+        }
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    isUpdated = false;
 }
 
 void OledUiRenderer::createTheme()
@@ -147,18 +212,17 @@ void OledUiRenderer::createTheme()
     m_style.ChildRounding = 4.0f;
     m_style.FrameRounding = 4.0f;
     m_style.PopupRounding = 4.0f;
-    //m_style.WindowRounding = 4.0f;
+    // m_style.WindowRounding = 4.0f;
     m_style.ScrollbarRounding = 4.0f;
 
     m_style.Colors[ImGuiCol_WindowBg] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
     m_style.Colors[ImGuiCol_Text] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
-    //m_style.Colors[ImGuiCol_Button] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-    //m_style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
-    //m_style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+    // m_style.Colors[ImGuiCol_Button] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+    // m_style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+    // m_style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
     m_style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
     m_style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
     // ...
-
 
     // EXAMPLE COLOR PROPERTIES:
     // ImVec4* colors = style->Colors;
@@ -209,12 +273,20 @@ void OledUiRenderer::createTheme()
 
 void OledUiRenderer::setTheme()
 {
-    ImGuiStyle& style = ImGui::GetStyle();
+    ImGuiStyle &style = ImGui::GetStyle();
     style = m_style;
 }
 
 void OledUiRenderer::resetTheme()
 {
-    ImGuiStyle& style = ImGui::GetStyle();
+    ImGuiStyle &style = ImGui::GetStyle();
     style = m_oldStyle;
+}
+
+bool OledUiRenderer::hasUpdate()
+{
+    if (isUpdated)
+        return true;
+    else
+        return false;
 }

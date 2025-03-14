@@ -1,6 +1,10 @@
-project('vm-1', 'cpp')
+# project('vm-1', 'cpp')
+project('vm-1', ['c', 'cpp'])
+
 
 add_project_arguments('-fpermissive', language : 'cpp')
+add_project_arguments('-DUSE_DEV_LIB', language: 'c')
+
 
 imgui_proj = subproject('imgui')
 imgui_dep = imgui_proj.get_variable('imgui_dep')
@@ -29,6 +33,9 @@ deps += c.find_library('SDL3_image', required: true)
 deps += c.find_library('SDL3_test', required: true)
 deps += c.find_library('unwind', required: true)
 
+deps += c.find_library('lgpio', required: true)
+deps += c.find_library('m', required: true)  # `-lm` for math functions
+
 sources = [ 'main.cpp', 
             'source/FileAssignmentWidget.cpp', 
             'source/CameraRenderer.cpp', 
@@ -41,7 +48,11 @@ sources = [ 'main.cpp',
             'source/V4L2Controller.cpp',
             'source/CameraController.cpp' ,
             'source/OledController.cpp',
-            'source/OledUiRenderer.cpp'      
+            'source/OledUiRenderer.cpp',
+            'source/oled/DEV_Config.c',  
+            'source/oled/GUI_BMPfile.c',  
+            'source/oled/GUI_Paint.c',  
+            'source/oled/OLED_1in5_rgb.c',  
           ]
 
 executable('vm1', 
