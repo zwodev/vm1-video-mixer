@@ -1,6 +1,6 @@
 # VM-1 Controller
 
-## Installation
+## Installation of existing binaries
 
 On the Raspberry Pi Pico (V1), press and hold the `bootsel` button while plugging in into your USB-Port. It will appear as a removable disk. Drag and Drop the file `VM1_Keyboard.uf2` onto it. The Pi Pico will reboot and show up as a keyboard.
 
@@ -34,3 +34,8 @@ In Arduino IDE, choose `Raspberry Pi Pico` as your Board. The following librarie
 
 * [https://github.com/victorsvi/MatrixKeypad](https://github.com/victorsvi/MatrixKeypad)
 * [https://github.com/gbr1/rp2040-encoder-library](https://github.com/gbr1/rp2040-encoder-library)
+
+## Working on the project
+
+We use the PiPico board library by [Earle Philhower](https://github.com/earlephilhower/arduino-pico)
+
