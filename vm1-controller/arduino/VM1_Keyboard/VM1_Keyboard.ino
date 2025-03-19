@@ -45,9 +45,9 @@ uint8_t colPins[NUM_COLS] = { COL9, COL8, COL7, COL6, COL5, COL4, COL3, COL2, CO
 bool current_keyboard_matrix[NUM_ROWS][NUM_COLS] = { false };
 bool previous_keyboard_matrix[NUM_ROWS][NUM_COLS] = { false };
 char keymap[NUM_ROWS][NUM_COLS] = {
-  { KEY_LEFT_ARROW, 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',' },
+  { KEY_LEFT_ARROW, 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i' },
   { KEY_RIGHT_ARROW, 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k' },
-  { KEY_LEFT_SHIFT, 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i' },
+  { KEY_LEFT_SHIFT, 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',' },
 };
 char last_button = '\0';
 bool last_button_state = RELEASED;
@@ -104,8 +104,10 @@ void update_keyboard() {
   if (last_button != '\0') {
     Serial.print(last_button);
     if (last_button_state == PRESSED) {
+      Keyboard.press(last_button);
       Serial.print("Pressed\n");
     } else {
+      Keyboard.release(last_button);
       Serial.print("Released\n");
     }
   }
@@ -172,14 +174,14 @@ void loop() {
   // Rotary Encoder ==> UP/DOWN Keys
   long encoder_value = encoder.getCount();
   if (encoder_value > encoder_value_old) {
-    Keyboard.press(KEY_UP_ARROW);
-    delay(1);
-    Keyboard.release(KEY_UP_ARROW);
-    encoder_value_old = encoder_value;
-  } else if (encoder_value < encoder_value_old) {
     Keyboard.press(KEY_DOWN_ARROW);
     delay(1);
     Keyboard.release(KEY_DOWN_ARROW);
+    encoder_value_old = encoder_value;
+  } else if (encoder_value < encoder_value_old) {
+    Keyboard.press(KEY_UP_ARROW);
+    delay(1);
+    Keyboard.release(KEY_UP_ARROW);
     encoder_value_old = encoder_value;
   }
 
