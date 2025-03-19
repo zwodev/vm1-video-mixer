@@ -9,6 +9,7 @@
 #pragma once
 
 #include "imgui.h"
+#include "MenuTest.h"
 
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_opengl.h>
@@ -28,6 +29,8 @@ private:
     GLuint m_fboTexture;
 
     bool isUpdated;
+
+    MenuSystem menuSystem;
 
 public:
     OledUiRenderer(int width, int height);

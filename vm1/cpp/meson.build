@@ -46,13 +46,14 @@ sources = [ 'main.cpp',
             'source/GLHelper.cpp',
             'source/MediaController.cpp',
             'source/V4L2Controller.cpp',
-            'source/CameraController.cpp' ,
+            'source/CameraController.cpp',
+            'source/MenuTest.cpp',
             'source/OledController.cpp',
             'source/OledUiRenderer.cpp',
             'source/oled/DEV_Config.c',  
             'source/oled/GUI_BMPfile.c',  
             'source/oled/GUI_Paint.c',  
-            'source/oled/OLED_1in5_rgb.c',  
+            'source/oled/OLED_1in5_rgb.c'
           ]
 
 executable('vm1', 

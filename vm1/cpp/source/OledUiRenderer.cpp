@@ -89,32 +89,33 @@ void OledUiRenderer::update()
 void OledUiRenderer::updateContent()
 {
     // Render the actual UI (flags: no title, borderless, etc)
+    menuSystem.render();
     ImGui::Text("HELLO World!!");
-    if (ImGui::Button("Button 1"))
-    {
-        printf("button has changed\n");
-        isUpdated = true;
-    }
-    if (ImGui::Button("Button 2"))
-    {
-        isUpdated = true;
-    }
-    if (ImGui::Button("Button 3"))
-    {
-        isUpdated = true;
-    }
-    if (ImGui::Button("Button 4"))
-    {
-        isUpdated = true;
-    }
-    if (ImGui::Button("Button 5"))
-    {
-        isUpdated = true;
-    }
-    if (ImGui::Button("Button 6"))
-    {
-        isUpdated = true;
-    }
+    // if (ImGui::Button("Button 1"))
+    // {
+    //     printf("button has changed\n");
+    //     isUpdated = true;
+    // }
+    // if (ImGui::Button("Button 2"))
+    // {
+    //     isUpdated = true;
+    // }
+    // if (ImGui::Button("Button 3"))
+    // {
+    //     isUpdated = true;
+    // }
+    // if (ImGui::Button("Button 4"))
+    // {
+    //     isUpdated = true;
+    // }
+    // if (ImGui::Button("Button 5"))
+    // {
+    //     isUpdated = true;
+    // }
+    // if (ImGui::Button("Button 6"))
+    // {
+    //     isUpdated = true;
+    // }
 }
 
 void OledUiRenderer::renderToFramebuffer(bool saveAsPng)

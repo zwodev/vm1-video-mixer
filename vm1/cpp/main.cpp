@@ -26,12 +26,43 @@
 #include "source/VideoPlane.h"
 #include "source/CameraRenderer.h"
 #include "source/FileAssignmentWidget.h"
+#include "source/MenuTest.h"
+#include "source/KeyForwarder.h"
 #include "source/CameraController.h"
 #include "source/OledUiRenderer.h"
 #include "source/OledController.h"
 
+const bool USE_OLED = false;
 const int FBO_WIDTH = 128;
 const int FBO_HEIGHT = 128;
+
+void forwardArrowKeys(ImGuiIO& sourceIO, ImGuiIO& targetIO) {
+    // Array of arrow keys to check
+    ImGuiKey arrowKeys[] = {
+        ImGuiKey_LeftArrow, ImGuiKey_RightArrow,
+        ImGuiKey_UpArrow, ImGuiKey_DownArrow
+    };
+
+    for (ImGuiKey key : arrowKeys) {
+        // Get the current state of the key in the source context
+        bool sourceKeyDown = sourceIO.KeysData[key].Down;
+
+        // Get the current state of the key in the target context
+        bool targetKeyDown = targetIO.KeysData[key].Down;
+
+        // Only forward events if there is a state change
+        if (sourceKeyDown != targetKeyDown) {
+            targetIO.AddKeyEvent(key, sourceKeyDown);
+
+            // Debugging: Print when an event is forwarded
+            printf("Forwarding key %d: %s\n", key, sourceKeyDown ? "Pressed" : "Released");
+        }
+    }
+}
+
+
+
+
 
 // Main code
 int main(int, char **)
@@ -122,8 +153,8 @@ int main(int, char **)
     ImGuiContext *mainContext = ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
     (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
     // Setup Platform/Renderer backends for main context
     ImGui_ImplSDL3_InitForOpenGL(windows[0], gl_context);
@@ -165,11 +196,18 @@ int main(int, char **)
     // Oled
     OledUiRenderer oledUiRenderer(FBO_WIDTH, FBO_HEIGHT);
     oledUiRenderer.initialize();
+
+    // Menu Test
+    //MenuSystem menuTest;
+    KeyForwarder keyForwarder;
+
+#ifdef USE_OLED
     OledController oledController;
     oledController.initializeOled();
     oledController.initializeImageBuffer();
     // oledController.drawTestBMP();
     // oledController.initializeExternalFboTexture(&oledUiRenderer.m_fboTexture);
+#endif
 
     // File Assignment Widget
     FileAssignmentWidget fileAssignmentWidget("../videos/", &videoPlane0, &videoPlane1);
@@ -179,6 +217,8 @@ int main(int, char **)
     bool isVideoEnabled = true;
     bool isCameraEnabled = false;
 
+    std::string selectedFile;
+
     // Main loop
     bool done = false;
     while (!done)
@@ -187,6 +227,8 @@ int main(int, char **)
         Uint64 currentTime = SDL_GetTicks();
         double deltaTime = (currentTime - lastTime) / 1000.0;
         lastTime = currentTime;
+
+        //forwardArrowKeys(io, fbo_io);
 
         // Poll and handle events (inputs, window resize, etc.)
         SDL_Event event;
@@ -207,6 +249,9 @@ int main(int, char **)
             SDL_Delay(10);
             continue;
         }
+
+        keyForwarder.ForwardArrowKeys(mainContext, fboContext);
+
         // START: Render to FBO (OLED) before main gui
         ImGui::SetCurrentContext(fboContext);
         ImGui_ImplOpenGL3_NewFrame();
@@ -220,6 +265,9 @@ int main(int, char **)
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
+
+        // Test Window
+        //menuTest.render();
 
         // Development Window
         // TODO: Put in own class.
@@ -296,11 +344,13 @@ int main(int, char **)
         }
 
         // Render OLED
+    #ifdef USE_OLED
         if (oledUiRenderer.hasUpdate())
         {
             oledUiRenderer.renderToRGB565(oledController.oledImage);
             oledController.render();
         }
+    #endif
 
         // End the frame
         ImGui::EndFrame();
