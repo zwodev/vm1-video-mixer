@@ -66,7 +66,7 @@ int OledController::initializeImageBuffer()
 
 void OledController::render()
 {
-    printf("rendering oled\n");
+    // printf("rendering oled\n");
     OLED_1in5_rgb_Display_chunkwise(oledImage);
 }
 

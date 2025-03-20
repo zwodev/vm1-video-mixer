@@ -32,33 +32,11 @@
 #include "source/OledUiRenderer.h"
 #include "source/OledController.h"
 
-const bool USE_OLED = false;
+#define USE_OLED
+
 const int FBO_WIDTH = 128;
 const int FBO_HEIGHT = 128;
 
-void forwardArrowKeys(ImGuiIO& sourceIO, ImGuiIO& targetIO) {
-    // Array of arrow keys to check
-    ImGuiKey arrowKeys[] = {
-        ImGuiKey_LeftArrow, ImGuiKey_RightArrow,
-        ImGuiKey_UpArrow, ImGuiKey_DownArrow
-    };
-
-    for (ImGuiKey key : arrowKeys) {
-        // Get the current state of the key in the source context
-        bool sourceKeyDown = sourceIO.KeysData[key].Down;
-
-        // Get the current state of the key in the target context
-        bool targetKeyDown = targetIO.KeysData[key].Down;
-
-        // Only forward events if there is a state change
-        if (sourceKeyDown != targetKeyDown) {
-            targetIO.AddKeyEvent(key, sourceKeyDown);
-
-            // Debugging: Print when an event is forwarded
-            printf("Forwarding key %d: %s\n", key, sourceKeyDown ? "Pressed" : "Released");
-        }
-    }
-}
 
 
 
@@ -166,7 +144,7 @@ int main(int, char **)
     ImGuiIO &fbo_io = ImGui::GetIO();
     (void)fbo_io;
     fbo_io.DisplaySize = ImVec2(FBO_WIDTH, FBO_HEIGHT);
-    fbo_io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    //fbo_io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
     // Setup Platform/Renderer backends for main context
     ImGui_ImplSDL3_InitForOpenGL(windows[0], gl_context);
@@ -192,11 +170,11 @@ int main(int, char **)
 
     CameraRenderer cameraRenderer0;
     // cameraRenderer0.start();
-
+    
     // Oled
     OledUiRenderer oledUiRenderer(FBO_WIDTH, FBO_HEIGHT);
     oledUiRenderer.initialize();
-
+    
     // Menu Test
     //MenuSystem menuTest;
     KeyForwarder keyForwarder;
@@ -228,7 +206,6 @@ int main(int, char **)
         double deltaTime = (currentTime - lastTime) / 1000.0;
         lastTime = currentTime;
 
-        //forwardArrowKeys(io, fbo_io);
 
         // Poll and handle events (inputs, window resize, etc.)
         SDL_Event event;
@@ -345,11 +322,8 @@ int main(int, char **)
 
         // Render OLED
     #ifdef USE_OLED
-        if (oledUiRenderer.hasUpdate())
-        {
-            oledUiRenderer.renderToRGB565(oledController.oledImage);
-            oledController.render();
-        }
+        oledUiRenderer.renderToRGB565(oledController.oledImage);
+        oledController.render();
     #endif
 
         // End the frame

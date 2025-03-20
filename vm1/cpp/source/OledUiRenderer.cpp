@@ -33,8 +33,6 @@ void OledUiRenderer::initialize()
     createTheme();
 
     createFramebufferAndTexture();
-
-    isUpdated = true;
 }
 
 GLuint OledUiRenderer::texture()
@@ -90,6 +88,7 @@ void OledUiRenderer::updateContent()
 {
     // Render the actual UI (flags: no title, borderless, etc)
     menuSystem.render();
+
 }
 
 void OledUiRenderer::renderToFramebuffer(bool saveAsPng)
@@ -141,10 +140,6 @@ void OledUiRenderer::renderToFramebuffer(bool saveAsPng)
 
 void OledUiRenderer::renderToRGB565(uint8_t *buffer)
 {
-    // ToDo: Falls sich nichts geändert hat, return false
-    if (!isUpdated)
-        return;
-
     // Bind the FBO
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     // glViewport(0, 0, m_width, m_height);
@@ -175,8 +170,6 @@ void OledUiRenderer::renderToRGB565(uint8_t *buffer)
         }
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    isUpdated = false;
 }
 
 void OledUiRenderer::createTheme()
@@ -190,13 +183,20 @@ void OledUiRenderer::createTheme()
     // m_style.WindowRounding = 4.0f;
     m_style.ScrollbarRounding = 4.0f;
 
-    m_style.Colors[ImGuiCol_WindowBg] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-    m_style.Colors[ImGuiCol_Text] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+    m_style.Colors[ImGuiCol_WindowBg] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+    m_style.Colors[ImGuiCol_Text] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
     // m_style.Colors[ImGuiCol_Button] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
     // m_style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
     // m_style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
-    m_style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-    m_style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+    m_style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+    m_style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // m_style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+    m_style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
+    // m_style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.0f, 0.0f, 1.0f, 1.0f);
+    m_style.Colors[ImGuiCol_Header] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+    
+
     // ...
 
     // EXAMPLE COLOR PROPERTIES:
@@ -256,12 +256,4 @@ void OledUiRenderer::resetTheme()
 {
     ImGuiStyle &style = ImGui::GetStyle();
     style = m_oldStyle;
-}
-
-bool OledUiRenderer::hasUpdate()
-{
-    if (isUpdated)
-        return true;
-    else
-        return false;
 }

@@ -28,8 +28,6 @@ private:
     GLuint m_fbo;
     GLuint m_fboTexture;
 
-    bool isUpdated;
-
     MenuSystem menuSystem;
 
 public:
@@ -40,7 +38,6 @@ public:
     void initialize();
     void update();
     void renderToRGB565(uint8_t *buffer);
-    bool hasUpdate();
 
 private:
     void updateContent();
