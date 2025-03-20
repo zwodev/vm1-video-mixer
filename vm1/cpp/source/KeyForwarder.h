@@ -32,7 +32,7 @@ public:
                 previousKeyStates[i] = currentKeyState;
                 
                 // Debug output
-                printf("Key %d state changed to: %s\n", arrowKeys[i], currentKeyState ? "Pressed" : "Released");
+                // printf("Key %d state changed to: %s\n", arrowKeys[i], currentKeyState ? "Pressed" : "Released");
             }
         }
     }

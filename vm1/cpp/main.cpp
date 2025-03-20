@@ -21,12 +21,13 @@
 #include <SDL3/SDL_opengl.h>
 #endif
 
+#include "source/Registry.h"
 #include "source/PlaneRenderer.h"
 #include "source/VideoPlayer.h"
 #include "source/VideoPlane.h"
 #include "source/CameraRenderer.h"
 #include "source/FileAssignmentWidget.h"
-#include "source/MenuTest.h"
+#include "source/MenuSystem.h"
 #include "source/KeyForwarder.h"
 #include "source/CameraController.h"
 #include "source/OledUiRenderer.h"
@@ -171,8 +172,10 @@ int main(int, char **)
     CameraRenderer cameraRenderer0;
     // cameraRenderer0.start();
     
+    Registry registry;
+
     // Oled
-    OledUiRenderer oledUiRenderer(FBO_WIDTH, FBO_HEIGHT);
+    OledUiRenderer oledUiRenderer(registry, FBO_WIDTH, FBO_HEIGHT);
     oledUiRenderer.initialize();
     
     // Menu Test

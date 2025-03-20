@@ -9,7 +9,8 @@
 #pragma once
 
 #include "imgui.h"
-#include "MenuTest.h"
+#include "MenuSystem.h"
+#include "Registry.h"
 
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_opengl.h>
@@ -19,6 +20,7 @@
 class OledUiRenderer
 {
 private:
+    Registry& m_registry;
     int m_width = 0;
     int m_height = 0;
 
@@ -28,10 +30,10 @@ private:
     GLuint m_fbo;
     GLuint m_fboTexture;
 
-    MenuSystem menuSystem;
+    MenuSystem m_menuSystem;
 
 public:
-    OledUiRenderer(int width, int height);
+    OledUiRenderer(Registry& registry, int width, int height);
     ~OledUiRenderer();
 
     GLuint texture();

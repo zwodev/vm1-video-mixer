@@ -1,17 +1,21 @@
-#include "MenuTest.h"
+#include "MenuSystem.h"
 
 #include <imgui.h>
 #include <vector>
 #include <string>
 
-    MenuSystem::MenuSystem() : currentMenu(0) {
+    MenuSystem::MenuSystem(Registry& registry) : 
+        m_registry(registry),
+        currentMenu(0)
+        
+    {
         // root menu
         rootMenu = new SubmenuEntry("root");
         currentMenu = rootMenu;
         currentSelection = 0;
         const int bankCount = 4;
         const int mediaButtonsCount = 16;
-        const std::vector<std::string> inputSelection = {"live", "file", "shader"};
+        const std::vector<std::string> inputSelection = {"live", "shader"};
 
         // menu entries level 0 ("bank-selection")
         for(int i = 0; i < bankCount; i++){
@@ -23,6 +27,9 @@
                 SubmenuEntry*  menuLevel1 = new SubmenuEntry("media-" + std::to_string(j));
                 menuLevel0->addSubmenuEntry(menuLevel1);
                 // menu entries level 1 ("live/file/shader-selection")
+                FilesystemEntry* fileSelection = new FilesystemEntry("files", "../videos/", j + i * mediaButtonsCount);
+                menuLevel1->addSubmenuEntry(fileSelection);
+
                 for(int k = 0; k < inputSelection.size(); k++) {
                     SubmenuEntry* menuLevel2 = new SubmenuEntry(inputSelection[k]);
                     menuLevel1->addSubmenuEntry(menuLevel2);
@@ -49,8 +56,7 @@
 
     void MenuSystem::render() {
         //ImGui::Begin("Menu System");
-        SubmenuEntry* submenuEntry = dynamic_cast<SubmenuEntry*>(currentMenu);
-
+        
         // Handle left arrow key (go back)
         if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) && currentMenu != rootMenu) {
             SubmenuEntry *parentEntry = currentMenu->parentEntry;
@@ -65,14 +71,22 @@
         }
         
         // Handle right arrow key (go forward)
+        SubmenuEntry* submenuEntry = dynamic_cast<SubmenuEntry*>(currentMenu);
         if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
-            if(submenuEntry){
-                previousMenu = currentMenu;
-                currentMenu = submenuEntry->submenus[currentSelection];
+            if(submenuEntry) {
+                previousMenu = currentMenu;  
+                MenuEntry* nextMenuEntry = submenuEntry->submenus[currentSelection];
+                if (dynamic_cast<SubmenuEntry*>(nextMenuEntry)) {
+                    currentMenu = nextMenuEntry;
+                }
+                else if (ButtonEntry* buttonEntry = dynamic_cast<ButtonEntry*>(nextMenuEntry)) {
+                    printf("Execute Button!\n");
+                    printf("Displayname: %s\n", buttonEntry->displayName.c_str());
+                    buttonEntry->action();
+     
+                }
+                currentMenu->process(m_registry);
                 currentSelection = 0;
-            }
-            else {
-                printf("call function\n");
             }
         }
 

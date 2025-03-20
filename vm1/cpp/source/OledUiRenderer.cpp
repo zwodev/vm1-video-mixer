@@ -15,9 +15,12 @@
 #include <vector>
 #include <iostream>
 
-OledUiRenderer::OledUiRenderer(int width, int height) : m_width(width), m_height(height)
-{
-    //
+OledUiRenderer::OledUiRenderer(Registry& registry, int width, int height) : 
+    m_registry(registry),
+    m_menuSystem(registry),
+    m_width(width), 
+    m_height(height)
+{   
 }
 
 OledUiRenderer::~OledUiRenderer()
@@ -87,7 +90,7 @@ void OledUiRenderer::update()
 void OledUiRenderer::updateContent()
 {
     // Render the actual UI (flags: no title, borderless, etc)
-    menuSystem.render();
+    m_menuSystem.render();
 
 }
 
