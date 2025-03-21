@@ -1,121 +1,56 @@
 #include "MenuSystem.h"
+#include "UIHelper.h"
 
 #include <imgui.h>
 #include <vector>
 #include <string>
 
-MenuSystem::MenuSystem(Registry &registry) : m_registry(registry),
-                                             currentMenu(0)
+MenuSystem::MenuSystem(Registry &registry) : m_registry(registry) {
+    buildMenuStructure();
+}
 
-{
-    // root menu
+void MenuSystem::buildMenuStructure() {
     rootMenu = std::make_unique<SubmenuEntry>("root");
     currentMenu = rootMenu.get();
     currentSelection = 0;
 
+    // input association menu
+    auto inputMenu = std::make_unique<SubmenuEntry>("input");
+    buildInputMenuStructure(inputMenu);
+    rootMenu->addSubmenuEntry(std::move(inputMenu));
+}
+
+void MenuSystem::buildInputMenuStructure(std::unique_ptr<SubmenuEntry>& rootEntry) {
     const int bankCount = 4;
     const int mediaButtonsCount = 16;
-    const std::vector<std::string> inputSelection = {"live", "shader"};
 
     // menu entries level 0 ("bank-selection")
     for (int i = 0; i < bankCount; i++)
     {
-        auto menuLevel0 = std::make_unique<SubmenuEntry>("bank-" + std::to_string(i));
+        auto menuBankLevel = std::make_unique<SubmenuEntry>("bank-" + std::to_string(i));
 
         // menu entries level 1 ("media-selection")
         for (int j = 0; j < mediaButtonsCount; j++)
         {
-            auto menuLevel1 = std::make_unique<SubmenuEntry>("media-" + std::to_string(j));
+            auto mediaButtonEntry = std::make_unique<SubmenuEntry>("media-" + std::to_string(j));
 
-            // menu entries level 1 ("live/file/shader-selection")
-            auto fileSelection = std::make_unique<FilesystemEntry>("files", "../videos/", j + i * mediaButtonsCount);
-            menuLevel1->addSubmenuEntry(std::move(fileSelection));
+            // file
+            auto fileSelectionEntry = std::make_unique<FilesystemEntry>("files", "../videos/", j + i * mediaButtonsCount);
+            mediaButtonEntry->addSubmenuEntry(std::move(fileSelectionEntry));
 
-            for (int k = 0; k < inputSelection.size(); k++)
-            {
-                std::unique_ptr<MenuEntry> menuLevel2 = std::make_unique<SubmenuEntry>(inputSelection[k]);
-                menuLevel1->addSubmenuEntry(std::move(menuLevel2));
-            }
+            // live
+            std::unique_ptr<MenuEntry> liveSelectionEntry = std::make_unique<SubmenuEntry>("live");
+            mediaButtonEntry->addSubmenuEntry(std::move(liveSelectionEntry));
 
-            menuLevel0->addSubmenuEntry(std::move(menuLevel1));
+            // shader
+            std::unique_ptr<MenuEntry> shaderSelectionEntry = std::make_unique<SubmenuEntry>("shader");
+            mediaButtonEntry->addSubmenuEntry(std::move(shaderSelectionEntry));
+
+            menuBankLevel->addSubmenuEntry(std::move(mediaButtonEntry));
         }
 
-        rootMenu->addSubmenuEntry(std::move(menuLevel0));
+        rootEntry->addSubmenuEntry(std::move(menuBankLevel));
     }
-}
-
-void MenuSystem::SetTextSettings(TextState state, ImVec4 &textColor, ImVec4 &bgColor)
-{
-    const ImVec4 black = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
-    const ImVec4 grey = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
-    const ImVec4 white = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-    const ImVec4 red = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
-    const ImVec4 orange = ImVec4(1.0f, 0.5f, 0.1f, 1.0f);
-    const ImVec4 yellow = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
-
-    switch (state)
-    {
-    case DEFAULT:
-        textColor = white;
-        bgColor = black;
-        break;
-    case SELECTED:
-        textColor = black;
-        bgColor = white;
-        ImGui::SetScrollHereY(0.8f);
-        break;
-    case HIGHLIGHT:
-        textColor = yellow;
-        bgColor = black;
-        break;
-    case ERROR:
-        textColor = red;
-        bgColor = black;
-        break;
-    case WARNING:
-        textColor = orange;
-        bgColor = black;
-        break;
-    default:
-        textColor = grey;
-        bgColor = black;
-        break;
-    }
-}
-
-void MenuSystem::RenderText(const std::string &label, TextState textState)
-{
-    ImVec4 textColor;
-    ImVec4 bgColor;
-    SetTextSettings(textState, textColor, bgColor);
-    int padding_x = 2;
-    ImVec2 textSize = ImGui::CalcTextSize(label.c_str()); // Get text dimensions
-    ImVec2 cursorPos = ImGui::GetCursorScreenPos();       // Get screen position of the cursor
-
-    ImGui::GetWindowDrawList()->AddRectFilled(
-        ImVec2(cursorPos.x - padding_x, cursorPos.y),
-        ImVec2(cursorPos.x + textSize.x + padding_x * 2, cursorPos.y + textSize.y),
-        ImGui::ColorConvertFloat4ToU32(bgColor) // Convert to ImU32
-    );
-
-    ImGui::PushStyleColor(ImGuiCol_Text, textColor);
-    ImGui::SetCursorPosX(cursorPos.x + padding_x);
-    ImGui::Text("%s", label.c_str());
-    ImGui::PopStyleColor();
-}
-
-void MenuSystem::RenderOverlayText(const std::string &text)
-{
-    // ImGui::PushFont(myFont);
-
-    ImDrawList *drawList = ImGui::GetForegroundDrawList();
-    drawList->AddText(ImVec2(100, 10), IM_COL32(255, 255, 255, 255), text.c_str());
-
-    // ImGui::SetNextItemAllowOverlap();
-    // ImGui::SetCursorPos(ImVec2(100, 100));
-    // ImGui::Text("%s", text.c_str());
-
-    // ImGui::PopFont();
 }
 
 void MenuSystem::render()
@@ -190,16 +125,9 @@ void MenuSystem::render()
             label = checkBox + " " + label;
         }
 
-        if (isSelected)
-        {
-            RenderText(label, TextState::SELECTED);
-        }
-        else
-        {
-            RenderText(label);
-        }
+        UI::renderText(label, isSelected ? UI::TextState::SELECTED : UI::TextState::DEFAULT);
     }
 
-    RenderOverlayText(std::to_string(currentSelection));
+    UI::renderOverlayText(std::to_string(currentSelection));
     // ImGui::End();
 }
