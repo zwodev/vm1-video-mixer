@@ -13,6 +13,7 @@
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_opengl3.h"
+
 #include <stdio.h>
 #include <SDL3/SDL.h>
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -37,11 +38,6 @@
 
 const int FBO_WIDTH = 128;
 const int FBO_HEIGHT = 128;
-
-
-
-
-
 
 // Main code
 int main(int, char **)
@@ -132,8 +128,8 @@ int main(int, char **)
     ImGuiContext *mainContext = ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
     (void)io;
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
     // Setup Platform/Renderer backends for main context
     ImGui_ImplSDL3_InitForOpenGL(windows[0], gl_context);
@@ -145,7 +141,8 @@ int main(int, char **)
     ImGuiIO &fbo_io = ImGui::GetIO();
     (void)fbo_io;
     fbo_io.DisplaySize = ImVec2(FBO_WIDTH, FBO_HEIGHT);
-    //fbo_io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    // fbo_io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
     // Setup Platform/Renderer backends for main context
     ImGui_ImplSDL3_InitForOpenGL(windows[0], gl_context);
@@ -171,15 +168,15 @@ int main(int, char **)
 
     CameraRenderer cameraRenderer0;
     // cameraRenderer0.start();
-    
+
     Registry registry;
 
     // Oled
     OledUiRenderer oledUiRenderer(registry, FBO_WIDTH, FBO_HEIGHT);
     oledUiRenderer.initialize();
-    
+
     // Menu Test
-    //MenuSystem menuTest;
+    // MenuSystem menuTest;
     KeyForwarder keyForwarder;
 
 #ifdef USE_OLED
@@ -208,7 +205,6 @@ int main(int, char **)
         Uint64 currentTime = SDL_GetTicks();
         double deltaTime = (currentTime - lastTime) / 1000.0;
         lastTime = currentTime;
-
 
         // Poll and handle events (inputs, window resize, etc.)
         SDL_Event event;
@@ -247,7 +243,7 @@ int main(int, char **)
         ImGui::NewFrame();
 
         // Test Window
-        //menuTest.render();
+        // menuTest.render();
 
         // Development Window
         // TODO: Put in own class.
@@ -323,11 +319,11 @@ int main(int, char **)
             SDL_GL_SwapWindow(windows[1]);
         }
 
-        // Render OLED
-    #ifdef USE_OLED
-        oledUiRenderer.renderToRGB565(oledController.oledImage);
+// Render OLED
+#ifdef USE_OLED
+        oledUiRenderer.renderToRGB565(oledController.oledImage, false);
         oledController.render();
-    #endif
+#endif
 
         // End the frame
         ImGui::EndFrame();
