@@ -175,8 +175,7 @@ int main(int, char **)
     OledUiRenderer oledUiRenderer(registry, FBO_WIDTH, FBO_HEIGHT);
     oledUiRenderer.initialize();
 
-    // Menu Test
-    // MenuSystem menuTest;
+    // Keyforwarding
     KeyForwarder keyForwarder;
 
 #ifdef USE_OLED
@@ -188,7 +187,7 @@ int main(int, char **)
 #endif
 
     // File Assignment Widget
-    FileAssignmentWidget fileAssignmentWidget("../videos/", &videoPlane0, &videoPlane1);
+    FileAssignmentWidget fileAssignmentWidget(registry, "../videos/", &videoPlane0, &videoPlane1);
 
     // Prepared delta time
     Uint64 lastTime = SDL_GetTicks();
