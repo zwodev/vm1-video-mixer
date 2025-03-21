@@ -70,7 +70,7 @@ void OledUiRenderer::initialize()
     ImGuiIO &fbo_io = ImGui::GetIO();
     font_std = fbo_io.Fonts->AddFontFromFileTTF("subprojects/imgui/imgui/misc/fonts/ProggyClean.ttf", 13.0f);
     font_big = fbo_io.Fonts->AddFontFromFileTTF("subprojects/imgui/imgui/misc/fonts/ProggyClean.ttf", 26.0f);
-    fbo_io.FontDefault = font_big;
+    fbo_io.FontDefault = font_std;
     fbo_io.Fonts->Build();
 
     createFramebufferAndTexture();
