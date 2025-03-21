@@ -87,7 +87,6 @@
                     printf("Execute Button!\n");
                     printf("Displayname: %s\n", buttonEntry->displayName.c_str());
                     buttonEntry->action();
-     
                 }
                 currentMenu->process(m_registry);
             }
@@ -109,8 +108,15 @@
             bool isSelected = (i == currentSelection);
 
             ImGuiStyle& style = ImGui::GetStyle();
-    
-            std::string label = submenuEntry->submenus[i]->displayName;
+
+            std::unique_ptr<MenuEntry>& menuEntry = submenuEntry->submenus[i];
+            std::string label = menuEntry->displayName;
+
+            if (ButtonEntry* buttonEntry = dynamic_cast<ButtonEntry*>(menuEntry.get())) {
+                std::string checkBox = buttonEntry->isChecked ? "[*]" : "[ ]";
+                label = checkBox + " " + label;
+            }
+
             if (isSelected)
             {
                 ColoredText(label, ImVec4(0.0f, 0.0f, 0.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f)); // White text on blue background

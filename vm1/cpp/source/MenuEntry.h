@@ -24,16 +24,14 @@ struct SubmenuEntry : public MenuEntry {
         submenus.push_back(std::move(submenuEntry));               
     }
 
-    void deleteSubmenus() {
-        submenus.clear();
-    }
-
     std::vector<std::unique_ptr<MenuEntry>> submenus;
 };
 
 struct ButtonEntry : public MenuEntry {
-    ButtonEntry(const std::string& displayName) : MenuEntry(displayName) {}
+    ButtonEntry(const std::string& displayName) : 
+        MenuEntry(displayName) {}
 
+    bool isChecked = false;
     std::function<void()> action;
 };
 
@@ -45,14 +43,20 @@ struct FilesystemEntry : public SubmenuEntry {
     }
 
     void process(Registry& registry) {
-        deleteSubmenus();
+        submenus.clear();
         for (const auto& entry : std::filesystem::directory_iterator(path)) {
             if (entry.is_regular_file()) {
                 std::string filename = entry.path().filename().string();
-                if (filename.find("h265") != std::string::npos) {
+                if (filename.find("h265") != std::string::npos) {       
                     std::unique_ptr<ButtonEntry> fileButton = std::make_unique<ButtonEntry>(filename);
-                    fileButton->action = [this, &registry, filename]() {
-                        registry.addEntry(id, path + filename);
+                    std::string filePath = path + filename;
+                    std::string currentValue = registry.getValue(id);
+                    if (!currentValue.empty()) {
+                        fileButton->isChecked = (currentValue == filePath);
+                    }
+                    
+                    fileButton->action = [this, &registry, filePath]() {
+                        registry.addEntry(id, filePath);
                     };
                     submenus.push_back(std::move(fileButton));
                 }

@@ -39,10 +39,6 @@ const int FBO_WIDTH = 128;
 const int FBO_HEIGHT = 128;
 
 
-
-
-
-
 // Main code
 int main(int, char **)
 {
@@ -191,7 +187,7 @@ int main(int, char **)
 #endif
 
     // File Assignment Widget
-    FileAssignmentWidget fileAssignmentWidget("../videos/", &videoPlane0, &videoPlane1);
+    FileAssignmentWidget fileAssignmentWidget(registry, "../videos/", &videoPlane0, &videoPlane1);
 
     // Prepared delta time
     Uint64 lastTime = SDL_GetTicks();
