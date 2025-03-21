@@ -3,7 +3,6 @@
 #include <map>
 #include <string>
 
-
 class Registry {
 public:
     Registry() {}

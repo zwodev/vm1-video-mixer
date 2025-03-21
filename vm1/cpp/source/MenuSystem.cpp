@@ -10,33 +10,36 @@
         
     {
         // root menu
-        rootMenu = new SubmenuEntry("root");
-        currentMenu = rootMenu;
+        rootMenu = std::make_unique<SubmenuEntry>("root");
+        currentMenu = rootMenu.get();
         currentSelection = 0;
+
         const int bankCount = 4;
         const int mediaButtonsCount = 16;
         const std::vector<std::string> inputSelection = {"live", "shader"};
 
         // menu entries level 0 ("bank-selection")
         for(int i = 0; i < bankCount; i++){
-            SubmenuEntry* menuLevel0 = new SubmenuEntry("bank-" + std::to_string(i));            
-            rootMenu->addSubmenuEntry(menuLevel0);
-            
+            auto menuLevel0 = std::make_unique<SubmenuEntry>("bank-" + std::to_string(i));
+                    
             // menu entries level 1 ("media-selection")
             for (int j = 0; j < mediaButtonsCount; j++) {
-                SubmenuEntry*  menuLevel1 = new SubmenuEntry("media-" + std::to_string(j));
-                menuLevel0->addSubmenuEntry(menuLevel1);
+                auto menuLevel1 = std::make_unique<SubmenuEntry>("media-" + std::to_string(j));
+                
                 // menu entries level 1 ("live/file/shader-selection")
-                FilesystemEntry* fileSelection = new FilesystemEntry("files", "../videos/", j + i * mediaButtonsCount);
-                menuLevel1->addSubmenuEntry(fileSelection);
+                auto fileSelection = std::make_unique<FilesystemEntry>("files", "../videos/", j + i * mediaButtonsCount);
+                menuLevel1->addSubmenuEntry(std::move(fileSelection));
 
                 for(int k = 0; k < inputSelection.size(); k++) {
-                    SubmenuEntry* menuLevel2 = new SubmenuEntry(inputSelection[k]);
-                    menuLevel1->addSubmenuEntry(menuLevel2);
+                    std::unique_ptr<MenuEntry> menuLevel2 = std::make_unique<SubmenuEntry>(inputSelection[k]);
+                    menuLevel1->addSubmenuEntry(std::move(menuLevel2));
                 }
+
+                menuLevel0->addSubmenuEntry(std::move(menuLevel1));
             }
-        }  
-        
+
+            rootMenu->addSubmenuEntry(std::move(menuLevel0));
+        } 
     }
 
     void  MenuSystem::ColoredText(const std::string& label, ImVec4 textColor, ImVec4 bgColor) {
@@ -56,13 +59,14 @@
 
     void MenuSystem::render() {
         //ImGui::Begin("Menu System");
+        SubmenuEntry* submenuEntry = dynamic_cast<SubmenuEntry*>(currentMenu);
         
         // Handle left arrow key (go back)
-        if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) && currentMenu != rootMenu) {
-            SubmenuEntry *parentEntry = currentMenu->parentEntry;
+        if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) && currentMenu != rootMenu.get()) {
+            SubmenuEntry *parentEntry = static_cast<SubmenuEntry*>(currentMenu->parentEntry);
             currentSelection = 0;
             for(int i = 0; i < parentEntry->submenus.size(); i++) {
-                if (parentEntry->submenus[i] == currentMenu){
+                if (parentEntry->submenus[i].get() == currentMenu){
                     currentSelection = i;
                     break;
                 }
@@ -71,13 +75,13 @@
         }
         
         // Handle right arrow key (go forward)
-        SubmenuEntry* submenuEntry = dynamic_cast<SubmenuEntry*>(currentMenu);
         if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
             if(submenuEntry) {
                 previousMenu = currentMenu;  
-                MenuEntry* nextMenuEntry = submenuEntry->submenus[currentSelection];
+                MenuEntry* nextMenuEntry = submenuEntry->submenus[currentSelection].get();
                 if (dynamic_cast<SubmenuEntry*>(nextMenuEntry)) {
                     currentMenu = nextMenuEntry;
+                    currentSelection = 0;
                 }
                 else if (ButtonEntry* buttonEntry = dynamic_cast<ButtonEntry*>(nextMenuEntry)) {
                     printf("Execute Button!\n");
@@ -86,7 +90,6 @@
      
                 }
                 currentMenu->process(m_registry);
-                currentSelection = 0;
             }
         }
 

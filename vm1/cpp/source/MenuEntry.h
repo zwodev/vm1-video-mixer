@@ -18,25 +18,22 @@ struct MenuEntry {
 
 struct SubmenuEntry : public MenuEntry {
     SubmenuEntry(const std::string& displayName) : MenuEntry(displayName) {}
-    void addSubmenuEntry(MenuEntry *submenuEntry) {
-        submenus.push_back(submenuEntry);
+    
+    void addSubmenuEntry(std::unique_ptr<MenuEntry> submenuEntry) {
         submenuEntry->parentEntry = this;
+        submenus.push_back(std::move(submenuEntry));               
     }
 
     void deleteSubmenus() {
-        for (int i = 0; i < submenus.size(); ++i) {
-            delete submenus[i];
-        }
-
         submenus.clear();
     }
-    std::vector<MenuEntry*> submenus;
+
+    std::vector<std::unique_ptr<MenuEntry>> submenus;
 };
 
 struct ButtonEntry : public MenuEntry {
     ButtonEntry(const std::string& displayName) : MenuEntry(displayName) {}
 
-    // bool (*function)();
     std::function<void()> action;
 };
 
@@ -53,12 +50,11 @@ struct FilesystemEntry : public SubmenuEntry {
             if (entry.is_regular_file()) {
                 std::string filename = entry.path().filename().string();
                 if (filename.find("h265") != std::string::npos) {
-                    ButtonEntry *fileButton = new ButtonEntry(filename);
-                    fileButton->action = [&]() {
-                        registry.addEntry(id, path + "/" + filename);
+                    std::unique_ptr<ButtonEntry> fileButton = std::make_unique<ButtonEntry>(filename);
+                    fileButton->action = [this, &registry, filename]() {
+                        registry.addEntry(id, path + filename);
                     };
-                    //fileButton->action = [&]() {int debug = 1;};
-                    submenus.push_back(fileButton);
+                    submenus.push_back(std::move(fileButton));
                 }
             }
         }

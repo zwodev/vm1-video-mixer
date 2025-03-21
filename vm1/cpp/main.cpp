@@ -178,8 +178,8 @@ int main(int, char **)
     OledUiRenderer oledUiRenderer(registry, FBO_WIDTH, FBO_HEIGHT);
     oledUiRenderer.initialize();
     
-    // Menu Test
-    //MenuSystem menuTest;
+    
+    // Keyforwarding
     KeyForwarder keyForwarder;
 
 #ifdef USE_OLED
