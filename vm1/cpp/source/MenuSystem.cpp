@@ -5,73 +5,87 @@
 #include <vector>
 #include <string>
 
+const int NUM_BANKS = 4;
+
 MenuSystem::MenuSystem(Registry &registry) : m_registry(registry) {
     buildMenuStructure();
 }
 
 void MenuSystem::buildMenuStructure() {
-    rootMenu = std::make_unique<SubmenuEntry>("root");
-    currentMenu = rootMenu.get();
-    currentSelection = 0;
-
     // input association menu
-    auto inputMenu = std::make_unique<SubmenuEntry>("input");
+    auto inputMenu = std::make_unique<SubmenuEntry>("Input Selection");
     buildInputMenuStructure(inputMenu);
-    rootMenu->addSubmenuEntry(std::move(inputMenu));
-}
+    m_menus[MT_InputSelection] = std::move(inputMenu);
+ }
 
 void MenuSystem::buildInputMenuStructure(std::unique_ptr<SubmenuEntry>& rootEntry) {
-    const int bankCount = 4;
-    const int mediaButtonsCount = 16;
+    // file
+    auto fileSelectionEntry = std::make_unique<FilesystemEntry>("files", "../videos/");
+    rootEntry->addSubmenuEntry(std::move(fileSelectionEntry));
 
-    // menu entries level 0 ("bank-selection")
-    for (int i = 0; i < bankCount; i++)
-    {
-        auto menuBankLevel = std::make_unique<SubmenuEntry>("bank-" + std::to_string(i));
+    // live
+    std::unique_ptr<MenuEntry> liveSelectionEntry = std::make_unique<SubmenuEntry>("live");
+    rootEntry->addSubmenuEntry(std::move(liveSelectionEntry));
 
-        // menu entries level 1 ("media-selection")
-        for (int j = 0; j < mediaButtonsCount; j++)
-        {
-            auto mediaButtonEntry = std::make_unique<SubmenuEntry>("media-" + std::to_string(j));
+    // shader
+    std::unique_ptr<MenuEntry> shaderSelectionEntry = std::make_unique<SubmenuEntry>("shader");
+    rootEntry->addSubmenuEntry(std::move(shaderSelectionEntry));
+}
 
-            // file
-            auto fileSelectionEntry = std::make_unique<FilesystemEntry>("files", "../videos/", j + i * mediaButtonsCount);
-            mediaButtonEntry->addSubmenuEntry(std::move(fileSelectionEntry));
+void MenuSystem::setMenu(MenuType menuType) {
+    if (m_menus.find(menuType) != m_menus.end()) {
+        m_rootMenu = m_menus[menuType].get();
+        m_currentMenu = m_rootMenu;
+    }
+}
 
-            // live
-            std::unique_ptr<MenuEntry> liveSelectionEntry = std::make_unique<SubmenuEntry>("live");
-            mediaButtonEntry->addSubmenuEntry(std::move(liveSelectionEntry));
-
-            // shader
-            std::unique_ptr<MenuEntry> shaderSelectionEntry = std::make_unique<SubmenuEntry>("shader");
-            mediaButtonEntry->addSubmenuEntry(std::move(shaderSelectionEntry));
-
-            menuBankLevel->addSubmenuEntry(std::move(mediaButtonEntry));
+void MenuSystem::handleKeyboardShortcuts() {
+    int numButtons = m_keyboardShortcuts.size();
+    for (int i = 0; i < numButtons; ++i) {
+        ImGuiKey key = m_keyboardShortcuts[i];
+        if (ImGui::IsKeyDown(key) && ImGui::IsKeyDown(ImGuiKey_LeftShift)) {
+            int id = m_bank * numButtons + i;
+            m_id = id;
+            setMenu(MT_InputSelection);
+            return;
         }
-
-        rootEntry->addSubmenuEntry(std::move(menuBankLevel));
     }
 }
 
 void MenuSystem::render()
 {
+    handleKeyboardShortcuts();
+
+    if (!m_rootMenu) {
+        UI::renderCenteredText("VM-1");
+        return;
+    }
+        
+
     // ImGui::Begin("Menu System");
-    SubmenuEntry *submenuEntry = dynamic_cast<SubmenuEntry *>(currentMenu);
+    SubmenuEntry *submenuEntry = dynamic_cast<SubmenuEntry *>(m_currentMenu);
 
     // Handle left arrow key (go back)
-    if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) && currentMenu != rootMenu.get())
+    if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
     {
-        SubmenuEntry *parentEntry = static_cast<SubmenuEntry *>(currentMenu->parentEntry);
-        currentSelection = 0;
+        if (m_currentMenu == m_rootMenu) {
+            m_rootMenu = nullptr;
+            m_currentMenu = nullptr;
+            m_previousMenu = nullptr;
+            return;
+        }
+
+        SubmenuEntry *parentEntry = static_cast<SubmenuEntry *>(m_currentMenu->parentEntry);
+        m_currentSelection = 0;
         for (int i = 0; i < parentEntry->submenus.size(); i++)
         {
-            if (parentEntry->submenus[i].get() == currentMenu)
+            if (parentEntry->submenus[i].get() == m_currentMenu)
             {
-                currentSelection = i;
+                m_currentSelection = i;
                 break;
             }
         }
-        currentMenu = currentMenu->parentEntry;
+        m_currentMenu = m_currentMenu->parentEntry;
     }
 
     // Handle right arrow key (go forward)
@@ -79,20 +93,26 @@ void MenuSystem::render()
     {
         if (submenuEntry)
         {
-            previousMenu = currentMenu;
-            MenuEntry *nextMenuEntry = submenuEntry->submenus[currentSelection].get();
+            if (submenuEntry->submenus.size() == 0)
+                return;
+            
+            m_previousMenu = m_currentMenu;
+            MenuEntry *nextMenuEntry = submenuEntry->submenus[m_currentSelection].get();
             if (dynamic_cast<SubmenuEntry *>(nextMenuEntry))
             {
-                currentMenu = nextMenuEntry;
-                currentSelection = 0;
+                m_currentMenu = nextMenuEntry;
+                m_currentSelection = 0;
             }
             else if (ButtonEntry *buttonEntry = dynamic_cast<ButtonEntry *>(nextMenuEntry))
             {
-                printf("Execute Button!\n");
-                printf("Displayname: %s\n", buttonEntry->displayName.c_str());
                 buttonEntry->action();
             }
-            currentMenu->process(m_registry);
+            
+            if (FilesystemEntry *filesystemEntry = dynamic_cast<FilesystemEntry *>(m_currentMenu))
+            {
+                filesystemEntry->update(m_registry, m_id);
+            }
+            //currentMenu->process(m_registry);
         }
     }
 
@@ -100,19 +120,19 @@ void MenuSystem::render()
         return;
 
     // Handle up and down arrow keys for item selection
-    if (ImGui::IsKeyPressed(ImGuiKey_UpArrow) && currentSelection > 0)
+    if (ImGui::IsKeyPressed(ImGuiKey_UpArrow) && m_currentSelection > 0)
     {
-        currentSelection--;
+        m_currentSelection--;
     }
 
-    if (ImGui::IsKeyPressed(ImGuiKey_DownArrow) && currentSelection < submenuEntry->submenus.size() - 1)
+    if (ImGui::IsKeyPressed(ImGuiKey_DownArrow) && m_currentSelection < submenuEntry->submenus.size() - 1)
     {
-        currentSelection++;
+        m_currentSelection++;
     }
 
     for (size_t i = 0; i < submenuEntry->submenus.size(); ++i)
     {
-        bool isSelected = (i == currentSelection);
+        bool isSelected = (i == m_currentSelection);
 
         ImGuiStyle &style = ImGui::GetStyle();
 
@@ -128,6 +148,6 @@ void MenuSystem::render()
         UI::renderText(label, isSelected ? UI::TextState::SELECTED : UI::TextState::DEFAULT);
     }
 
-    UI::renderOverlayText(std::to_string(currentSelection));
+    UI::renderOverlayText(std::to_string(m_currentSelection));
     // ImGui::End();
 }

@@ -10,7 +10,7 @@ struct MenuEntry {
         this->displayName = displayName;
     }
     virtual ~MenuEntry() {}
-    virtual void process(Registry& registry) {}
+    //virtual void process(Registry& registry) {}
 
     std::string displayName;
     MenuEntry* parentEntry = nullptr;
@@ -36,13 +36,12 @@ struct ButtonEntry : public MenuEntry {
 };
 
 struct FilesystemEntry : public SubmenuEntry {
-    FilesystemEntry(const std::string& displayName, const std::string& path, int id) : SubmenuEntry(displayName)
+    FilesystemEntry(const std::string& displayName, const std::string& path) : SubmenuEntry(displayName)
     {
         this->path = path;
-        this->id = id;
     }
 
-    void process(Registry& registry) {
+    void update(Registry& registry, int id) {
         submenus.clear();
         for (const auto& entry : std::filesystem::directory_iterator(path)) {
             if (entry.is_regular_file()) {
@@ -55,7 +54,7 @@ struct FilesystemEntry : public SubmenuEntry {
                         fileButton->isChecked = (currentValue == filePath);
                     }
                     
-                    fileButton->action = [this, &registry, filePath]() {
+                    fileButton->action = [&registry, id, filePath]() {
                         registry.addEntry(id, filePath);
                     };
                     submenus.push_back(std::move(fileButton));
@@ -65,5 +64,4 @@ struct FilesystemEntry : public SubmenuEntry {
     }
 
     std::string path;
-    int id;
 };

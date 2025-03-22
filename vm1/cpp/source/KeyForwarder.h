@@ -5,35 +5,37 @@
 #include <imgui.h>
 
 class KeyForwarder {
-private:
-    std::array<bool, 4> previousKeyStates;
-    std::array<ImGuiKey, 4> arrowKeys = {
-        ImGuiKey_LeftArrow, ImGuiKey_RightArrow,
-        ImGuiKey_UpArrow, ImGuiKey_DownArrow
-    };
-
 public:
-    KeyForwarder() : previousKeyStates{false, false, false, false} {}
+    KeyForwarder() {
+        for (auto key : m_arrowKeys) {
+            m_previousKeyStates.push_back(false);
+        }
+    }
 
-    void ForwardArrowKeys(ImGuiContext* sourceContext, ImGuiContext* targetContext) {
+    void forwardArrowKeys(ImGuiContext* sourceContext, ImGuiContext* targetContext) {
         ImGui::SetCurrentContext(sourceContext);
-        
-        for (size_t i = 0; i < arrowKeys.size(); ++i) {
-            bool currentKeyState = ImGui::IsKeyDown(arrowKeys[i]);
-            
-            if (currentKeyState != previousKeyStates[i]) {
+        for (size_t i = 0; i < m_arrowKeys.size(); ++i) {
+            bool currentKeyState = ImGui::IsKeyDown(m_arrowKeys[i]);
+            if (currentKeyState != m_previousKeyStates[i]) {
                 ImGui::SetCurrentContext(targetContext);
                 if (currentKeyState) {
-                    ImGui::GetIO().AddKeyEvent(arrowKeys[i], true);
-                    ImGui::GetIO().AddKeyEvent(arrowKeys[i], false);  // Immediate release
+                    ImGui::GetIO().AddKeyEvent(m_arrowKeys[i], true);
+                }
+                else {
+                    ImGui::GetIO().AddKeyEvent(m_arrowKeys[i], false);
                 }
                 ImGui::SetCurrentContext(sourceContext);
-                
-                previousKeyStates[i] = currentKeyState;
-                
-                // Debug output
-                // printf("Key %d state changed to: %s\n", arrowKeys[i], currentKeyState ? "Pressed" : "Released");
+                m_previousKeyStates[i] = currentKeyState;
             }
         }
     }
+
+private:
+    std::vector<bool> m_previousKeyStates;
+    std::vector<ImGuiKey> m_arrowKeys = {   ImGuiKey_LeftShift, ImGuiKey_LeftArrow, ImGuiKey_RightArrow, ImGuiKey_UpArrow, ImGuiKey_DownArrow,
+                                            ImGuiKey_Q, ImGuiKey_W, ImGuiKey_E, ImGuiKey_R, 
+                                            ImGuiKey_T, ImGuiKey_Z, ImGuiKey_U, ImGuiKey_I, 
+                                            ImGuiKey_A, ImGuiKey_S, ImGuiKey_D, ImGuiKey_F, 
+                                            ImGuiKey_G, ImGuiKey_H, ImGuiKey_J, ImGuiKey_K 
+                                        };
 };

@@ -52,8 +52,21 @@ namespace UI {
         }
     }
 
+    void renderCenteredText(const std::string &label) 
+    {
+        auto windowWidth = ImGui::GetWindowSize().x;
+        auto windowHeight = ImGui::GetWindowSize().y;
+        auto textWidth   = ImGui::CalcTextSize(label.c_str()).x;
+        auto textHeight   = ImGui::CalcTextSize(label.c_str()).y;
+
+        ImGui::SetCursorPosX((windowWidth - textWidth) * 0.5f);
+        ImGui::SetCursorPosY((windowHeight - textHeight) * 0.5f);
+        ImGui::Text("%s", label.c_str());
+    }
+
     void renderText(const std::string &label, TextState textState)
     {
+
         ImVec4 textColor;
         ImVec4 bgColor;
         setTextSettings(textState, textColor, bgColor);

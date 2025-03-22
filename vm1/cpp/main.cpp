@@ -225,7 +225,7 @@ int main(int, char **)
             continue;
         }
 
-        keyForwarder.ForwardArrowKeys(mainContext, fboContext);
+        keyForwarder.forwardArrowKeys(mainContext, fboContext);
 
         // START: Render to FBO (OLED) before main gui
         ImGui::SetCurrentContext(fboContext);

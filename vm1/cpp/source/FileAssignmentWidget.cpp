@@ -114,14 +114,16 @@ void FileAssignmentWidget::handleButtonClick(int id) {
 
     std::string filePath = m_registry.getValue(id);
     if (!filePath.empty()) { 
-        printf("Play: (ID: %d, FILE: %s)\n", id, filePath);
+        
 
         int oddRow = (id / WIDTH) % 2;
         // Select plane
         if (oddRow == 0) {
+            printf("Play Left: (ID: %d, FILE: %s)\n", id, filePath.c_str());
             m_videoPlaneLeft->playAndFade(filePath);
         } 
         else {
+            printf("Play Right: (ID: %d, FILE: %s)\n", id, filePath.c_str());
             m_videoPlaneRight->playAndFade(filePath);
         }
     }
@@ -131,8 +133,8 @@ void FileAssignmentWidget::handleKeyboardShortcuts() {
     for (int y = 0; y < HEIGHT; y++) {
         for (int x = 0; x < WIDTH; x++) {
             ImGuiKey key = m_keyboardShortcuts[y][x];
-            if (ImGui::IsKeyPressed(key)) {
-                int id = m_bank * (y * WIDTH) + x;
+            if (ImGui::IsKeyPressed(key) && !ImGui::IsKeyDown(ImGuiKey_LeftShift)) {
+                int id = m_bank * (2 * WIDTH) + (y * WIDTH) + x;
                 handleButtonClick(id);
                 return;
             }
