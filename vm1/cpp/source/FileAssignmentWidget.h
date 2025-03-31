@@ -16,15 +16,16 @@
 #include "VideoPlane.h"
 #include "Registry.h"
 
-class FileAssignmentWidget {
+class FileAssignmentWidget
+{
 private:
     static const int SPACING = 6;
     static const int WIDTH = 8;
     static const int HEIGHT = 2;
-    
-    Registry& m_registry; 
-    VideoPlane* m_videoPlaneLeft = nullptr;
-    VideoPlane* m_videoPlaneRight = nullptr;
+
+    Registry &m_registry;
+    VideoPlane *m_videoPlaneLeft = nullptr;
+    VideoPlane *m_videoPlaneRight = nullptr;
 
     std::string m_directory;
     std::vector<std::string> m_files;
@@ -36,21 +37,25 @@ private:
     ImVec4 m_assignedButtonColor = ImVec4(0.0f, 0.5f, 0.0f, 1.0f);
     ImVec4 m_highlightedButtonColor = ImVec4(0.5f, 0.5f, 0.0f, 1.0f);
 
-    std::string m_keyLabels[HEIGHT][WIDTH] = {  {"Q", "W", "E", "R", "T", "Z", "U", "I"}, 
-                                                {"A", "S", "D", "F", "G", "H", "J", "K"} };
+    // std::string m_keyLabels[HEIGHT][WIDTH] = {  {"Q", "W", "E", "R", "T", "Z", "U", "I"},
+    //                                             {"A", "S", "D", "F", "G", "H", "J", "K"} };
+    std::string m_keyLabels[HEIGHT][WIDTH] = {{"A", "S", "D", "F", "G", "H", "J", "K"},
+                                              {"Z", "X", "C", "V", "B", "N", "M", ","}};
 
-    ImGuiKey m_keyboardShortcuts[HEIGHT][WIDTH] = { {ImGuiKey_Q, ImGuiKey_W, ImGuiKey_E, ImGuiKey_R, ImGuiKey_T, ImGuiKey_Z, ImGuiKey_U, ImGuiKey_I}, 
-                                                    {ImGuiKey_A, ImGuiKey_S, ImGuiKey_D, ImGuiKey_F, ImGuiKey_G, ImGuiKey_H, ImGuiKey_J, ImGuiKey_K} };
+    // ImGuiKey m_keyboardShortcuts[HEIGHT][WIDTH] = {{ImGuiKey_Q, ImGuiKey_W, ImGuiKey_E, ImGuiKey_R, ImGuiKey_T, ImGuiKey_Z, ImGuiKey_U, ImGuiKey_I},
+    //                                                {ImGuiKey_A, ImGuiKey_S, ImGuiKey_D, ImGuiKey_F, ImGuiKey_G, ImGuiKey_H, ImGuiKey_J, ImGuiKey_K}};
+    ImGuiKey m_keyboardShortcuts[HEIGHT][WIDTH] = {{ImGuiKey_A, ImGuiKey_S, ImGuiKey_D, ImGuiKey_F, ImGuiKey_G, ImGuiKey_H, ImGuiKey_J, ImGuiKey_K},
+                                                   {ImGuiKey_Z, ImGuiKey_X, ImGuiKey_C, ImGuiKey_V, ImGuiKey_B, ImGuiKey_N, ImGuiKey_M, ImGuiKey_Comma}};
 
 public:
-    FileAssignmentWidget(Registry& registry, const std::string& directory, VideoPlane* videoPlaneLeft, VideoPlane* videoPlaneRight);
-    
+    FileAssignmentWidget(Registry &registry, const std::string &directory, VideoPlane *videoPlaneLeft, VideoPlane *videoPlaneRight);
+
     void render();
 
 private:
     void setupKeyboardShortcuts();
     void setupKeyLabels();
-    void loadFiles(const std::string& directory);
+    void loadFiles(const std::string &directory);
     void renderFileList();
     void renderButtonMatrix();
     void renderSettings();

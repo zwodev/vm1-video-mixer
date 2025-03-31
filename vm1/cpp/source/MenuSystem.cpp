@@ -7,18 +7,21 @@
 
 const int NUM_BANKS = 4;
 
-MenuSystem::MenuSystem(Registry &registry) : m_registry(registry) {
+MenuSystem::MenuSystem(Registry &registry) : m_registry(registry)
+{
     buildMenuStructure();
 }
 
-void MenuSystem::buildMenuStructure() {
+void MenuSystem::buildMenuStructure()
+{
     // input association menu
     auto inputMenu = std::make_unique<SubmenuEntry>("Input Selection");
     buildInputMenuStructure(inputMenu);
     m_menus[MT_InputSelection] = std::move(inputMenu);
- }
+}
 
-void MenuSystem::buildInputMenuStructure(std::unique_ptr<SubmenuEntry>& rootEntry) {
+void MenuSystem::buildInputMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntry)
+{
     // file
     auto fileSelectionEntry = std::make_unique<FilesystemEntry>("files", "../videos/");
     rootEntry->addSubmenuEntry(std::move(fileSelectionEntry));
@@ -32,18 +35,23 @@ void MenuSystem::buildInputMenuStructure(std::unique_ptr<SubmenuEntry>& rootEntr
     rootEntry->addSubmenuEntry(std::move(shaderSelectionEntry));
 }
 
-void MenuSystem::setMenu(MenuType menuType) {
-    if (m_menus.find(menuType) != m_menus.end()) {
+void MenuSystem::setMenu(MenuType menuType)
+{
+    if (m_menus.find(menuType) != m_menus.end())
+    {
         m_rootMenu = m_menus[menuType].get();
         m_currentMenu = m_rootMenu;
     }
 }
 
-void MenuSystem::handleKeyboardShortcuts() {
+void MenuSystem::handleKeyboardShortcuts()
+{
     int numButtons = m_keyboardShortcuts.size();
-    for (int i = 0; i < numButtons; ++i) {
+    for (int i = 0; i < numButtons; ++i)
+    {
         ImGuiKey key = m_keyboardShortcuts[i];
-        if (ImGui::IsKeyDown(key) && ImGui::IsKeyDown(ImGuiKey_LeftShift)) {
+        if (ImGui::IsKeyDown(key) && ImGui::IsKeyDown(ImGuiKey_LeftShift))
+        {
             int id = m_bank * numButtons + i;
             m_id = id;
             setMenu(MT_InputSelection);
@@ -56,11 +64,11 @@ void MenuSystem::render()
 {
     handleKeyboardShortcuts();
 
-    if (!m_rootMenu) {
+    if (!m_rootMenu)
+    {
         UI::renderCenteredText("VM-1");
         return;
     }
-        
 
     // ImGui::Begin("Menu System");
     SubmenuEntry *submenuEntry = dynamic_cast<SubmenuEntry *>(m_currentMenu);
@@ -68,7 +76,8 @@ void MenuSystem::render()
     // Handle left arrow key (go back)
     if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
     {
-        if (m_currentMenu == m_rootMenu) {
+        if (m_currentMenu == m_rootMenu)
+        {
             m_rootMenu = nullptr;
             m_currentMenu = nullptr;
             m_previousMenu = nullptr;
@@ -95,7 +104,7 @@ void MenuSystem::render()
         {
             if (submenuEntry->submenus.size() == 0)
                 return;
-            
+
             m_previousMenu = m_currentMenu;
             MenuEntry *nextMenuEntry = submenuEntry->submenus[m_currentSelection].get();
             if (dynamic_cast<SubmenuEntry *>(nextMenuEntry))
@@ -107,12 +116,12 @@ void MenuSystem::render()
             {
                 buttonEntry->action();
             }
-            
+
             if (FilesystemEntry *filesystemEntry = dynamic_cast<FilesystemEntry *>(m_currentMenu))
             {
                 filesystemEntry->update(m_registry, m_id);
             }
-            //currentMenu->process(m_registry);
+            // currentMenu->process(m_registry);
         }
     }
 
@@ -148,6 +157,6 @@ void MenuSystem::render()
         UI::renderText(label, isSelected ? UI::TextState::SELECTED : UI::TextState::DEFAULT);
     }
 
-    UI::renderOverlayText(std::to_string(m_currentSelection));
+    UI::renderOverlayText(std::to_string(m_id + 1));
     // ImGui::End();
 }

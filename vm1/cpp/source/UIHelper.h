@@ -3,7 +3,8 @@
 #include "imgui.h"
 #include <string>
 
-namespace UI {
+namespace UI
+{
     enum TextState
     {
         DEFAULT,
@@ -52,12 +53,12 @@ namespace UI {
         }
     }
 
-    void renderCenteredText(const std::string &label) 
+    void renderCenteredText(const std::string &label)
     {
         auto windowWidth = ImGui::GetWindowSize().x;
         auto windowHeight = ImGui::GetWindowSize().y;
-        auto textWidth   = ImGui::CalcTextSize(label.c_str()).x;
-        auto textHeight   = ImGui::CalcTextSize(label.c_str()).y;
+        auto textWidth = ImGui::CalcTextSize(label.c_str()).x;
+        auto textHeight = ImGui::CalcTextSize(label.c_str()).y;
 
         ImGui::SetCursorPosX((windowWidth - textWidth) * 0.5f);
         ImGui::SetCursorPosY((windowHeight - textHeight) * 0.5f);
@@ -70,7 +71,7 @@ namespace UI {
         ImVec4 textColor;
         ImVec4 bgColor;
         setTextSettings(textState, textColor, bgColor);
-        
+
         int padding_x = 2;
         ImVec2 textSize = ImGui::CalcTextSize(label.c_str()); // Get text dimensions
         ImVec2 cursorPos = ImGui::GetCursorScreenPos();       // Get screen position of the cursor
@@ -90,6 +91,6 @@ namespace UI {
     void renderOverlayText(const std::string &text)
     {
         ImDrawList *drawList = ImGui::GetForegroundDrawList();
-        drawList->AddText(ImVec2(100, 10), IM_COL32(255, 255, 255, 255), text.c_str());
+        drawList->AddText(ImVec2(100, 10), IM_COL32(0, 255, 0, 255), text.c_str());
     }
 }
