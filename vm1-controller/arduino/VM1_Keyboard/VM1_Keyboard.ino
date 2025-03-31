@@ -26,6 +26,7 @@
 #define ROTARY_PIN_B 27
 
 
+// debugASDD
 // #define DEBUG
 #ifdef DEBUG
 uint32_t d_current_micros, d_previous_micros;
@@ -171,7 +172,6 @@ void loop() {
 
 
   // Rotary Encoder ==> UP/DOWN Keys
-  long encoder_value = encoder.getCount();
   int32_t encoder_value = encoder.getCount() / 10;
   if (encoder_value > encoder_value_old) {
     Keyboard.press(KEY_DOWN_ARROW);
