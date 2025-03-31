@@ -15,9 +15,44 @@
 #include <vector>
 #include <iostream>
 
-OledUiRenderer::OledUiRenderer(int width, int height) : m_width(width), m_height(height)
+#include <fstream>
+#include <cstdint>
+
+#pragma pack(push, 1) // Ensure proper struct alignment
+struct BMPFileHeader
 {
-    //
+    uint16_t bfType = 0x4D42; // "BM"
+    uint32_t bfSize;          // File size
+    uint16_t bfReserved1 = 0;
+    uint16_t bfReserved2 = 0;
+    uint32_t bfOffBits = 70; // Pixel data offset (56-byte DIB + 16-byte masks)
+};
+
+struct BMPInfoHeaderV3
+{
+    uint32_t biSize = 56; // 56-byte BITMAPV3INFOHEADER
+    int32_t biWidth;
+    int32_t biHeight;
+    uint16_t biPlanes = 1;
+    uint16_t biBitCount = 16;   // 16-bit BMP
+    uint32_t biCompression = 3; // BI_BITFIELDS (16-bit)
+    uint32_t biSizeImage;
+    int32_t biXPelsPerMeter = 2835;
+    int32_t biYPelsPerMeter = 2835;
+    uint32_t biClrUsed = 0;
+    uint32_t biClrImportant = 0;
+    uint32_t biRedMask = 0xF800;   // 5-bit red
+    uint32_t biGreenMask = 0x07E0; // 6-bit green
+    uint32_t biBlueMask = 0x001F;  // 5-bit blue
+    uint32_t biAlphaMask = 0x0000; // No alpha
+};
+#pragma pack(pop)
+
+OledUiRenderer::OledUiRenderer(Registry &registry, int width, int height) : m_registry(registry),
+                                                                            m_menuSystem(registry),
+                                                                            m_width(width),
+                                                                            m_height(height)
+{
 }
 
 OledUiRenderer::~OledUiRenderer()
@@ -32,9 +67,13 @@ void OledUiRenderer::initialize()
     m_oldStyle = style;
     createTheme();
 
-    createFramebufferAndTexture();
+    ImGuiIO &fbo_io = ImGui::GetIO();
+    font_std = fbo_io.Fonts->AddFontFromFileTTF("subprojects/imgui/imgui/misc/fonts/ProggyClean.ttf", 13.0f);
+    font_big = fbo_io.Fonts->AddFontFromFileTTF("subprojects/imgui/imgui/misc/fonts/ProggyClean.ttf", 26.0f);
+    fbo_io.FontDefault = font_std;
+    fbo_io.Fonts->Build();
 
-    isUpdated = true;
+    createFramebufferAndTexture();
 }
 
 GLuint OledUiRenderer::texture()
@@ -49,8 +88,8 @@ void OledUiRenderer::createFramebufferAndTexture()
 
     glBindTexture(GL_TEXTURE_2D, m_fboTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_width, m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_fboTexture, 0);
@@ -89,32 +128,7 @@ void OledUiRenderer::update()
 void OledUiRenderer::updateContent()
 {
     // Render the actual UI (flags: no title, borderless, etc)
-    ImGui::Text("HELLO World!!");
-    if (ImGui::Button("Button 1"))
-    {
-        printf("button has changed\n");
-        isUpdated = true;
-    }
-    if (ImGui::Button("Button 2"))
-    {
-        isUpdated = true;
-    }
-    if (ImGui::Button("Button 3"))
-    {
-        isUpdated = true;
-    }
-    if (ImGui::Button("Button 4"))
-    {
-        isUpdated = true;
-    }
-    if (ImGui::Button("Button 5"))
-    {
-        isUpdated = true;
-    }
-    if (ImGui::Button("Button 6"))
-    {
-        isUpdated = true;
-    }
+    m_menuSystem.render();
 }
 
 void OledUiRenderer::renderToFramebuffer(bool saveAsPng)
@@ -124,6 +138,7 @@ void OledUiRenderer::renderToFramebuffer(bool saveAsPng)
     glViewport(0, 0, m_width, m_height);
 
     // Render ImGui
+    // glDisable(GL_MULTISAMPLE);
     ImGui::Render();
     ImDrawData *drawData = ImGui::GetDrawData();
     drawData->DisplaySize = ImVec2(m_width, m_height);
@@ -164,12 +179,8 @@ void OledUiRenderer::renderToFramebuffer(bool saveAsPng)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void OledUiRenderer::renderToRGB565(uint8_t *buffer)
+void OledUiRenderer::renderToRGB565(uint8_t *buffer, bool saveAsBmp)
 {
-    // ToDo: Falls sich nichts geändert hat, return false
-    if (!isUpdated)
-        return;
-
     // Bind the FBO
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     // glViewport(0, 0, m_width, m_height);
@@ -201,7 +212,44 @@ void OledUiRenderer::renderToRGB565(uint8_t *buffer)
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    isUpdated = false;
+    if (saveAsBmp)
+    {
+        std::string filename = "output.bmp";
+        // Ensure 4-byte row alignment
+        int rowSize = ((m_width * 2 + 3) / 4) * 4;
+        int dataSize = rowSize * m_height;
+        int fileSize = sizeof(BMPFileHeader) + sizeof(BMPInfoHeaderV3) + dataSize;
+
+        BMPFileHeader fileHeader;
+        fileHeader.bfSize = fileSize;
+
+        BMPInfoHeaderV3 infoHeader;
+        infoHeader.biWidth = m_width;
+        infoHeader.biHeight = -m_height; // Top-down DIB
+        infoHeader.biSizeImage = dataSize;
+
+        std::ofstream file(filename, std::ios::binary);
+        if (!file)
+        {
+            printf("Failed to open file for writing: %s\n", filename.c_str());
+            return;
+        }
+
+        // Write BMP headers
+        file.write(reinterpret_cast<const char *>(&fileHeader), sizeof(fileHeader));
+        file.write(reinterpret_cast<const char *>(&infoHeader), sizeof(infoHeader));
+
+        // Write pixel data row by row (ensuring alignment)
+        std::vector<uint8_t> rowBuffer(rowSize, 0);
+        for (int y = 0; y < m_height; ++y)
+        {
+            memcpy(rowBuffer.data(), &buffer[y * m_width * 2], m_width * 2);
+            file.write(reinterpret_cast<const char *>(rowBuffer.data()), rowSize);
+        }
+
+        file.close();
+        printf("Saved BMP: %s\n", filename.c_str());
+    }
 }
 
 void OledUiRenderer::createTheme()
@@ -215,13 +263,33 @@ void OledUiRenderer::createTheme()
     // m_style.WindowRounding = 4.0f;
     m_style.ScrollbarRounding = 4.0f;
 
-    m_style.Colors[ImGuiCol_WindowBg] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-    m_style.Colors[ImGuiCol_Text] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+    m_style.Colors[ImGuiCol_WindowBg] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+    m_style.Colors[ImGuiCol_Text] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
     // m_style.Colors[ImGuiCol_Button] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
     // m_style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
     // m_style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
-    m_style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-    m_style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+    m_style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+    m_style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // m_style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+    m_style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
+    // m_style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.0f, 0.0f, 1.0f, 1.0f);
+    m_style.Colors[ImGuiCol_Header] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+
+    m_style.AntiAliasedFill = false;
+    m_style.AntiAliasedLines = false;
+
+    m_style.ScrollbarRounding = 0.0f;
+    m_style.ScrollbarSize = 1.0f;
+    m_style.FrameBorderSize = 0.0f;
+    m_style.WindowBorderSize = 0.0f;
+
+    m_style.CellPadding = ImVec2(0.0f, 0.0f);
+    m_style.FramePadding = ImVec2(0.0f, 0.0f);
+    m_style.WindowPadding = ImVec2(0.0f, 0.0f);
+    m_style.DisplayWindowPadding = ImVec2(0.0f, 0.0f);
+    m_style.SeparatorTextPadding = ImVec2(0.0f, 0.0f);
+    m_style.DisplaySafeAreaPadding = ImVec2(0.0f, 0.0f);
     // ...
 
     // EXAMPLE COLOR PROPERTIES:
@@ -281,12 +349,4 @@ void OledUiRenderer::resetTheme()
 {
     ImGuiStyle &style = ImGui::GetStyle();
     style = m_oldStyle;
-}
-
-bool OledUiRenderer::hasUpdate()
-{
-    if (isUpdated)
-        return true;
-    else
-        return false;
 }

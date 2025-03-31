@@ -36,7 +36,7 @@ bool CameraController::setup() {
     std::string subdevPath = m_mediaController.getSubdeviceFromName("tc358743");
     if (!m_v4l2Controller.openDevice(subdevPath)) return false;
     if (!m_v4l2Controller.setEdid(edid_1080p30)) return false;
-    SDL_Delay(3000);
+    SDL_Delay(5000);
     if (!m_v4l2Controller.setDvTimings()) return false;
     v4l2_dv_timings timings =  m_v4l2Controller.queryDvTimings();
     m_v4l2Controller.printDvTimings(timings);

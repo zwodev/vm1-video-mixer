@@ -8,7 +8,9 @@
 
 #include "FileAssignmentWidget.h"
 
-FileAssignmentWidget::FileAssignmentWidget(const std::string& directory, VideoPlane* videoPlaneLeft, VideoPlane* videoPlaneRight) {
+FileAssignmentWidget::FileAssignmentWidget(Registry& registry, const std::string& directory, VideoPlane* videoPlaneLeft, VideoPlane* videoPlaneRight) :
+    m_registry(registry)
+{
     m_videoPlaneLeft = videoPlaneLeft;
     m_videoPlaneRight = videoPlaneRight;
     m_directory = directory;
@@ -17,6 +19,7 @@ FileAssignmentWidget::FileAssignmentWidget(const std::string& directory, VideoPl
 
 
 void FileAssignmentWidget::renderFileList() {
+    
     ImGui::BeginChild("FileList", ImVec2(0, 0), true);
     for (const auto& file : m_files) {
         if (ImGui::Selectable(file.c_str(), m_selectedFile == file)) {
@@ -33,16 +36,19 @@ void FileAssignmentWidget::renderFileList() {
 }
 
 void FileAssignmentWidget::renderButtonMatrix() {
+    ImGui::BeginChild("Button Matrix");
     float buttonSize = (ImGui::GetContentRegionAvail().x - ((WIDTH + 1) * SPACING)) / WIDTH;
-    
     for (int y = 0; y < HEIGHT; y++) {
         for (int x = 0; x < WIDTH; x++) {
             ImGui::PushID(y * WIDTH + x);
             
-            ImVec4 buttonColor = m_assignedFiles[y][x].empty() ? m_defaultButtonColor : m_assignedButtonColor;
-            if (isButtonHighlighted(x, y)) {
-                buttonColor = m_highlightedButtonColor;
-            }
+            //ImVec4 buttonColor = m_assignedFiles[y][x].empty() ? m_defaultButtonColor : m_assignedButtonColor;
+            int id = m_bank * (WIDTH * HEIGHT) + y * WIDTH + x;
+            std::string filePath = m_registry.getValue(id);
+            ImVec4 buttonColor = filePath.empty() ? m_defaultButtonColor : m_assignedButtonColor;
+            //if (isButtonHighlighted(x, y)) {
+            //    buttonColor = m_highlightedButtonColor;
+            //}
             
             ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
             ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 10.0f);
@@ -50,7 +56,7 @@ void FileAssignmentWidget::renderButtonMatrix() {
             std::string buttonLabel = m_keyLabels[y][x];
             
             if (ImGui::Button(buttonLabel.c_str(), ImVec2(buttonSize, buttonSize))) {
-                handleButtonClick(x, y);
+                handleButtonClick(id);
             }
 
             ImGui::PopStyleVar();
@@ -58,7 +64,8 @@ void FileAssignmentWidget::renderButtonMatrix() {
 
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("FILE_PAYLOAD")) {
-                    m_assignedFiles[y][x] = static_cast<const char*>(payload->Data);
+                    m_registry.addEntry(id, m_directory + std::string(static_cast<const char*>(payload->Data)));
+                    //m_assignedFiles[y][x] = static_cast<const char*>(payload->Data);
                 }
                 ImGui::EndDragDropTarget();
             }
@@ -68,17 +75,28 @@ void FileAssignmentWidget::renderButtonMatrix() {
         }
         ImGui::NewLine();
     }
+    ImGui::EndChild();
+}
+
+void FileAssignmentWidget::renderSettings() {
+    ImGui::BeginChild("Settings", ImVec2(0, 0), true);
+    ImGui::SliderInt("Bank", &m_bank, 0, 3);
+    ImGui::EndChild();
 }
 
 void FileAssignmentWidget::render() {
     ImGui::Begin("File Assignment");
 
-    ImGui::Columns(2);
+    ImGui::Columns(3);
     // Left column: File list
     renderFileList();
     ImGui::NextColumn();
-    // Right column: Button matrix
+    // Middle column: Button matrix
     renderButtonMatrix();
+    ImGui::NextColumn();
+    // Right column: Render settings
+    renderSettings();
+
     ImGui::End();
 
     handleKeyboardShortcuts();
@@ -92,18 +110,21 @@ void FileAssignmentWidget::loadFiles(const std::string& directory) {
     }
 }
 
-void FileAssignmentWidget::handleButtonClick(int x, int y) {
-    if (!m_assignedFiles[y][x].empty()) {
-        std::string fileName = m_assignedFiles[y][x];
-        
-        printf("Play: (%d, %d)\n", x, y);
+void FileAssignmentWidget::handleButtonClick(int id) {
 
+    std::string filePath = m_registry.getValue(id);
+    if (!filePath.empty()) { 
+        
+
+        int oddRow = (id / WIDTH) % 2;
         // Select plane
-        if (y == 0) {
-            m_videoPlaneLeft->playAndFade(m_directory + "/" + fileName);
+        if (oddRow == 0) {
+            printf("Play Left: (ID: %d, FILE: %s)\n", id, filePath.c_str());
+            m_videoPlaneLeft->playAndFade(filePath);
         } 
         else {
-            m_videoPlaneRight->playAndFade(m_directory + "/" + fileName);
+            printf("Play Right: (ID: %d, FILE: %s)\n", id, filePath.c_str());
+            m_videoPlaneRight->playAndFade(filePath);
         }
     }
 }
@@ -112,8 +133,9 @@ void FileAssignmentWidget::handleKeyboardShortcuts() {
     for (int y = 0; y < HEIGHT; y++) {
         for (int x = 0; x < WIDTH; x++) {
             ImGuiKey key = m_keyboardShortcuts[y][x];
-            if (ImGui::IsKeyPressed(key)) {
-                handleButtonClick(x, y);
+            if (ImGui::IsKeyPressed(key) && !ImGui::IsKeyDown(ImGuiKey_LeftShift)) {
+                int id = m_bank * (2 * WIDTH) + (y * WIDTH) + x;
+                handleButtonClick(id);
                 return;
             }
         }

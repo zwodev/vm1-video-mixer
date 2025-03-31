@@ -13,6 +13,7 @@
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_opengl3.h"
+
 #include <stdio.h>
 #include <SDL3/SDL.h>
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -21,14 +22,19 @@
 #include <SDL3/SDL_opengl.h>
 #endif
 
+#include "source/Registry.h"
 #include "source/PlaneRenderer.h"
 #include "source/VideoPlayer.h"
 #include "source/VideoPlane.h"
 #include "source/CameraRenderer.h"
 #include "source/FileAssignmentWidget.h"
+#include "source/MenuSystem.h"
+#include "source/KeyForwarder.h"
 #include "source/CameraController.h"
 #include "source/OledUiRenderer.h"
 #include "source/OledController.h"
+
+#define USE_OLED
 
 const int FBO_WIDTH = 128;
 const int FBO_HEIGHT = 128;
@@ -122,8 +128,8 @@ int main(int, char **)
     ImGuiContext *mainContext = ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
     (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
     // Setup Platform/Renderer backends for main context
     ImGui_ImplSDL3_InitForOpenGL(windows[0], gl_context);
@@ -135,7 +141,8 @@ int main(int, char **)
     ImGuiIO &fbo_io = ImGui::GetIO();
     (void)fbo_io;
     fbo_io.DisplaySize = ImVec2(FBO_WIDTH, FBO_HEIGHT);
-    fbo_io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    // fbo_io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
     // Setup Platform/Renderer backends for main context
     ImGui_ImplSDL3_InitForOpenGL(windows[0], gl_context);
@@ -162,22 +169,32 @@ int main(int, char **)
     CameraRenderer cameraRenderer0;
     // cameraRenderer0.start();
 
+    Registry registry;
+
     // Oled
-    OledUiRenderer oledUiRenderer(FBO_WIDTH, FBO_HEIGHT);
+    OledUiRenderer oledUiRenderer(registry, FBO_WIDTH, FBO_HEIGHT);
     oledUiRenderer.initialize();
+
+    // Keyforwarding
+    KeyForwarder keyForwarder;
+
+#ifdef USE_OLED
     OledController oledController;
     oledController.initializeOled();
     oledController.initializeImageBuffer();
     // oledController.drawTestBMP();
     // oledController.initializeExternalFboTexture(&oledUiRenderer.m_fboTexture);
+#endif
 
     // File Assignment Widget
-    FileAssignmentWidget fileAssignmentWidget("../videos/", &videoPlane0, &videoPlane1);
+    FileAssignmentWidget fileAssignmentWidget(registry, "../videos/", &videoPlane0, &videoPlane1);
 
     // Prepared delta time
     Uint64 lastTime = SDL_GetTicks();
     bool isVideoEnabled = true;
     bool isCameraEnabled = false;
+
+    std::string selectedFile;
 
     // Main loop
     bool done = false;
@@ -207,6 +224,9 @@ int main(int, char **)
             SDL_Delay(10);
             continue;
         }
+
+        keyForwarder.forwardArrowKeys(mainContext, fboContext);
+
         // START: Render to FBO (OLED) before main gui
         ImGui::SetCurrentContext(fboContext);
         ImGui_ImplOpenGL3_NewFrame();
@@ -220,6 +240,9 @@ int main(int, char **)
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
+
+        // Test Window
+        // menuTest.render();
 
         // Development Window
         // TODO: Put in own class.
@@ -295,12 +318,11 @@ int main(int, char **)
             SDL_GL_SwapWindow(windows[1]);
         }
 
-        // Render OLED
-        if (oledUiRenderer.hasUpdate())
-        {
-            oledUiRenderer.renderToRGB565(oledController.oledImage);
-            oledController.render();
-        }
+// Render OLED
+#ifdef USE_OLED
+        oledUiRenderer.renderToRGB565(oledController.oledImage, false);
+        oledController.render();
+#endif
 
         // End the frame
         ImGui::EndFrame();

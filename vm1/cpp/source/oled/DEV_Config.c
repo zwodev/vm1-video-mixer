@@ -159,7 +159,7 @@ UBYTE DEV_ModuleInit(void)
 #if USE_SPI
     printf("USE_SPI\r\n");
     // wiringPiSPISetup(0,9000000);
-    wiringPiSPISetupMode(0, 9000000, 3);
+    wiringPiSPISetupMode(0, 20000000, 3);
 #elif USE_IIC
     OLED_DC_0;
     OLED_CS_0;
@@ -201,7 +201,7 @@ UBYTE DEV_ModuleInit(void)
 
 #if USE_SPI
     printf("USE_SPI\r\n");
-    SPI_Handle = lgSpiOpen(0, 0, 10000000, 0);
+    SPI_Handle = lgSpiOpen(0, 0, 20000000, 0);
 
 #elif USE_IIC
     printf("USE_IIC\r\n");

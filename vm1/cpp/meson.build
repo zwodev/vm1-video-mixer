@@ -1,5 +1,5 @@
 # project('vm-1', 'cpp')
-project('vm-1', ['c', 'cpp'])
+project('vm-1', ['c', 'cpp'], default_options: ['cpp_std=c++23'])
 
 
 add_project_arguments('-fpermissive', language : 'cpp')
@@ -46,13 +46,14 @@ sources = [ 'main.cpp',
             'source/GLHelper.cpp',
             'source/MediaController.cpp',
             'source/V4L2Controller.cpp',
-            'source/CameraController.cpp' ,
+            'source/CameraController.cpp',
+            'source/MenuSystem.cpp',
             'source/OledController.cpp',
             'source/OledUiRenderer.cpp',
             'source/oled/DEV_Config.c',  
             'source/oled/GUI_BMPfile.c',  
             'source/oled/GUI_Paint.c',  
-            'source/oled/OLED_1in5_rgb.c',  
+            'source/oled/OLED_1in5_rgb.c'
           ]
 
 executable('vm1', 

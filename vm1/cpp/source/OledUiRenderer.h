@@ -9,6 +9,8 @@
 #pragma once
 
 #include "imgui.h"
+#include "MenuSystem.h"
+#include "Registry.h"
 
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_opengl.h>
@@ -18,31 +20,33 @@
 class OledUiRenderer
 {
 private:
+    Registry &m_registry;
     int m_width = 0;
     int m_height = 0;
 
     ImGuiStyle m_oldStyle;
     ImGuiStyle m_style;
+    ImFont *font_std;
+    ImFont *font_big;
 
     GLuint m_fbo;
     GLuint m_fboTexture;
 
-    bool isUpdated;
+    MenuSystem m_menuSystem;
 
 public:
-    OledUiRenderer(int width, int height);
+    OledUiRenderer(Registry &registry, int width, int height);
     ~OledUiRenderer();
 
     GLuint texture();
     void initialize();
     void update();
-    void renderToRGB565(uint8_t *buffer);
-    bool hasUpdate();
+    void renderToRGB565(uint8_t *buffer, bool saveAsBmp = false);
+    void renderToFramebuffer(bool saveAsPng = false);
 
 private:
     void updateContent();
     void createFramebufferAndTexture();
-    void renderToFramebuffer(bool saveAsPng);
     void createTheme();
     void setTheme();
     void resetTheme();
