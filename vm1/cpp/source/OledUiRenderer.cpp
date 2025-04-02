@@ -7,6 +7,7 @@
  */
 
 #include "OledUiRenderer.h"
+#include "FontManager.h"
 
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_opengl3.h"
@@ -68,9 +69,9 @@ void OledUiRenderer::initialize()
     createTheme();
 
     ImGuiIO &fbo_io = ImGui::GetIO();
-    font_std = fbo_io.Fonts->AddFontFromFileTTF("subprojects/imgui/imgui/misc/fonts/ProggyClean.ttf", 13.0f);
-    font_big = fbo_io.Fonts->AddFontFromFileTTF("subprojects/imgui/imgui/misc/fonts/ProggyClean.ttf", 26.0f);
-    fbo_io.FontDefault = font_std;
+    FontManager::GetInstance().font_std = fbo_io.Fonts->AddFontFromFileTTF("subprojects/imgui/imgui/misc/fonts/ProggyClean.ttf", 13.0f);
+    FontManager::GetInstance().font_big = fbo_io.Fonts->AddFontFromFileTTF("subprojects/imgui/imgui/misc/fonts/ProggyClean.ttf", 26.0f);
+    fbo_io.FontDefault = FontManager::GetInstance().font_std;
     fbo_io.Fonts->Build();
 
     createFramebufferAndTexture();

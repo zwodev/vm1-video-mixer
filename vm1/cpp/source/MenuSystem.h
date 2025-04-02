@@ -12,7 +12,8 @@ public:
     enum MenuType
     {
         MT_Logo,
-        MT_InputSelection
+        MT_InputSelection,
+        MT_PlaybackSelection
     };
 
 public:
@@ -22,6 +23,7 @@ public:
 private:
     void buildMenuStructure();
     void buildInputMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntry);
+    void buildPlaybackMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntry);
     void setMenu(MenuType menuType);
     void handleKeyboardShortcuts();
 
@@ -34,15 +36,16 @@ private:
     MenuEntry *m_rootMenu = nullptr;
     MenuEntry *m_currentMenu = nullptr;
     MenuEntry *m_previousMenu = nullptr;
+    MenuType m_currentActiveMenu;
 
     // Keyboard Shortcuts
     std::vector<ImGuiKey> m_keyboardShortcuts = {
-        // ImGuiKey_Q, ImGuiKey_W, ImGuiKey_E, ImGuiKey_R,
-        // ImGuiKey_T, ImGuiKey_Z, ImGuiKey_U, ImGuiKey_I,
-        // ImGuiKey_A, ImGuiKey_S, ImGuiKey_D, ImGuiKey_F,
-        // ImGuiKey_G, ImGuiKey_H, ImGuiKey_J, ImGuiKey_K
         ImGuiKey_A, ImGuiKey_S, ImGuiKey_D, ImGuiKey_F,
         ImGuiKey_G, ImGuiKey_H, ImGuiKey_J, ImGuiKey_K,
         ImGuiKey_Z, ImGuiKey_X, ImGuiKey_C, ImGuiKey_V,
         ImGuiKey_B, ImGuiKey_N, ImGuiKey_M, ImGuiKey_Comma};
+
+    std::vector<ImGuiKey> m_keyboardShortcuts_editButtons = {
+        ImGuiKey_Q, ImGuiKey_W, ImGuiKey_E, ImGuiKey_R,
+        ImGuiKey_T, ImGuiKey_Y, ImGuiKey_U, ImGuiKey_I};
 };

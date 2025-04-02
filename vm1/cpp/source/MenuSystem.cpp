@@ -18,6 +18,13 @@ void MenuSystem::buildMenuStructure()
     auto inputMenu = std::make_unique<SubmenuEntry>("Input Selection");
     buildInputMenuStructure(inputMenu);
     m_menus[MT_InputSelection] = std::move(inputMenu);
+
+    // playback menu
+    auto playbackMenu = std::make_unique<SubmenuEntry>("Playback Selection");
+    buildPlaybackMenuStructure(playbackMenu);
+    m_menus[MT_PlaybackSelection] = std::move(playbackMenu);
+
+    m_currentActiveMenu = MT_InputSelection;
 }
 
 void MenuSystem::buildInputMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntry)
@@ -35,6 +42,36 @@ void MenuSystem::buildInputMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntr
     rootEntry->addSubmenuEntry(std::move(shaderSelectionEntry));
 }
 
+void MenuSystem::buildPlaybackMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntry)
+{
+    /*
+    Playback-Menu (contains also trigger-options):
+    - start-time
+    - end-time
+    - loop yes/no
+    - play backwards
+    - live-looper
+    - mute audio
+    - OSC-In/Out
+    - MIDI-In/Out
+    - MQTT-In/Out
+    */
+
+    std::unique_ptr<MenuEntry> starttimeEntry = std::make_unique<SubmenuEntry>("start-time");
+    rootEntry->addSubmenuEntry(std::move(starttimeEntry));
+
+    std::unique_ptr<MenuEntry> endtimeEntry = std::make_unique<SubmenuEntry>("end-time");
+    rootEntry->addSubmenuEntry(std::move(endtimeEntry));
+
+    std::unique_ptr<MenuEntry> loopEntry = std::make_unique<SubmenuEntry>("loop");
+    rootEntry->addSubmenuEntry(std::move(loopEntry));
+
+    std::unique_ptr<MenuEntry> playbackwardsEntry = std::make_unique<SubmenuEntry>("play backwards");
+    rootEntry->addSubmenuEntry(std::move(playbackwardsEntry));
+
+    // ... etc ...
+}
+
 void MenuSystem::setMenu(MenuType menuType)
 {
     if (m_menus.find(menuType) != m_menus.end())
@@ -47,15 +84,38 @@ void MenuSystem::setMenu(MenuType menuType)
 void MenuSystem::handleKeyboardShortcuts()
 {
     int numButtons = m_keyboardShortcuts.size();
+    // check the media-buttons
     for (int i = 0; i < numButtons; ++i)
     {
         ImGuiKey key = m_keyboardShortcuts[i];
-        if (ImGui::IsKeyDown(key) && ImGui::IsKeyDown(ImGuiKey_LeftShift))
+        // if (ImGui::IsKeyDown(key) && ImGui::IsKeyDown(ImGuiKey_LeftShift))
+        if (ImGui::IsKeyDown(key))
         {
             int id = m_bank * numButtons + i;
             m_id = id;
-            setMenu(MT_InputSelection);
+            setMenu(m_currentActiveMenu);
+            // printf("Current Active Menu: %d\n", m_currentActiveMenu);
             return;
+        }
+    }
+
+    // check the edit-buttons
+    for (ImGuiKey editButton : m_keyboardShortcuts_editButtons)
+    {
+        if (ImGui::IsKeyDown(editButton))
+        {
+            switch (editButton)
+            {
+            case ImGuiKey_Q:
+                m_currentActiveMenu = MT_InputSelection;
+                break;
+            case ImGuiKey_W:
+                m_currentActiveMenu = MT_PlaybackSelection;
+                break;
+            default:
+                break;
+            }
+            setMenu(m_currentActiveMenu);
         }
     }
 }
@@ -157,6 +217,6 @@ void MenuSystem::render()
         UI::renderText(label, isSelected ? UI::TextState::SELECTED : UI::TextState::DEFAULT);
     }
 
-    UI::renderOverlayText(std::to_string(m_id + 1));
+    UI::renderMediaButtonID(m_id + 1);
     // ImGui::End();
 }

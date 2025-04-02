@@ -1,6 +1,7 @@
 #pragma once
 
 #include "imgui.h"
+#include "FontManager.h"
 #include <string>
 
 namespace UI
@@ -88,9 +89,37 @@ namespace UI
         ImGui::PopStyleColor();
     }
 
-    void renderOverlayText(const std::string &text)
+    void renderMediaButtonID(int id)
     {
+        ImFont *font_big = FontManager::GetInstance().font_big;
+        ImGui::PushFont(FontManager::GetInstance().font_big);
+
         ImDrawList *drawList = ImGui::GetForegroundDrawList();
-        drawList->AddText(ImVec2(100, 10), IM_COL32(0, 255, 0, 255), text.c_str());
+
+        std::string text = std::to_string(id);
+        ImVec2 textExtent = ImGui::CalcTextSize(text.c_str());
+
+        // Draw rectangle
+        ImGui::PushClipRect({}, {1000, 1000}, false); // Disable clipping to prevent cutting corners
+
+        int x = 100; // todo: calculate position based on font size
+        int y = 10;
+
+        // Calculate rectangle dimensions considering padding
+        ImVec2 rectStart = ImVec2(x, y);
+        ImVec2 rectEnd = ImVec2(
+            x + static_cast<float>(textExtent.x) + 0.0f,
+            y + static_cast<float>(textExtent.y) + 0.0f);
+
+        // Draw white text
+        ImU32 textColor = IM_COL32(0, 0, 0, 255);
+
+        drawList->AddRectFilled(rectStart, rectEnd, IM_COL32(255, 255, 255, 255)); // Black background
+
+        drawList->AddText(ImVec2(x, y), textColor, text.c_str());
+
+        ImGui::PopClipRect();
+        ImGui::PopFont();
     }
+
 }
