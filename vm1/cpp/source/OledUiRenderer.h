@@ -17,9 +17,29 @@
 #include <SDL3/SDL_opengles2.h>
 #include <SDL3/SDL_egl.h>
 
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+
+struct ImageBuffer {
+    ImageBuffer(int width, int height) {
+        this->width = width;
+        this->height = height;
+        buffer = std::vector<unsigned char>(width * height * 4);
+    }
+
+    int width;
+    int height;
+    std::vector<unsigned char> buffer;
+};
+
 class OledUiRenderer
 {
 private:
+    std::queue<ImageBuffer> m_imageQueue;
+    std::mutex m_mutex;
+    std::condition_variable m_cv;
+
     Registry &m_registry;
     int m_width = 0;
     int m_height = 0;
@@ -41,6 +61,8 @@ public:
     GLuint texture();
     void initialize();
     void update();
+    void queueCurrentImage();
+    ImageBuffer popImage();
     void renderToRGB565(uint8_t *buffer, bool saveAsBmp = false);
     void renderToFramebuffer(bool saveAsPng = false);
 

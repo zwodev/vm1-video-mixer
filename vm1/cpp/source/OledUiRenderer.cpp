@@ -19,36 +19,6 @@
 #include <fstream>
 #include <cstdint>
 
-#pragma pack(push, 1) // Ensure proper struct alignment
-struct BMPFileHeader
-{
-    uint16_t bfType = 0x4D42; // "BM"
-    uint32_t bfSize;          // File size
-    uint16_t bfReserved1 = 0;
-    uint16_t bfReserved2 = 0;
-    uint32_t bfOffBits = 70; // Pixel data offset (56-byte DIB + 16-byte masks)
-};
-
-struct BMPInfoHeaderV3
-{
-    uint32_t biSize = 56; // 56-byte BITMAPV3INFOHEADER
-    int32_t biWidth;
-    int32_t biHeight;
-    uint16_t biPlanes = 1;
-    uint16_t biBitCount = 16;   // 16-bit BMP
-    uint32_t biCompression = 3; // BI_BITFIELDS (16-bit)
-    uint32_t biSizeImage;
-    int32_t biXPelsPerMeter = 2835;
-    int32_t biYPelsPerMeter = 2835;
-    uint32_t biClrUsed = 0;
-    uint32_t biClrImportant = 0;
-    uint32_t biRedMask = 0xF800;   // 5-bit red
-    uint32_t biGreenMask = 0x07E0; // 6-bit green
-    uint32_t biBlueMask = 0x001F;  // 5-bit blue
-    uint32_t biAlphaMask = 0x0000; // No alpha
-};
-#pragma pack(pop)
-
 OledUiRenderer::OledUiRenderer(Registry &registry, int width, int height) : m_registry(registry),
                                                                             m_menuSystem(registry),
                                                                             m_width(width),
@@ -118,6 +88,7 @@ void OledUiRenderer::update()
     ImGui::End();
 
     renderToFramebuffer(false);
+    queueCurrentImage();
 
     // Reset to old theme
     resetTheme();
@@ -130,6 +101,27 @@ void OledUiRenderer::updateContent()
 {
     // Render the actual UI (flags: no title, borderless, etc)
     m_menuSystem.render();
+}
+
+void OledUiRenderer::queueCurrentImage()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    ImageBuffer imageBuffer(m_width, m_height);
+    glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, imageBuffer.buffer.data());
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_imageQueue.push(imageBuffer);
+    m_cv.notify_one();
+}
+
+ImageBuffer OledUiRenderer::popImage() 
+{
+        std::unique_lock<std::mutex> lock(m_mutex);
+        m_cv.wait(lock, [this] { return !m_imageQueue.empty(); });
+        ImageBuffer imageBuffer = m_imageQueue.front();
+        m_imageQueue.pop();
+        return imageBuffer;
 }
 
 void OledUiRenderer::renderToFramebuffer(bool saveAsPng)
@@ -178,79 +170,6 @@ void OledUiRenderer::renderToFramebuffer(bool saveAsPng)
 
     // Unbind the FBO
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void OledUiRenderer::renderToRGB565(uint8_t *buffer, bool saveAsBmp)
-{
-    // Bind the FBO
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-    // glViewport(0, 0, m_width, m_height);
-
-    // Read pixels from the FBO
-    std::vector<unsigned char> pixels(m_width * m_height * 4);
-    glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-
-    // Now you can process the data
-    for (int y = 0; y < m_height; ++y)
-    {
-        for (int x = 0; x < m_width; ++x)
-        {
-            // Calculate the flipped y index (flip vertically)
-            int flippedY = m_height - 1 - y;
-
-            // Fetch RGBA values from the texture buffer (no horizontal flip)
-            uint8_t r = pixels[(flippedY * m_width + x) * 4 + 0];
-            uint8_t g = pixels[(flippedY * m_width + x) * 4 + 1];
-            uint8_t b = pixels[(flippedY * m_width + x) * 4 + 2];
-
-            // Convert to RGB565
-            uint16_t rgb565 = (r >> 3) << 11 | (g >> 2) << 5 | (b >> 3);
-
-            // Store the 16-bit RGB565 into the buffer as two bytes
-            buffer[(y * m_width + x) * 2 + 0] = (uint8_t)(rgb565 >> 8);   // High byte (most significant byte)
-            buffer[(y * m_width + x) * 2 + 1] = (uint8_t)(rgb565 & 0xFF); // Low byte (least significant byte)
-        }
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    if (saveAsBmp)
-    {
-        std::string filename = "output.bmp";
-        // Ensure 4-byte row alignment
-        int rowSize = ((m_width * 2 + 3) / 4) * 4;
-        int dataSize = rowSize * m_height;
-        int fileSize = sizeof(BMPFileHeader) + sizeof(BMPInfoHeaderV3) + dataSize;
-
-        BMPFileHeader fileHeader;
-        fileHeader.bfSize = fileSize;
-
-        BMPInfoHeaderV3 infoHeader;
-        infoHeader.biWidth = m_width;
-        infoHeader.biHeight = -m_height; // Top-down DIB
-        infoHeader.biSizeImage = dataSize;
-
-        std::ofstream file(filename, std::ios::binary);
-        if (!file)
-        {
-            printf("Failed to open file for writing: %s\n", filename.c_str());
-            return;
-        }
-
-        // Write BMP headers
-        file.write(reinterpret_cast<const char *>(&fileHeader), sizeof(fileHeader));
-        file.write(reinterpret_cast<const char *>(&infoHeader), sizeof(infoHeader));
-
-        // Write pixel data row by row (ensuring alignment)
-        std::vector<uint8_t> rowBuffer(rowSize, 0);
-        for (int y = 0; y < m_height; ++y)
-        {
-            memcpy(rowBuffer.data(), &buffer[y * m_width * 2], m_width * 2);
-            file.write(reinterpret_cast<const char *>(rowBuffer.data()), rowSize);
-        }
-
-        file.close();
-        printf("Saved BMP: %s\n", filename.c_str());
-    }
 }
 
 void OledUiRenderer::createTheme()

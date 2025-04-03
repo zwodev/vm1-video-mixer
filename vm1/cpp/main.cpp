@@ -180,8 +180,10 @@ int main(int, char **)
 
 #ifdef USE_OLED
     OledController oledController;
-    oledController.initializeOled();
-    oledController.initializeImageBuffer();
+    //oledController.initializeOled();
+    //oledController.initializeImageBuffer();
+    oledController.setOledUiRenderer(&oledUiRenderer);
+    oledController.start();
     // oledController.drawTestBMP();
     // oledController.initializeExternalFboTexture(&oledUiRenderer.m_fboTexture);
 #endif
@@ -319,10 +321,11 @@ int main(int, char **)
         }
 
 // Render OLED
-#ifdef USE_OLED
-        oledUiRenderer.renderToRGB565(oledController.oledImage, false);
-        oledController.render();
-#endif
+//#ifdef USE_OLED
+        //oledUiRenderer.update();
+        //oledUiRenderer.renderToRGB565(oledController.oledImage, false);
+        //oledController.render();
+//#endif
 
         // End the frame
         ImGui::EndFrame();

@@ -8,16 +8,18 @@
 
 #pragma once
 
+#include "OledUiRenderer.h"
+
 #include "oled/OLED_1in5_rgb.h"
 #include "oled/DEV_Config.h"
 #include "oled/GUI_Paint.h"
 #include "oled/GUI_BMPfile.h"
 
+#include <thread>
+
 class OledController
 {
 public:
-    UBYTE *oledImage;
-
     OledController();
     ~OledController();
 
@@ -25,9 +27,23 @@ public:
     int initializeOled();
     int initializeImageBuffer();
 
+    void setOledUiRenderer(OledUiRenderer* oledUiRenderer);
+    void start();
+    void stop();
+
+    void renderToRGB565(ImageBuffer& imageBuffer, bool saveAsBmp);
     void drawTestBMP();
     void render();
 
 private:
-    UWORD imagesize;
+    void process();
+
+public:
+    UBYTE *oledImage;
+
+private:
+    bool m_isRunning = false;
+    std::thread m_thread;
+    OledUiRenderer* m_oledUiRenderer = nullptr;
+    UWORD m_imagesize;
 };
