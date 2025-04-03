@@ -3,6 +3,7 @@
 #include "imgui.h"
 #include "FontManager.h"
 #include <string>
+#include <algorithm>
 
 namespace UI
 {
@@ -92,6 +93,9 @@ namespace UI
     void renderMediaButtonID(int id)
     {
         ImFont *font_big = FontManager::GetInstance().font_big;
+        int width = (int)ImGui::GetWindowSize().x;
+        int height = (int)ImGui::GetWindowSize().y;
+
         ImGui::PushFont(FontManager::GetInstance().font_big);
 
         ImDrawList *drawList = ImGui::GetForegroundDrawList();
@@ -99,26 +103,55 @@ namespace UI
         std::string text = std::to_string(id);
         ImVec2 textExtent = ImGui::CalcTextSize(text.c_str());
 
-        // Draw rectangle
-        ImGui::PushClipRect({}, {1000, 1000}, false); // Disable clipping to prevent cutting corners
+        // ImGui::PushClipRect({}, {1000, 1000}, false); // Disable clipping to prevent cutting corners
 
-        int x = 100; // todo: calculate position based on font size
-        int y = 10;
+        int x = width - (int)textExtent.x;
+        int y = 0;
 
-        // Calculate rectangle dimensions considering padding
         ImVec2 rectStart = ImVec2(x, y);
         ImVec2 rectEnd = ImVec2(
-            x + static_cast<float>(textExtent.x) + 0.0f,
-            y + static_cast<float>(textExtent.y) + 0.0f);
+            x + static_cast<float>(textExtent.x),
+            y + static_cast<float>(textExtent.y) - 4); // hard-coded 4 pixels less in height
 
-        // Draw white text
+        // printf("textExtend x: %f, y: %f // start-x: %d, start-y: %d, width: %d, height: %d\n", textExtent.x, textExtent.y, x, y, width, height);
+
+        ImU32 rectColor = IM_COL32(255, 255, 255, 255);
         ImU32 textColor = IM_COL32(0, 0, 0, 255);
-
-        drawList->AddRectFilled(rectStart, rectEnd, IM_COL32(255, 255, 255, 255)); // Black background
-
+        drawList->AddRectFilled(rectStart, rectEnd, rectColor);
+        // drawList->AddRectFilled(ImVec2(0, 0), ImVec2(width, textExtent.y - 4), rectColor);
         drawList->AddText(ImVec2(x, y), textColor, text.c_str());
+        // drawList->AddRectFilled(ImVec2(0, rectEnd.y), ImVec2(width, rectEnd.y + 1), rectColor);
+        drawList->AddRectFilled(ImVec2(rectStart.x - 3, 0), ImVec2(rectStart.x - 1, rectEnd.y), textColor);
 
-        ImGui::PopClipRect();
+        // ImGui::PopClipRect();
+        ImGui::PopFont();
+    }
+
+    void renderMenuTitle(std::string menuTitle)
+    {
+        std::transform(menuTitle.begin(), menuTitle.end(), menuTitle.begin(), ::toupper);
+
+        ImFont *font_big = FontManager::GetInstance().font_big;
+        int width = (int)ImGui::GetWindowSize().x;
+        int height = (int)ImGui::GetWindowSize().y;
+        ImGui::PushFont(FontManager::GetInstance().font_big);
+
+        ImDrawList *drawList = ImGui::GetForegroundDrawList();
+        ImVec2 textExtent = ImGui::CalcTextSize(menuTitle.c_str());
+
+        int x = 0;
+        int y = 0;
+
+        ImVec2 rectStart = ImVec2(x, y);
+        ImVec2 rectEnd = ImVec2(
+            x + static_cast<float>(textExtent.x),
+            y + static_cast<float>(textExtent.y));
+
+        ImU32 bgColor = IM_COL32(255, 255, 255, 255);
+        ImU32 textColor = IM_COL32(0, 0, 0, 255);
+        // drawList->AddRectFilled(rectStart, rectEnd, rectColor);
+        drawList->AddRectFilled(ImVec2(0, 0), ImVec2(width, textExtent.y - 4), bgColor);
+        drawList->AddText(ImVec2(x, y), textColor, menuTitle.c_str());
         ImGui::PopFont();
     }
 
