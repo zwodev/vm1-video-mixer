@@ -15,12 +15,12 @@ MenuSystem::MenuSystem(Registry &registry) : m_registry(registry)
 void MenuSystem::buildMenuStructure()
 {
     // input association menu
-    auto inputMenu = std::make_unique<SubmenuEntry>("Input Selection");
+    auto inputMenu = std::make_unique<SubmenuEntry>("Source");
     buildInputMenuStructure(inputMenu);
     m_menus[MT_InputSelection] = std::move(inputMenu);
 
     // playback menu
-    auto playbackMenu = std::make_unique<SubmenuEntry>("Playback Selection");
+    auto playbackMenu = std::make_unique<SubmenuEntry>("Playback");
     buildPlaybackMenuStructure(playbackMenu);
     m_menus[MT_PlaybackSelection] = std::move(playbackMenu);
 
@@ -199,6 +199,8 @@ void MenuSystem::render()
         m_currentSelection++;
     }
 
+    ImGui::SetCursorPosY(23);
+
     for (size_t i = 0; i < submenuEntry->submenus.size(); ++i)
     {
         bool isSelected = (i == m_currentSelection);
@@ -217,6 +219,8 @@ void MenuSystem::render()
         UI::renderText(label, isSelected ? UI::TextState::SELECTED : UI::TextState::DEFAULT);
     }
 
+    UI::renderMenuTitle(submenuEntry->displayName);
     UI::renderMediaButtonID(m_id + 1);
+
     // ImGui::End();
 }
