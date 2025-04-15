@@ -12,7 +12,7 @@ wget https://github.com/localsend/localsend/releases/download/v1.17.0/$LOCALSEND
 sudo dpkg -i $LOCALSEND_PACKET_NAME
 sudo apt-get install -f
 rm $LOCALSEND_PACKET_NAME
-wget https://github.com/zwodev/vm1-video-mixer/tree/master/vm1/res/localsend/shared_preferences.json -O LOCALSEND_SETTINGS_FILE
+wget https://raw.githubusercontent.com/zwodev/vm1-video-mixer/refs/heads/master/vm1/res/localsend/shared_preferences.json -O $LOCALSEND_SETTINGS_FILE
 sed -i "s|###VIDEO_DST###|$VIDEO_DIR|g" $LOCALSEND_SETTINGS_FILE
 
 

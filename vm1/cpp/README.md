@@ -76,16 +76,8 @@ sudo systemctl stop lightdm.service
  ### LocalSend for easy file transfers
 ```
 
-# This may cause problems with xvfb, so remove it
-sudo apt remove xdg-desktop-portal
-
-# Install xvfb
-sudo apt install xvfb
-
 # Install LocalSend
-wget https://github.com/localsend/localsend/releases/download/v1.17.0/LocalSend-1.17.0-linux-arm-64.deb
-sudo dpkg -i LocalSend-1.17.0-linux-arm-64.deb
-sudo apt-get install -f
+scripts/install-localsend.sh
 
 # Run LocalSend
 xvfb-run -a localsend_app
