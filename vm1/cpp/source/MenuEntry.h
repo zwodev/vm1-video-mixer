@@ -46,7 +46,7 @@ struct FilesystemEntry : public SubmenuEntry {
         for (const auto& entry : std::filesystem::directory_iterator(path)) {
             if (entry.is_regular_file()) {
                 std::string filename = entry.path().filename().string();
-                if (filename.find("h265") != std::string::npos) {       
+                if (filename.find("h265") != std::string::npos || filename.find("hdmi") != std::string::npos) {       
                     std::unique_ptr<ButtonEntry> fileButton = std::make_unique<ButtonEntry>(filename);
                     std::string filePath = path + filename;
                     std::string currentValue = registry.getValue(id);
