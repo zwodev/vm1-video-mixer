@@ -60,7 +60,7 @@ public:
 
 public:
     bool initialize();
-    void update(std::vector<YUVImage> yuvImages, float mixValue);
+    void update(std::vector<YUVImage> yuvImages, std::vector<YUVImage> yuyvImages, float videoMixValue, float cameraMixValue);
 
 private:
     void createGeometryBuffers();
@@ -74,6 +74,7 @@ private:
     std::vector<VertexWithTex> m_vertices;
     std::vector<GLuint> m_indices;
     std::vector<GLuint> m_yuvTextures;
+    std::vector<GLuint> m_yuyvTextures;
     std::vector<GLuint> m_compTextures;
     std::vector<GLuint> m_inputTextures;
     GLuint m_compTexture;

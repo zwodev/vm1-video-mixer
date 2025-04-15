@@ -26,7 +26,7 @@
 #include "source/PlaneRenderer.h"
 #include "source/VideoPlayer.h"
 #include "source/VideoPlane.h"
-#include "source/CameraRenderer.h"
+#include "source/CameraPlayer.h"
 #include "source/FileAssignmentWidget.h"
 #include "source/MenuSystem.h"
 #include "source/KeyForwarder.h"
@@ -158,38 +158,34 @@ int main(int, char **)
     // TODO: This was not implemented in SDL3 yet. I did it. Another way or PR?
     SDL_RaiseWindow(windows[0]);
 
-    // Video players
-    VideoPlane videoPlane0;
-    VideoPlane videoPlane1;
+    // Create registry
+    Registry registry;
 
     // Camera
     CameraController cameraController;
-    // cameraController.setup();
+    CameraPlayer cameraPlayer0;
 
-    CameraRenderer cameraRenderer0;
-    // cameraRenderer0.start();
+    // Video players
+    VideoPlane videoPlane0;
+    videoPlane0.addCameraPlayer(&cameraPlayer0);
+    VideoPlane videoPlane1;
+    videoPlane1.addCameraPlayer(&cameraPlayer0);
 
-    Registry registry;
+    // File Assignment Widget
+    FileAssignmentWidget fileAssignmentWidget(registry, "../videos/", &videoPlane0, &videoPlane1);
+
+    // Keyforwarding
+    KeyForwarder keyForwarder;
 
     // Oled
     OledUiRenderer oledUiRenderer(registry, FBO_WIDTH, FBO_HEIGHT);
     oledUiRenderer.initialize();
 
-    // Keyforwarding
-    KeyForwarder keyForwarder;
-
 #ifdef USE_OLED
     OledController oledController;
-    //oledController.initializeOled();
-    //oledController.initializeImageBuffer();
     oledController.setOledUiRenderer(&oledUiRenderer);
     oledController.start();
-    // oledController.drawTestBMP();
-    // oledController.initializeExternalFboTexture(&oledUiRenderer.m_fboTexture);
 #endif
-
-    // File Assignment Widget
-    FileAssignmentWidget fileAssignmentWidget(registry, "../videos/", &videoPlane0, &videoPlane1);
 
     // Prepared delta time
     Uint64 lastTime = SDL_GetTicks();
@@ -243,9 +239,6 @@ int main(int, char **)
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
 
-        // Test Window
-        // menuTest.render();
-
         // Development Window
         // TODO: Put in own class.
         {
@@ -262,10 +255,10 @@ int main(int, char **)
             {
                 cameraController.setup();
             }
-            if (ImGui::Button("Start HDMI2CSI"))
-            {
-                cameraRenderer0.start();
-            }
+            // if (ImGui::Button("Start HDMI2CSI"))
+            // {
+            //     cameraRenderer0.start();
+            // }
             ImGui::Checkbox("Show HDMI2CSI", &isCameraEnabled);
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
             ImGui::End();
@@ -298,10 +291,6 @@ int main(int, char **)
         if (isVideoEnabled)
             videoPlane0.update(deltaTime);
 
-        // Render camera content
-        if (isCameraEnabled)
-            cameraRenderer0.update();
-
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(windows[0]);
 
@@ -319,13 +308,6 @@ int main(int, char **)
 
             SDL_GL_SwapWindow(windows[1]);
         }
-
-// Render OLED
-//#ifdef USE_OLED
-        //oledUiRenderer.update();
-        //oledUiRenderer.renderToRGB565(oledController.oledImage, false);
-        //oledController.render();
-//#endif
 
         // End the frame
         ImGui::EndFrame();
@@ -352,144 +334,3 @@ int main(int, char **)
 
     return 0;
 }
-
-// EXAMPLE: ImGUI + SDL3 + OpenGL ES
-// (with 2 ImGui Contexts, one rendering to screen and one to FBO)
-
-/*
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_opengl.h>
-#include <imgui.h>
-#include <imgui_impl_sdl3.h>
-#include <imgui_impl_opengl3.h>
-
-#include <SDL3/SDL_render.h>
-#include <SDL3/SDL_opengl.h>
-#include <SDL3/SDL_opengles2.h>
-#include <SDL3/SDL_egl.h>
-#include <stdio.h>
-//#include <GL/gl3w.h>
-
-const int SCREEN_WIDTH = 1280;
-const int SCREEN_HEIGHT = 720;
-const int FBO_WIDTH = 600;
-const int FBO_HEIGHT = 600;
-
-GLuint createFramebuffer(int width, int height, GLuint& textureColorbuffer) {
-    GLuint framebuffer;
-    glGenFramebuffers(1, &framebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-
-    glGenTextures(1, &textureColorbuffer);
-    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    return framebuffer;
-}
-
-int main(int, char**)
-{
-    printf("Hello!");
-    SDL_Init(SDL_INIT_VIDEO);
-
-    SDL_Window* window = SDL_CreateWindow("ImGui SDL3+OpenGL3 example", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
-    SDL_GLContext gl_context = SDL_GL_CreateContext(window);
-    SDL_GL_MakeCurrent(window, gl_context);
-
-    const char* glsl_version = "#version 300 es";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-
-    IMGUI_CHECKVERSION();
-    ImGuiContext* mainContext = ImGui::CreateContext();
-    ImGui_ImplOpenGL3_Init(glsl_version);
-    ImGui_ImplSDL3_InitForOpenGL(window, gl_context);
-    ImGuiContext* secondContext = ImGui::CreateContext();
-    ImGui::SetCurrentContext(secondContext);
-    ImGuiIO& io = ImGui::GetIO();
-    io.DisplaySize = ImVec2(FBO_WIDTH, FBO_HEIGHT);
-    ImGui_ImplOpenGL3_Init(glsl_version);
-    ImGui_ImplSDL3_InitForOpenGL(window, gl_context);
-    ImGui::SetCurrentContext(mainContext);
-
-    GLuint fboTexture;
-    GLuint fbo = createFramebuffer(FBO_WIDTH, FBO_HEIGHT, fboTexture);
-
-    bool done = false;
-    while (!done)
-    {
-        SDL_Event event;
-        while (SDL_PollEvent(&event))
-        {
-            ImGui_ImplSDL3_ProcessEvent(&event);
-            if (event.type == SDL_EVENT_QUIT)
-                done = true;
-        }
-
-        ImGui::SetCurrentContext(secondContext);
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL3_NewFrame();
-
-        // Main context (render to FBO)
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-        glViewport(0, 0, FBO_WIDTH, FBO_HEIGHT);
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-
-        ImGui::NewFrame();
-        ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize(ImVec2(FBO_WIDTH, FBO_HEIGHT));
-        ImGui::Begin("FBO Window", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
-        ImGui::Text("This is rendered to FBO");
-        ImGui::End();
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        ImGui::SetCurrentContext(mainContext);
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL3_NewFrame();
-
-        // Second context (render to screen)
-        glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-        glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-
-        ImGui::NewFrame();
-        ImGui::Begin("Screen Window");
-        ImGui::Text("This is rendered to screen");
-        ImGui::Image((void*)(intptr_t)fboTexture, ImVec2(FBO_WIDTH, FBO_HEIGHT));
-        ImGui::End();
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        SDL_GL_SwapWindow(window);
-    }
-
-    ImGui::SetCurrentContext(secondContext);
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL3_Shutdown();
-
-    ImGui::SetCurrentContext(mainContext);
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL3_Shutdown();
-
-    ImGui::DestroyContext(secondContext);
-    ImGui::DestroyContext(mainContext);
-
-    SDL_GL_DestroyContext(gl_context);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-
-    return 0;
-}
-*/

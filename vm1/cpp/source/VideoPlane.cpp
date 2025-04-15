@@ -13,7 +13,8 @@
 
 #include "VideoPlane.h"
 
-const int NUM_PLAYERS = 2;
+const int NUM_VIDEO_PLAYERS = 2;
+const int NUM_CAMERA_PLAYERS = 1;
 
 VideoPlane::VideoPlane()
 {
@@ -27,12 +28,20 @@ VideoPlane::~VideoPlane()
 
 void VideoPlane::initialize()
 {
-    for (int i = 0; i < NUM_PLAYERS; ++i) {
+    // Create video players
+    for (int i = 0; i < NUM_VIDEO_PLAYERS; ++i) {
         VideoPlayer* player = new VideoPlayer();
         m_videoPlayers.push_back(player);
         m_yuvImages.push_back(YUVImage());
         m_startTimes.push_back(0);
     }
+
+    // // Create camera players
+    // for (int i = 0; i < NUM_CAMERA_PLAYERS; ++i) {
+    //     CameraPlayer* player = new CameraPlayer();
+    //     m_cameraPlayers.push_back(player);
+    //     m_yuyvImages.push_back(YUVImage());
+    // }
 }
 
 void VideoPlane::finalize()
@@ -42,6 +51,12 @@ void VideoPlane::finalize()
         delete player;
     }
     m_videoPlayers.clear();
+}
+
+void VideoPlane::addCameraPlayer(CameraPlayer* cameraPlayer)
+{
+    m_cameraPlayers.push_back(cameraPlayer);
+    m_yuyvImages.push_back(YUVImage());
 }
 
 float VideoPlane::fadeTime() const
@@ -56,47 +71,72 @@ void VideoPlane::setFadeTime(int fadeTime)
 
 void VideoPlane::playAndFade(const std::string& fileName)
 {
-    if (m_isFading) return;
+    if (m_isVideoFading || m_isCameraFading) return;
 
-    int freePlayerIndex = 1;
-    if (m_mixValue > 0.0f) freePlayerIndex = 0;
+    if (fileName == "../videos/hdmi0") {
+        CameraPlayer* cameraPlayer = m_cameraPlayers[0];
+        if (cameraPlayer->start()) {
+            if (m_cameraMixValue < 1) startCameraFade();
+        }
+    }
+    else {
+        int freePlayerIndex = 1;
+        if (m_videoMixValue > 0.0f) freePlayerIndex = 0;
 
-    VideoPlayer* videoPlayer = m_videoPlayers[freePlayerIndex];
-    if (videoPlayer->open(fileName)) {
-        m_startTimes[freePlayerIndex] = 0;
-        videoPlayer->play();
-        startFade();
+        VideoPlayer* videoPlayer = m_videoPlayers[freePlayerIndex];
+        if (videoPlayer->open(fileName)) {
+            m_startTimes[freePlayerIndex] = 0;
+            videoPlayer->play();
+            if (m_cameraMixValue > 0) {
+                startCameraFade();
+                m_videoMixValue = freePlayerIndex;
+            }
+            else {
+                startVideoFade();
+            }
+        }
     }
 }
 
-void VideoPlane::startFade() {
-    m_isFading = true;
-
+void VideoPlane::startVideoFade() {
+    m_isVideoFading = true;
     m_fadeDir = 1.0f;
-    if (m_mixValue > 0.0f) m_fadeDir = -1.0f;
+    if (m_videoMixValue > 0.0f) m_fadeDir = -1.0f;
 }
 
-void VideoPlane::updateFade(float deltaTime)
-{
-    if (!m_isFading) return;
+void VideoPlane::startCameraFade() {
+    m_isCameraFading = true;
+    m_fadeDir = 1.0f;
+    if (m_cameraMixValue > 0.0f) m_fadeDir = -1.0f;
+}
 
-    m_mixValue = m_mixValue + ((deltaTime / m_fadeTime) * m_fadeDir);
-    if (m_mixValue <= 0.0f) {
-        m_mixValue = 0.0f;
-        m_isFading = false;
+void VideoPlane::updateFade(float deltaTime, float& mixValue, bool& isFading)
+{
+    mixValue = mixValue + ((deltaTime / m_fadeTime) * m_fadeDir);
+    if (mixValue <= 0.0f) {
+        mixValue = 0.0f;
+        isFading = false;
     } 
-    else if (m_mixValue >= 1.0f) {
-        m_mixValue = 1.0f;
-        m_isFading = false;
+    else if (mixValue >= 1.0f) {
+        mixValue = 1.0f;
+        isFading = false;
     }
 }
 
 void VideoPlane::update(float deltaTime) {
-    updateFade(deltaTime);
-    updateVideoFrames(m_mixValue);
+    if (m_isVideoFading) {
+        updateFade(deltaTime, m_videoMixValue, m_isVideoFading);
+        printf ("Video Mix: %f, Camera Mix: %f\n", m_videoMixValue, m_cameraMixValue);
+    }
+    else if (m_isCameraFading) {
+        updateFade(deltaTime, m_cameraMixValue, m_isCameraFading);
+        printf ("Video Mix: %f, Camera Mix: %f\n", m_videoMixValue, m_cameraMixValue);
+    }
+        
+    updateVideoFrames(m_videoMixValue, m_cameraMixValue);
 }
 
-void VideoPlane::updateVideoFrames(float mixValue)
+void VideoPlane::updateVideoFrames(float videoMixValue, float cameraMixValue)
 {
     EGLDisplay display = eglGetCurrentDisplay();
 
@@ -155,8 +195,21 @@ void VideoPlane::updateVideoFrames(float mixValue)
         }
     }
 
+    // Lock and fetch camera buffers
+    for (int i = 0; i < m_cameraPlayers.size(); ++i) {
+        Buffer* buffer = m_cameraPlayers[i]->lockBuffer();
+        if (buffer) {
+            m_yuyvImages[i].yImage = buffer->image;
+        }
+    }
+
     // Render new frame
-    m_planeRenderer.update(m_yuvImages, mixValue);
+    m_planeRenderer.update(m_yuvImages, m_yuyvImages, videoMixValue, cameraMixValue);
+
+    // Unlock camera buffers
+    for (int i = 0; i < m_cameraPlayers.size(); ++i) {
+        m_cameraPlayers[i]->unlockBuffer();
+    }
 
     // Create fence for current frame
     m_fence = eglCreateSync(display, EGL_SYNC_FENCE, NULL);
