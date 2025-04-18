@@ -16,6 +16,8 @@ namespace UI
         WARNING
     };
 
+    float scrollOversizedTextPositionX;
+
     void setTextSettings(TextState state, ImVec4 &textColor, ImVec4 &bgColor)
     {
         const ImVec4 black = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -67,9 +69,13 @@ namespace UI
         ImGui::Text("%s", label.c_str());
     }
 
+    void resetTextScrollPosition()
+    {
+        scrollOversizedTextPositionX = 0.0;
+    }
+
     void renderText(const std::string &label, TextState textState)
     {
-
         ImVec4 textColor;
         ImVec4 bgColor;
         setTextSettings(textState, textColor, bgColor);
@@ -78,6 +84,18 @@ namespace UI
         ImVec2 textSize = ImGui::CalcTextSize(label.c_str()); // Get text dimensions
         ImVec2 cursorPos = ImGui::GetCursorScreenPos();       // Get screen position of the cursor
 
+        int width = (int)ImGui::GetWindowSize().x;
+
+        bool isOversized = textState == TextState::SELECTED && textSize.x >= width;
+        if (isOversized)
+        {
+            // bgColor = ImVec4(255, 0, 0, 255);
+            if (abs(scrollOversizedTextPositionX) < textSize.x - width + 10)
+            {
+                scrollOversizedTextPositionX -= 0.75;
+            }
+        }
+
         ImGui::GetWindowDrawList()->AddRectFilled(
             ImVec2(cursorPos.x - padding_x, cursorPos.y),
             ImVec2(cursorPos.x + textSize.x + padding_x * 2, cursorPos.y + textSize.y),
@@ -85,7 +103,14 @@ namespace UI
         );
 
         ImGui::PushStyleColor(ImGuiCol_Text, textColor);
-        ImGui::SetCursorPosX(cursorPos.x + padding_x);
+        if (isOversized)
+        {
+            ImGui::SetCursorPosX(cursorPos.x + padding_x + scrollOversizedTextPositionX);
+        }
+        else
+        {
+            ImGui::SetCursorPosX(cursorPos.x + padding_x);
+        }
         ImGui::Text("%s", label.c_str());
         ImGui::PopStyleColor();
     }

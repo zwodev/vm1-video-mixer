@@ -217,11 +217,13 @@ void MenuSystem::handleMenuNavigationKeys(SubmenuEntry *submenuEntry)
     if ((!ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_UpArrow)) && m_currentSelection > 0)
     {
         m_currentSelection--;
+        UI::resetTextScrollPosition();
     }
 
     if ((!ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_DownArrow)) && m_currentSelection < submenuEntry->submenus.size() - 1)
     {
         m_currentSelection++;
+        UI::resetTextScrollPosition();
     }
 }
 
