@@ -206,10 +206,6 @@ void VideoPlane::updateVideoFrames(float videoMixValue, float cameraMixValue)
     // Render new frame
     m_planeRenderer.update(m_yuvImages, m_yuyvImages, videoMixValue, cameraMixValue);
 
-    // Unlock camera buffers
-    for (int i = 0; i < m_cameraPlayers.size(); ++i) {
-        m_cameraPlayers[i]->unlockBuffer();
-    }
 
     // Create fence for current frame
     m_fence = eglCreateSync(display, EGL_SYNC_FENCE, NULL);
