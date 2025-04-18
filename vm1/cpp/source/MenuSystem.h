@@ -12,8 +12,10 @@ public:
     enum MenuType
     {
         MT_Logo,
+        MT_InfoSelection,
         MT_InputSelection,
-        MT_PlaybackSelection
+        MT_PlaybackSelection,
+        MT_SettingsSelection
     };
 
 public:
@@ -22,10 +24,14 @@ public:
 
 private:
     void buildMenuStructure();
+    void buildInfoMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntry);
     void buildInputMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntry);
     void buildPlaybackMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntry);
+    void buildSettingsMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntry);
     void setMenu(MenuType menuType);
     void handleKeyboardShortcuts();
+    void handleMenuNavigationKeys(SubmenuEntry *submenuEntry);
+    void renderMenuItems(SubmenuEntry *submenuEntry);
 
 private:
     Registry &m_registry;

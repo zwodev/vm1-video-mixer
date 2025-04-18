@@ -14,6 +14,11 @@ MenuSystem::MenuSystem(Registry &registry) : m_registry(registry)
 
 void MenuSystem::buildMenuStructure()
 {
+    // info menu / info screen
+    auto infoMenu = std::make_unique<SubmenuEntry>("Info");
+    buildInfoMenuStructure(infoMenu);
+    m_menus[MT_InfoSelection] = std::move(infoMenu);
+
     // input association menu
     auto inputMenu = std::make_unique<SubmenuEntry>("Source");
     buildInputMenuStructure(inputMenu);
@@ -24,7 +29,23 @@ void MenuSystem::buildMenuStructure()
     buildPlaybackMenuStructure(playbackMenu);
     m_menus[MT_PlaybackSelection] = std::move(playbackMenu);
 
+    // settings menu
+    auto settingsMMenu = std::make_unique<SubmenuEntry>("Settings");
+    buildSettingsMenuStructure(settingsMMenu);
+    m_menus[MT_SettingsSelection] = std::move(settingsMMenu);
+
     m_currentActiveMenu = MT_InputSelection;
+}
+
+void MenuSystem::buildInfoMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntry)
+{
+}
+
+void MenuSystem::buildSettingsMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntry)
+{
+    // show desktop gui
+    std::unique_ptr<MenuEntry> showGuiEntry = std::make_unique<SubmenuEntry>("show gui");
+    rootEntry->addSubmenuEntry(std::move(showGuiEntry));
 }
 
 void MenuSystem::buildInputMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntry)
@@ -84,6 +105,7 @@ void MenuSystem::setMenu(MenuType menuType)
 void MenuSystem::handleKeyboardShortcuts()
 {
     int numButtons = m_keyboardShortcuts.size();
+
     // check the media-buttons
     for (int i = 0; i < numButtons; ++i)
     {
@@ -107,10 +129,24 @@ void MenuSystem::handleKeyboardShortcuts()
             switch (editButton)
             {
             case ImGuiKey_Q:
-                m_currentActiveMenu = MT_InputSelection;
+                m_currentActiveMenu = MT_InfoSelection;
                 break;
             case ImGuiKey_W:
+                m_currentActiveMenu = MT_InputSelection;
+                break;
+            case ImGuiKey_E:
                 m_currentActiveMenu = MT_PlaybackSelection;
+                break;
+            case ImGuiKey_R:
+                break;
+            case ImGuiKey_T:
+                break;
+            case ImGuiKey_Z:
+                break;
+            case ImGuiKey_U:
+                break;
+            case ImGuiKey_I:
+                m_currentActiveMenu = MT_SettingsSelection;
                 break;
             default:
                 break;
@@ -120,21 +156,10 @@ void MenuSystem::handleKeyboardShortcuts()
     }
 }
 
-void MenuSystem::render()
+void MenuSystem::handleMenuNavigationKeys(SubmenuEntry *submenuEntry)
 {
-    handleKeyboardShortcuts();
-
-    if (!m_rootMenu)
-    {
-        UI::renderCenteredText("VM-1");
-        return;
-    }
-
-    // ImGui::Begin("Menu System");
-    SubmenuEntry *submenuEntry = dynamic_cast<SubmenuEntry *>(m_currentMenu);
-
     // Handle left arrow key (go back)
-    if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+    if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) || (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_UpArrow)))
     {
         if (m_currentMenu == m_rootMenu)
         {
@@ -158,7 +183,7 @@ void MenuSystem::render()
     }
 
     // Handle right arrow key (go forward)
-    if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+    if (ImGui::IsKeyPressed(ImGuiKey_RightArrow) || (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_DownArrow)))
     {
         if (submenuEntry)
         {
@@ -189,18 +214,19 @@ void MenuSystem::render()
         return;
 
     // Handle up and down arrow keys for item selection
-    if (ImGui::IsKeyPressed(ImGuiKey_UpArrow) && m_currentSelection > 0)
+    if ((!ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_UpArrow)) && m_currentSelection > 0)
     {
         m_currentSelection--;
     }
 
-    if (ImGui::IsKeyPressed(ImGuiKey_DownArrow) && m_currentSelection < submenuEntry->submenus.size() - 1)
+    if ((!ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_DownArrow)) && m_currentSelection < submenuEntry->submenus.size() - 1)
     {
         m_currentSelection++;
     }
+}
 
-    ImGui::SetCursorPosY(23);
-
+void MenuSystem::renderMenuItems(SubmenuEntry *submenuEntry)
+{
     for (size_t i = 0; i < submenuEntry->submenus.size(); ++i)
     {
         bool isSelected = (i == m_currentSelection);
@@ -217,6 +243,35 @@ void MenuSystem::render()
         }
 
         UI::renderText(label, isSelected ? UI::TextState::SELECTED : UI::TextState::DEFAULT);
+    }
+}
+
+void MenuSystem::render()
+{
+    handleKeyboardShortcuts();
+
+    SubmenuEntry *submenuEntry = dynamic_cast<SubmenuEntry *>(m_currentMenu);
+
+    if (!m_rootMenu)
+    {
+        UI::renderCenteredText("VM-1");
+        return;
+    }
+
+    // ImGui::Begin("Menu System");
+
+    if (m_currentActiveMenu == MenuType::MT_InfoSelection)
+    {
+        // printf("Display Information\n");
+        std::string filename = m_registry.getValue(m_id);
+        UI::renderInfoScreen(m_bank, m_id, filename);
+    }
+    else
+    {
+        handleMenuNavigationKeys(submenuEntry);
+
+        ImGui::SetCursorPosY(23);
+        renderMenuItems(submenuEntry);
     }
 
     UI::renderMenuTitle(submenuEntry->displayName);

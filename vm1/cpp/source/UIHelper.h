@@ -155,4 +155,14 @@ namespace UI
         ImGui::PopFont();
     }
 
+    void renderInfoScreen(int m_bank, int m_id, std::string filename)
+    {
+        ImGui::SetCursorPosY(25);
+        ImGui::Text("Information:");
+        ImGui::Text("%s", filename.c_str());
+        ImGui::Text("Currrent Pos/Duration");
+        ImGui::Text("Loop yes or no");
+        ImGui::Text("%d/%d", m_bank, m_id);
+    }
+
 }
