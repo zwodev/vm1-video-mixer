@@ -287,6 +287,7 @@ int main(int, char **)
         glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        cameraPlayer0.lockBuffer();
         // Render video content
         if (isVideoEnabled)
             videoPlane0.update(deltaTime);
@@ -308,6 +309,8 @@ int main(int, char **)
 
             SDL_GL_SwapWindow(windows[1]);
         }
+
+        cameraPlayer0.unlockBuffer();
 
         // End the frame
         ImGui::EndFrame();
