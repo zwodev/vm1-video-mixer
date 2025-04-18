@@ -47,14 +47,18 @@ CameraPlayer::~CameraPlayer()
 {   
 }
 
-Buffer* CameraPlayer::lockBuffer()
+void CameraPlayer::lockBuffer()
+{
+    if (!m_isRunning) return;    
+    m_bufferIndex = dequeueBuffer(m_fd);
+}
+
+Buffer* CameraPlayer::getBuffer()
 {
     Buffer* buffer = nullptr;
     if (!m_isRunning) return buffer;    
 
-    m_bufferIndex = dequeueBuffer(m_fd);
     if (m_bufferIndex >= 0) {
-        //printf("Dequeue! \n");
         buffer = &(m_buffers[m_bufferIndex]);
     }
 

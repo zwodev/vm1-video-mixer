@@ -197,7 +197,7 @@ void VideoPlane::updateVideoFrames(float videoMixValue, float cameraMixValue)
 
     // Lock and fetch camera buffers
     for (int i = 0; i < m_cameraPlayers.size(); ++i) {
-        Buffer* buffer = m_cameraPlayers[i]->lockBuffer();
+        Buffer* buffer = m_cameraPlayers[i]->getBuffer();
         if (buffer) {
             m_yuyvImages[i].yImage = buffer->image;
         }

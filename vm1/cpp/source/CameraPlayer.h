@@ -63,7 +63,8 @@ public:
 
 public:
     bool start();
-    Buffer* lockBuffer();
+    void lockBuffer();
+    Buffer* getBuffer();
     void unlockBuffer();
 
 private:
