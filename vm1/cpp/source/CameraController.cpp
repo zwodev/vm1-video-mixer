@@ -50,4 +50,5 @@ bool CameraController::setup() {
     if (!m_mediaController.setFormat("csi2", 4, "UYVY8_1X16", 1920, 1080)) return false;
     if (!m_mediaController.setFormat("tc358743", 0, "UYVY8_1X16", 1920, 1080)) return false;
     
+    return true;
 }
