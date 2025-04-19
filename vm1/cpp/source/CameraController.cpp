@@ -32,7 +32,6 @@ bool CameraController::setup() {
     //m_mediaController.printTopology();
 
     // V4L2 Controller
-    //std::string subdevName = "/dev/v4l-subdev2";
     std::string subdevPath = m_mediaController.getSubdeviceFromName("tc358743");
     if (!m_v4l2Controller.openDevice(subdevPath)) return false;
     if (!m_v4l2Controller.setEdid(edid_1080p30)) return false;

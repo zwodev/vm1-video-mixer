@@ -45,7 +45,6 @@ VideoPlayer::~VideoPlayer()
 void VideoPlayer::close()
 {
     m_isRunning = false;
-    m_flushing = false;
     m_frameCV.notify_all();
     
     if (m_decoderThread.joinable()) {
@@ -118,10 +117,15 @@ bool VideoPlayer::open(std::string fileName, bool useH264)
 
 void VideoPlayer::play()
 {
-    double m_firstPts = -1.0;
-    bool m_flushing = false;
+    m_firstPts = -1.0;
+    m_isFlushing = false;
     m_isRunning = true;
     m_decoderThread = std::thread(&VideoPlayer::decodingThread, this);
+}
+
+void VideoPlayer::setLooping(bool looping)
+{
+    m_isLooping = looping;
 }
 
 AVCodecContext* VideoPlayer::openVideoStream()
@@ -236,28 +240,35 @@ AVCodecContext* VideoPlayer::openAudioStream()
 
 void VideoPlayer::decodingThread() {
     while (m_isRunning) {
-        if (!m_flushing) {
+        if (!m_isFlushing) {
             // Read and decode frames
             int result = av_read_frame(m_formatContext, m_packet);
             if (result < 0) {
-                SDL_Log("End of stream, finishing decode\n");
+                if (m_isLooping) {
+                    m_firstPts = -1.0;
+                    av_seek_frame(m_formatContext, -1, 0, AVSEEK_FLAG_BACKWARD);
+                    SDL_Log("End of stream, restart (looping)\n");
+                }
+                else {
+                    SDL_Log("End of stream, finishing decode\n");     
+                    m_isFlushing = true;
+                }
                 if (m_audioContext) {
                     avcodec_flush_buffers(m_audioContext);
                 }
                 if (m_videoContext) {
                     avcodec_flush_buffers(m_videoContext);
                 }
-                m_flushing = true;
             } else {
                 if (m_packet->stream_index == m_audioStream) {
                     result = avcodec_send_packet(m_audioContext, m_packet);
                     if (result < 0) {
-                        //SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "avcodec_send_packet(audio_context) failed: %s", av_err2str(result));
+                        //return;
                     }
                 } else if (m_packet->stream_index == m_videoStream) {
                     result = avcodec_send_packet(m_videoContext, m_packet);
                     if (result < 0) {
-                        //SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "avcodec_send_packet(video_context) failed: %s", av_err2str(result));
+                        //return;
                     }
                 }
                 av_packet_unref(m_packet);
@@ -268,17 +279,20 @@ void VideoPlayer::decodingThread() {
         if (m_videoContext) {
             while (avcodec_receive_frame(m_videoContext, m_frame) >= 0) {
                 double pts = ((double)m_frame->pts * m_videoContext->pkt_timebase.num) / m_videoContext->pkt_timebase.den;
+                bool firstFrame = false;
                 if (m_firstPts < 0.0) {
                     m_firstPts = pts;
+                    firstFrame = true;
                 }
                 pts -= m_firstPts;
 
                 VideoFrame frame;
                 if (getTextureForDRMFrame(m_frame, frame)) {
+                    frame.isFirstFrame = firstFrame;
                     frame.pts = pts;
                     pushFrame(frame);
                 }
-            }
+            }      
         }
     }
 }

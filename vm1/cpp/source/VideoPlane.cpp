@@ -126,11 +126,22 @@ void VideoPlane::updateFade(float deltaTime, float& mixValue, bool& isFading)
 void VideoPlane::update(float deltaTime) {
     if (m_isVideoFading) {
         updateFade(deltaTime, m_videoMixValue, m_isVideoFading);
-        printf ("Video Mix: %f, Camera Mix: %f\n", m_videoMixValue, m_cameraMixValue);
+        //printf ("Video Mix: %f, Camera Mix: %f\n", m_videoMixValue, m_cameraMixValue);
     }
     else if (m_isCameraFading) {
         updateFade(deltaTime, m_cameraMixValue, m_isCameraFading);
-        printf ("Video Mix: %f, Camera Mix: %f\n", m_videoMixValue, m_cameraMixValue);
+        //printf ("Video Mix: %f, Camera Mix: %f\n", m_videoMixValue, m_cameraMixValue);
+    }
+    else {
+        for (int i = 0; i < m_videoPlayers.size(); ++i) {
+            int freePlayerIndex = 1;
+            if (m_videoMixValue > 0.0f) freePlayerIndex = 0;
+            if (i == freePlayerIndex) {
+                if (m_videoPlayers[i]->isPlaying()) {
+                    m_videoPlayers[i]->close();
+                }
+            }
+        }
     }
         
     updateVideoFrames(m_videoMixValue, m_cameraMixValue);
@@ -158,7 +169,7 @@ void VideoPlane::updateVideoFrames(float videoMixValue, float cameraMixValue)
         
         // Check PTS
         if (m_videoPlayers[i]->peekFrame(frame)) {
-            if (!m_startTimes[i]) {
+            if (frame.isFirstFrame) {
                 m_startTimes[i] = SDL_GetTicks();
             }
 

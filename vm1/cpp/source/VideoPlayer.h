@@ -40,7 +40,8 @@ static enum AVPixelFormat getSupportedPixelFormat(AVCodecContext *s, const enum 
 
 struct VideoFrame {
     std::vector<EGLImage> images;
-    double pts;
+    bool isFirstFrame = false;
+    double pts = 0.0;
     
     // Add these fields for DRM frame info
     std::vector<uint32_t> formats;
@@ -60,6 +61,7 @@ public:
     void play();
     void close();
     bool isPlaying() const { return m_isRunning; }
+    void setLooping(bool looping);
     bool popFrame(VideoFrame& frame);
     bool peekFrame(VideoFrame& frame);
 
@@ -101,5 +103,6 @@ private:
 
     // State
     std::atomic<bool> m_isRunning = false;
-    std::atomic<bool> m_flushing = false;
+    std::atomic<bool> m_isLooping = false;
+    std::atomic<bool> m_isFlushing = false;
 };
