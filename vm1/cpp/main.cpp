@@ -28,11 +28,11 @@
 #include "source/VideoPlane.h"
 #include "source/CameraPlayer.h"
 #include "source/FileAssignmentWidget.h"
-#include "source/MenuSystem.h"
 #include "source/KeyForwarder.h"
 #include "source/CameraController.h"
 #include "source/OledUiRenderer.h"
 #include "source/OledController.h"
+
 
 #define USE_OLED
 
@@ -239,46 +239,52 @@ int main(int, char **)
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
 
-        // Development Window
+
+        // Desktop UI
         // TODO: Put in own class.
-        {
-            ImGui::Begin("Development");
-            // ImGui::Image((ImTextureID)(intptr_t)oledUiRenderer.texture(), ImVec2(128, 128));
-            static float fadeTimeInSecs = 2.0f;
-            if (ImGui::SliderFloat("Fade Time", &fadeTimeInSecs, 0.0f, 5.0f))
+        if (registry.settings().showUI)
+        {     
             {
-                videoPlane0.setFadeTime(fadeTimeInSecs);
-                videoPlane1.setFadeTime(fadeTimeInSecs);
+                ImGui::Begin("Development");
+                // ImGui::Image((ImTextureID)(intptr_t)oledUiRenderer.texture(), ImVec2(128, 128));
+                static float fadeTimeInSecs = 2.0f;
+                if (ImGui::SliderFloat("Fade Time", &fadeTimeInSecs, 0.0f, 5.0f))
+                {
+                    videoPlane0.setFadeTime(fadeTimeInSecs);
+                    videoPlane1.setFadeTime(fadeTimeInSecs);
+                }
+                ImGui::Checkbox("Enable Video", &isVideoEnabled);
+                if (ImGui::Button("Setup HDMI2CSI"))
+                {
+                    cameraController.setup();
+                }
+                // if (ImGui::Button("Start HDMI2CSI"))
+                // {
+                //     cameraRenderer0.start();
+                // }
+                ImGui::Checkbox("Show HDMI2CSI", &isCameraEnabled);
+                ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+                ImGui::End();
             }
-            ImGui::Checkbox("Enable Video", &isVideoEnabled);
-            if (ImGui::Button("Setup HDMI2CSI"))
+
+            // OLED debug window
             {
-                cameraController.setup();
+                // ImGui::SetNextWindowPos(ImVec2(0, 0));
+                ImGui::SetNextWindowSize(ImVec2(FBO_WIDTH, FBO_HEIGHT));
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+                ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration;
+                ImGui::Begin("OLED Debug Window", nullptr, window_flags);
+                // ImGui::Begin("OLED Debug Window");
+                ImGui::Image((void *)(intptr_t)oledUiRenderer.texture(), ImVec2(FBO_WIDTH, FBO_HEIGHT), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+                ImGui::End();
+                ImGui::PopStyleVar();
             }
-            // if (ImGui::Button("Start HDMI2CSI"))
-            // {
-            //     cameraRenderer0.start();
-            // }
-            ImGui::Checkbox("Show HDMI2CSI", &isCameraEnabled);
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-            ImGui::End();
+
+            // File Assignment Widget
+            fileAssignmentWidget.render();
         }
 
-        // OLED debug window
-        {
-            // ImGui::SetNextWindowPos(ImVec2(0, 0));
-            ImGui::SetNextWindowSize(ImVec2(FBO_WIDTH, FBO_HEIGHT));
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-            ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration;
-            ImGui::Begin("OLED Debug Window", nullptr, window_flags);
-            // ImGui::Begin("OLED Debug Window");
-            ImGui::Image((void *)(intptr_t)oledUiRenderer.texture(), ImVec2(FBO_WIDTH, FBO_HEIGHT), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
-            ImGui::End();
-            ImGui::PopStyleVar();
-        }
-
-        // File Assignment Widget
-        fileAssignmentWidget.render();
+        
 
         // Rendering window 0
         SDL_GL_MakeCurrent(windows[0], gl_context);

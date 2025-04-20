@@ -69,7 +69,7 @@ void VideoPlane::setFadeTime(int fadeTime)
     m_fadeTime = fadeTime;
 }
 
-void VideoPlane::playAndFade(const std::string& fileName)
+void VideoPlane::playAndFade(const std::string& fileName, bool looping)
 {
     if (m_isVideoFading || m_isCameraFading) return;
 
@@ -86,6 +86,7 @@ void VideoPlane::playAndFade(const std::string& fileName)
         VideoPlayer* videoPlayer = m_videoPlayers[freePlayerIndex];
         if (videoPlayer->open(fileName)) {
             m_startTimes[freePlayerIndex] = 0;
+            videoPlayer->setLooping(looping);
             videoPlayer->play();
             if (m_cameraMixValue > 0) {
                 startCameraFade();

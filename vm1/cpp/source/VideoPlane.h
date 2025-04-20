@@ -30,7 +30,7 @@ public:
     float fadeTime() const;
     void setFadeTime(int fadeTime);
     const std::vector<VideoPlayer*>& players() const;
-    void playAndFade(const std::string& fileName);
+    void playAndFade(const std::string& fileName, bool looping = false);
     void update(float mixValue);
 
 private:

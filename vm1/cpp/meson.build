@@ -48,7 +48,7 @@ sources = [ 'main.cpp',
             'source/MediaController.cpp',
             'source/V4L2Controller.cpp',
             'source/CameraController.cpp',
-            'source/MenuSystem.cpp',
+            'source/menu/MenuSystem.cpp',
             'source/OledController.cpp',
             'source/OledUiRenderer.cpp',
             'source/oled/DEV_Config.c',  
@@ -57,7 +57,9 @@ sources = [ 'main.cpp',
             'source/oled/OLED_1in5_rgb.c'
           ]
 
+incdir = include_directories('source', 'source/menu')
 executable('vm1', 
            sources, 
-           dependencies : deps
+           dependencies: deps,
+           include_directories: incdir 
            )

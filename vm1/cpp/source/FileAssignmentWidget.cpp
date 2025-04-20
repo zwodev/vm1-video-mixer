@@ -44,7 +44,12 @@ void FileAssignmentWidget::renderButtonMatrix() {
             
             //ImVec4 buttonColor = m_assignedFiles[y][x].empty() ? m_defaultButtonColor : m_assignedButtonColor;
             int id = m_bank * (WIDTH * HEIGHT) + y * WIDTH + x;
-            std::string filePath = m_registry.getValue(id);
+            std::string filePath;
+            VideoInputConfig* videoInputConfig = m_registry.inputMappings().getVideoInputConfig(id);
+            if (videoInputConfig) {
+                filePath = videoInputConfig->fileName;
+            }
+            
             ImVec4 buttonColor = filePath.empty() ? m_defaultButtonColor : m_assignedButtonColor;
             //if (isButtonHighlighted(x, y)) {
             //    buttonColor = m_highlightedButtonColor;
@@ -64,7 +69,9 @@ void FileAssignmentWidget::renderButtonMatrix() {
 
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("FILE_PAYLOAD")) {
-                    m_registry.addEntry(id, m_directory + std::string(static_cast<const char*>(payload->Data)));
+                    auto videoInputConfig = std::make_unique<VideoInputConfig>();
+                    videoInputConfig->fileName = m_directory + std::string(static_cast<const char*>(payload->Data));
+                    m_registry.inputMappings().addInputConfig(id, std::move(videoInputConfig));
                     //m_assignedFiles[y][x] = static_cast<const char*>(payload->Data);
                 }
                 ImGui::EndDragDropTarget();
@@ -111,20 +118,20 @@ void FileAssignmentWidget::loadFiles(const std::string& directory) {
 }
 
 void FileAssignmentWidget::handleButtonClick(int id) {
-
-    std::string filePath = m_registry.getValue(id);
-    if (!filePath.empty()) { 
-        
-
+    VideoInputConfig* videoInputConfig = m_registry.inputMappings().getVideoInputConfig(id);
+    if (videoInputConfig && !videoInputConfig->fileName.empty()) {
+        std::string fileName = videoInputConfig->fileName;
+        bool looping = videoInputConfig->looping;
+        std::string filePath = m_registry.mediaPool().getVideoFilePath(fileName);
         int oddRow = (id / WIDTH) % 2;
         // Select plane
         if (oddRow == 0) {
-            printf("Play Left: (ID: %d, FILE: %s)\n", id, filePath.c_str());
-            m_videoPlaneLeft->playAndFade(filePath);
+            printf("Play Left: (ID: %d, FILE: %s, LOOP: %d)\n", id, fileName.c_str(), looping);
+            m_videoPlaneLeft->playAndFade(filePath, looping);
         } 
         else {
-            printf("Play Right: (ID: %d, FILE: %s)\n", id, filePath.c_str());
-            m_videoPlaneRight->playAndFade(filePath);
+            printf("Play Right: (ID: %d, FILE: %s, LOOP: %d)\n", id, fileName.c_str(), looping);
+            m_videoPlaneRight->playAndFade(filePath, looping);
         }
     }
 }

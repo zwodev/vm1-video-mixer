@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2025 Julian Jungel & Nils Zweiling
+ *
+ * This file is part of VM-1 which is released under the MIT license.
+ * See file LICENSE or go to https://github.com/zwodev/vm1-video-mixer/tree/master/LICENSE
+ * for full license details.
+ */
+
 #pragma once
 
 #include <imgui.h>
@@ -5,6 +13,12 @@
 #include <string>
 #include "Registry.h"
 #include "MenuEntry.h"
+
+struct MenuItem {
+    std::string label;
+    std::vector<MenuItem> children;
+    void (*renderFunc)(Registry*, int, int*) = nullptr;
+};
 
 class MenuSystem
 {
@@ -23,26 +37,27 @@ public:
     void render();
 
 private:
-    void buildMenuStructure();
-    void buildInfoMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntry);
-    void buildInputMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntry);
-    void buildPlaybackMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntry);
-    void buildSettingsMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntry);
     void setMenu(MenuType menuType);
-    void handleKeyboardShortcuts();
-    void handleMenuNavigationKeys(SubmenuEntry *submenuEntry);
-    void renderMenuItems(SubmenuEntry *submenuEntry);
+    void handleMediaAndEditButtons();
+
+private:
+    static void FileSelection(Registry* registry, int id, int* selectedIdx);
+    static void LiveInputSelection(Registry* registry, int id, int* selectedIdx);
+    static void PlaybackSettings(Registry* registry, int id, int* selectedIdx);
+    static void GlobalSettings(Registry* registry, int id, int* selectedIdx);
 
 private:
     Registry &m_registry;
-    std::map<MenuType, std::unique_ptr<MenuEntry>> m_menus;
-    int m_id = -1;
+    int m_id = 0;
     int m_bank = 0;
-    int m_currentSelection = 0;
-    MenuEntry *m_rootMenu = nullptr;
-    MenuEntry *m_currentMenu = nullptr;
-    MenuEntry *m_previousMenu = nullptr;
-    MenuType m_currentActiveMenu;
+    MenuItem *m_currentMenu = nullptr;
+    int m_selectedIdx = 0;
+    std::vector<int> m_currentMenuPath;
+
+    
+    std::map<MenuType, MenuItem> m_menus;
+    MenuType m_currentMenuType = MT_InputSelection;
+
 
     // Keyboard Shortcuts
     std::vector<ImGuiKey> m_keyboardShortcuts = {

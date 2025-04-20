@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2025 Julian Jungel & Nils Zweiling
+ *
+ * This file is part of VM-1 which is released under the MIT license.
+ * See file LICENSE or go to https://github.com/zwodev/vm1-video-mixer/tree/master/LICENSE
+ * for full license details.
+ */
+
 #include "MenuSystem.h"
 #include "UIHelper.h"
 
@@ -8,101 +16,26 @@
 const int NUM_BANKS = 4;
 
 MenuSystem::MenuSystem(Registry &registry) : m_registry(registry)
-{
-    buildMenuStructure();
-}
-
-void MenuSystem::buildMenuStructure()
-{
-    // info menu / info screen
-    auto infoMenu = std::make_unique<SubmenuEntry>("Info");
-    buildInfoMenuStructure(infoMenu);
-    m_menus[MT_InfoSelection] = std::move(infoMenu);
-
-    // input association menu
-    auto inputMenu = std::make_unique<SubmenuEntry>("Source");
-    buildInputMenuStructure(inputMenu);
-    m_menus[MT_InputSelection] = std::move(inputMenu);
-
-    // playback menu
-    auto playbackMenu = std::make_unique<SubmenuEntry>("Playback");
-    buildPlaybackMenuStructure(playbackMenu);
-    m_menus[MT_PlaybackSelection] = std::move(playbackMenu);
-
-    // settings menu
-    auto settingsMMenu = std::make_unique<SubmenuEntry>("Settings");
-    buildSettingsMenuStructure(settingsMMenu);
-    m_menus[MT_SettingsSelection] = std::move(settingsMMenu);
-
-    m_currentActiveMenu = MT_InputSelection;
-}
-
-void MenuSystem::buildInfoMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntry)
-{
-}
-
-void MenuSystem::buildSettingsMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntry)
-{
-    // show desktop gui
-    std::unique_ptr<MenuEntry> showGuiEntry = std::make_unique<SubmenuEntry>("show gui");
-    rootEntry->addSubmenuEntry(std::move(showGuiEntry));
-}
-
-void MenuSystem::buildInputMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntry)
-{
-    // file
-    auto fileSelectionEntry = std::make_unique<FilesystemEntry>("files", "../videos/");
-    rootEntry->addSubmenuEntry(std::move(fileSelectionEntry));
-
-    // live
-    std::unique_ptr<MenuEntry> liveSelectionEntry = std::make_unique<SubmenuEntry>("live");
-    rootEntry->addSubmenuEntry(std::move(liveSelectionEntry));
-
-    // shader
-    std::unique_ptr<MenuEntry> shaderSelectionEntry = std::make_unique<SubmenuEntry>("shader");
-    rootEntry->addSubmenuEntry(std::move(shaderSelectionEntry));
-}
-
-void MenuSystem::buildPlaybackMenuStructure(std::unique_ptr<SubmenuEntry> &rootEntry)
-{
-    /*
-    Playback-Menu (contains also trigger-options):
-    - start-time
-    - end-time
-    - loop yes/no
-    - play backwards
-    - live-looper
-    - mute audio
-    - OSC-In/Out
-    - MIDI-In/Out
-    - MQTT-In/Out
-    */
-
-    std::unique_ptr<MenuEntry> starttimeEntry = std::make_unique<SubmenuEntry>("start-time");
-    rootEntry->addSubmenuEntry(std::move(starttimeEntry));
-
-    std::unique_ptr<MenuEntry> endtimeEntry = std::make_unique<SubmenuEntry>("end-time");
-    rootEntry->addSubmenuEntry(std::move(endtimeEntry));
-
-    std::unique_ptr<MenuEntry> loopEntry = std::make_unique<SubmenuEntry>("loop");
-    rootEntry->addSubmenuEntry(std::move(loopEntry));
-
-    std::unique_ptr<MenuEntry> playbackwardsEntry = std::make_unique<SubmenuEntry>("play backwards");
-    rootEntry->addSubmenuEntry(std::move(playbackwardsEntry));
-
-    // ... etc ...
+{   
+    m_menus[MT_InfoSelection]       =  {"Info", {}};
+    m_menus[MT_InputSelection]      =  {"Source", {
+                                            {"File", {}, FileSelection},
+                                            {"Live", {}, LiveInputSelection},
+                                            {"Shader", {}}
+                                        }};
+    m_menus[MT_PlaybackSelection]   = {"Playback", {}, PlaybackSettings};
+    m_menus[MT_SettingsSelection]   = {"Settings", {}, GlobalSettings};
 }
 
 void MenuSystem::setMenu(MenuType menuType)
 {
     if (m_menus.find(menuType) != m_menus.end())
     {
-        m_rootMenu = m_menus[menuType].get();
-        m_currentMenu = m_rootMenu;
+        m_currentMenu = &(m_menus[menuType]);
     }
 }
 
-void MenuSystem::handleKeyboardShortcuts()
+void MenuSystem::handleMediaAndEditButtons()
 {
     int numButtons = m_keyboardShortcuts.size();
 
@@ -110,13 +43,10 @@ void MenuSystem::handleKeyboardShortcuts()
     for (int i = 0; i < numButtons; ++i)
     {
         ImGuiKey key = m_keyboardShortcuts[i];
-        // if (ImGui::IsKeyDown(key) && ImGui::IsKeyDown(ImGuiKey_LeftShift))
         if (ImGui::IsKeyDown(key))
         {
             int id = m_bank * numButtons + i;
             m_id = id;
-            setMenu(m_currentActiveMenu);
-            // printf("Current Active Menu: %d\n", m_currentActiveMenu);
             return;
         }
     }
@@ -129,13 +59,13 @@ void MenuSystem::handleKeyboardShortcuts()
             switch (editButton)
             {
             case ImGuiKey_Q:
-                m_currentActiveMenu = MT_InfoSelection;
+                m_currentMenuType = MT_InfoSelection;
                 break;
             case ImGuiKey_W:
-                m_currentActiveMenu = MT_InputSelection;
+                m_currentMenuType = MT_InputSelection;
                 break;
             case ImGuiKey_E:
-                m_currentActiveMenu = MT_PlaybackSelection;
+                m_currentMenuType = MT_PlaybackSelection;
                 break;
             case ImGuiKey_R:
                 break;
@@ -146,138 +76,162 @@ void MenuSystem::handleKeyboardShortcuts()
             case ImGuiKey_U:
                 break;
             case ImGuiKey_I:
-                m_currentActiveMenu = MT_SettingsSelection;
+                m_currentMenuType = MT_SettingsSelection;
                 break;
             default:
                 break;
             }
-            setMenu(m_currentActiveMenu);
+
+            setMenu(m_currentMenuType);
         }
-    }
-}
-
-void MenuSystem::handleMenuNavigationKeys(SubmenuEntry *submenuEntry)
-{
-    // Handle left arrow key (go back)
-    if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) || (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_UpArrow)))
-    {
-        if (m_currentMenu == m_rootMenu)
-        {
-            m_rootMenu = nullptr;
-            m_currentMenu = nullptr;
-            m_previousMenu = nullptr;
-            return;
-        }
-
-        SubmenuEntry *parentEntry = static_cast<SubmenuEntry *>(m_currentMenu->parentEntry);
-        m_currentSelection = 0;
-        for (int i = 0; i < parentEntry->submenus.size(); i++)
-        {
-            if (parentEntry->submenus[i].get() == m_currentMenu)
-            {
-                m_currentSelection = i;
-                break;
-            }
-        }
-        m_currentMenu = m_currentMenu->parentEntry;
-    }
-
-    // Handle right arrow key (go forward)
-    if (ImGui::IsKeyPressed(ImGuiKey_RightArrow) || (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_DownArrow)))
-    {
-        if (submenuEntry)
-        {
-            if (submenuEntry->submenus.size() == 0)
-                return;
-
-            m_previousMenu = m_currentMenu;
-            MenuEntry *nextMenuEntry = submenuEntry->submenus[m_currentSelection].get();
-            if (dynamic_cast<SubmenuEntry *>(nextMenuEntry))
-            {
-                m_currentMenu = nextMenuEntry;
-                m_currentSelection = 0;
-            }
-            else if (ButtonEntry *buttonEntry = dynamic_cast<ButtonEntry *>(nextMenuEntry))
-            {
-                buttonEntry->action();
-            }
-
-            if (FilesystemEntry *filesystemEntry = dynamic_cast<FilesystemEntry *>(m_currentMenu))
-            {
-                filesystemEntry->update(m_registry, m_id);
-            }
-            // currentMenu->process(m_registry);
-        }
-    }
-
-    if (!submenuEntry)
-        return;
-
-    // Handle up and down arrow keys for item selection
-    if ((!ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_UpArrow)) && m_currentSelection > 0)
-    {
-        m_currentSelection--;
-        UI::resetTextScrollPosition();
-    }
-
-    if ((!ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_DownArrow)) && m_currentSelection < submenuEntry->submenus.size() - 1)
-    {
-        m_currentSelection++;
-        UI::resetTextScrollPosition();
-    }
-}
-
-void MenuSystem::renderMenuItems(SubmenuEntry *submenuEntry)
-{
-    for (size_t i = 0; i < submenuEntry->submenus.size(); ++i)
-    {
-        bool isSelected = (i == m_currentSelection);
-
-        ImGuiStyle &style = ImGui::GetStyle();
-
-        std::unique_ptr<MenuEntry> &menuEntry = submenuEntry->submenus[i];
-        std::string label = menuEntry->displayName;
-
-        if (ButtonEntry *buttonEntry = dynamic_cast<ButtonEntry *>(menuEntry.get()))
-        {
-            std::string checkBox = buttonEntry->isChecked ? "[*]" : "[ ]";
-            label = checkBox + " " + label;
-        }
-
-        UI::renderText(label, isSelected ? UI::TextState::SELECTED : UI::TextState::DEFAULT);
     }
 }
 
 void MenuSystem::render()
 {
-    handleKeyboardShortcuts();
+    handleMediaAndEditButtons();
 
-    SubmenuEntry *submenuEntry = dynamic_cast<SubmenuEntry *>(m_currentMenu);
-
-    if (!m_rootMenu)
+    if (!m_currentMenu)
     {
-        UI::renderCenteredText("VM-1");
+        UI::CenteredText("VM-1");
         return;
     }
 
-    // ImGui::Begin("Menu System");
-
-    if (m_currentActiveMenu == MenuType::MT_InfoSelection)
-    {
-        // printf("Display Information\n");
-        std::string filename = m_registry.getValue(m_id);
-        UI::renderInfoScreen(m_bank, m_id, filename);
-    }
-    else
-    {
-        handleMenuNavigationKeys(submenuEntry);
-
-        ImGui::SetCursorPosY(23);
-        renderMenuItems(submenuEntry);
+    // Traverse to current menu
+    const MenuItem* menuItem = m_currentMenu;
+    for (int idx : m_currentMenuPath) {
+        if (idx >= 0 && idx < (int)menuItem->children.size())
+            menuItem = &menuItem->children[idx];
+        else
+            break;
     }
 
-    UI::renderMenuTitle(submenuEntry->displayName);
-    UI::renderMediaButtonID(m_id + 1);
+    // Render title
+    UI::MenuTitle(menuItem->label);
+    UI::MediaButtonID(m_id + 1);
 
-    // ImGui::End();
+    ImGui::SetCursorPosY(23);
+
+    // Render static content
+    for (int i = 0; i < (int)menuItem->children.size(); ++i) {
+        bool isSelected = (i == m_selectedIdx);
+        std::string label = menuItem->children[i].label;
+        UI::Text(label, isSelected ? UI::TextState::SELECTED : UI::TextState::DEFAULT);
+    }
+
+    // Render dynamic content if present
+    if (menuItem->renderFunc) {
+        menuItem->renderFunc(&m_registry, m_id, &m_selectedIdx);
+    }
+
+    // Handle navigation
+    if  (ImGui::IsKeyPressed(ImGuiKey_RightArrow) || 
+        (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_DownArrow))) {
+        // Go deeper if selected item has children or a render_func (treat as a page)
+        if (m_selectedIdx >= 0 && m_selectedIdx < (int)menuItem->children.size()) {
+            auto& sel = menuItem->children[m_selectedIdx];
+            if (!sel.children.empty() || sel.renderFunc) {
+                m_currentMenuPath.push_back(m_selectedIdx);
+                m_selectedIdx = 0;
+            }
+        }
+    }
+    else if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) || 
+            (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_UpArrow))) 
+    {
+        // Go up one level
+        if (!m_currentMenuPath.empty()) {
+            m_currentMenuPath.pop_back();
+            m_selectedIdx = 0;
+        }
+    }
+    else if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
+        if (m_selectedIdx > 0) {
+            m_selectedIdx--;
+            UI::resetTextScrollPosition();
+        }
+    }
+    else if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
+        // TODO: How can we make this work in menu items with renderFunc?
+        //if (m_selectedIdx + 1 < (int)menuItem->children.size() || menuItem->renderFunc) {
+            m_selectedIdx++;
+            UI::resetTextScrollPosition();
+        //}
+    }
+}
+
+// DYNAMIC CONTENT
+// TODO: Could be put in different namespaces
+void MenuSystem::FileSelection(Registry* registry, int id, int* selectedIdx)
+{
+    auto config = std::make_unique<VideoInputConfig>();
+    VideoInputConfig* currentConfig = registry->inputMappings().getVideoInputConfig(id);
+    if (currentConfig) {
+        *config = *currentConfig;
+    } 
+
+    std::vector<std::string>& files = registry->mediaPool().getVideoFiles();
+    bool changed = false;
+    for (int i = 0; i < files.size(); ++i) {
+        std::string fileName = files[i];
+        if (UI::RadioButton(fileName.c_str(), *selectedIdx == i, (config->fileName == fileName))) {
+            config->fileName = fileName;
+            changed = true;
+        }
+    }
+
+    if (changed)
+        registry->inputMappings().addInputConfig(id, std::move(config));
+}
+
+void MenuSystem::LiveInputSelection(Registry* registry, int id, int* selectedIdx) 
+{
+    auto config = std::make_unique<HdmiInputConfig>();
+    HdmiInputConfig* currentConfig = registry->inputMappings().getHdmiInputConfig(id);
+    if (currentConfig) { *config = *currentConfig; }
+
+    bool changed = false;
+    if (UI::RadioButton("HDMI 1", (*selectedIdx == 0), currentConfig && (config->hdmiPort == 0))) {
+        config->hdmiPort = 0; 
+        changed = true; 
+    }
+    if (UI::RadioButton("HDMI 2", (*selectedIdx == 1), currentConfig && (config->hdmiPort == 1))) { 
+        config->hdmiPort = 1; 
+        changed = true; 
+    }
+
+    if (changed) registry->inputMappings().addInputConfig(id, std::move(config));
+}
+
+void MenuSystem::PlaybackSettings(Registry* registry, int id, int* selectedIdx) 
+{
+    InputConfig* currentConfig = registry->inputMappings().getInputConfig(id);
+    if (!currentConfig) {
+        UI::Text("No input selected", UI::TextState::DEFAULT);
+        return;
+    }
+
+    if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(currentConfig)) {
+        int i = 0;
+        if (UI::CheckBox("loop", (i++ == *selectedIdx), videoInputConfig->looping)) { 
+            videoInputConfig->looping = !videoInputConfig->looping; 
+        }
+        if (UI::CheckBox("backwards", (i++ == *selectedIdx), videoInputConfig->backwards)) {
+            videoInputConfig->backwards = !videoInputConfig->backwards;
+        }
+        UI::Text("start-time", UI::TextState::DEFAULT);
+        UI::Text("end-time", UI::TextState::DEFAULT);
+    }
+    else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(currentConfig)) {
+        std::string label = "Source: HDMI " + hdmiInputConfig->hdmiPort;
+        UI::Text(label, UI::TextState::DEFAULT);
+    }
+}
+
+void MenuSystem::GlobalSettings(Registry* registry, int id, int* selectedIdx) 
+{
+    Settings& settings = registry->settings();
+
+    int i = 0;
+    if (UI::CheckBox("Show UI", (i++ == *selectedIdx), settings.showUI)) { settings.showUI = !settings.showUI; };
 }
