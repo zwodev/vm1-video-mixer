@@ -12,7 +12,6 @@
 #include <vector>
 #include <string>
 #include "Registry.h"
-#include "MenuEntry.h"
 
 struct MenuItem {
     std::string label;
