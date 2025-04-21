@@ -32,6 +32,7 @@ void MenuSystem::setMenu(MenuType menuType)
     if (m_menus.find(menuType) != m_menus.end())
     {
         m_currentMenu = &(m_menus[menuType]);
+        m_selectedIdx = 0;
     }
 }
 
@@ -87,6 +88,22 @@ void MenuSystem::handleMediaAndEditButtons()
     }
 }
 
+void MenuSystem::HandleUpAndDownKeys(int* selectedIdx, int menuSize)
+{
+    if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
+        if ((*selectedIdx) > 0) {
+            (*selectedIdx)--;
+            UI::resetTextScrollPosition();
+        }
+    }
+    else if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
+        if ((*selectedIdx) + 1 < menuSize) {
+            (*selectedIdx)++;
+            UI::resetTextScrollPosition();
+        }
+    }
+}
+
 void MenuSystem::render()
 {
     handleMediaAndEditButtons();
@@ -119,7 +136,7 @@ void MenuSystem::render()
         UI::Text(label, isSelected ? UI::TextState::SELECTED : UI::TextState::DEFAULT);
     }
 
-    // Render dynamic content if present
+    // Render dynamic content (if present)
     if (menuItem->renderFunc) {
         menuItem->renderFunc(&m_registry, m_id, &m_selectedIdx);
     }
@@ -145,19 +162,10 @@ void MenuSystem::render()
             m_selectedIdx = 0;
         }
     }
-    else if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
-        if (m_selectedIdx > 0) {
-            m_selectedIdx--;
-            UI::resetTextScrollPosition();
-        }
+    else if (menuItem->children.size() > 0) {
+        HandleUpAndDownKeys(&m_selectedIdx, (int)menuItem->children.size());
     }
-    else if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
-        // TODO: How can we make this work in menu items with renderFunc?
-        //if (m_selectedIdx + 1 < (int)menuItem->children.size() || menuItem->renderFunc) {
-            m_selectedIdx++;
-            UI::resetTextScrollPosition();
-        //}
-    }
+
 }
 
 // DYNAMIC CONTENT
@@ -172,16 +180,20 @@ void MenuSystem::FileSelection(Registry* registry, int id, int* selectedIdx)
 
     std::vector<std::string>& files = registry->mediaPool().getVideoFiles();
     bool changed = false;
+    int menuSize = 0;
     for (int i = 0; i < files.size(); ++i) {
         std::string fileName = files[i];
         if (UI::RadioButton(fileName.c_str(), *selectedIdx == i, (config->fileName == fileName))) {
             config->fileName = fileName;
             changed = true;
         }
+        menuSize++;
     }
 
     if (changed)
         registry->inputMappings().addInputConfig(id, std::move(config));
+
+    HandleUpAndDownKeys(selectedIdx, menuSize);   
 }
 
 void MenuSystem::LiveInputSelection(Registry* registry, int id, int* selectedIdx) 
@@ -190,17 +202,20 @@ void MenuSystem::LiveInputSelection(Registry* registry, int id, int* selectedIdx
     HdmiInputConfig* currentConfig = registry->inputMappings().getHdmiInputConfig(id);
     if (currentConfig) { *config = *currentConfig; }
 
+    int i = 0;
     bool changed = false;
-    if (UI::RadioButton("HDMI 1", (*selectedIdx == 0), currentConfig && (config->hdmiPort == 0))) {
+    if (UI::RadioButton("HDMI 1", (i++ == *selectedIdx), currentConfig && (config->hdmiPort == 0))) {
         config->hdmiPort = 0; 
         changed = true; 
     }
-    if (UI::RadioButton("HDMI 2", (*selectedIdx == 1), currentConfig && (config->hdmiPort == 1))) { 
-        config->hdmiPort = 1; 
-        changed = true; 
-    }
-
+    // if (UI::RadioButton("HDMI 2", (i++ == *selectedIdx), currentConfig && (config->hdmiPort == 1))) { 
+    //     config->hdmiPort = 1; 
+    //     changed = true; 
+    // }
     if (changed) registry->inputMappings().addInputConfig(id, std::move(config));
+
+    HandleUpAndDownKeys(selectedIdx, i);
+
 }
 
 void MenuSystem::PlaybackSettings(Registry* registry, int id, int* selectedIdx) 
@@ -210,7 +225,7 @@ void MenuSystem::PlaybackSettings(Registry* registry, int id, int* selectedIdx)
         UI::Text("No input selected", UI::TextState::DEFAULT);
         return;
     }
-
+    
     if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(currentConfig)) {
         int i = 0;
         if (UI::CheckBox("loop", (i++ == *selectedIdx), videoInputConfig->looping)) { 
@@ -221,6 +236,7 @@ void MenuSystem::PlaybackSettings(Registry* registry, int id, int* selectedIdx)
         }
         UI::Text("start-time", UI::TextState::DEFAULT);
         UI::Text("end-time", UI::TextState::DEFAULT);
+        HandleUpAndDownKeys(selectedIdx, i+1);
     }
     else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(currentConfig)) {
         std::string label = "Source: HDMI " + hdmiInputConfig->hdmiPort;
@@ -234,4 +250,5 @@ void MenuSystem::GlobalSettings(Registry* registry, int id, int* selectedIdx)
 
     int i = 0;
     if (UI::CheckBox("Show UI", (i++ == *selectedIdx), settings.showUI)) { settings.showUI = !settings.showUI; };
+    HandleUpAndDownKeys(selectedIdx, i);
 }

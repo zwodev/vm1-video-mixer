@@ -38,8 +38,10 @@ public:
 private:
     void setMenu(MenuType menuType);
     void handleMediaAndEditButtons();
+    
 
 private:
+    static void HandleUpAndDownKeys(int* selectedIdx, int menuSize);
     static void FileSelection(Registry* registry, int id, int* selectedIdx);
     static void LiveInputSelection(Registry* registry, int id, int* selectedIdx);
     static void PlaybackSettings(Registry* registry, int id, int* selectedIdx);

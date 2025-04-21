@@ -118,21 +118,35 @@ void FileAssignmentWidget::loadFiles(const std::string& directory) {
 }
 
 void FileAssignmentWidget::handleButtonClick(int id) {
-    VideoInputConfig* videoInputConfig = m_registry.inputMappings().getVideoInputConfig(id);
-    if (videoInputConfig && !videoInputConfig->fileName.empty()) {
-        std::string fileName = videoInputConfig->fileName;
-        bool looping = videoInputConfig->looping;
-        std::string filePath = m_registry.mediaPool().getVideoFilePath(fileName);
-        int oddRow = (id / WIDTH) % 2;
-        // Select plane
-        if (oddRow == 0) {
-            printf("Play Left: (ID: %d, FILE: %s, LOOP: %d)\n", id, fileName.c_str(), looping);
-            m_videoPlaneLeft->playAndFade(filePath, looping);
-        } 
-        else {
-            printf("Play Right: (ID: %d, FILE: %s, LOOP: %d)\n", id, fileName.c_str(), looping);
-            m_videoPlaneRight->playAndFade(filePath, looping);
+    std::string fileName;
+    std::string filePath;
+    bool looping = false;
+
+    InputConfig* inputConfig = m_registry.inputMappings().getVideoInputConfig(id);
+    if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(inputConfig)) {
+        fileName = videoInputConfig->fileName;
+        looping = videoInputConfig->looping;
+        filePath = m_registry.mediaPool().getVideoFilePath(fileName);
+    }
+    else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(inputConfig)) {
+        if (hdmiInputConfig->hdmiPort == 0) {
+            fileName = "hdmi0";
+            filePath = m_registry.mediaPool().getVideoFilePath(fileName);
         }
+    }
+    else {
+        return;
+    }
+
+    int oddRow = (id / WIDTH) % 2;
+    // Select plane
+    if (oddRow == 0) {
+        printf("Play Left: (ID: %d, FILE: %s, LOOP: %d)\n", id, fileName.c_str(), looping);
+        m_videoPlaneLeft->playAndFade(filePath, looping);
+    } 
+    else {
+        printf("Play Right: (ID: %d, FILE: %s, LOOP: %d)\n", id, fileName.c_str(), looping);
+        m_videoPlaneRight->playAndFade(filePath, looping);
     }
 }
 
