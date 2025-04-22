@@ -24,7 +24,7 @@ class MenuSystem
 public:
     enum MenuType
     {
-        MT_Logo,
+        MT_StartupScreen,
         MT_InfoSelection,
         MT_InputSelection,
         MT_PlaybackSelection,
@@ -42,6 +42,7 @@ private:
 
 private:
     static void HandleUpAndDownKeys(int* selectedIdx, int menuSize);
+    static void StartupScreen(Registry* registry, int id, int* selectedIdx);
     static void FileSelection(Registry* registry, int id, int* selectedIdx);
     static void LiveInputSelection(Registry* registry, int id, int* selectedIdx);
     static void PlaybackSettings(Registry* registry, int id, int* selectedIdx);
@@ -51,7 +52,6 @@ private:
     Registry &m_registry;
     int m_id = 0;
     int m_bank = 0;
-    MenuItem *m_currentMenu = nullptr;
     int m_selectedIdx = 0;
     std::vector<int> m_currentMenuPath;
 

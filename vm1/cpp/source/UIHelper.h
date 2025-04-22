@@ -7,6 +7,8 @@
 #include <string>
 #include <algorithm>
 
+//#define ALLOW_SCROLLING
+
 namespace UI
 {
     struct MenuItem {
@@ -94,7 +96,9 @@ namespace UI
 
         int width = (int)ImGui::GetWindowSize().x;
 
-        bool isOversized = textState == TextState::SELECTED && textSize.x >= width;
+        bool isOversized = false;
+#ifdef ALLOW_SCROLLING
+        isOversized = textState == TextState::SELECTED && textSize.x >= width;
         if (isOversized)
         {
             // bgColor = ImVec4(255, 0, 0, 255);
@@ -103,6 +107,7 @@ namespace UI
                 scrollOversizedTextPositionX -= 0.75;
             }
         }
+#endif
 
         ImGui::GetWindowDrawList()->AddRectFilled(
             ImVec2(cursorPos.x - padding_x, cursorPos.y),
@@ -227,56 +232,6 @@ namespace UI
 
         return selected && toggled;
     }
-
-
-    // int getMenuNavInput(int* selectedIndex) {
-    //     int leaveMenu = 0;
-    //     if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
-    //         *selectedIndex--;
-    //     }
-    //     else if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
-    //         *selectedIndex++;
-    //     }
-    //     else if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) {
-    //         *selectedIndex++;
-    //         leaveMenu = -1;
-    //     }
-
-    //     return leaveMenu;
-    // }
-
-    // int FileSelection(const std::vector<std::string>& files, std::string* activeFile, int* selectedIndex)
-    // {
-    //     int leaveMenu = getMenuNavInput(selectedIndex);
-
-    //     for (int i = 0; i < files.size(); ++i) {
-    //         bool isSelected = (i == *selectedIndex);
-
-    //         std::string file = files[i];
-    //         if (Toggled(file, isSelected, (file == *activeFile))) {
-    //             *activeFile = file;
-    //         }
-    //     }
-    // }
-
-    // int LiveInput(HdmiInputConfig* hdmiInputConfig, int* selectedIndex)
-    // {
-    //     if (!hdmiInputConfig) return;
-
-    //     int leaveMenu = getMenuNavInput(selectedIndex);
-
-    //     int i = 0;
-    //     bool isHdmi1 = (hdmiInputConfig->hdmiPort == 0);
-    //     if (Toggled("HDMI 1", (i++ == *selectedIndex), &isHdmi1)) {
-    //         hdmiInputConfig->hdmiPort = 0;
-    //     }
-    //     bool isHdmi2 = (hdmiInputConfig->hdmiPort == 1);
-    //     if (Toggled("HDMI 2", (i++ == *selectedIndex), &isHdmi2)) {
-    //         hdmiInputConfig->hdmiPort = 1;
-    //     }
-
-    //     return leaveMenu;
-    // }
 
     int FileSelection(Registry* registry, int id)
     {

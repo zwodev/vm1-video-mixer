@@ -17,6 +17,7 @@ const int NUM_BANKS = 4;
 
 MenuSystem::MenuSystem(Registry &registry) : m_registry(registry)
 {   
+    m_menus[MT_StartupScreen]       =  {"", {}, StartupScreen};
     m_menus[MT_InfoSelection]       =  {"Info", {}};
     m_menus[MT_InputSelection]      =  {"Source", {
                                             {"File", {}, FileSelection},
@@ -26,14 +27,14 @@ MenuSystem::MenuSystem(Registry &registry) : m_registry(registry)
     m_menus[MT_PlaybackSelection]   = {"Playback", {}, PlaybackSettings};
     m_menus[MT_SettingsSelection]   = {"Settings", {}, GlobalSettings};
 
-    setMenu(MT_InputSelection);
+    setMenu(MT_StartupScreen);
 }
 
 void MenuSystem::setMenu(MenuType menuType)
 {
     if (m_menus.find(menuType) != m_menus.end())
     {
-        m_currentMenu = &(m_menus[menuType]);
+        m_currentMenuType = menuType;
         m_selectedIdx = 0;
     }
 }
@@ -50,6 +51,8 @@ void MenuSystem::handleMediaAndEditButtons()
         {
             int id = m_bank * numButtons + i;
             m_id = id;
+
+            if (m_currentMenuType == MT_StartupScreen) setMenu(MT_InputSelection);
             return;
         }
     }
@@ -62,13 +65,13 @@ void MenuSystem::handleMediaAndEditButtons()
             switch (editButton)
             {
             case ImGuiKey_Q:
-                m_currentMenuType = MT_InfoSelection;
+                setMenu(MT_InfoSelection);
                 break;
             case ImGuiKey_W:
-                m_currentMenuType = MT_InputSelection;
+                setMenu(MT_InputSelection);
                 break;
             case ImGuiKey_E:
-                m_currentMenuType = MT_PlaybackSelection;
+                setMenu(MT_PlaybackSelection);
                 break;
             case ImGuiKey_R:
                 break;
@@ -79,13 +82,13 @@ void MenuSystem::handleMediaAndEditButtons()
             case ImGuiKey_U:
                 break;
             case ImGuiKey_I:
-                m_currentMenuType = MT_SettingsSelection;
+                setMenu(MT_SettingsSelection);
                 break;
             default:
                 break;
             }
 
-            setMenu(m_currentMenuType);
+            
         }
     }
 }
@@ -110,14 +113,14 @@ void MenuSystem::render()
 {
     handleMediaAndEditButtons();
 
-    if (!m_currentMenu)
-    {
-        UI::CenteredText("VM-1");
-        return;
-    }
+    // if (!m_currentMenu)
+    // {
+    //     UI::CenteredText("VM-1");
+    //     return;
+    // }
 
     // Traverse to current menu
-    const MenuItem* menuItem = m_currentMenu;
+    const MenuItem* menuItem = &(m_menus[m_currentMenuType]);
     for (int idx : m_currentMenuPath) {
         if (idx >= 0 && idx < (int)menuItem->children.size())
             menuItem = &menuItem->children[idx];
@@ -126,8 +129,10 @@ void MenuSystem::render()
     }
 
     // Render title
-    UI::MenuTitle(menuItem->label);
-    UI::MediaButtonID(m_id + 1);
+    if (!menuItem->label.empty()) {
+        UI::MenuTitle(menuItem->label);
+        UI::MediaButtonID(m_id + 1);
+    }
 
     ImGui::SetCursorPosY(23);
 
@@ -176,6 +181,11 @@ void MenuSystem::render()
 
 // DYNAMIC CONTENT
 // TODO: Could be put in different namespaces
+void MenuSystem::StartupScreen(Registry* registry, int id, int* selectedIdx)
+{
+    UI::CenteredText("VM-1");
+}
+
 void MenuSystem::FileSelection(Registry* registry, int id, int* selectedIdx)
 {
     auto config = std::make_unique<VideoInputConfig>();
