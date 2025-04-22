@@ -92,19 +92,23 @@ void FileAssignmentWidget::renderSettings() {
 }
 
 void FileAssignmentWidget::render() {
-    ImGui::Begin("File Assignment");
+    Settings& settings = m_registry.settings();
+    
+    if (settings.showUI) {
+        ImGui::Begin("File Assignment");
 
-    ImGui::Columns(3);
-    // Left column: File list
-    renderFileList();
-    ImGui::NextColumn();
-    // Middle column: Button matrix
-    renderButtonMatrix();
-    ImGui::NextColumn();
-    // Right column: Render settings
-    renderSettings();
+        ImGui::Columns(3);
+        // Left column: File list
+        renderFileList();
+        ImGui::NextColumn();
+        // Middle column: Button matrix
+        renderButtonMatrix();
+        ImGui::NextColumn();
+        // Right column: Render settings
+        renderSettings();
 
-    ImGui::End();
+        ImGui::End();
+    }
 
     handleKeyboardShortcuts();
 }

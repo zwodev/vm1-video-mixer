@@ -25,6 +25,8 @@ MenuSystem::MenuSystem(Registry &registry) : m_registry(registry)
                                         }};
     m_menus[MT_PlaybackSelection]   = {"Playback", {}, PlaybackSettings};
     m_menus[MT_SettingsSelection]   = {"Settings", {}, GlobalSettings};
+
+    setMenu(MT_InputSelection);
 }
 
 void MenuSystem::setMenu(MenuType menuType)
@@ -90,13 +92,13 @@ void MenuSystem::handleMediaAndEditButtons()
 
 void MenuSystem::HandleUpAndDownKeys(int* selectedIdx, int menuSize)
 {
-    if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
+    if (!ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
         if ((*selectedIdx) > 0) {
             (*selectedIdx)--;
             UI::resetTextScrollPosition();
         }
     }
-    else if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
+    else if (!ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
         if ((*selectedIdx) + 1 < menuSize) {
             (*selectedIdx)++;
             UI::resetTextScrollPosition();
@@ -158,8 +160,12 @@ void MenuSystem::render()
     {
         // Go up one level
         if (!m_currentMenuPath.empty()) {
+            m_selectedIdx = m_currentMenuPath.back();
             m_currentMenuPath.pop_back();
+        }
+        else {
             m_selectedIdx = 0;
+            setMenu(MT_InputSelection);
         }
     }
     else if (menuItem->children.size() > 0) {
@@ -208,10 +214,10 @@ void MenuSystem::LiveInputSelection(Registry* registry, int id, int* selectedIdx
         config->hdmiPort = 0; 
         changed = true; 
     }
-    // if (UI::RadioButton("HDMI 2", (i++ == *selectedIdx), currentConfig && (config->hdmiPort == 1))) { 
-    //     config->hdmiPort = 1; 
-    //     changed = true; 
-    // }
+    if (UI::RadioButton("HDMI 2", (i++ == *selectedIdx), currentConfig && (config->hdmiPort == 1))) { 
+        config->hdmiPort = 1; 
+        changed = true; 
+    }
     if (changed) registry->inputMappings().addInputConfig(id, std::move(config));
 
     HandleUpAndDownKeys(selectedIdx, i);
@@ -234,9 +240,9 @@ void MenuSystem::PlaybackSettings(Registry* registry, int id, int* selectedIdx)
         if (UI::CheckBox("backwards", (i++ == *selectedIdx), videoInputConfig->backwards)) {
             videoInputConfig->backwards = !videoInputConfig->backwards;
         }
-        UI::Text("start-time", UI::TextState::DEFAULT);
-        UI::Text("end-time", UI::TextState::DEFAULT);
-        HandleUpAndDownKeys(selectedIdx, i+1);
+        UI::Text("start-time", (i++ == *selectedIdx) ? UI::TextState::SELECTED : UI::TextState::DEFAULT);
+        UI::Text("end-time", (i++ == *selectedIdx) ? UI::TextState::SELECTED : UI::TextState::DEFAULT);
+        HandleUpAndDownKeys(selectedIdx, i);
     }
     else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(currentConfig)) {
         std::string label = "Source: HDMI " + hdmiInputConfig->hdmiPort;

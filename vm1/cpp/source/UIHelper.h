@@ -201,7 +201,8 @@ namespace UI
     bool CheckBox(const std::string& label, bool selected, bool checked)
     {
         bool oldChecked= checked;
-        if (selected && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
+        bool keyPressed = (ImGui::IsKeyPressed(ImGuiKey_RightArrow) || (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_DownArrow)));
+        if (selected && keyPressed) {
             checked = !checked;
         }
 
@@ -215,7 +216,8 @@ namespace UI
     bool RadioButton(const std::string& label, bool selected, bool toggled)
     {
         bool oldToggled = toggled;
-        if (selected && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
+        bool keyPressed = (ImGui::IsKeyPressed(ImGuiKey_RightArrow) || (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_DownArrow)));
+        if (selected && keyPressed) {
             toggled = !toggled;
         }
 

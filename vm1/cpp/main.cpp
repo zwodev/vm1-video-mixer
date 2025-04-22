@@ -279,10 +279,10 @@ int main(int, char **)
                 ImGui::End();
                 ImGui::PopStyleVar();
             }
-
+        }
             // File Assignment Widget
             fileAssignmentWidget.render();
-        }
+        
 
         
 
