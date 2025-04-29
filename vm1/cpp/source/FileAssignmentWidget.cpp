@@ -126,7 +126,7 @@ void FileAssignmentWidget::handleButtonClick(int id) {
     std::string filePath;
     bool looping = false;
 
-    InputConfig* inputConfig = m_registry.inputMappings().getVideoInputConfig(id);
+    InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(id);
     if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(inputConfig)) {
         fileName = videoInputConfig->fileName;
         looping = videoInputConfig->looping;

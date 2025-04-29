@@ -163,6 +163,7 @@ int main(int, char **)
 
     // Camera
     CameraController cameraController;
+    cameraController.setup();
     CameraPlayer cameraPlayer0;
 
     // Video players
@@ -265,6 +266,7 @@ int main(int, char **)
                 ImGui::Checkbox("Show HDMI2CSI", &isCameraEnabled);
                 ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
                 ImGui::End();
+                //printf("FPS: %f\n", io.Framerate);
             }
 
             // OLED debug window

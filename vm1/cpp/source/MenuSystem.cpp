@@ -228,7 +228,10 @@ void MenuSystem::LiveInputSelection(Registry* registry, int id, int* selectedIdx
         config->hdmiPort = 1; 
         changed = true; 
     }
-    if (changed) registry->inputMappings().addInputConfig(id, std::move(config));
+    if (changed)  {
+        //printf("ID: %d, PORT: %d\n", id, config->hdmiPort);
+        registry->inputMappings().addInputConfig(id, std::move(config));
+    }
 
     HandleUpAndDownKeys(selectedIdx, i);
 

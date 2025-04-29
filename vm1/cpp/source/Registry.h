@@ -25,7 +25,7 @@ public:
     bool backwards = false;
 };
 
-struct HdmiInputConfig : public InputConfig
+class HdmiInputConfig : public InputConfig
 {
 public:
     HdmiInputConfig() {};
