@@ -1,0 +1,16 @@
+[Unit]
+Description=Start the VM-1
+Requires=graphical-session.target
+
+[Service]
+Type=simple
+ExecStartPre=/bin/sleep 10
+ExecStart=/home/vm1/Documents/coding/vm1-video-mixer/vm1/cpp/builddir/vm1
+WorkingDirectory=/home/vm1/Documents/coding/vm1-video-mixer/vm1/cpp
+Environment=DISPLAY=:0
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+#Restart=on-failure
+
+
+[Install]
+WantedBy=default.target

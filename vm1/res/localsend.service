@@ -1,0 +1,16 @@
+[Unit]
+Description=Start LocalSend
+#After=network.target
+#Requires=network.target
+
+[Service]
+Type=simple
+ExecStart=xvfb-run -a localsend_app
+Restart=on-failure
+#User=vm1
+#Group=vm1
+#WorkingDirectory=/home/pi
+
+[Install]
+#WantedBy=multi-user.target
+WantedBy=default.target
