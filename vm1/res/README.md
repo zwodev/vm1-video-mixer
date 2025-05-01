@@ -4,9 +4,11 @@
 2) Copy `vm1.service` and `localsend.service` to `~/.config/systemd/user/`
 3) Enable vm1.service:
 
-    systemctl --user enable localsend.service
-    systemctl --user enable vm1.service
-    systemctl --user daemon-reload
+```
+$ systemctl --user enable localsend.service
+$ systemctl --user enable vm1.service
+$ systemctl --user daemon-reload
+```
 
 4) Reboot Raspberry Pi
 
