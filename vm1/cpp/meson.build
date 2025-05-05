@@ -1,5 +1,5 @@
 # project('vm-1', 'cpp')
-project('vm-1', ['c', 'cpp'], default_options: ['cpp_std=c++23'])
+project('vm-1', ['c', 'cpp'], default_options: ['cpp_std=c++20'])
 
 
 add_project_arguments('-fpermissive', language : 'cpp')

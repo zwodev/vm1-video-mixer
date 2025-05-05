@@ -6,33 +6,58 @@
 #include <memory>
 #include <filesystem>
 
+#include <cereal/types/polymorphic.hpp>
+#include <cereal/archives/json.hpp>
+#include <cereal/types/map.hpp>
+#include <cereal/types/memory.hpp>
+#include <fstream>
+
 
 class InputConfig
 {
 public:
-    InputConfig() {};
-    virtual ~InputConfig() {}; // Should be abstract
+    InputConfig() = default;
+    virtual ~InputConfig() = 0;
+
+    template <class Archive>
+    void serialize(Archive & ar) { }
 };
+inline InputConfig::~InputConfig() = default;
 
 class VideoInputConfig : public InputConfig
 {
 public:
-    VideoInputConfig() {};
-    ~VideoInputConfig() {};
+    VideoInputConfig() = default;
+    ~VideoInputConfig() = default;
 
     std::string fileName;
     bool looping = false;
     bool backwards = false;
+    
+    template <class Archive>
+    void serialize(Archive & ar) {
+        ar(cereal::base_class<InputConfig>(this), fileName, looping, backwards);
+    }
 };
 
 class HdmiInputConfig : public InputConfig
 {
 public:
-    HdmiInputConfig() {};
-    ~HdmiInputConfig() {};
+    HdmiInputConfig() = default;
+    ~HdmiInputConfig() = default;
     
     int hdmiPort = 0;
+
+    template <class Archive>
+    void serialize(Archive & ar) {
+        ar(cereal::base_class<InputConfig>(this), hdmiPort);
+    }
 };
+
+CEREAL_REGISTER_TYPE(VideoInputConfig);
+CEREAL_REGISTER_TYPE(HdmiInputConfig);
+CEREAL_REGISTER_POLYMORPHIC_RELATION(InputConfig, VideoInputConfig)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(InputConfig, HdmiInputConfig)
 
 
 // TODO: Could be simplified with templates
@@ -75,8 +100,14 @@ public:
         return nullptr;
     }
 
+    template<class Archive>
+    void serialize(Archive& ar) {
+        ar(m_idsToValue);
+    }
+
 private:
     std::map<int, std::unique_ptr<InputConfig>> m_idsToValue;
+
 };
 
 class MediaPool 
@@ -119,6 +150,11 @@ struct Settings
 {
     bool showUI = true;
     std::string videoFilePath = "../videos/";
+
+    template <class Archive>
+    void serialize(Archive & ar) {
+        ar(showUI, videoFilePath);
+    }    
 };
 
 class Registry 
@@ -130,9 +166,23 @@ public:
     Settings& settings() { return m_settings; }
     InputMappings& inputMappings() { return m_inputMappings; }
     MediaPool& mediaPool() { return m_mediaPool; }
+    
+    void save() {
+        std::ofstream file("vm1-registry.json");
+        cereal::JSONOutputArchive archive(file);
+        archive(m_inputMappings, m_settings);
+    }
+
+    void load() {
+        std::ifstream file("vm1-registry.json");
+        cereal::JSONInputArchive archive(file);
+        archive(m_inputMappings, m_settings);
+    }
 
 private:
     Settings m_settings;
     InputMappings m_inputMappings;
     MediaPool m_mediaPool;
 };
+
+
