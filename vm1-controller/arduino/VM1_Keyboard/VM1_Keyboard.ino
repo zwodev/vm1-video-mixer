@@ -26,7 +26,7 @@
 #define ROTARY_PIN_B 27
 
 
-// debugASDD
+// debug
 // #define DEBUG
 #ifdef DEBUG
 uint32_t d_current_micros, d_previous_micros;
@@ -187,36 +187,40 @@ void loop() {
 
   // handle serial input and status leds
   if (Serial.available() > 0) {
-    char incoming_serial = Serial.read();
-    Serial.println(incoming_serial);
-    switch (incoming_serial) {
-      case '0':
-        Serial.println("Running");
-        led_state = RUNNING;
-        break;
-      case '1':
-        Serial.println("LED 0");
-        led_state = LED_0_ON;
-        set_status_led(0);
-        break;
-      case '2':
-        Serial.println("LED 1");
-        led_state = LED_1_ON;
-        set_status_led(1);
-        break;
-      case '3':
-        Serial.println("LED 2");
-        led_state = LED_2_ON;
-        set_status_led(2);
-        break;
-      case '4':
-        Serial.println("LED 3");
-        led_state = LED_3_ON;
-        set_status_led(3);
-        break;
-      default:
-        break;
-    }
+
+    String received = Serial.readStringUntil('\n');  // Read until newline
+    Serial.print("Received: ");
+    Serial.println(received);
+    // char incoming_serial = Serial.read();
+    // Serial.println(incoming_serial);
+    // switch (incoming_serial) {
+    //   case '0':
+    //     Serial.println("Running");
+    //     led_state = RUNNING;
+    //     break;
+    //   case '1':
+    //     Serial.println("LED 0");
+    //     led_state = LED_0_ON;
+    //     set_status_led(0);
+    //     break;
+    //   case '2':
+    //     Serial.println("LED 1");
+    //     led_state = LED_1_ON;
+    //     set_status_led(1);
+    //     break;
+    //   case '3':
+    //     Serial.println("LED 2");
+    //     led_state = LED_2_ON;
+    //     set_status_led(2);
+    //     break;
+    //   case '4':
+    //     Serial.println("LED 3");
+    //     led_state = LED_3_ON;
+    //     set_status_led(3);
+    //     break;
+    //   default:
+    //     break;
+    // }
   }
 
   // handle status leds state
@@ -254,6 +258,7 @@ void blink() {
       // blink four status leds
       for (int8_t i = 0; i < status_led_count; i++) {
         digitalWrite(status_leds[i], i != led_index);
+        // Serial.print(".");
       }
       led_index--;
       if (led_index < 0) led_index = status_led_count - 1;
