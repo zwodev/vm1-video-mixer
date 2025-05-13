@@ -6,6 +6,18 @@
 #include <unistd.h>
 #include <cstring>
 
+enum button_state
+{
+    NONE,
+    EMPTY,
+    FILE_ASSET,
+    LIVECAM,
+    SHADER,
+    FILE_ASSET_ACTIVE,
+    LIVECAM_ACTIVE,
+    SHADER_ACTIVE,
+};
+
 // Helper: Set up serial port
 int open_serial(const char *port)
 {
@@ -43,27 +55,59 @@ int main()
         return 1;
     }
 
-    // Create RGB values for 15 LEDs
-    std::vector<std::vector<int>> leds(15, std::vector<int>(3));
-    for (int i = 0; i < 15; ++i)
-    {
-        leds[i][0] = 255; // Red
-        leds[i][1] = 0;   // Green
-        leds[i][2] = 0;   // Blue
-        // leds[i][0] = (i * 17) % 256;       // Red
-        // leds[i][1] = (255 - i * 10) % 256; // Green
-        // leds[i][2] = (i * 5) % 256;        // Blue
-    }
+    // Set Button States
+    std::vector<button_state> button_states = {
+        button_state::NONE,
+        button_state::NONE,
+
+        button_state::NONE,
+        button_state::NONE,
+        button_state::NONE,
+        button_state::NONE,
+        button_state::NONE,
+        button_state::NONE,
+        button_state::NONE,
+        button_state::NONE,
+
+        button_state::EMPTY,
+        button_state::EMPTY,
+        button_state::EMPTY,
+        button_state::FILE_ASSET_ACTIVE,
+
+        button_state::FILE_ASSET,
+        button_state::FILE_ASSET,
+        button_state::FILE_ASSET,
+        button_state::LIVECAM,
+
+        button_state::NONE,
+
+        button_state::LIVECAM,
+        button_state::FILE_ASSET,
+        button_state::FILE_ASSET_ACTIVE,
+        button_state::FILE_ASSET,
+
+        button_state::EMPTY,
+        button_state::EMPTY,
+        button_state::EMPTY,
+        button_state::EMPTY,
+
+    };
+
+    // Convert button_states to integers for MessagePack
+    std::vector<int> button_states_as_int;
+    for (const auto &state : button_states)
+        button_states_as_int.push_back(static_cast<int>(state));
 
     // Pack data with MessagePack
     msgpack::sbuffer buffer;
-    msgpack::pack(buffer, leds);
+    // msgpack::pack(buffer, leds);
+    msgpack::pack(buffer, button_states_as_int);
 
     // Send to Pico
     write(fd, buffer.data(), buffer.size());
     close(fd);
 
-    std::cout << "Sent MessagePack with 15 LED colors.\n";
+    std::cout << "Sent MessagePack.\n";
 
     return 0;
 }

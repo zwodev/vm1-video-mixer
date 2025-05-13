@@ -1,6 +1,8 @@
 #include <stdint.h>
+#include <Adafruit_NeoPixel.h>
+#include "MsgPack/MsgPack.h"
 #include "Keyboard.h"
-#include "pio_encoder.h"
+// #include "pio_encoder.h"
 
 // four status leds pins
 #define LED_PIN_01 0
@@ -25,8 +27,11 @@
 #define ROTARY_PIN_A 26
 #define ROTARY_PIN_B 27
 
+#define NEOPIXELS_PIN 22
+#define NEOPIXEL_COUNT 27
+#define MESSAGEPACK_SIZE 27
 
-// debugASDD
+// debug
 // #define DEBUG
 #ifdef DEBUG
 uint32_t d_current_micros, d_previous_micros;
@@ -40,28 +45,49 @@ uint32_t d_main_loop_duration_micros;
 
 const uint8_t NUM_ROWS = 3;
 const uint8_t NUM_COLS = 9;
-uint8_t rowPins[NUM_ROWS] = { ROW3, ROW2, ROW1 };
-uint8_t colPins[NUM_COLS] = { COL9, COL8, COL7, COL6, COL5, COL4, COL3, COL2, COL1 };
-bool current_keyboard_matrix[NUM_ROWS][NUM_COLS] = { false };
-bool previous_keyboard_matrix[NUM_ROWS][NUM_COLS] = { false };
+uint8_t rowPins[NUM_ROWS] = {ROW3, ROW2, ROW1};
+uint8_t colPins[NUM_COLS] = {COL9, COL8, COL7, COL6, COL5, COL4, COL3, COL2, COL1};
+bool current_keyboard_matrix[NUM_ROWS][NUM_COLS] = {false};
+bool previous_keyboard_matrix[NUM_ROWS][NUM_COLS] = {false};
 char keymap[NUM_ROWS][NUM_COLS] = {
-  { KEY_LEFT_ARROW, 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i' },
-  { KEY_RIGHT_ARROW, 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k' },
-  { KEY_LEFT_SHIFT, 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',' },
+    {KEY_LEFT_ARROW, 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i'},
+    {KEY_RIGHT_ARROW, 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k'},
+    {KEY_LEFT_SHIFT, 'z', 'x', 'c', 'v', 'b', 'n', 'm', ','},
 };
 char last_button = '\0';
 bool last_button_state = RELEASED;
 
-
 // encoder
-PioEncoder encoder(ROTARY_PIN_A);
+// PioEncoder encoder(ROTARY_PIN_A);
 long encoder_value_old = 0;
 
 // status leds
-uint8_t status_leds[] = { LED_PIN_01, LED_PIN_02, LED_PIN_03, LED_PIN_04 };
+uint8_t status_leds[] = {LED_PIN_01, LED_PIN_02, LED_PIN_03, LED_PIN_04};
 const uint8_t status_led_count = 4;
 
-enum STATUS_LED_STATE {
+// NeoPixels
+Adafruit_NeoPixel strip(NEOPIXEL_COUNT, NEOPIXELS_PIN, NEO_GRB + NEO_KHZ800);
+int dimmed_divider = 20;
+int black[] = {0, 0, 0};
+int grey[] = {10, 10, 10};
+int red[] = {255, 0, 0};
+int dark_red[] = {255 / dimmed_divider, 0, 0};
+int green[] = {0, 255, 0};
+int dark_green[] = {0, 255 / dimmed_divider, 0};
+int blue[] = {0, 0, 255};
+int dark_blue[] = {0, 0, 255 / dimmed_divider};
+int white[] = {255, 255, 255};
+int yellow[] = {255, 255, 0};
+int magenta[] = {255, 0, 255};
+int cyan[] = {0, 255, 255};
+
+// MessagePack
+const int SERIAL_BUF_SIZE = 512;
+uint8_t serialBuf[SERIAL_BUF_SIZE];
+int serialLen = 0;
+
+enum STATUS_LED_STATE
+{
   RUNNING,
   LED_0_ON,
   LED_1_ON,
@@ -70,10 +96,30 @@ enum STATUS_LED_STATE {
 };
 STATUS_LED_STATE led_state = RUNNING;
 
-void check_keyboard_matrix() {
-  for (uint8_t i = 0; i < NUM_ROWS; i++) {
-    for (uint8_t j = 0; j < NUM_COLS; j++) {
-      if (previous_keyboard_matrix[i][j] != current_keyboard_matrix[i][j]) {
+enum button_state
+{
+  NONE,
+  EMPTY,
+  FILE_ASSET,
+  LIVECAM,
+  SHADER,
+  FILE_ASSET_ACTIVE,
+  LIVECAM_ACTIVE,
+  SHADER_ACTIVE,
+};
+
+// shared debug message between both cores
+volatile char debug_msg[32] = "- no info -";
+volatile bool debug_msg_ready = false;
+
+void check_keyboard_matrix()
+{
+  for (uint8_t i = 0; i < NUM_ROWS; i++)
+  {
+    for (uint8_t j = 0; j < NUM_COLS; j++)
+    {
+      if (previous_keyboard_matrix[i][j] != current_keyboard_matrix[i][j])
+      {
         last_button = keymap[i][j];
         last_button_state = !current_keyboard_matrix[i][j];
         return;
@@ -83,8 +129,10 @@ void check_keyboard_matrix() {
   last_button = '\0';
 }
 
-void update_keyboard() {
-  for (uint8_t i = 0; i < NUM_COLS; i++) {
+void update_keyboard()
+{
+  for (uint8_t i = 0; i < NUM_COLS; i++)
+  {
     gpio_put(colPins[i], true);
     sleep_us(10);
 
@@ -101,43 +149,134 @@ void update_keyboard() {
 
   check_keyboard_matrix();
 
-  if (last_button != '\0') {
+  if (last_button != '\0')
+  {
     Serial.print(last_button);
-    if (last_button_state == PRESSED) {
+    if (last_button_state == PRESSED)
+    {
       Keyboard.press(last_button);
       Serial.print("Pressed\n");
-    } else {
+    }
+    else
+    {
       Keyboard.release(last_button);
       Serial.print("Released\n");
     }
   }
 
   // store current keyboard matrix
-  for (uint8_t i = 0; i < NUM_ROWS; i++) {
-    for (uint8_t j = 0; j < NUM_COLS; j++) {
+  for (uint8_t i = 0; i < NUM_ROWS; i++)
+  {
+    for (uint8_t j = 0; j < NUM_COLS; j++)
+    {
       previous_keyboard_matrix[i][j] = current_keyboard_matrix[i][j];
     }
   }
 }
 
-void setup() {
+void set_status_led(uint8_t led_index)
+{
+  for (int8_t i = 0; i < status_led_count; i++)
+  {
+    digitalWrite(status_leds[i], i != led_index);
+  }
+}
+
+void blink()
+{
+  unsigned long current_millis = millis();
+
+  static int onboard_led_state = LOW;
+  static long time = 0;
+  static int8_t led_index = 0;
+
+  if (current_millis - time > 250)
+  {
+    if (led_state == RUNNING)
+    {
+      // blink four status leds
+      for (int8_t i = 0; i < status_led_count; i++)
+      {
+        digitalWrite(status_leds[i], i != led_index);
+      }
+      led_index--;
+      if (led_index < 0)
+        led_index = status_led_count - 1;
+    }
+
+    // blink on-board led
+    if (onboard_led_state == HIGH)
+    {
+      onboard_led_state = LOW;
+    }
+    else
+    {
+      onboard_led_state = HIGH;
+    }
+    digitalWrite(LED_BUILTIN, onboard_led_state);
+
+    // Serial.println(encoder.getCount());
+    time = current_millis;
+  }
+}
+
+int *colorForButtonState(button_state state)
+{
+  switch (state)
+  {
+  case NONE:
+    return black;
+  case EMPTY:
+    return grey;
+
+  case FILE_ASSET:
+    return dark_green;
+  case FILE_ASSET_ACTIVE:
+    return green;
+
+  case LIVECAM:
+    return dark_red;
+  case LIVECAM_ACTIVE:
+    return red;
+
+  case SHADER:
+    return dark_blue;
+  case SHADER_ACTIVE:
+    return blue;
+
+  default:
+    return black;
+  }
+}
+
+uint32_t colorFromArray(int color[3])
+{
+  return strip.Color(color[0], color[1], color[2]);
+  return 0;
+}
+
+void setup()
+{
   Serial.begin(115200);
 
   // init encoder
-  encoder.begin();
+  // encoder.begin();
 
   // init leds
   pinMode(LED_BUILTIN, OUTPUT);
-  for (uint8_t i = 0; i < status_led_count; i++) {
+  for (uint8_t i = 0; i < status_led_count; i++)
+  {
     pinMode(status_leds[i], OUTPUT);
   }
 
   // init button-matrix
-  for (uint8_t i = 0; i < NUM_ROWS; i++) {
+  for (uint8_t i = 0; i < NUM_ROWS; i++)
+  {
     gpio_init(rowPins[i]);
     gpio_set_dir(rowPins[i], GPIO_IN);
   }
-  for (uint8_t i = 0; i < NUM_COLS; i++) {
+  for (uint8_t i = 0; i < NUM_COLS; i++)
+  {
     gpio_init(colPins[i]);
     gpio_set_dir(colPins[i], GPIO_OUT);
     gpio_put(colPins[i], false);
@@ -146,77 +285,68 @@ void setup() {
   // hid-keyboard
   Keyboard.begin();
 
+  strip.begin();
+  strip.setBrightness(25);
+  strip.show();
+
 #ifdef DEBUG
   d_current_micros = 0;
   d_previous_micros = 0;
 #endif
 }
 
-void loop() {
+void loop()
+{
 #ifdef DEBUG
   d_current_micros = micros();
 #endif
-  // KEY_LEFT_SHIFT
-  // KEY_TAB
-  // KEY_UP_ARROW
-  // KEY_DOWN_ARROW
-  // KEY_LEFT_ARROW
-  // KEY_RIGHT_ARROW
 
-  // Scan Keyboard
-  // Keyboard.press('a');
-  // delay(1000);
-  // Keyboard.release('a');
-  // delay(1000);
   update_keyboard();
 
-
-  // Rotary Encoder ==> UP/DOWN Keys
-  int32_t encoder_value = encoder.getCount() / 10;
-  if (encoder_value > encoder_value_old) {
-    Keyboard.press(KEY_DOWN_ARROW);
+  // Rotary Encoder (send to Keyboard as UP/DOWN Keys)
+  /*
+    int32_t encoder_value = encoder.getCount() / 10;
+    if (encoder_value > encoder_value_old)
+    {
+      Keyboard.press(KEY_DOWN_ARROW);
+      delay(1);
+      Keyboard.release(KEY_DOWN_ARROW);
+      encoder_value_old = encoder_value;
+    }
+    else if (encoder_value < encoder_value_old)
+    {
+      Keyboard.press(KEY_UP_ARROW);
+      delay(1);
+      Keyboard.release(KEY_UP_ARROW);
+      encoder_value_old = encoder_value;
+    }
+    */
+  while (Serial.available() > 0 && serialLen < SERIAL_BUF_SIZE)
+  {
+    serialBuf[serialLen++] = Serial.read();
+    Serial.println(serialLen);
     delay(1);
-    Keyboard.release(KEY_DOWN_ARROW);
-    encoder_value_old = encoder_value;
-  } else if (encoder_value < encoder_value_old) {
-    Keyboard.press(KEY_UP_ARROW);
-    delay(1);
-    Keyboard.release(KEY_UP_ARROW);
-    encoder_value_old = encoder_value;
   }
 
-  // handle serial input and status leds
-  if (Serial.available() > 0) {
-    char incoming_serial = Serial.read();
-    Serial.println(incoming_serial);
-    switch (incoming_serial) {
-      case '0':
-        Serial.println("Running");
-        led_state = RUNNING;
-        break;
-      case '1':
-        Serial.println("LED 0");
-        led_state = LED_0_ON;
-        set_status_led(0);
-        break;
-      case '2':
-        Serial.println("LED 1");
-        led_state = LED_1_ON;
-        set_status_led(1);
-        break;
-      case '3':
-        Serial.println("LED 2");
-        led_state = LED_2_ON;
-        set_status_led(2);
-        break;
-      case '4':
-        Serial.println("LED 3");
-        led_state = LED_3_ON;
-        set_status_led(3);
-        break;
-      default:
-        break;
+  if (serialLen > 0)
+  {
+    MsgPack::Unpacker unpacker;
+
+    unpacker.feed(serialBuf, serialLen);
+
+    MsgPack::arr_t<int> states;
+
+    if (unpacker.deserialize(states) && states.size() == NEOPIXEL_COUNT)
+    {
+      for (uint32_t i = 0; i < NEOPIXEL_COUNT; i++)
+      {
+        int *color = colorForButtonState(static_cast<button_state>(states[i]));
+        strip.setPixelColor(i, colorFromArray(color));
+      }
+      strip.show();
     }
+
+    serialLen = 0; // Reset buffer
   }
 
   // handle status leds state
@@ -228,46 +358,34 @@ void loop() {
   // check how long the main loop takes
   // (hint/todo: it actually should average the time of all the
   //             iterations it does up to the next debug output)
-  if (d_current_micros - d_previous_micros > d_debug_log_interval_micros) {
-    Serial.print("Main loop duration in us:");
-    Serial.println(d_main_loop_duration_micros);
+  if (d_current_micros - d_previous_micros > d_debug_log_interval_micros)
+  {
+    // Serial.print("Main loop duration in us:");
+    // Serial.println(d_main_loop_duration_micros);
+    if (debug_msg_ready)
+    {
+      Serial.print("message from core 1: ");
+      Serial.println((const char *)debug_msg);
+      debug_msg_ready = false;
+    }
+    Serial.print(".");
+
     d_previous_micros = d_current_micros;
   }
 #endif
 }
 
-void set_status_led(uint8_t led_index) {
-  for (int8_t i = 0; i < status_led_count; i++) {
-    digitalWrite(status_leds[i], i != led_index);
-  }
+void set_debug_msg_core1(const char *message)
+{
+  snprintf((char *)debug_msg, sizeof(debug_msg), "%s", message); // Safe string copy into the buffer
+  debug_msg_ready = true;                                        // Set flag to indicate the message is ready
 }
 
-void blink() {
-  unsigned long current_millis = millis();
+void setup1()
+{
+  set_debug_msg_core1("hello from core 1");
+}
 
-  static int onboard_led_state = LOW;
-  static long time = 0;
-  static int8_t led_index = 0;
-
-  if (current_millis - time > 250) {
-    if (led_state == RUNNING) {
-      // blink four status leds
-      for (int8_t i = 0; i < status_led_count; i++) {
-        digitalWrite(status_leds[i], i != led_index);
-      }
-      led_index--;
-      if (led_index < 0) led_index = status_led_count - 1;
-    }
-
-    // blink on-board led
-    if (onboard_led_state == HIGH) {
-      onboard_led_state = LOW;
-    } else {
-      onboard_led_state = HIGH;
-    }
-    digitalWrite(LED_BUILTIN, onboard_led_state);
-
-    // Serial.println(encoder.getCount());
-    time = current_millis;
-  }
+void loop1()
+{
 }
