@@ -99,7 +99,9 @@ git clone https://github.com/hideakitai/DebugLog.git
 git clone https://github.com/hideakitai/ArxTypeTraits.git
 git clone https://github.com/hideakitai/ArxContainer.git
 
+# install Rotary Encoder Library
 
+git clone https://github.com/tobiglaser/RP2040-Encoder.git
 
 
 

@@ -3,6 +3,7 @@
 #include "MsgPack/MsgPack.h"
 #include "Keyboard.h"
 // #include "pio_encoder.h"
+#include "RP2040-Encoder/quadrature.h"
 
 // four status leds pins
 #define LED_PIN_01 0
@@ -26,7 +27,7 @@
 // rotary encoder pins
 #define ROTARY_PIN_A 26
 #define ROTARY_PIN_B 27
-
+// neopixel
 #define NEOPIXELS_PIN 22
 #define NEOPIXEL_COUNT 27
 #define MESSAGEPACK_SIZE 27
@@ -59,6 +60,8 @@ bool last_button_state = RELEASED;
 
 // encoder
 // PioEncoder encoder(ROTARY_PIN_A);
+Quadrature_encoder<ROTARY_PIN_A, ROTARY_PIN_B> encoder = Quadrature_encoder<ROTARY_PIN_A, ROTARY_PIN_B>();
+
 long encoder_value_old = 0;
 
 // status leds
@@ -259,9 +262,6 @@ void setup()
 {
   Serial.begin(115200);
 
-  // init encoder
-  // encoder.begin();
-
   // init leds
   pinMode(LED_BUILTIN, OUTPUT);
   for (uint8_t i = 0; i < status_led_count; i++)
@@ -285,6 +285,11 @@ void setup()
   // hid-keyboard
   Keyboard.begin();
 
+  // init encoder
+  // encoder.begin();
+  encoder.begin(pull_direction::up, resolution::quarter);
+
+  // neopixels
   strip.begin();
   strip.setBrightness(25);
   strip.show();
@@ -304,27 +309,26 @@ void loop()
   update_keyboard();
 
   // Rotary Encoder (send to Keyboard as UP/DOWN Keys)
-  /*
-    int32_t encoder_value = encoder.getCount() / 10;
-    if (encoder_value > encoder_value_old)
-    {
-      Keyboard.press(KEY_DOWN_ARROW);
-      delay(1);
-      Keyboard.release(KEY_DOWN_ARROW);
-      encoder_value_old = encoder_value;
-    }
-    else if (encoder_value < encoder_value_old)
-    {
-      Keyboard.press(KEY_UP_ARROW);
-      delay(1);
-      Keyboard.release(KEY_UP_ARROW);
-      encoder_value_old = encoder_value;
-    }
-    */
+
+  int32_t encoder_value = encoder.count() / 2;
+  if (encoder_value > encoder_value_old)
+  {
+    Keyboard.press(KEY_DOWN_ARROW);
+    delay(1);
+    Keyboard.release(KEY_DOWN_ARROW);
+    encoder_value_old = encoder_value;
+  }
+  else if (encoder_value < encoder_value_old)
+  {
+    Keyboard.press(KEY_UP_ARROW);
+    delay(1);
+    Keyboard.release(KEY_UP_ARROW);
+    encoder_value_old = encoder_value;
+  }
+
   while (Serial.available() > 0 && serialLen < SERIAL_BUF_SIZE)
   {
     serialBuf[serialLen++] = Serial.read();
-    Serial.println(serialLen);
     delay(1);
   }
 
@@ -350,7 +354,7 @@ void loop()
   }
 
   // handle status leds state
-  blink();
+  // blink();
 
 #ifdef DEBUG
   uint32_t d_time_after_main_loop = micros();
