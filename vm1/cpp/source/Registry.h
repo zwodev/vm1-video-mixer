@@ -5,9 +5,12 @@
 #include <string>
 #include <memory>
 #include <filesystem>
+#include <functional>
+#include <sstream>
 
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/archives/json.hpp>
+#include <cereal/archives/binary.hpp>
 #include <cereal/types/map.hpp>
 #include <cereal/types/memory.hpp>
 #include <fstream>
@@ -67,14 +70,6 @@ public:
     InputMappings() {}
     ~InputMappings() {}
 
-    void setBank(int bank) {
-        m_bank = bank;
-    }
-
-    int getBank() {
-        return m_bank;
-    }
-    
     void addInputConfig(int id, std::unique_ptr<InputConfig> inputConfig) {
         m_idsToValue[id] = std::move(inputConfig);
     }
@@ -110,11 +105,13 @@ public:
 
     template<class Archive>
     void serialize(Archive& ar) {
-        ar(m_bank, m_idsToValue);
+        ar(bank, m_idsToValue);
     }
 
+public:
+    int bank = 0;
+
 private:
-    int m_bank = 0;
     std::map<int, std::unique_ptr<InputConfig>> m_idsToValue;
 
 };
@@ -169,7 +166,7 @@ struct Settings
 class Registry 
 {
 public:
-    Registry() {}
+    Registry() { load(); }
     ~Registry() {}
 
     Settings& settings() { return m_settings; }
@@ -189,6 +186,16 @@ public:
     }
 
 private:
+    std::size_t hash() {
+        std::stringstream stream;
+        cereal::BinaryOutputArchive archive(stream);
+        archive(m_inputMappings, m_settings);
+        std::string serialized = stream.str();
+        return std::hash<std::string>{}(serialized);
+    }
+
+private:
+    size_t m_lastHash;
     Settings m_settings;
     InputMappings m_inputMappings;
     MediaPool m_mediaPool;

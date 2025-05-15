@@ -43,7 +43,7 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     // Select plane
     int oddRow = (mediaSlotId / 8) % 2;
     if (oddRow == 0) {
-        printf("Play Left: (ID: %d, FILE: %s, LOOP: %d)\n", mediaSlotId, fileName.c_str(), looping);
+        printf("Play Left: (ID: %d, FILE: %s, LOOP: %d)\n", mediaSlotId, filePath.c_str(), looping);
         int playerIndex = m_planes[0].playAndFade(filePath, looping);
         printf("Player Index: %d", playerIndex);
         if (playerIndex >= 0) {
@@ -112,11 +112,10 @@ void PlaybackOperator::renderPlane(int planeId, float deltaTime)
 void PlaybackOperator::updateKeyboardController()
 {
     InputMappings& inputMappings = m_registry.inputMappings();
-    int bank = inputMappings.getBank();
 
     ControllerState controllerState;
     for (int i = 0; i < 16; ++i) {
-        int mediaSlotId = (bank * 16) + i;
+        int mediaSlotId = (inputMappings.bank * 16) + i;
         InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
         if (!inputConfig) {
             controllerState.media[i] = ButtonState::NONE;

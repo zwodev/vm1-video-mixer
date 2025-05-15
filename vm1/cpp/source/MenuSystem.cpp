@@ -169,8 +169,8 @@ void MenuSystem::render()
             m_currentMenuPath.pop_back();
         }
         else {
-            m_selectedIdx = 0;
-            setMenu(MT_InputSelection);
+            //m_selectedIdx = 0;
+            //setMenu(MT_InputSelection);
         }
     }
     else if (menuItem->children.size() > 0) {

@@ -33,14 +33,14 @@ void FileAssignmentWidget::renderFileList() {
 }
 
 void FileAssignmentWidget::renderButtonMatrix() {
+    int bank = m_registry.inputMappings().bank;
     ImGui::BeginChild("Button Matrix");
     float buttonSize = (ImGui::GetContentRegionAvail().x - ((WIDTH + 1) * SPACING)) / WIDTH;
     for (int y = 0; y < HEIGHT; y++) {
         for (int x = 0; x < WIDTH; x++) {
             ImGui::PushID(y * WIDTH + x);
             
-            //ImVec4 buttonColor = m_assignedFiles[y][x].empty() ? m_defaultButtonColor : m_assignedButtonColor;
-            int id = m_bank * (WIDTH * HEIGHT) + y * WIDTH + x;
+            int id = bank * (WIDTH * HEIGHT) + y * WIDTH + x;
             std::string filePath;
             VideoInputConfig* videoInputConfig = m_registry.inputMappings().getVideoInputConfig(id);
             if (videoInputConfig) {
@@ -48,9 +48,6 @@ void FileAssignmentWidget::renderButtonMatrix() {
             }
             
             ImVec4 buttonColor = filePath.empty() ? m_defaultButtonColor : m_assignedButtonColor;
-            //if (isButtonHighlighted(x, y)) {
-            //    buttonColor = m_highlightedButtonColor;
-            //}
             
             ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
             ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 10.0f);
@@ -58,7 +55,6 @@ void FileAssignmentWidget::renderButtonMatrix() {
             std::string buttonLabel = m_keyLabels[y][x];
             
             if (ImGui::Button(buttonLabel.c_str(), ImVec2(buttonSize, buttonSize))) {
-                //handleButtonClick(id);
                 m_playbackOperator.showMedia(id);
             }
 
@@ -84,7 +80,7 @@ void FileAssignmentWidget::renderButtonMatrix() {
 
 void FileAssignmentWidget::renderSettings() {
     ImGui::BeginChild("Settings", ImVec2(0, 0), true);
-    ImGui::SliderInt("Bank", &m_bank, 0, 3);
+    ImGui::SliderInt("Bank", &m_registry.inputMappings().bank, 0, 3);
     ImGui::EndChild();
 }
 
@@ -110,46 +106,12 @@ void FileAssignmentWidget::render() {
     handleKeyboardShortcuts();
 }
 
-// void FileAssignmentWidget::handleButtonClick(int id) {
-//     std::string fileName;
-//     std::string filePath;
-//     bool looping = false;
-
-//     InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(id);
-//     if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(inputConfig)) {
-//         fileName = videoInputConfig->fileName;
-//         looping = videoInputConfig->looping;
-//         filePath = m_registry.mediaPool().getVideoFilePath(fileName);
-//     }
-//     else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(inputConfig)) {
-//         if (hdmiInputConfig->hdmiPort == 0) {
-//             fileName = "hdmi0";
-//             filePath = m_registry.mediaPool().getVideoFilePath(fileName);
-//         }
-//     }
-//     else {
-//         return;
-//     }
-
-//     int oddRow = (id / WIDTH) % 2;
-//     // Select plane
-//     if (oddRow == 0) {
-//         printf("Play Left: (ID: %d, FILE: %s, LOOP: %d)\n", id, fileName.c_str(), looping);
-//         m_videoPlaneLeft->playAndFade(filePath, looping);
-//     } 
-//     else {
-//         printf("Play Right: (ID: %d, FILE: %s, LOOP: %d)\n", id, fileName.c_str(), looping);
-//         m_videoPlaneRight->playAndFade(filePath, looping);
-//     }
-// }
-
 void FileAssignmentWidget::handleKeyboardShortcuts() {
     for (int y = 0; y < HEIGHT; y++) {
         for (int x = 0; x < WIDTH; x++) {
             ImGuiKey key = m_keyboardShortcuts[y][x];
             if (ImGui::IsKeyPressed(key) && !ImGui::IsKeyDown(ImGuiKey_LeftShift)) {
-                int id = m_bank * (2 * WIDTH) + (y * WIDTH) + x;
-                //handleButtonClick(id);
+                int id = m_registry.inputMappings().bank * (2 * WIDTH) + (y * WIDTH) + x;
                 m_playbackOperator.showMedia(id);
                 return;
             }

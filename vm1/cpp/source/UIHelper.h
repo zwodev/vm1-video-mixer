@@ -218,19 +218,18 @@ namespace UI
         return checked != oldChecked;
     }
 
-    bool RadioButton(const std::string& label, bool selected, bool toggled)
+    bool RadioButton(const std::string& label, bool selected, bool active)
     {
-        bool oldToggled = toggled;
         bool keyPressed = (ImGui::IsKeyPressed(ImGuiKey_RightArrow) || (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_DownArrow)));
-        if (selected && keyPressed) {
-            toggled = !toggled;
+        if (selected && !active && keyPressed) {
+            active = true;
         }
 
         std::string newLabel = "[ ] " + label;
-        if (toggled) newLabel = "[*] " + label;
+        if (active) newLabel = "[*] " + label;
         Text(newLabel, selected ? TextState::SELECTED : TextState::DEFAULT);
 
-        return selected && toggled;
+        return selected && active;
     }
 
     int FileSelection(Registry* registry, int id)

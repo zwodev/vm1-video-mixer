@@ -28,20 +28,6 @@ VideoPlane::~VideoPlane()
 
 void VideoPlane::initialize()
 {
-    // Create video players
-    // for (int i = 0; i < NUM_VIDEO_PLAYERS; ++i) {
-    //     VideoPlayer* player = new VideoPlayer();
-    //     m_videoPlayers.push_back(player);
-    //     m_yuvImages.push_back(YUVImage());
-    //     m_startTimes.push_back(0);
-    // }
-
-    // // Create camera players
-    // for (int i = 0; i < NUM_CAMERA_PLAYERS; ++i) {
-    //     CameraPlayer* player = new CameraPlayer();
-    //     m_cameraPlayers.push_back(player);
-    //     m_yuyvImages.push_back(YUVImage());
-    // }
 }
 
 void VideoPlane::finalize()
@@ -64,7 +50,7 @@ void VideoPlane::addVideoPlayer(VideoPlayer* videoPlayer)
 
 void VideoPlane::addCameraPlayer(CameraPlayer* cameraPlayer)
 {
-    if (m_videoPlayers.size() < NUM_CAMERA_PLAYERS) {
+    if (m_cameraPlayers.size() < NUM_CAMERA_PLAYERS) {
         m_cameraPlayers.push_back(cameraPlayer);
         m_yuyvImages.push_back(YUVImage());
     }

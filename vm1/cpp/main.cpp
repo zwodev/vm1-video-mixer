@@ -260,6 +260,10 @@ int main(int, char **)
                     //videoPlane0.setFadeTime(fadeTimeInSecs);
                     //videoPlane1.setFadeTime(fadeTimeInSecs);
                 }
+                if (ImGui::Button("Save Registry"))
+                {
+                    registry.save();
+                }
                 ImGui::Checkbox("Enable Video", &isVideoEnabled);
                 if (ImGui::Button("Setup HDMI2CSI"))
                 {
