@@ -32,7 +32,7 @@ bool KeyboardController::connect(const std::string& port)
     tty.c_oflag = 0;
 
     tcsetattr(m_fd, TCSANOW, &tty);
-    
+
     return true;
 }
 
@@ -42,9 +42,16 @@ void KeyboardController::disconnect()
     m_fd = -1;
 }
 
-void KeyboardController::update(const ControllerState& controllerState)
+void KeyboardController::send(const ControllerState& controllerState)
 {
     if (m_fd < 0) { return; }
+
+    // Do not send state when nothing has changed (aka hash is the same)
+    size_t hash = controllerState.hash();
+    if (hash == m_lastHash)
+        return;
+
+    m_lastHash = hash;
 
     // Pack data with MessagePack
     msgpack::sbuffer buffer;

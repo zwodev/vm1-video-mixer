@@ -4,6 +4,7 @@
 #include "VideoPlane.h"
 #include "CameraPlayer.h"
 #include "VideoPlayer.h"
+#include "KeyboardController.h"
 #include "Registry.h"
 #include <map>
 
@@ -15,7 +16,6 @@ public:
     void initialize();
     void update();
     void showMedia(int mediaId);
-    int getCurrentlyPlayingIds();
     
     // Rendering related functions 
     // TODO: Decouple this class from rendering and move them somewhere else!?
@@ -24,7 +24,12 @@ public:
     void renderPlane(int planeId, float deltaTime);
 
 private:
+    void updateRunningPlayer(VideoInputConfig* videoInputConfig, int playerId);
+    void updateKeyboardController();
+
+private:
     Registry& m_registry;
+    KeyboardController m_keyboardController;
 
     // Player related
     CameraPlayer m_cameraPlayers[2];

@@ -67,6 +67,14 @@ public:
     InputMappings() {}
     ~InputMappings() {}
 
+    void setBank(int bank) {
+        m_bank = bank;
+    }
+
+    int getBank() {
+        return m_bank;
+    }
+    
     void addInputConfig(int id, std::unique_ptr<InputConfig> inputConfig) {
         m_idsToValue[id] = std::move(inputConfig);
     }
@@ -102,10 +110,11 @@ public:
 
     template<class Archive>
     void serialize(Archive& ar) {
-        ar(m_idsToValue);
+        ar(m_bank, m_idsToValue);
     }
 
 private:
+    int m_bank = 0;
     std::map<int, std::unique_ptr<InputConfig>> m_idsToValue;
 
 };

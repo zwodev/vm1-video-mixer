@@ -60,6 +60,11 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     }
 }
 
+void PlaybackOperator::updateRunningPlayer(VideoInputConfig* videoInputConfig, int playerId)
+{
+    // Delete ??
+}
+
 void PlaybackOperator::update()
 {
     for (const auto& [key, value] : m_mediaSlotIdToPlayerId) {
@@ -81,10 +86,8 @@ void PlaybackOperator::update()
         }
 
     } 
-}
 
-int PlaybackOperator::getCurrentlyPlayingIds()
-{
+    updateKeyboardController();
 }
 
 void PlaybackOperator::lockCameras() 
@@ -104,4 +107,30 @@ void PlaybackOperator::unlockCameras()
 void PlaybackOperator::renderPlane(int planeId, float deltaTime) 
 {
     m_planes[planeId].update(deltaTime);
+}
+
+void PlaybackOperator::updateKeyboardController()
+{
+    InputMappings& inputMappings = m_registry.inputMappings();
+    int bank = inputMappings.getBank();
+
+    ControllerState controllerState;
+    for (int i = 0; i < 16; ++i) {
+        int mediaSlotId = (bank * 16) + i;
+        InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
+        if (!inputConfig) {
+            controllerState.media[i] = ButtonState::NONE;
+        }
+        else if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(inputConfig)) {
+            if (m_mediaSlotIdToPlayerId.contains(i)) 
+                controllerState.media[i] = ButtonState::FILE_ASSET;
+            else
+                controllerState.media[i] = ButtonState::FILE_ASSET_ACTIVE;
+        }
+        else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(inputConfig)) {
+            controllerState.media[i] = ButtonState::LIVECAM;
+        }
+    }
+
+    m_keyboardController.send(controllerState);
 }
