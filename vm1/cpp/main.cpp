@@ -23,6 +23,7 @@
 #endif
 
 #include "source/Registry.h"
+#include "source/PlaybackOperator.h"
 #include "source/PlaneRenderer.h"
 #include "source/VideoPlayer.h"
 #include "source/VideoPlane.h"
@@ -161,19 +162,23 @@ int main(int, char **)
     // Create registry
     Registry registry;
 
+    // Playback operator
+    PlaybackOperator playbackOperator(registry);
+
     // Camera
     CameraController cameraController;
     cameraController.setup();
-    CameraPlayer cameraPlayer0;
+
+    // CameraPlayer cameraPlayer0;
 
     // Video players
-    VideoPlane videoPlane0;
-    videoPlane0.addCameraPlayer(&cameraPlayer0);
-    VideoPlane videoPlane1;
-    videoPlane1.addCameraPlayer(&cameraPlayer0);
+    // VideoPlane videoPlane0;
+    // videoPlane0.addCameraPlayer(&cameraPlayer0);
+    // VideoPlane videoPlane1;
+    // videoPlane1.addCameraPlayer(&cameraPlayer0);
 
     // File Assignment Widget
-    FileAssignmentWidget fileAssignmentWidget(registry, "../videos/", &videoPlane0, &videoPlane1);
+    FileAssignmentWidget fileAssignmentWidget(playbackOperator, registry);
 
     // Keyforwarding
     KeyForwarder keyForwarder;
@@ -224,6 +229,7 @@ int main(int, char **)
             continue;
         }
 
+        playbackOperator.update();
         keyForwarder.forwardArrowKeys(mainContext, fboContext);
 
         // START: Render to FBO (OLED) before main gui
@@ -251,8 +257,8 @@ int main(int, char **)
                 static float fadeTimeInSecs = 2.0f;
                 if (ImGui::SliderFloat("Fade Time", &fadeTimeInSecs, 0.0f, 5.0f))
                 {
-                    videoPlane0.setFadeTime(fadeTimeInSecs);
-                    videoPlane1.setFadeTime(fadeTimeInSecs);
+                    //videoPlane0.setFadeTime(fadeTimeInSecs);
+                    //videoPlane1.setFadeTime(fadeTimeInSecs);
                 }
                 ImGui::Checkbox("Enable Video", &isVideoEnabled);
                 if (ImGui::Button("Setup HDMI2CSI"))
@@ -295,10 +301,13 @@ int main(int, char **)
         glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        cameraPlayer0.lockBuffer();
+        playbackOperator.lockCameras();
+        //cameraPlayer0.lockBuffer();
+        
         // Render video content
         if (isVideoEnabled)
-            videoPlane0.update(deltaTime);
+            playbackOperator.renderPlane(0, deltaTime);
+            //videoPlane0.update(deltaTime);
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(windows[0]);
@@ -313,12 +322,14 @@ int main(int, char **)
 
             // Render video content
             if (isVideoEnabled)
-                videoPlane1.update(deltaTime);
+                playbackOperator.renderPlane(1, deltaTime);
+                //videoPlane1.update(deltaTime);
 
             SDL_GL_SwapWindow(windows[1]);
         }
 
-        cameraPlayer0.unlockBuffer();
+        playbackOperator.unlockCameras();
+        //cameraPlayer0.unlockBuffer();
 
         // End the frame
         ImGui::EndFrame();

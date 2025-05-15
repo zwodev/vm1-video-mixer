@@ -227,13 +227,13 @@ AVCodecContext* VideoPlayer::openAudioStream()
         return nullptr;
     }
 
-    SDL_AudioSpec spec = { SDL_AUDIO_F32, codecpar->ch_layout.nb_channels, codecpar->sample_rate };
-    m_audio = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, NULL, NULL);
-    if (m_audio) {
-        SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_audio));
-    } else {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't open audio: %s", SDL_GetError());
-    }
+    // SDL_AudioSpec spec = { SDL_AUDIO_F32, codecpar->ch_layout.nb_channels, codecpar->sample_rate };
+    // m_audio = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, NULL, NULL);
+    // if (m_audio) {
+    //     SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_audio));
+    // } else {
+    //     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't open audio: %s", SDL_GetError());
+    // }
 
     return context;
 }

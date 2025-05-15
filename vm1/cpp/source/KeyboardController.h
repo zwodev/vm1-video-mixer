@@ -15,6 +15,8 @@ enum ButtonState
     SHADER_ACTIVE,
 };
 
+MSGPACK_ADD_ENUM(ButtonState);
+
 struct ControllerState {
     ButtonState forward;
     ButtonState backward;
@@ -23,9 +25,18 @@ struct ControllerState {
     ButtonState media[16];
 
     MSGPACK_DEFINE(forward, backward, fn, edit, media);
-}
+};
 
 class KeyboardController {
+    
+public:
     KeyboardController() = default;
     ~KeyboardController() = default;
+
+    bool connect(const std::string& port);
+    void disconnect();
+    void update(const ControllerState& state);
+
+private:
+    int m_fd = -1;
 };

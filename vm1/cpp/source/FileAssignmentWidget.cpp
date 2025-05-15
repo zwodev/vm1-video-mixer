@@ -8,20 +8,17 @@
 
 #include "FileAssignmentWidget.h"
 
-FileAssignmentWidget::FileAssignmentWidget(Registry& registry, const std::string& directory, VideoPlane* videoPlaneLeft, VideoPlane* videoPlaneRight) :
+FileAssignmentWidget::FileAssignmentWidget(PlaybackOperator& playbackOperator, Registry& registry) :
+    m_playbackOperator(playbackOperator),
     m_registry(registry)
 {
-    m_videoPlaneLeft = videoPlaneLeft;
-    m_videoPlaneRight = videoPlaneRight;
-    m_directory = directory;
-    loadFiles(directory);
 }
 
 
 void FileAssignmentWidget::renderFileList() {
     
     ImGui::BeginChild("FileList", ImVec2(0, 0), true);
-    for (const auto& file : m_files) {
+    for (const auto& file : m_registry.mediaPool().getVideoFiles()) {
         if (ImGui::Selectable(file.c_str(), m_selectedFile == file)) {
             m_selectedFile = file;
         }
@@ -61,7 +58,8 @@ void FileAssignmentWidget::renderButtonMatrix() {
             std::string buttonLabel = m_keyLabels[y][x];
             
             if (ImGui::Button(buttonLabel.c_str(), ImVec2(buttonSize, buttonSize))) {
-                handleButtonClick(id);
+                //handleButtonClick(id);
+                m_playbackOperator.showMedia(id);
             }
 
             ImGui::PopStyleVar();
@@ -70,9 +68,8 @@ void FileAssignmentWidget::renderButtonMatrix() {
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("FILE_PAYLOAD")) {
                     auto videoInputConfig = std::make_unique<VideoInputConfig>();
-                    videoInputConfig->fileName = m_directory + std::string(static_cast<const char*>(payload->Data));
+                    videoInputConfig->fileName = m_registry.mediaPool().getVideoFilePath(std::string(static_cast<const char*>(payload->Data)));
                     m_registry.inputMappings().addInputConfig(id, std::move(videoInputConfig));
-                    //m_assignedFiles[y][x] = static_cast<const char*>(payload->Data);
                 }
                 ImGui::EndDragDropTarget();
             }
@@ -113,46 +110,38 @@ void FileAssignmentWidget::render() {
     handleKeyboardShortcuts();
 }
 
-void FileAssignmentWidget::loadFiles(const std::string& directory) {
-    for (const auto& entry : std::filesystem::directory_iterator(directory)) {
-        if (entry.is_regular_file()) {
-            m_files.push_back(entry.path().filename().string());
-        }
-    }
-}
+// void FileAssignmentWidget::handleButtonClick(int id) {
+//     std::string fileName;
+//     std::string filePath;
+//     bool looping = false;
 
-void FileAssignmentWidget::handleButtonClick(int id) {
-    std::string fileName;
-    std::string filePath;
-    bool looping = false;
+//     InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(id);
+//     if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(inputConfig)) {
+//         fileName = videoInputConfig->fileName;
+//         looping = videoInputConfig->looping;
+//         filePath = m_registry.mediaPool().getVideoFilePath(fileName);
+//     }
+//     else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(inputConfig)) {
+//         if (hdmiInputConfig->hdmiPort == 0) {
+//             fileName = "hdmi0";
+//             filePath = m_registry.mediaPool().getVideoFilePath(fileName);
+//         }
+//     }
+//     else {
+//         return;
+//     }
 
-    InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(id);
-    if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(inputConfig)) {
-        fileName = videoInputConfig->fileName;
-        looping = videoInputConfig->looping;
-        filePath = m_registry.mediaPool().getVideoFilePath(fileName);
-    }
-    else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(inputConfig)) {
-        if (hdmiInputConfig->hdmiPort == 0) {
-            fileName = "hdmi0";
-            filePath = m_registry.mediaPool().getVideoFilePath(fileName);
-        }
-    }
-    else {
-        return;
-    }
-
-    int oddRow = (id / WIDTH) % 2;
-    // Select plane
-    if (oddRow == 0) {
-        printf("Play Left: (ID: %d, FILE: %s, LOOP: %d)\n", id, fileName.c_str(), looping);
-        m_videoPlaneLeft->playAndFade(filePath, looping);
-    } 
-    else {
-        printf("Play Right: (ID: %d, FILE: %s, LOOP: %d)\n", id, fileName.c_str(), looping);
-        m_videoPlaneRight->playAndFade(filePath, looping);
-    }
-}
+//     int oddRow = (id / WIDTH) % 2;
+//     // Select plane
+//     if (oddRow == 0) {
+//         printf("Play Left: (ID: %d, FILE: %s, LOOP: %d)\n", id, fileName.c_str(), looping);
+//         m_videoPlaneLeft->playAndFade(filePath, looping);
+//     } 
+//     else {
+//         printf("Play Right: (ID: %d, FILE: %s, LOOP: %d)\n", id, fileName.c_str(), looping);
+//         m_videoPlaneRight->playAndFade(filePath, looping);
+//     }
+// }
 
 void FileAssignmentWidget::handleKeyboardShortcuts() {
     for (int y = 0; y < HEIGHT; y++) {
@@ -160,7 +149,8 @@ void FileAssignmentWidget::handleKeyboardShortcuts() {
             ImGuiKey key = m_keyboardShortcuts[y][x];
             if (ImGui::IsKeyPressed(key) && !ImGui::IsKeyDown(ImGuiKey_LeftShift)) {
                 int id = m_bank * (2 * WIDTH) + (y * WIDTH) + x;
-                handleButtonClick(id);
+                //handleButtonClick(id);
+                m_playbackOperator.showMedia(id);
                 return;
             }
         }

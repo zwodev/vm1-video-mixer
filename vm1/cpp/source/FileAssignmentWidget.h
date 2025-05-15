@@ -13,7 +13,9 @@
 #include <vector>
 #include <string>
 
-#include "VideoPlane.h"
+
+//#include "VideoPlane.h"
+#include "PlaybackOperator.h"
 #include "Registry.h"
 
 class FileAssignmentWidget
@@ -23,14 +25,15 @@ private:
     static const int WIDTH = 8;
     static const int HEIGHT = 2;
 
-    Registry &m_registry;
-    VideoPlane *m_videoPlaneLeft = nullptr;
-    VideoPlane *m_videoPlaneRight = nullptr;
+    PlaybackOperator& m_playbackOperator;
+    Registry& m_registry;
+    //VideoPlane *m_videoPlaneLeft = nullptr;
+    //VideoPlane *m_videoPlaneRight = nullptr;
 
-    std::string m_directory;
-    std::vector<std::string> m_files;
+    //std::string m_directory;
+    //std::vector<std::string> m_files;
     std::string m_selectedFile;
-    std::string m_assignedFiles[HEIGHT][WIDTH];
+    //std::string m_assignedFiles[HEIGHT][WIDTH];
     int m_bank = 0;
 
     ImVec4 m_defaultButtonColor = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
@@ -48,18 +51,18 @@ private:
                                                    {ImGuiKey_Z, ImGuiKey_X, ImGuiKey_C, ImGuiKey_V, ImGuiKey_B, ImGuiKey_N, ImGuiKey_M, ImGuiKey_Comma}};
 
 public:
-    FileAssignmentWidget(Registry &registry, const std::string &directory, VideoPlane *videoPlaneLeft, VideoPlane *videoPlaneRight);
+    FileAssignmentWidget(PlaybackOperator& playbackOperator, Registry &registry);
 
     void render();
 
 private:
     void setupKeyboardShortcuts();
     void setupKeyLabels();
-    void loadFiles(const std::string &directory);
+    //void loadFiles(const std::string &directory);
     void renderFileList();
     void renderButtonMatrix();
     void renderSettings();
-    void handleButtonClick(int id);
+    //void handleButtonClick(int id);
     void handleKeyboardShortcuts();
     bool isButtonHighlighted(int x, int y);
 };

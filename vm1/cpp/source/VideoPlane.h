@@ -27,10 +27,12 @@ public:
 
 public:
     void addCameraPlayer(CameraPlayer* cameraPlayer);
+    void addVideoPlayer(VideoPlayer* videoPlayer);
+    
     float fadeTime() const;
     void setFadeTime(int fadeTime);
     const std::vector<VideoPlayer*>& players() const;
-    void playAndFade(const std::string& fileName, bool looping = false);
+    int playAndFade(const std::string& fileName, bool looping = false);
     void update(float mixValue);
 
 private:

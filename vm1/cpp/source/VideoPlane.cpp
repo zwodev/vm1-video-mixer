@@ -29,12 +29,12 @@ VideoPlane::~VideoPlane()
 void VideoPlane::initialize()
 {
     // Create video players
-    for (int i = 0; i < NUM_VIDEO_PLAYERS; ++i) {
-        VideoPlayer* player = new VideoPlayer();
-        m_videoPlayers.push_back(player);
-        m_yuvImages.push_back(YUVImage());
-        m_startTimes.push_back(0);
-    }
+    // for (int i = 0; i < NUM_VIDEO_PLAYERS; ++i) {
+    //     VideoPlayer* player = new VideoPlayer();
+    //     m_videoPlayers.push_back(player);
+    //     m_yuvImages.push_back(YUVImage());
+    //     m_startTimes.push_back(0);
+    // }
 
     // // Create camera players
     // for (int i = 0; i < NUM_CAMERA_PLAYERS; ++i) {
@@ -53,10 +53,21 @@ void VideoPlane::finalize()
     m_videoPlayers.clear();
 }
 
+void VideoPlane::addVideoPlayer(VideoPlayer* videoPlayer)
+{   
+    if (m_videoPlayers.size() < NUM_VIDEO_PLAYERS) {
+        m_videoPlayers.push_back(videoPlayer);
+        m_yuvImages.push_back(YUVImage());
+        m_startTimes.push_back(0);
+    }
+} 
+
 void VideoPlane::addCameraPlayer(CameraPlayer* cameraPlayer)
 {
-    m_cameraPlayers.push_back(cameraPlayer);
-    m_yuyvImages.push_back(YUVImage());
+    if (m_videoPlayers.size() < NUM_CAMERA_PLAYERS) {
+        m_cameraPlayers.push_back(cameraPlayer);
+        m_yuyvImages.push_back(YUVImage());
+    }
 }
 
 float VideoPlane::fadeTime() const
@@ -69,7 +80,7 @@ void VideoPlane::setFadeTime(int fadeTime)
     m_fadeTime = fadeTime;
 }
 
-void VideoPlane::playAndFade(const std::string& fileName, bool looping)
+int VideoPlane::playAndFade(const std::string& fileName, bool looping)
 {
     if (m_isVideoFading || m_isCameraFading) return;
 
@@ -84,10 +95,11 @@ void VideoPlane::playAndFade(const std::string& fileName, bool looping)
         if (m_videoMixValue > 0.0f) freePlayerIndex = 0;
 
         VideoPlayer* videoPlayer = m_videoPlayers[freePlayerIndex];
-        if (videoPlayer->open(fileName)) {
+        if (videoPlayer->open(fileName)) {  
             m_startTimes[freePlayerIndex] = 0;
             videoPlayer->setLooping(looping);
             videoPlayer->play();
+              
             if (m_cameraMixValue > 0) {
                 startCameraFade();
                 m_videoMixValue = freePlayerIndex;
@@ -95,8 +107,11 @@ void VideoPlane::playAndFade(const std::string& fileName, bool looping)
             else {
                 startVideoFade();
             }
+            return freePlayerIndex;
         }
     }
+
+    return -1;
 }
 
 void VideoPlane::startVideoFade() {
