@@ -274,12 +274,9 @@ void VideoPlayer::decodingThread() {
                 av_packet_unref(m_packet);
             }
         }
-        else {
-            m_isRunning = false;
-        }
         
         // Process decoded frames
-        if (m_videoContext) {
+        if (m_videoContext) { 
             while (avcodec_receive_frame(m_videoContext, m_frame) >= 0) {
                 double pts = ((double)m_frame->pts * m_videoContext->pkt_timebase.num) / m_videoContext->pkt_timebase.den;
                 bool firstFrame = false;
@@ -297,6 +294,8 @@ void VideoPlayer::decodingThread() {
                 }
             }      
         }
+
+        if (m_isFlushing) m_isRunning = false;
     }
 }
 

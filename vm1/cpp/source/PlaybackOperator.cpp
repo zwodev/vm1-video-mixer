@@ -81,6 +81,7 @@ void PlaybackOperator::updateRunningPlayer(VideoInputConfig *videoInputConfig, i
 
 void PlaybackOperator::update()
 {
+    std::vector<int> idsToDelete;
     for (const auto &[key, value] : m_mediaSlotIdToPlayerId)
     {
         int mediaSlotId = key;
@@ -96,13 +97,19 @@ void PlaybackOperator::update()
             VideoPlayer &videoPlayer = m_videoPlayers[playerId];
             if (videoPlayer.isPlaying())
             {
-                videoPlayer.setLooping(looping);
+                 videoPlayer.setLooping(looping);
             }
             else
             {
-                m_mediaSlotIdToPlayerId.erase(mediaSlotId);
+                if(m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
+                    idsToDelete.push_back(mediaSlotId);
+                }
             }
         }
+    }
+
+    for (auto id : idsToDelete) {
+        m_mediaSlotIdToPlayerId.erase(id);
     }
 
     updateKeyboardController();

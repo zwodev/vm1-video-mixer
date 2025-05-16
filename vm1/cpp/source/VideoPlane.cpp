@@ -140,7 +140,7 @@ void VideoPlane::update(float deltaTime) {
             if (m_videoMixValue > 0.0f) freePlayerIndex = 0;
             if (i == freePlayerIndex) {
                 if (m_videoPlayers[i]->isPlaying()) {
-                    m_videoPlayers[i]->close();
+                     m_videoPlayers[i]->close();
                 }
             }
         }
