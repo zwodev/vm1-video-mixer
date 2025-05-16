@@ -32,7 +32,7 @@
 #ifndef DRM_FORMAT_RGBA8888
 #define DRM_FORMAT_RGBA8888 fourcc_code('R', 'A', '2', '4')
 #endif
-
+ 
 VideoPlayer::VideoPlayer()
 {
 }
@@ -273,6 +273,9 @@ void VideoPlayer::decodingThread() {
                 }
                 av_packet_unref(m_packet);
             }
+        }
+        else {
+            m_isRunning = false;
         }
         
         // Process decoded frames
