@@ -156,10 +156,11 @@ struct Settings
 {
     bool showUI = true;
     std::string videoFilePath = "../videos/";
+    std::string serialDevice = "/dev/ttyACM0";
 
     template <class Archive>
     void serialize(Archive & ar) {
-        ar(showUI, videoFilePath);
+        ar(showUI, videoFilePath, serialDevice);
     }    
 };
 
@@ -192,6 +193,11 @@ private:
         archive(m_inputMappings, m_settings);
         std::string serialized = stream.str();
         return std::hash<std::string>{}(serialized);
+
+        // Syntax explanation: Curly brackets create a temporary functor.
+        // Equivalent to this:
+        // std::hash<std::string> hasher;
+        // size_t hash = hasher(serialized);
     }
 
 private:

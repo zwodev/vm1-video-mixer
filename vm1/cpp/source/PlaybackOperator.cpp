@@ -7,6 +7,12 @@ PlaybackOperator::PlaybackOperator(Registry& registry) : m_registry(registry)
 
 void PlaybackOperator::initialize()
 {
+    // Open serial port
+    std::string serialDevice = m_registry.settings().serialDevice;
+    if (!m_keyboardController.connect(serialDevice)) {
+        printf("Could not open serial device: %s\n", serialDevice.c_str());
+    }
+
     // First screen
     m_planes[0].addVideoPlayer(&(m_videoPlayers[0]));
     m_planes[0].addVideoPlayer(&(m_videoPlayers[1]));
@@ -72,7 +78,7 @@ void PlaybackOperator::update()
         int playerId = value;
 
         InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
-        if (!inputConfig) return;
+        if (!inputConfig) continue;
 
         if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(inputConfig)) {
             bool looping = videoInputConfig->looping;
@@ -122,11 +128,12 @@ void PlaybackOperator::updateKeyboardController()
         }
         else if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(inputConfig)) {
             if (m_mediaSlotIdToPlayerId.contains(i)) 
-                controllerState.media[i] = ButtonState::FILE_ASSET;
-            else
                 controllerState.media[i] = ButtonState::FILE_ASSET_ACTIVE;
+            else
+                controllerState.media[i] = ButtonState::FILE_ASSET;
         }
         else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(inputConfig)) {
+            // TODO: How to handle active HDMI or IMAGE, etc.
             controllerState.media[i] = ButtonState::LIVECAM;
         }
     }
