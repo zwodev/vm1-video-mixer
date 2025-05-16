@@ -158,6 +158,9 @@ public:
                 }
             }
         }
+
+        // sort the files by name
+        std::sort(m_videoFiles.begin(), m_videoFiles.end());
     }
 
 private:
