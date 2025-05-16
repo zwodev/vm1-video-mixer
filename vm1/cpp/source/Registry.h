@@ -151,11 +151,8 @@ public:
             if (entry.is_regular_file())
             {
                 std::string filename = entry.path().filename().string();
-                if (filename.find("h265") != std::string::npos || filename.find("hdmi") != std::string::npos)
-                {
-                    std::string filePath = filename;
-                    m_videoFiles.push_back(filePath);
-                }
+                std::string filePath = filename;
+                m_videoFiles.push_back(filePath);
             }
         }
 
