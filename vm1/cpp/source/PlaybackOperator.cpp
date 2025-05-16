@@ -1,6 +1,6 @@
 #include "PlaybackOperator.h"
 
-PlaybackOperator::PlaybackOperator(Registry& registry) : m_registry(registry)
+PlaybackOperator::PlaybackOperator(Registry &registry) : m_registry(registry)
 {
     initialize();
 }
@@ -9,7 +9,8 @@ void PlaybackOperator::initialize()
 {
     // Open serial port
     std::string serialDevice = m_registry.settings().serialDevice;
-    if (!m_keyboardController.connect(serialDevice)) {
+    if (!m_keyboardController.connect(serialDevice))
+    {
         printf("Could not open serial device: %s\n", serialDevice.c_str());
     }
 
@@ -22,7 +23,6 @@ void PlaybackOperator::initialize()
     m_planes[1].addVideoPlayer(&(m_videoPlayers[2]));
     m_planes[1].addVideoPlayer(&(m_videoPlayers[3]));
     m_planes[1].addCameraPlayer(&(m_cameraPlayers[0]));
-
 }
 
 void PlaybackOperator::showMedia(int mediaSlotId)
@@ -31,16 +31,20 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     std::string filePath;
     bool looping = false;
 
-    InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
-    if (!inputConfig) return;
+    InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
+    if (!inputConfig)
+        return;
 
-    if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(inputConfig)) {
+    if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
+    {
         fileName = videoInputConfig->fileName;
         looping = videoInputConfig->looping;
         filePath = m_registry.mediaPool().getVideoFilePath(fileName);
     }
-    else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(inputConfig)) {
-        if (hdmiInputConfig->hdmiPort == 0) {
+    else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
+    {
+        if (hdmiInputConfig->hdmiPort == 0)
+        {
             fileName = "hdmi0";
             filePath = m_registry.mediaPool().getVideoFilePath(fileName);
         }
@@ -48,95 +52,108 @@ void PlaybackOperator::showMedia(int mediaSlotId)
 
     // Select plane
     int oddRow = (mediaSlotId / 8) % 2;
-    if (oddRow == 0) {
+    if (oddRow == 0)
+    {
         printf("Play Left: (ID: %d, FILE: %s, LOOP: %d)\n", mediaSlotId, filePath.c_str(), looping);
         int playerIndex = m_planes[0].playAndFade(filePath, looping);
         printf("Player Index: %d", playerIndex);
-        if (playerIndex >= 0) {
+        if (playerIndex >= 0)
+        {
             m_mediaSlotIdToPlayerId[mediaSlotId] = playerIndex;
         }
-    } 
-    else {
+    }
+    else
+    {
         printf("Play Right: (ID: %d, FILE: %s, LOOP: %d)\n", mediaSlotId, fileName.c_str(), looping);
         int playerIndex = m_planes[1].playAndFade(filePath, looping);
-        if (playerIndex >= 0) {
+        if (playerIndex >= 0)
+        {
             playerIndex += 2;
             m_mediaSlotIdToPlayerId[mediaSlotId] = playerIndex;
         }
     }
 }
 
-void PlaybackOperator::updateRunningPlayer(VideoInputConfig* videoInputConfig, int playerId)
+void PlaybackOperator::updateRunningPlayer(VideoInputConfig *videoInputConfig, int playerId)
 {
     // Delete ??
 }
 
 void PlaybackOperator::update()
 {
-    for (const auto& [key, value] : m_mediaSlotIdToPlayerId) {
+    for (const auto &[key, value] : m_mediaSlotIdToPlayerId)
+    {
         int mediaSlotId = key;
         int playerId = value;
 
-        InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
-        if (!inputConfig) continue;
+        InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
+        if (!inputConfig)
+            continue;
 
-        if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(inputConfig)) {
+        if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
+        {
             bool looping = videoInputConfig->looping;
-            VideoPlayer& videoPlayer = m_videoPlayers[playerId];
-            if (videoPlayer.isPlaying()) {
+            VideoPlayer &videoPlayer = m_videoPlayers[playerId];
+            if (videoPlayer.isPlaying())
+            {
                 videoPlayer.setLooping(looping);
             }
-            else {
+            else
+            {
                 m_mediaSlotIdToPlayerId.erase(mediaSlotId);
             }
         }
-
-    } 
+    }
 
     updateKeyboardController();
 }
 
-void PlaybackOperator::lockCameras() 
+void PlaybackOperator::lockCameras()
 {
-    for (int i = 0; i < 1; ++i) {
+    for (int i = 0; i < 1; ++i)
+    {
         m_cameraPlayers[i].lockBuffer();
     }
 }
 
-void PlaybackOperator::unlockCameras() 
+void PlaybackOperator::unlockCameras()
 {
-    for (int i = 0; i < 1; ++i) {
+    for (int i = 0; i < 1; ++i)
+    {
         m_cameraPlayers[i].unlockBuffer();
     }
 }
 
-void PlaybackOperator::renderPlane(int planeId, float deltaTime) 
+void PlaybackOperator::renderPlane(int planeId, float deltaTime)
 {
     m_planes[planeId].update(deltaTime);
 }
 
 void PlaybackOperator::updateKeyboardController()
 {
-    InputMappings& inputMappings = m_registry.inputMappings();
+    InputMappings &inputMappings = m_registry.inputMappings();
 
     ControllerState controllerState;
-    for (int i = 0; i < 16; ++i) {
+    for (int i = 0; i < 16; ++i)
+    {
         int mediaSlotId = (inputMappings.bank * 16) + i;
-        InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
-        if (!inputConfig) {
+        InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
+        if (!inputConfig)
+        {
             controllerState.media[i] = ButtonState::NONE;
         }
-        else if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(inputConfig)) {
-            if (m_mediaSlotIdToPlayerId.contains(i)) 
+        else if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
+        {
+            if (m_mediaSlotIdToPlayerId.contains(i))
                 controllerState.media[i] = ButtonState::FILE_ASSET_ACTIVE;
             else
                 controllerState.media[i] = ButtonState::FILE_ASSET;
         }
-        else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(inputConfig)) {
+        else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
+        {
             // TODO: How to handle active HDMI or IMAGE, etc.
             controllerState.media[i] = ButtonState::LIVECAM;
         }
     }
-
     m_keyboardController.send(controllerState);
 }
