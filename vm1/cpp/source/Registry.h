@@ -15,7 +15,6 @@
 #include <cereal/types/memory.hpp>
 #include <fstream>
 
-
 class InputConfig
 {
 public:
@@ -23,7 +22,7 @@ public:
     virtual ~InputConfig() = 0;
 
     template <class Archive>
-    void serialize(Archive & ar) { }
+    void serialize(Archive &ar) {}
 };
 inline InputConfig::~InputConfig() = default;
 
@@ -36,9 +35,10 @@ public:
     std::string fileName;
     bool looping = false;
     bool backwards = false;
-    
+
     template <class Archive>
-    void serialize(Archive & ar) {
+    void serialize(Archive &ar)
+    {
         ar(cereal::base_class<InputConfig>(this), fileName, looping, backwards);
     }
 };
@@ -48,11 +48,12 @@ class HdmiInputConfig : public InputConfig
 public:
     HdmiInputConfig() = default;
     ~HdmiInputConfig() = default;
-    
+
     int hdmiPort = 0;
 
     template <class Archive>
-    void serialize(Archive & ar) {
+    void serialize(Archive &ar)
+    {
         ar(cereal::base_class<InputConfig>(this), hdmiPort);
     }
 };
@@ -62,49 +63,56 @@ CEREAL_REGISTER_TYPE(HdmiInputConfig);
 CEREAL_REGISTER_POLYMORPHIC_RELATION(InputConfig, VideoInputConfig)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(InputConfig, HdmiInputConfig)
 
-
 // TODO: Could be simplified with templates
-class InputMappings 
+class InputMappings
 {
 public:
     InputMappings() {}
     ~InputMappings() {}
 
-    void addInputConfig(int id, std::unique_ptr<InputConfig> inputConfig) {
+    void addInputConfig(int id, std::unique_ptr<InputConfig> inputConfig)
+    {
         m_idsToValue[id] = std::move(inputConfig);
     }
 
-    InputConfig* getInputConfig(int id) {
-        InputConfig* inputConfig = nullptr;
+    InputConfig *getInputConfig(int id)
+    {
+        InputConfig *inputConfig = nullptr;
 
-        if (m_idsToValue.find(id) != m_idsToValue.end()) {
+        if (m_idsToValue.find(id) != m_idsToValue.end())
+        {
             inputConfig = m_idsToValue[id].get();
-            //printf("Get -> ID: %d, Value: %s\n", id, value.c_str());
+            // printf("Get -> ID: %d, Value: %s\n", id, value.c_str());
         }
 
         return inputConfig;
     }
 
-    VideoInputConfig* getVideoInputConfig(int id) {
-        InputConfig* inputConfig = getInputConfig(id);
-        if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(inputConfig)) {
+    VideoInputConfig *getVideoInputConfig(int id)
+    {
+        InputConfig *inputConfig = getInputConfig(id);
+        if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
+        {
             return videoInputConfig;
         }
 
         return nullptr;
     }
 
-    HdmiInputConfig* getHdmiInputConfig(int id) {
-        InputConfig* inputConfig = getInputConfig(id);
-        if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(inputConfig)) {
+    HdmiInputConfig *getHdmiInputConfig(int id)
+    {
+        InputConfig *inputConfig = getInputConfig(id);
+        if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
+        {
             return hdmiInputConfig;
         }
 
         return nullptr;
     }
 
-    template<class Archive>
-    void serialize(Archive& ar) {
+    template <class Archive>
+    void serialize(Archive &ar)
+    {
         ar(bank, m_idsToValue);
     }
 
@@ -113,32 +121,38 @@ public:
 
 private:
     std::map<int, std::unique_ptr<InputConfig>> m_idsToValue;
-
 };
 
-class MediaPool 
+class MediaPool
 {
 public:
-    MediaPool() {
+    MediaPool()
+    {
         updateVideoFiles(); // TODO: Should be updated on filesystem change
     }
 
     ~MediaPool() = default;
 
-    std::vector<std::string>& getVideoFiles() {
+    std::vector<std::string> &getVideoFiles()
+    {
         return m_videoFiles;
     }
 
-    std::string getVideoFilePath(const std::string& fileName) {
+    std::string getVideoFilePath(const std::string &fileName)
+    {
         return m_videoFilePath + fileName;
     }
 
-    void updateVideoFiles() {
+    void updateVideoFiles()
+    {
         m_videoFiles.clear();
-        for (const auto& entry : std::filesystem::directory_iterator(m_videoFilePath)) {
-            if (entry.is_regular_file()) {
+        for (const auto &entry : std::filesystem::directory_iterator(m_videoFilePath))
+        {
+            if (entry.is_regular_file())
+            {
                 std::string filename = entry.path().filename().string();
-                if (filename.find("h265") != std::string::npos || filename.find("hdmi") != std::string::npos) {       
+                if (filename.find("h265") != std::string::npos || filename.find("hdmi") != std::string::npos)
+                {
                     std::string filePath = filename;
                     m_videoFiles.push_back(filePath);
                 }
@@ -149,45 +163,56 @@ public:
 private:
     std::string m_videoFilePath = "../videos/";
     std::vector<std::string> m_videoFiles;
-
 };
 
-struct Settings 
+struct Settings
 {
     bool showUI = true;
     std::string videoFilePath = "../videos/";
     std::string serialDevice = "/dev/ttyACM0";
 
     template <class Archive>
-    void serialize(Archive & ar) {
+    void serialize(Archive &ar)
+    {
         ar(showUI, videoFilePath, serialDevice);
-    }    
+    }
 };
 
-class Registry 
+class Registry
 {
 public:
     Registry() { load(); }
     ~Registry() {}
 
-    Settings& settings() { return m_settings; }
-    InputMappings& inputMappings() { return m_inputMappings; }
-    MediaPool& mediaPool() { return m_mediaPool; }
-    
-    void save() {
+    Settings &settings() { return m_settings; }
+    InputMappings &inputMappings() { return m_inputMappings; }
+    MediaPool &mediaPool() { return m_mediaPool; }
+
+    void save()
+    {
         std::ofstream file("vm1-registry.json");
         cereal::JSONOutputArchive archive(file);
         archive(m_inputMappings, m_settings);
     }
 
-    void load() {
-        std::ifstream file("vm1-registry.json");
-        cereal::JSONInputArchive archive(file);
-        archive(m_inputMappings, m_settings);
+    void load()
+    {
+        try
+        {
+            std::ifstream file("vm1-registry.json");
+            cereal::JSONInputArchive archive(file);
+            archive(m_inputMappings, m_settings);
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << "Deserialization failed: " << e.what() << std::endl;
+            // Handle error, e.g., fallback, alert user, etc.
+        }
     }
 
 private:
-    std::size_t hash() {
+    std::size_t hash()
+    {
         std::stringstream stream;
         cereal::BinaryOutputArchive archive(stream);
         archive(m_inputMappings, m_settings);
@@ -206,5 +231,3 @@ private:
     InputMappings m_inputMappings;
     MediaPool m_mediaPool;
 };
-
-

@@ -1,8 +1,6 @@
 #include <stdint.h>
 #include <Adafruit_NeoPixel.h>
-#include "MsgPack/MsgPack.h"
 #include "Keyboard.h"
-// #include "pio_encoder.h"
 #include "RP2040-Encoder/quadrature.h"
 
 // four status leds pins
@@ -59,7 +57,6 @@ char last_button = '\0';
 bool last_button_state = RELEASED;
 
 // encoder
-// PioEncoder encoder(ROTARY_PIN_A);
 Quadrature_encoder<ROTARY_PIN_A, ROTARY_PIN_B> encoder = Quadrature_encoder<ROTARY_PIN_A, ROTARY_PIN_B>();
 
 long encoder_value_old = 0;
@@ -84,12 +81,7 @@ int yellow[] = {255, 255, 0};
 int magenta[] = {255, 0, 255};
 int cyan[] = {0, 255, 255};
 
-// MessagePack
-const int SERIAL_BUF_SIZE = 512;
-uint8_t serialBuf[SERIAL_BUF_SIZE];
-int serialLen = 0;
-
-enum STATUS_LED_STATE
+enum StatusLedState : uint8_t
 {
   RUNNING,
   LED_0_ON,
@@ -97,9 +89,9 @@ enum STATUS_LED_STATE
   LED_2_ON,
   LED_3_ON,
 };
-STATUS_LED_STATE led_state = RUNNING;
+StatusLedState led_state = RUNNING;
 
-enum button_state
+enum ButtonState : uint8_t
 {
   NONE,
   EMPTY,
@@ -110,6 +102,17 @@ enum button_state
   LIVECAM_ACTIVE,
   SHADER_ACTIVE,
 };
+
+#pragma pack(1)
+struct ControllerState
+{
+  ButtonState forward = ButtonState::NONE;
+  ButtonState backward = ButtonState::NONE;
+  ButtonState fn = ButtonState::NONE;
+  ButtonState edit[8] = {ButtonState::NONE};
+  ButtonState media[16] = {ButtonState::NONE};
+};
+#pragma pack()
 
 // shared debug message between both cores
 volatile char debug_msg[32] = "- no info -";
@@ -223,7 +226,7 @@ void blink()
   }
 }
 
-int *colorForButtonState(button_state state)
+int *colorForButtonState(ButtonState state)
 {
   switch (state)
   {
@@ -326,31 +329,56 @@ void loop()
     encoder_value_old = encoder_value;
   }
 
-  while (Serial.available() > 0 && serialLen < SERIAL_BUF_SIZE)
+  if (Serial.available() >= sizeof(ControllerState))
   {
-    serialBuf[serialLen++] = Serial.read();
-    delay(1);
-  }
+    ControllerState controllerState;
+    Serial.readBytes((char *)&controllerState, sizeof(ControllerState));
 
-  if (serialLen > 0)
-  {
-    MsgPack::Unpacker unpacker;
-
-    unpacker.feed(serialBuf, serialLen);
-
-    MsgPack::arr_t<int> states;
-
-    if (unpacker.deserialize(states) && states.size() == NEOPIXEL_COUNT)
+    Serial.println();
+    Serial.println("**** Content of states ****");
+    Serial.print("backward button: ");
+    Serial.println(controllerState.backward);
+    Serial.print("forward button: ");
+    Serial.println(controllerState.forward);
+    Serial.print("fn button: ");
+    Serial.println(controllerState.fn);
+    Serial.println("edit buttons:");
+    for (uint8_t i = 0; i < 8; i++)
     {
-      for (uint32_t i = 0; i < NEOPIXEL_COUNT; i++)
-      {
-        int *color = colorForButtonState(static_cast<button_state>(states[i]));
-        strip.setPixelColor(i, colorFromArray(color));
-      }
-      strip.show();
+      Serial.printf("[%d] %d - ", i, controllerState.edit[i]);
+    }
+    Serial.printf("\r\nmedia buttons:\r\n");
+    for (uint8_t i = 0; i < 16; i++)
+    {
+      Serial.printf("[%d] %d - ", i, controllerState.media[i]);
+    }
+    Serial.println();
+
+    // set neopixel colors
+    int *color = colorForButtonState(controllerState.backward);
+    strip.setPixelColor(0, colorFromArray(color));
+
+    color = colorForButtonState(controllerState.forward);
+    strip.setPixelColor(1, colorFromArray(color));
+
+    color = colorForButtonState(controllerState.fn);
+    strip.setPixelColor(18, colorFromArray(color));
+
+    for (uint8_t i = 0; i < 8; i++)
+    {
+      color = colorForButtonState(controllerState.edit[i]);
+      strip.setPixelColor(2 + i, colorFromArray(color));
     }
 
-    serialLen = 0; // Reset buffer
+    for (uint8_t i = 0; i < 16; i++)
+    {
+      color = colorForButtonState(controllerState.media[i]);
+      if (i < 8)
+        strip.setPixelColor(17 - i, colorFromArray(color));
+      else
+        strip.setPixelColor(19 + i - 8, colorFromArray(color));
+    }
+    strip.show();
   }
 
   // handle status leds state

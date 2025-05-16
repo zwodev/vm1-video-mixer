@@ -4,7 +4,7 @@
 #include <msgpack.hpp>
 #include <functional>
 
-enum ButtonState
+enum ButtonState : uint8_t
 {
     NONE,
     EMPTY,
@@ -16,49 +16,53 @@ enum ButtonState
     SHADER_ACTIVE,
 };
 
-MSGPACK_ADD_ENUM(ButtonState);
-
-struct ControllerState {
+#pragma pack(1)
+struct ControllerState
+{
     ButtonState forward = ButtonState::NONE;
     ButtonState backward = ButtonState::NONE;
-    ButtonState fn = ButtonState::NONE;
-    ButtonState edit[8] = { ButtonState::NONE };
-    ButtonState media[16] = { ButtonState::NONE };
-
-    MSGPACK_DEFINE(forward, backward, fn, edit, media);
+    ButtonState fn = ButtonState::FILE_ASSET;
+    ButtonState edit[8] = {ButtonState::NONE};
+    ButtonState media[16] = {ButtonState::NONE};
 
     template <typename T>
-    inline void hashCombine(std::size_t& seed, const T& v) const {
+    inline void hashCombine(std::size_t &seed, const T &v) const
+    {
         seed ^= std::hash<T>{}(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
     }
 
-    size_t hash() const {
+    size_t hash() const
+    {
         size_t seed = 0;
         hashCombine(seed, forward);
         hashCombine(seed, backward);
         hashCombine(seed, fn);
 
-        for (auto state : edit) {
+        for (auto state : edit)
+        {
             hashCombine(seed, state);
         }
 
-        for (auto state : media) {
+        for (auto state : media)
+        {
             hashCombine(seed, state);
         }
 
         return seed;
-    }   
+    }
 };
+#pragma pack()
 
-class KeyboardController {
-    
+class KeyboardController
+{
+
 public:
     KeyboardController() = default;
     ~KeyboardController() = default;
 
-    bool connect(const std::string& port);
+    bool connect(const std::string &port);
     void disconnect();
-    void send(const ControllerState& state);
+    void send(const ControllerState &state);
 
 private:
     int m_fd = -1;

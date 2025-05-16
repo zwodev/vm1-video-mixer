@@ -2,14 +2,14 @@
 
 #include <string>
 #include <iostream>
-//#include <vector>
+// #include <vector>
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
 #include <cstring>
 
 // Helper: Set up serial port
-bool KeyboardController::connect(const std::string& port)
+bool KeyboardController::connect(const std::string &port)
 {
     m_fd = open(port.c_str(), O_RDWR);
     if (m_fd < 0)
@@ -42,9 +42,12 @@ void KeyboardController::disconnect()
     m_fd = -1;
 }
 
-void KeyboardController::send(const ControllerState& controllerState)
+void KeyboardController::send(const ControllerState &controllerState)
 {
-    if (m_fd < 0) { return; }
+    if (m_fd < 0)
+    {
+        return;
+    }
 
     // Do not send state when nothing has changed (aka hash is the same)
     size_t hash = controllerState.hash();
@@ -53,11 +56,20 @@ void KeyboardController::send(const ControllerState& controllerState)
 
     m_lastHash = hash;
 
-    // Pack data with MessagePack
-    msgpack::sbuffer buffer;
-    // msgpack::pack(buffer, leds);
-    msgpack::pack(buffer, controllerState);
+    printf("backward button: %d\n", controllerState.backward);
+    printf("forward button: %d\n", controllerState.forward);
+    printf("fn button: %d\n", controllerState.fn);
+    printf("edit buttons:\n");
+    for (uint8_t i = 0; i < 8; i++)
+    {
+        printf("%d : %d\r\n", i, controllerState.edit[i]);
+    }
+    printf("media buttons:\n");
+    for (uint8_t i = 0; i < 16; i++)
+    {
+        printf("%d : %d\r\n", i, controllerState.media[i]);
+    }
 
     // Send to Pico
-    write(m_fd, buffer.data(), buffer.size());
+    write(m_fd, (char *)&controllerState, sizeof(ControllerState));
 }

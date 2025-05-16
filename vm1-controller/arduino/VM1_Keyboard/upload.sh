@@ -31,6 +31,9 @@ if [ -z "$PICO_DEV" ]; then
   exit 1
 fi
 
+# upload
+# arduino-cli upload --fqbn rp2040:rp2040:raspberry_pi_pico -p /dev/ttyACM0
+
 # Mount and upload
 DEVICE_PATH="/dev/$PICO_DEV"
 sudo mount $DEVICE_PATH $MOUNT_POINT
