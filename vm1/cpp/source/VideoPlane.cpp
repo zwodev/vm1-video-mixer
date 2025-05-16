@@ -68,7 +68,7 @@ void VideoPlane::setFadeTime(int fadeTime)
 
 int VideoPlane::playAndFade(const std::string& fileName, bool looping)
 {
-    if (m_isVideoFading || m_isCameraFading) return;
+    if (m_isVideoFading || m_isCameraFading) return -1;
 
     if (fileName == "../videos/hdmi0") {
         CameraPlayer* cameraPlayer = m_cameraPlayers[0];
