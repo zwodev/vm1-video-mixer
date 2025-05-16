@@ -1,7 +1,15 @@
 #include <stdint.h>
 #include <Adafruit_NeoPixel.h>
+#include <stdio.h>
+// #include "pico/stdlib.h"
+#include "hardware/pio.h"
+#include "hardware/gpio.h"
+#include "stdlib.h"
 #include "Keyboard.h"
-#include "RP2040-Encoder/quadrature.h"
+// #include "RP2040-Encoder/quadrature.h"
+
+// rotary encoder code taken from:
+// https://www.reddit.com/r/raspberrypipico/comments/pacarb/sharing_some_c_code_to_read_a_rotary_encoder/
 
 // four status leds pins
 #define LED_PIN_01 0
@@ -57,9 +65,11 @@ char last_button = '\0';
 bool last_button_state = RELEASED;
 
 // encoder
-Quadrature_encoder<ROTARY_PIN_A, ROTARY_PIN_B> encoder = Quadrature_encoder<ROTARY_PIN_A, ROTARY_PIN_B>();
-
-long encoder_value_old = 0;
+// Quadrature_encoder<ROTARY_PIN_A, ROTARY_PIN_B> encoder = Quadrature_encoder<ROTARY_PIN_A, ROTARY_PIN_B>();
+uint m_uPhasePosition = 0;
+volatile int32_t encoder_value = 0;
+int32_t encoder_value_old = 0;
+int32_t m_iEncoderOffset;
 
 // status leds
 uint8_t status_leds[] = {LED_PIN_01, LED_PIN_02, LED_PIN_03, LED_PIN_04};
@@ -261,6 +271,33 @@ uint32_t colorFromArray(int color[3])
   return 0;
 }
 
+const int8_t encoder_table[16] = {
+    0, -1, 1, 0,
+    1, 0, 0, -1,
+    -1, 0, 0, 1,
+    0, 1, -1, 0};
+
+volatile uint8_t last_state = 0;
+
+int8_t ReadEncoderDelta()
+{
+  uint8_t pin_a = gpio_get(ROTARY_PIN_A);
+  uint8_t pin_b = gpio_get(ROTARY_PIN_B);
+  uint8_t current_state = (pin_a << 1) | pin_b;
+
+  uint8_t index = (last_state << 2) | current_state;
+  int8_t delta = encoder_table[index];
+
+  last_state = current_state;
+  return delta;
+}
+
+void IRQCallback(uint gpio, uint32_t events)
+{
+  int8_t delta = ReadEncoderDelta();
+  m_iEncoderOffset += delta;
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -290,7 +327,17 @@ void setup()
 
   // init encoder
   // encoder.begin();
-  encoder.begin(pull_direction::up, resolution::quarter);
+  // encoder.begin(pull_direction::up, resolution::quarter);
+  gpio_init(ROTARY_PIN_A);
+  gpio_set_dir(ROTARY_PIN_A, GPIO_IN);
+  gpio_disable_pulls(ROTARY_PIN_A);
+
+  gpio_init(ROTARY_PIN_B);
+  gpio_set_dir(ROTARY_PIN_B, GPIO_IN);
+  gpio_disable_pulls(ROTARY_PIN_B);
+
+  gpio_set_irq_enabled_with_callback(ROTARY_PIN_A, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &IRQCallback);
+  gpio_set_irq_enabled(ROTARY_PIN_B, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
 
   // neopixels
   strip.begin();
@@ -311,48 +358,52 @@ void loop()
 
   update_keyboard();
 
-  // Rotary Encoder (send to Keyboard as UP/DOWN Keys)
+  // Rotary Encoder(send to Keyboard as UP / DOWN Keys)
+  encoder_value = m_iEncoderOffset;
+  int delta = encoder_value - encoder_value_old;
 
-  int32_t encoder_value = encoder.count() / 2;
-  if (encoder_value > encoder_value_old)
-  {
-    Keyboard.press(KEY_DOWN_ARROW);
-    delay(1);
-    Keyboard.release(KEY_DOWN_ARROW);
-    encoder_value_old = encoder_value;
-  }
-  else if (encoder_value < encoder_value_old)
+  if (delta >= 4)
   {
     Keyboard.press(KEY_UP_ARROW);
     delay(1);
     Keyboard.release(KEY_UP_ARROW);
-    encoder_value_old = encoder_value;
+    encoder_value_old += 4;
+    // Serial.println(encoder_value_old);
+  }
+  else if (delta <= -4)
+  {
+    Keyboard.press(KEY_DOWN_ARROW);
+    delay(1);
+    Keyboard.release(KEY_DOWN_ARROW);
+    encoder_value_old -= 4;
+    // Serial.println(encoder_value_old);
   }
 
+  // Read Serial and set NeoPixels
   if (Serial.available() >= sizeof(ControllerState))
   {
     ControllerState controllerState;
     Serial.readBytes((char *)&controllerState, sizeof(ControllerState));
 
-    Serial.println();
-    Serial.println("**** Content of states ****");
-    Serial.print("backward button: ");
-    Serial.println(controllerState.backward);
-    Serial.print("forward button: ");
-    Serial.println(controllerState.forward);
-    Serial.print("fn button: ");
-    Serial.println(controllerState.fn);
-    Serial.println("edit buttons:");
-    for (uint8_t i = 0; i < 8; i++)
-    {
-      Serial.printf("[%d] %d - ", i, controllerState.edit[i]);
-    }
-    Serial.printf("\r\nmedia buttons:\r\n");
-    for (uint8_t i = 0; i < 16; i++)
-    {
-      Serial.printf("[%d] %d - ", i, controllerState.media[i]);
-    }
-    Serial.println();
+    // Serial.println();
+    // Serial.println("**** Content of states ****");
+    // Serial.print("backward button: ");
+    // Serial.println(controllerState.backward);
+    // Serial.print("forward button: ");
+    // Serial.println(controllerState.forward);
+    // Serial.print("fn button: ");
+    // Serial.println(controllerState.fn);
+    // Serial.println("edit buttons:");
+    // for (uint8_t i = 0; i < 8; i++)
+    // {
+    //   Serial.printf("[%d] %d - ", i, controllerState.edit[i]);
+    // }
+    // Serial.printf("\r\nmedia buttons:\r\n");
+    // for (uint8_t i = 0; i < 16; i++)
+    // {
+    //   Serial.printf("[%d] %d - ", i, controllerState.media[i]);
+    // }
+    // Serial.println();
 
     // set neopixel colors
     int *color = colorForButtonState(controllerState.backward);
