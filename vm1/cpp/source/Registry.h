@@ -178,7 +178,7 @@ struct Settings
     template <class Archive>
     void serialize(Archive &ar)
     {
-        ar(showUI, defaultLooping, videoFilePath, serialDevice);
+        ar(showUI, defaultLooping, fadeTime, videoFilePath, serialDevice);
     }
 };
 
