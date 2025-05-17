@@ -51,10 +51,12 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     }
 
     // Select plane
+    float fadeTime = float(m_registry.settings().fadeTime); 
     int oddRow = (mediaSlotId / 8) % 2;
     if (oddRow == 0)
     {
         printf("Play Left: (ID: %d, FILE: %s, LOOP: %d)\n", mediaSlotId, filePath.c_str(), looping);
+        m_planes[0].setFadeTime(fadeTime);
         int playerIndex = m_planes[0].playAndFade(filePath, looping);
         printf("Player Index: %d", playerIndex);
         if (playerIndex >= 0)
@@ -65,6 +67,7 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     else
     {
         printf("Play Right: (ID: %d, FILE: %s, LOOP: %d)\n", mediaSlotId, fileName.c_str(), looping);
+        m_planes[1].setFadeTime(fadeTime);
         int playerIndex = m_planes[1].playAndFade(filePath, looping);
         if (playerIndex >= 0)
         {

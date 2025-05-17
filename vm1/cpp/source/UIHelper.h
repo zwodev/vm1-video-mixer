@@ -232,101 +232,119 @@ namespace UI
         return selected && active;
     }
 
-    int FileSelection(Registry* registry, int id)
+    void SpinBoxInt(const std::string& label, bool selected, int& value, int minValue, int maxValue)
     {
-        auto config = std::make_unique<VideoInputConfig>();
-        VideoInputConfig* currentConfig = registry->inputMappings().getVideoInputConfig(id);
-        if (currentConfig) {
-            *config = *currentConfig;
+        int diff = 0;
+        if (ImGui::IsKeyDown(ImGuiKey_LeftShift)) {
+            if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) diff = 1;
+            else if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) diff = -1;
+        }
+        
+        if (selected && diff != 0) {
+            value += diff;
+            if (value < minValue) value = minValue;
+            else if (value > maxValue) value = maxValue;
         }
 
-        // need to get that from registry
-        std::vector<std::string>& files = registry->mediaPool().getVideoFiles();
-        bool changed = false;
-        for (int i = 0; i < files.size(); ++i) {
-            std::string fileName = files[i];
-            if (ImGui::RadioButton(fileName.c_str(), (currentConfig->fileName == fileName))) {
-                currentConfig->fileName = fileName;
-            }
-        }
-
-        if (changed)
-            registry->inputMappings().addInputConfig(id, std::move(config));
+        std::string newLabel = label + ": " + std::to_string(value);
+        Text(newLabel, selected ? TextState::SELECTED : TextState::DEFAULT);
     }
 
-    void LiveInputSelection(Registry* registry, int id) {
-        auto config = std::make_unique<HdmiInputConfig>();
-        HdmiInputConfig* currentConfig = registry->inputMappings().getHdmiInputConfig(id);
-        if (currentConfig) {
-            *config = *currentConfig; 
-        }
+    // int FileSelection(Registry* registry, int id)
+    // {
+    //     auto config = std::make_unique<VideoInputConfig>();
+    //     VideoInputConfig* currentConfig = registry->inputMappings().getVideoInputConfig(id);
+    //     if (currentConfig) {
+    //         *config = *currentConfig;
+    //     }
 
-        bool changed = false;
-        changed |= ImGui::RadioButton("HDMI 1", &(config->hdmiPort), 0);
-        changed |= ImGui::RadioButton("HDMI 2", &(config->hdmiPort), 1);
+    //     // need to get that from registry
+    //     std::vector<std::string>& files = registry->mediaPool().getVideoFiles();
+    //     bool changed = false;
+    //     for (int i = 0; i < files.size(); ++i) {
+    //         std::string fileName = files[i];
+    //         if (ImGui::RadioButton(fileName.c_str(), (currentConfig->fileName == fileName))) {
+    //             currentConfig->fileName = fileName;
+    //         }
+    //     }
 
-        if (changed)
-            registry->inputMappings().addInputConfig(id, std::move(config));
-    }
+    //     if (changed)
+    //         registry->inputMappings().addInputConfig(id, std::move(config));
+    // }
 
-    void HierarchicalMenuWidget(const MenuItem& root, Registry* registry) {
-        static std::vector<int> path;
-        static int selectedIdx = 0;
+    // void LiveInputSelection(Registry* registry, int id) {
+    //     auto config = std::make_unique<HdmiInputConfig>();
+    //     HdmiInputConfig* currentConfig = registry->inputMappings().getHdmiInputConfig(id);
+    //     if (currentConfig) {
+    //         *config = *currentConfig; 
+    //     }
 
-        // Traverse to current menu
-        const MenuItem* current = &root;
-        for (int idx : path) {
-            if (idx >= 0 && idx < (int)current->children.size())
-                current = &current->children[idx];
-            else
-                break;
-        }
+    //     bool changed = false;
+    //     changed |= ImGui::RadioButton("HDMI 1", &(config->hdmiPort), 0);
+    //     changed |= ImGui::RadioButton("HDMI 2", &(config->hdmiPort), 1);
 
-        // Render current menu page
-        ImGui::BeginChild("MenuPage", ImVec2(0, 200), true);
-        for (int i = 0; i < (int)current->children.size(); ++i) {
-            bool isSelected = (i == selectedIdx);
-            std::string label = current->children[i].label;
-            if (ImGui::Selectable(label.c_str(), isSelected)) {
-                selectedIdx = i;
-            }
-        }
-        ImGui::EndChild();
+    //     if (changed)
+    //         registry->inputMappings().addInputConfig(id, std::move(config));
+    // }
 
-        // Render dynamic content if present
-        if (selectedIdx >= 0 && selectedIdx < (int)current->children.size()) {
-            auto& selected = current->children[selectedIdx];
-            if (selected.renderFunc) {
-                ImGui::Separator();
-                selected.renderFunc(registry, 0);
-            }
-        }
+    // void HierarchicalMenuWidget(const MenuItem& root, Registry* registry) {
+    //     static std::vector<int> path;
+    //     static int selectedIdx = 0;
 
-        // Handle navigation
-        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows)) {
-            if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
-                // Go deeper if selected item has children or a render_func (treat as a page)
-                if (selectedIdx >= 0 && selectedIdx < (int)current->children.size()) {
-                    auto& sel = current->children[selectedIdx];
-                    if (!sel.children.empty() || sel.renderFunc) {
-                        path.push_back(selectedIdx);
-                        selectedIdx = 0;
-                    }
-                }
-            }
-            if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) {
-                // Go up one level
-                if (!path.empty()) {
-                    path.pop_back();
-                    selectedIdx = 0;
-                }
-            }
-            if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
-                if (selectedIdx > 0) selectedIdx--;
-            }
-            if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
-                if (selectedIdx + 1 < (int)current->children.size()) selectedIdx++;
-            }
-        }
-    }
+    //     // Traverse to current menu
+    //     const MenuItem* current = &root;
+    //     for (int idx : path) {
+    //         if (idx >= 0 && idx < (int)current->children.size())
+    //             current = &current->children[idx];
+    //         else
+    //             break;
+    //     }
+
+    //     // Render current menu page
+    //     ImGui::BeginChild("MenuPage", ImVec2(0, 200), true);
+    //     for (int i = 0; i < (int)current->children.size(); ++i) {
+    //         bool isSelected = (i == selectedIdx);
+    //         std::string label = current->children[i].label;
+    //         if (ImGui::Selectable(label.c_str(), isSelected)) {
+    //             selectedIdx = i;
+    //         }
+    //     }
+    //     ImGui::EndChild();
+
+    //     // Render dynamic content if present
+    //     if (selectedIdx >= 0 && selectedIdx < (int)current->children.size()) {
+    //         auto& selected = current->children[selectedIdx];
+    //         if (selected.renderFunc) {
+    //             ImGui::Separator();
+    //             selected.renderFunc(registry, 0);
+    //         }
+    //     }
+
+    //     // Handle navigation
+    //     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows)) {
+    //         if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
+    //             // Go deeper if selected item has children or a render_func (treat as a page)
+    //             if (selectedIdx >= 0 && selectedIdx < (int)current->children.size()) {
+    //                 auto& sel = current->children[selectedIdx];
+    //                 if (!sel.children.empty() || sel.renderFunc) {
+    //                     path.push_back(selectedIdx);
+    //                     selectedIdx = 0;
+    //                 }
+    //             }
+    //         }
+    //         if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) {
+    //             // Go up one level
+    //             if (!path.empty()) {
+    //                 path.pop_back();
+    //                 selectedIdx = 0;
+    //             }
+    //         }
+    //         if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
+    //             if (selectedIdx > 0) selectedIdx--;
+    //         }
+    //         if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
+    //             if (selectedIdx + 1 < (int)current->children.size()) selectedIdx++;
+    //         }
+    //     }
+    // }
 }

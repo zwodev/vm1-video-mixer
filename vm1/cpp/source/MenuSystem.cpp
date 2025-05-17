@@ -200,6 +200,8 @@ void MenuSystem::StartupScreen(Registry* registry, int id, int* selectedIdx)
 void MenuSystem::FileSelection(Registry* registry, int id, int* selectedIdx)
 {
     auto config = std::make_unique<VideoInputConfig>();
+    config->looping = registry->settings().defaultLooping;
+
     VideoInputConfig* currentConfig = registry->inputMappings().getVideoInputConfig(id);
     if (currentConfig) {
         *config = *currentConfig;
@@ -279,6 +281,8 @@ void MenuSystem::GlobalSettings(Registry* registry, int id, int* selectedIdx)
     Settings& settings = registry->settings();
 
     int i = 0;
+    UI::SpinBoxInt("Fade Time", (i++ == *selectedIdx), settings.fadeTime, 0, 10);
     if (UI::CheckBox("Show UI", (i++ == *selectedIdx), settings.showUI)) { settings.showUI = !settings.showUI; };
+    if (UI::CheckBox("Default Looping", (i++ == *selectedIdx), settings.defaultLooping)) { settings.defaultLooping = !settings.defaultLooping; };
     HandleUpAndDownKeys(selectedIdx, i);
 }

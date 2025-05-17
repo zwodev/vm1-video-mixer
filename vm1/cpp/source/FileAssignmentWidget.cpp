@@ -64,6 +64,7 @@ void FileAssignmentWidget::renderButtonMatrix() {
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("FILE_PAYLOAD")) {
                     auto videoInputConfig = std::make_unique<VideoInputConfig>();
+                    videoInputConfig->looping = m_registry.settings().defaultLooping;
                     videoInputConfig->fileName = m_registry.mediaPool().getVideoFilePath(std::string(static_cast<const char*>(payload->Data)));
                     m_registry.inputMappings().addInputConfig(id, std::move(videoInputConfig));
                 }

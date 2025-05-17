@@ -168,13 +168,15 @@ private:
 struct Settings
 {
     bool showUI = true;
+    bool defaultLooping = true;
+    int fadeTime = 2.0f;
     std::string videoFilePath = "../videos/";
     std::string serialDevice = "/dev/ttyACM0";
 
     template <class Archive>
     void serialize(Archive &ar)
     {
-        ar(showUI, videoFilePath, serialDevice);
+        ar(showUI, defaultLooping, videoFilePath, serialDevice);
     }
 };
 
