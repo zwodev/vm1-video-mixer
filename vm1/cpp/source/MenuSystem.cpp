@@ -8,6 +8,7 @@
 
 #include "MenuSystem.h"
 #include "UIHelper.h"
+#include "NetworkTools.h"
 
 #include <imgui.h>
 #include <vector>
@@ -25,6 +26,7 @@ MenuSystem::MenuSystem(Registry &registry) : m_registry(registry)
                                             {"Shader", {}}
                                         }};
     m_menus[MT_PlaybackSelection]   = {"Playback", {}, PlaybackSettings};
+    m_menus[MT_NetworkInfo]         = {"Network", {}, NetworkInfo};
     m_menus[MT_SettingsSelection]   = {"Settings", {}, GlobalSettings};
 
     setMenu(MT_StartupScreen);
@@ -81,6 +83,7 @@ void MenuSystem::handleMediaAndEditButtons()
             case ImGuiKey_Z:
                 break;
             case ImGuiKey_U:
+                setMenu(MT_NetworkInfo);
                 break;
             case ImGuiKey_I:
                 setMenu(MT_SettingsSelection);
@@ -132,7 +135,9 @@ void MenuSystem::render()
     // Render title
     if (!menuItem->label.empty()) {
         UI::MenuTitle(menuItem->label);
-        UI::MediaButtonID(m_id + 1);
+        if (m_currentMenuType != MT_SettingsSelection && m_currentMenuType != MT_NetworkInfo) {
+            UI::MediaButtonID(m_id + 1);
+        }
     }
 
     ImGui::SetCursorPosY(23);
@@ -274,6 +279,18 @@ void MenuSystem::PlaybackSettings(Registry* registry, int id, int* selectedIdx)
         std::string label = "Source: HDMI " + hdmiInputConfig->hdmiPort;
         UI::Text(label, UI::TextState::DEFAULT);
     }
+}
+
+void MenuSystem::NetworkInfo(Registry* registry, int id, int* selectedIdx) 
+{
+    Settings& settings = registry->settings();
+    std::string eth0;
+    std::string wlan0;
+    NetworkTools::getIPAddress("eth0", eth0);
+    NetworkTools::getIPAddress("wlan0", wlan0);
+
+    if (!eth0.empty()) UI::Text("e: " + eth0, UI::TextState::DEFAULT);
+    if (!wlan0.empty()) UI::Text("w: " + wlan0, UI::TextState::DEFAULT);
 }
 
 void MenuSystem::GlobalSettings(Registry* registry, int id, int* selectedIdx) 

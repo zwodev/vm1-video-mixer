@@ -28,6 +28,7 @@ public:
         MT_InfoSelection,
         MT_InputSelection,
         MT_PlaybackSelection,
+        MT_NetworkInfo,
         MT_SettingsSelection
     };
 
@@ -46,6 +47,7 @@ private:
     static void FileSelection(Registry* registry, int id, int* selectedIdx);
     static void LiveInputSelection(Registry* registry, int id, int* selectedIdx);
     static void PlaybackSettings(Registry* registry, int id, int* selectedIdx);
+    static void NetworkInfo(Registry* registry, int id, int* selectedIdx);
     static void GlobalSettings(Registry* registry, int id, int* selectedIdx);
 
 private:
