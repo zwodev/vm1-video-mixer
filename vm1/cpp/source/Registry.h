@@ -135,6 +135,7 @@ public:
 
     std::vector<std::string> &getVideoFiles()
     {
+        // TODO: Update only when new files are present.
         updateVideoFiles();
         return m_videoFiles;
     }
