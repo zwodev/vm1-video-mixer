@@ -135,6 +135,7 @@ public:
 
     std::vector<std::string> &getVideoFiles()
     {
+        updateVideoFiles();
         return m_videoFiles;
     }
 
