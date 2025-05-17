@@ -10,15 +10,23 @@
 #include <SDL3/SDL.h>
 #include "edid/1080p30edid.h"
 
-CameraController::CameraController() {
+CameraController::CameraController() 
+{
     // 
 }
 
-CameraController::~CameraController() {
+CameraController::~CameraController() 
+{
     //
 }
 
-bool CameraController::setup() {
+void CameraController::setupDetached()
+{
+    m_thread = std::thread(&CameraController::setup, this);
+}
+
+bool CameraController::setup() 
+{
     const std::string captureDeviceName = "rp1-cfe";
     std::string mediaPath = MediaController::getDevicePath(captureDeviceName);
     if (mediaPath.empty()) {

@@ -11,7 +11,10 @@
 #include "V4L2Controller.h"
 #include "MediaController.h"
 
-class CameraController  {
+#include <thread>
+
+class CameraController 
+{
 private:
     V4L2Controller m_v4l2Controller;
     MediaController m_mediaController;
@@ -20,6 +23,12 @@ public:
     CameraController();
     ~CameraController();
     
+    void setupDetached();
+
+private:
     bool setup();
+
+private:
+    std::thread m_thread;
 
 };

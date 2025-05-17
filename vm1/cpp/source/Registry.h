@@ -188,11 +188,31 @@ public:
     InputMappings &inputMappings() { return m_inputMappings; }
     MediaPool &mediaPool() { return m_mediaPool; }
 
+    void update(float deltaTime) {
+        m_timeSinceLastHash += deltaTime;
+        //printf("Time Since Last Hash: %f\n", m_timeSinceLastHash); 
+        if (m_timeSinceLastHash >= m_autosaveInterval) {
+            m_timeSinceLastHash -= m_autosaveInterval;
+            size_t currentHash = hash();
+            if (currentHash != m_lastHash) {
+                m_lastHash = currentHash;
+                save();
+            }
+        }
+    }
+
     void save()
     {
-        std::ofstream file("vm1-registry.json");
-        cereal::JSONOutputArchive archive(file);
-        archive(m_inputMappings, m_settings);
+        try {
+            std::ofstream file("vm1-registry.json");
+            cereal::JSONOutputArchive archive(file);
+            archive(m_inputMappings, m_settings);
+            printf("Successfully saved registry!\n");
+        }
+        catch(const std::exception &e) {
+            std::cerr << "Serialization failed: " << e.what() << std::endl;
+        }
+        
     }
 
     void load()
@@ -202,6 +222,7 @@ public:
             std::ifstream file("vm1-registry.json");
             cereal::JSONInputArchive archive(file);
             archive(m_inputMappings, m_settings);
+            m_lastHash = hash();
         }
         catch (const std::exception &e)
         {
@@ -226,7 +247,10 @@ private:
     }
 
 private:
-    size_t m_lastHash;
+    float m_autosaveInterval = 5.0f;
+    float m_timeSinceLastHash = 0.0f;
+    size_t m_lastHash = 0;
+
     Settings m_settings;
     InputMappings m_inputMappings;
     MediaPool m_mediaPool;

@@ -51,7 +51,7 @@ private:
 private:
     Registry &m_registry;
     int m_id = 0;
-    int m_bank = 0;
+    //int m_bank = 0;
     int m_selectedIdx = 0;
     std::vector<int> m_currentMenuPath;
 

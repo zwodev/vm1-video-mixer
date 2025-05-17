@@ -19,6 +19,7 @@ enum ButtonState : uint8_t
 #pragma pack(1)
 struct ControllerState
 {
+    uint8_t bank;
     ButtonState forward = ButtonState::NONE;
     ButtonState backward = ButtonState::NONE;
     ButtonState fn = ButtonState::FILE_ASSET;
@@ -34,6 +35,7 @@ struct ControllerState
     size_t hash() const
     {
         size_t seed = 0;
+        hashCombine(seed, bank);
         hashCombine(seed, forward);
         hashCombine(seed, backward);
         hashCombine(seed, fn);

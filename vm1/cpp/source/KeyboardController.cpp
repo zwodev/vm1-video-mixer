@@ -56,19 +56,20 @@ void KeyboardController::send(const ControllerState &controllerState)
 
     m_lastHash = hash;
 
-    printf("backward button: %d\n", controllerState.backward);
-    printf("forward button: %d\n", controllerState.forward);
-    printf("fn button: %d\n", controllerState.fn);
-    printf("edit buttons:\n");
-    for (uint8_t i = 0; i < 8; i++)
-    {
-        printf("%d : %d\r\n", i, controllerState.edit[i]);
-    }
-    printf("media buttons:\n");
-    for (uint8_t i = 0; i < 16; i++)
-    {
-        printf("%d : %d\r\n", i, controllerState.media[i]);
-    }
+    printf("bank: %d\n", controllerState.bank);
+    // printf("backward button: %d\n", controllerState.backward);
+    // printf("forward button: %d\n", controllerState.forward);
+    // printf("fn button: %d\n", controllerState.fn);
+    // printf("edit buttons:\n");
+    // for (uint8_t i = 0; i < 8; i++)
+    // {
+    //     printf("%d : %d\r\n", i, controllerState.edit[i]);
+    // }
+    // printf("media buttons:\n");
+    // for (uint8_t i = 0; i < 16; i++)
+    // {
+    //     printf("%d : %d\r\n", i, controllerState.media[i]);
+    // }
 
     // Send to Pico
     write(m_fd, (char *)&controllerState, sizeof(ControllerState));

@@ -49,7 +49,8 @@ void MenuSystem::handleMediaAndEditButtons()
         ImGuiKey key = m_keyboardShortcuts[i];
         if (ImGui::IsKeyDown(key))
         {
-            int id = m_bank * numButtons + i;
+            int bank = m_registry.inputMappings().bank;
+            int id = bank * numButtons + i;
             m_id = id;
 
             if (m_currentMenuType == MT_StartupScreen) setMenu(MT_InputSelection);
@@ -148,9 +149,19 @@ void MenuSystem::render()
         menuItem->renderFunc(&m_registry, m_id, &m_selectedIdx);
     }
 
+    // Handle bank switching
+    if (ImGui::IsKeyDown(ImGuiKey_LeftShift) && (ImGui::IsKeyPressed(ImGuiKey_RightArrow))) {
+        m_registry.inputMappings().bank = (m_registry.inputMappings().bank + 1) % 4; 
+    }
+    else if (ImGui::IsKeyDown(ImGuiKey_LeftShift) && (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))) {
+        m_registry.inputMappings().bank = (m_registry.inputMappings().bank - 1) % 4;
+        if (m_registry.inputMappings().bank < 0) m_registry.inputMappings().bank = 3;
+    }
+
+
     // Handle navigation
-    if  (ImGui::IsKeyPressed(ImGuiKey_RightArrow) || 
-        (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_DownArrow))) {
+    if  ( (!ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) || 
+        (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_DownArrow)) ) {
         // Go deeper if selected item has children or a render_func (treat as a page)
         if (m_selectedIdx >= 0 && m_selectedIdx < (int)menuItem->children.size()) {
             auto& sel = menuItem->children[m_selectedIdx];
@@ -160,7 +171,7 @@ void MenuSystem::render()
             }
         }
     }
-    else if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) || 
+    else if ( (!ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) || 
             (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_UpArrow))) 
     {
         // Go up one level

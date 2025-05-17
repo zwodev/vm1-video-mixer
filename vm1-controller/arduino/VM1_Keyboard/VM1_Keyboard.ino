@@ -116,6 +116,7 @@ enum ButtonState : uint8_t
 #pragma pack(1)
 struct ControllerState
 {
+  uint8_t bank;
   ButtonState forward = ButtonState::NONE;
   ButtonState backward = ButtonState::NONE;
   ButtonState fn = ButtonState::NONE;
@@ -404,6 +405,9 @@ void loop()
     //   Serial.printf("[%d] %d - ", i, controllerState.media[i]);
     // }
     // Serial.println();
+
+    // set bank indicator led
+    set_status_led(controllerState.bank);
 
     // set neopixel colors
     int *color = colorForButtonState(controllerState.backward);

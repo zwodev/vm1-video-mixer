@@ -167,7 +167,7 @@ int main(int, char **)
 
     // Camera
     CameraController cameraController;
-    cameraController.setup();
+    //cameraController.setupDetached();
 
     // CameraPlayer cameraPlayer0;
 
@@ -229,6 +229,7 @@ int main(int, char **)
             continue;
         }
 
+        registry.update(deltaTime);
         playbackOperator.update();
         keyForwarder.forwardArrowKeys(mainContext, fboContext);
 
@@ -267,7 +268,7 @@ int main(int, char **)
                 ImGui::Checkbox("Enable Video", &isVideoEnabled);
                 if (ImGui::Button("Setup HDMI2CSI"))
                 {
-                    cameraController.setup();
+                    cameraController.setupDetached();
                 }
                 // if (ImGui::Button("Start HDMI2CSI"))
                 // {

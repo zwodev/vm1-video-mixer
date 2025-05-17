@@ -141,6 +141,7 @@ void PlaybackOperator::updateKeyboardController()
     InputMappings &inputMappings = m_registry.inputMappings();
 
     ControllerState controllerState;
+    controllerState.bank = uint8_t(inputMappings.bank);
     for (int i = 0; i < 16; ++i)
     {
         int mediaSlotId = (inputMappings.bank * 16) + i;
