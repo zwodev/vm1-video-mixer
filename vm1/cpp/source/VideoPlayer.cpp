@@ -70,6 +70,29 @@ bool VideoPlayer::open(std::string fileName, bool useH264)
         return false;
     }
 
+    if (avformat_find_stream_info(m_formatContext, NULL) < 0) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't find stream info in file %s: %d", fileName.c_str(), result);
+        return false; 
+    }
+
+    bool foundStream = false;
+    for (unsigned int i = 0; i < m_formatContext->nb_streams; i++) {
+        AVStream *stream = m_formatContext->streams[i];
+        AVCodecParameters *codecpar = stream->codecpar;
+        if (codecpar->codec_type == AVMEDIA_TYPE_VIDEO &&
+            codecpar->width == 1920 &&
+            codecpar->height == 1080 &&
+            codecpar->codec_id == AV_CODEC_ID_HEVC) {
+            foundStream = true;
+            break;
+        }
+    }
+
+    if (!foundStream) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't find a valid HEVC/1080p video stream in file %s: %d", fileName.c_str(), result);
+        return false;
+    }
+
     m_videoStream = av_find_best_stream(m_formatContext, AVMEDIA_TYPE_VIDEO, -1, -1, &m_videoCodec, 0);
     if (m_videoStream >= 0) {
         if (useH264) {

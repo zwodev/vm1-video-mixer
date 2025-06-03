@@ -58,12 +58,19 @@ int main(int, char **)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 
     // Check number of attached displays
+    int x_offsets[2] = { 0, 0 };
+    int y_offsets[2] = { 0, 0 };
     int num_displays;
     SDL_DisplayID *displays = SDL_GetDisplays(&num_displays);
     SDL_Log("Found %d display(s)", num_displays);
     for (int i = 0; i < num_displays; ++i)
     {
         SDL_Log("Display ID for %d: %d", i, displays[i]);
+        // SDL_DisplayMode mode;
+        // if (SDL_GetCurrentDisplayMode(displays[i], &mode) == 0) {
+        //     SDL_Log("Display %d native resolution: %dx%d @ %dHz\n",
+        //            i, mode.w, mode.h, mode.refresh_rate);
+        // }
     }
     SDL_free(displays);
 
@@ -129,8 +136,6 @@ int main(int, char **)
     ImGuiContext *mainContext = ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
     (void)io;
-    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
     // Setup Platform/Renderer backends for main context
     ImGui_ImplSDL3_InitForOpenGL(windows[0], gl_context);
@@ -143,15 +148,12 @@ int main(int, char **)
     (void)fbo_io;
     fbo_io.DisplaySize = ImVec2(FBO_WIDTH, FBO_HEIGHT);
 
-    // fbo_io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-
     // Setup Platform/Renderer backends for main context
     ImGui_ImplSDL3_InitForOpenGL(windows[0], gl_context);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
-    // ImGui::StyleColorsLight();
 
     // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
@@ -167,15 +169,7 @@ int main(int, char **)
 
     // Camera
     CameraController cameraController;
-    //cameraController.setupDetached();
-
-    // CameraPlayer cameraPlayer0;
-
-    // Video players
-    // VideoPlane videoPlane0;
-    // videoPlane0.addCameraPlayer(&cameraPlayer0);
-    // VideoPlane videoPlane1;
-    // videoPlane1.addCameraPlayer(&cameraPlayer0);
+    cameraController.setupDetached();
 
     // File Assignment Widget
     FileAssignmentWidget fileAssignmentWidget(playbackOperator, registry);
@@ -221,6 +215,14 @@ int main(int, char **)
             else if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == SDL_GetWindowID(windows[0]))
             {
                 done = true;
+            }
+            else if (event.type == SDL_EVENT_DISPLAY_ADDED)
+            {
+                SDL_Log("Display added!\n");
+            }
+            else if (event.type == SDL_EVENT_DISPLAY_REMOVED)
+            {
+                SDL_Log("Display removed!\n");
             }
         }
         if (SDL_GetWindowFlags(windows[0]) & SDL_WINDOW_MINIMIZED)
