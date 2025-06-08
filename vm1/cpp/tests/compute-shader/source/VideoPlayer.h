@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "source/Shader.h"
+
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_egl.h>
@@ -32,7 +34,6 @@ extern "C"
 #include <libavutil/hwcontext_drm.h>
 }
 
-#include "PlaneRenderer.h"
 
 static SDL_PixelFormat getTextureFormat(enum AVPixelFormat format);
 static bool isSupportedPixelFormat(enum AVPixelFormat format);
@@ -62,10 +63,17 @@ public:
     void close();
     bool isPlaying() const { return m_isRunning; }
     void setLooping(bool looping);
+    void update();
     bool popFrame(VideoFrame& frame);
     bool peekFrame(VideoFrame& frame);
+    GLuint texture();
 
 private:
+    void loadShaders();
+    void createVertexBuffers();
+    void initializeFramebufferAndTextures();
+    void renderQuads();
+    void runComputeShader();
     AVCodecContext* openVideoStream();
     AVCodecContext* openAudioStream();
     bool getTextureForDRMFrame(AVFrame *frame, VideoFrame &dstFram);
@@ -77,6 +85,7 @@ private:
 
 private:
     // FFMpeg
+    Uint64 m_startTime = 0;
     double m_firstPts = -1.0;
     SDL_AudioStream* m_audio;
     AVFormatContext* m_formatContext = nullptr;
@@ -89,13 +98,27 @@ private:
     int m_videoStream = -1;
     int m_audioStream = -1;
 
+    // Rendering
+    GLuint m_vao; 
+    GLuint m_vbo;
+    
     // Threading & Synchronization
     std::thread m_decoderThread;
     std::mutex m_frameMutex;
     std::condition_variable m_frameCV;
-    std::queue<EGLSyncKHR> m_fences;
+    EGLSyncKHR m_fence = EGL_NO_SYNC;
     
+    // Textures & Shader
+    GLuint m_frameBuffer = 0;
+    //GLuint m_yuvTexture = 0;
+    GLuint m_rgbTexture = 0;
+    Shader m_computeShader;
+    Shader m_shader;
+
     // Frames
+    //EGLImage m_yuvImage = nullptr;
+    std::vector<GLuint> m_yuvTextures;
+    std::vector<EGLImage> m_yuvImages;
     static constexpr size_t MAX_QUEUE_SIZE = 3;
     VideoFrame m_currentFrame;
     std::queue<VideoFrame> m_frameQueue;

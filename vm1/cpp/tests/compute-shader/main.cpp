@@ -77,7 +77,7 @@ int main(int, char **)
     }
 
     SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, "Window");
-    SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_WAYLAND_CREATE_EGL_WINDOW_BOOLEAN, true);
+    //SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_WAYLAND_CREATE_EGL_WINDOW_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
     SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, 1920);
@@ -114,7 +114,7 @@ int main(int, char **)
     }
 
     // Enable vsync and activate all windows
-    SDL_GL_SetSwapInterval(1);
+    SDL_GL_SetSwapInterval(0);
     for (int i = 0; i < windows.size(); ++i)
     {
         SDL_ShowWindow(windows[i]);
@@ -131,10 +131,6 @@ int main(int, char **)
     ImGui_ImplSDL3_InitForOpenGL(windows[0], gl_context);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    // Setup Platform/Renderer backends for main context
-    ImGui_ImplSDL3_InitForOpenGL(windows[0], gl_context);
-    ImGui_ImplOpenGL3_Init(glsl_version);
-
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
 
@@ -143,6 +139,27 @@ int main(int, char **)
 
     // TODO: This was not implemented in SDL3 yet. I did it. Another way or PR?
     SDL_RaiseWindow(windows[0]);
+
+    // Video Player
+    VideoPlayer videoPlayer0;
+    videoPlayer0.open("../../../videos/vm1-introduction-small.mp4");
+    videoPlayer0.play();
+    videoPlayer0.setLooping(true);
+
+    VideoPlayer videoPlayer1;
+    videoPlayer1.open("../../../videos/vm1-introduction-small.mp4");
+    videoPlayer1.play();
+    videoPlayer1.setLooping(true);
+
+    VideoPlayer videoPlayer2;
+    videoPlayer2.open("../../../videos/vm1-introduction-small.mp4");
+    videoPlayer2.play();
+    videoPlayer2.setLooping(true);
+
+    VideoPlayer videoPlayer3;
+    videoPlayer3.open("../../../videos/vm1-introduction-small.mp4");
+    videoPlayer3.play();
+    videoPlayer3.setLooping(true);
 
     // Prepared delta time
     Uint64 lastTime = SDL_GetTicks();
@@ -196,19 +213,38 @@ int main(int, char **)
             ImGui::End();
         }
 
-        // OLED debug window
+        // Compute Shader Test   
         {
-            // ImGui::SetNextWindowPos(ImVec2(0, 0));
-            ImGui::SetNextWindowSize(ImVec2(FBO_WIDTH, FBO_HEIGHT));
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-            ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration;
-            ImGui::Begin("OLED Debug Window", nullptr, window_flags);
-            // ImGui::Begin("OLED Debug Window");
-            ImGui::Image((void *)(intptr_t)oledUiRenderer.texture(), ImVec2(FBO_WIDTH, FBO_HEIGHT), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+            ImGui::SetNextWindowSize(ImVec2(960, 540));
+            ImGui::Begin("Video 0");
+            videoPlayer0.update();
+            ImGui::Image((void *)(intptr_t)videoPlayer0.texture(), ImVec2(960, 540));
             ImGui::End();
-            ImGui::PopStyleVar();
         }
-        
+
+        {
+            ImGui::SetNextWindowSize(ImVec2(960, 540));
+            ImGui::Begin("Video 1");
+            videoPlayer1.update();
+            ImGui::Image((void *)(intptr_t)videoPlayer1.texture(), ImVec2(960, 540));
+            ImGui::End();
+        }
+
+        {
+            ImGui::SetNextWindowSize(ImVec2(960, 540));
+            ImGui::Begin("Video 2");
+            videoPlayer2.update();
+            ImGui::Image((void *)(intptr_t)videoPlayer2.texture(), ImVec2(960, 540));
+            ImGui::End();
+        }
+
+        {
+            ImGui::SetNextWindowSize(ImVec2(960, 540));
+            ImGui::Begin("Video 3");
+            videoPlayer3.update();
+            ImGui::Image((void *)(intptr_t)videoPlayer3.texture(), ImVec2(960, 540));
+            ImGui::End();
+        }
 
         // Rendering window 0
         SDL_GL_MakeCurrent(windows[0], gl_context);

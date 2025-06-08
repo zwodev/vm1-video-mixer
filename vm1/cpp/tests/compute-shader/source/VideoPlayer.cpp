@@ -17,6 +17,7 @@
 #include <SDL3/SDL_opengl.h>
 #include <SDL3/SDL_opengles2.h>
 #include <EGL/eglext.h>
+#include <GLES3/gl31.h>
 
 
 
@@ -32,14 +33,114 @@
 #ifndef DRM_FORMAT_RGBA8888
 #define DRM_FORMAT_RGBA8888 fourcc_code('R', 'A', '2', '4')
 #endif
+
+static bool has_EGL_EXT_image_dma_buf_import;
+static PFNGLACTIVETEXTUREARBPROC glActiveTextureARBFunc;
+static PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOESFunc;
+void NewGlInit()
+{
+    const char *extensions = eglQueryString(eglGetCurrentDisplay(), EGL_EXTENSIONS);
+    if (SDL_strstr(extensions, "EGL_EXT_image_dma_buf_import") != NULL) {
+        has_EGL_EXT_image_dma_buf_import = true;
+    }
+
+    if (SDL_GL_ExtensionSupported("GL_OES_EGL_image")) {
+        glEGLImageTargetTexture2DOESFunc = (PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)eglGetProcAddress("glEGLImageTargetTexture2DOES");
+    }
+
+    glActiveTextureARBFunc = (PFNGLACTIVETEXTUREARBPROC)SDL_GL_GetProcAddress("glActiveTextureARB");
+
+    // if (has_EGL_EXT_image_dma_buf_import &&
+    //     glEGLImageTargetTexture2DOESFunc &&
+    //     glActiveTextureARBFunc) {
+    //     m_hasEglCreateImage = true;
+    // }
+}
+
+const int YUV_IMAGE_WIDTH = 2048;
+const int YUV_IMAGE_HEIGHT = 1530;
  
 VideoPlayer::VideoPlayer()
 {
+    NewGlInit();
+    loadShaders();
+    createVertexBuffers();
+    initializeFramebufferAndTextures();
 }
 
 VideoPlayer::~VideoPlayer()
 {
     close();
+}
+
+void VideoPlayer::loadShaders()
+{
+    m_computeShader.load("shaders/pass.comp");
+    m_shader.load("shaders/video.vert", "shaders/video.frag");
+}
+
+void VideoPlayer::createVertexBuffers()
+{   
+    float quadVertices[] = {
+        //  x,    y,    u,   v
+        -1.0f, -1.0f,  0.0f, 0.0f, // bottom left
+        1.0f, -1.0f,  1.0f, 0.0f, // bottom right
+        1.0f,  1.0f,  1.0f, 1.0f, // top right
+
+        -1.0f, -1.0f,  0.0f, 0.0f, // bottom left
+        1.0f,  1.0f,  1.0f, 1.0f, // top right
+        -1.0f,  1.0f,  0.0f, 1.0f  // top left
+    };
+
+    // Setup VAO, VBO, and attribute pointers for aPos (vec2) and aTexCoord (vec2)
+    glGenVertexArrays(1, &m_vao);
+    glGenBuffers(1, &m_vbo);
+
+    glBindVertexArray(m_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+
+    // aPos
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    // aTexCoord
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
+
+void VideoPlayer::initializeFramebufferAndTextures()
+{
+    // Generate input buffer (SAND128 NV12 / YUV)
+    for (int i = 0; i < 15; ++i) {
+        GLuint texId;
+        glGenTextures(1, &texId);
+        m_yuvTextures.push_back(texId);
+        m_yuvImages.push_back(nullptr);
+    }
+    
+
+    // Generate and bind the output framebuffer (RGB)
+    glGenFramebuffers(1, &m_frameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+
+    // Create output texture (RGB)
+    glGenTextures(1, &m_rgbTexture);
+    glBindTexture(GL_TEXTURE_2D, m_rgbTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, 1920, 1080);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_rgbTexture, 0);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void VideoPlayer::close()
@@ -261,6 +362,155 @@ AVCodecContext* VideoPlayer::openAudioStream()
     return context;
 }
 
+void VideoPlayer::renderQuads()
+{
+    glViewport(0, 0, 1920, 1080);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    m_shader.activate();
+    m_shader.setValue("stripWidthNDC", 2.0f/15.0f);
+
+    glBindVertexArray(m_vao);
+    for (int i = 0; i < m_yuvTextures.size(); ++i) {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m_yuvTextures[i]);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        // Bind the texture to unit
+        glEGLImageTargetTexture2DOESFunc(GL_TEXTURE_2D, m_yuvImages[i]);
+        m_shader.bindUniformLocation("inputTexture", 0);
+
+        m_shader.setValue("stripId", i);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+    }
+
+    glBindVertexArray(0);
+    m_shader.deactivate();
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void VideoPlayer::runComputeShader()
+{
+//     glActiveTexture(GL_TEXTURE0);
+//     glBindTexture(GL_TEXTURE_2D, m_yuvTexture);
+//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+//     // Bind the texture to unit
+//     glEGLImageTargetTexture2DOESFunc(GL_TEXTURE_2D, m_yuvImage);
+
+//     m_computeShader.activate();
+//     m_computeShader.bindUniformLocation("inputTexture", 0);
+//     glBindImageTexture(1, m_rgbTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+
+//     // Round up to next multiple of local_size_x
+//     GLuint workGroupSizeX = (YUV_IMAGE_WIDTH + 15) / 16;
+//     GLuint workGroupSizeY = (YUV_IMAGE_HEIGHT + 15) / 16;
+//     glDispatchCompute(workGroupSizeX, workGroupSizeY, 1);
+
+//     // Ensure all writes are finished before using the output texture
+//     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);    
+//     m_computeShader.deactivate();
+}
+
+void VideoPlayer::update()
+{
+    EGLDisplay display = eglGetCurrentDisplay();
+
+    // Wait for fence and delete it
+    eglClientWaitSync(display, m_fence, EGL_SYNC_FLUSH_COMMANDS_BIT, EGL_FOREVER);
+    eglDestroySync(display, m_fence);
+    m_fence = EGL_NO_SYNC;
+
+    // TODO: Can EGLImages be reused? It seems like the DRM-Buf FDs change very often.
+    for (auto& yuvImage : m_yuvImages ) {
+        if (yuvImage != nullptr) {
+            eglDestroyImage(display, yuvImage);
+            yuvImage = nullptr;
+        }
+    }
+
+    VideoFrame frame;
+    
+    // Check PTS
+    if (peekFrame(frame)) {
+        if (frame.isFirstFrame) {
+            m_startTime  = SDL_GetTicks();
+        }
+
+        double pts = frame.pts;
+        double now = (double)(SDL_GetTicks() - m_startTime) / 1000.0;
+        
+        // Do not pop and display frame when PTS is ahead 
+        if (now < (pts - 0.001)) {
+            //printf("Skipping frame because of PTS.\n");
+            return;
+        } 
+    }
+    
+    // if (popFrame(frame)) {
+    //     // Create EGL images here in the main thread
+    //     // TODO: Support for multiple planes and images (see older version)
+    //     if (frame.formats.size() > 0) {
+    //         int j = 0;
+    //         EGLAttrib img_attr[] = {
+    //             EGL_LINUX_DRM_FOURCC_EXT,      frame.formats[j],
+    //             EGL_WIDTH,                     frame.widths[j],
+    //             EGL_HEIGHT,                    frame.heights[j],
+    //             EGL_DMA_BUF_PLANE0_FD_EXT,     frame.fds[j],
+    //             EGL_DMA_BUF_PLANE0_OFFSET_EXT, frame.offsets[j],
+    //             EGL_DMA_BUF_PLANE0_PITCH_EXT,  frame.pitches[j],
+    //             EGL_NONE
+    //         };
+            
+    //         EGLImage image = eglCreateImage(display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, img_attr);
+    //         if (image != EGL_NO_IMAGE) {
+    //             m_yuvImage = image;
+    //         }
+    //     }
+    // }
+
+    if (popFrame(frame)) {
+        // Create EGL images here in the main thread
+        // TODO: Support for multiple planes and images (see older version)
+        for (int i = 0; i < m_yuvImages.size(); ++i) {
+            if (frame.formats.size() > 0) {
+                int j = 0;
+                EGLAttrib img_attr[] = {
+                    EGL_LINUX_DRM_FOURCC_EXT,      frame.formats[j],
+                    EGL_WIDTH,                     128,
+                    EGL_HEIGHT,                    1632,
+                    EGL_DMA_BUF_PLANE0_FD_EXT,     frame.fds[j],
+                    EGL_DMA_BUF_PLANE0_OFFSET_EXT, i * 128 * 1632,
+                    EGL_DMA_BUF_PLANE0_PITCH_EXT,  128,
+                    EGL_NONE
+                };
+                
+                EGLImage image = eglCreateImage(display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, img_attr);
+                if (image != EGL_NO_IMAGE) {
+                    m_yuvImages[i] = image;
+                }
+            }
+        }
+    }
+
+    // TODO: Convert frame's texture using compute shader
+    //runComputeShader();
+    renderQuads();
+
+    // Create fence for current frame
+    m_fence = eglCreateSync(display, EGL_SYNC_FENCE, NULL);
+}
+
 void VideoPlayer::decodingThread() {
     while (m_isRunning) {
         if (!m_isFlushing) {
@@ -363,15 +613,12 @@ bool VideoPlayer::peekFrame(VideoFrame& frame) {
     return true;
 }
 
-void VideoPlayer::cleanupResources() {
-    EGLDisplay display = eglGetCurrentDisplay();
-    
-    // Cleanup sync fences
-    while (!m_fences.empty()) {
-        eglDestroySync(display, m_fences.front()); 
-        m_fences.pop();
-    }
+GLuint VideoPlayer::texture()
+{
+    return m_rgbTexture;
+}
 
+void VideoPlayer::cleanupResources() {
     clearFrames();
 
     if (m_audioContext) {

@@ -20,6 +20,7 @@ public:
     bool load(const char *compFilename);
     bool bindUniformLocation(const char* locName, GLint unit);
     bool setValue(const char* locName, GLfloat value);
+    bool setValue(const char* locName, GLint value);
     void activate();
     void deactivate();
     
