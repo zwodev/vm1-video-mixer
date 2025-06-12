@@ -22,17 +22,7 @@
 #include <SDL3/SDL_opengl.h>
 #endif
 
-#include "source/Registry.h"
-#include "source/PlaybackOperator.h"
-#include "source/PlaneRenderer.h"
 #include "source/VideoPlayer.h"
-#include "source/VideoPlane.h"
-#include "source/CameraPlayer.h"
-#include "source/FileAssignmentWidget.h"
-#include "source/KeyForwarder.h"
-#include "source/CameraController.h"
-#include "source/OledUiRenderer.h"
-#include "source/OledController.h"
 
 
 #define USE_OLED
@@ -87,7 +77,7 @@ int main(int, char **)
     }
 
     SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, "Window");
-    SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_WAYLAND_CREATE_EGL_WINDOW_BOOLEAN, true);
+    //SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_WAYLAND_CREATE_EGL_WINDOW_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
     SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, 1920);
@@ -124,7 +114,7 @@ int main(int, char **)
     }
 
     // Enable vsync and activate all windows
-    SDL_GL_SetSwapInterval(1);
+    SDL_GL_SetSwapInterval(0);
     for (int i = 0; i < windows.size(); ++i)
     {
         SDL_ShowWindow(windows[i]);
@@ -141,17 +131,6 @@ int main(int, char **)
     ImGui_ImplSDL3_InitForOpenGL(windows[0], gl_context);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    // Setup FBO context for ImGui (off-screen)
-    ImGuiContext *fboContext = ImGui::CreateContext();
-    ImGui::SetCurrentContext(fboContext);
-    ImGuiIO &fbo_io = ImGui::GetIO();
-    (void)fbo_io;
-    fbo_io.DisplaySize = ImVec2(FBO_WIDTH, FBO_HEIGHT);
-
-    // Setup Platform/Renderer backends for main context
-    ImGui_ImplSDL3_InitForOpenGL(windows[0], gl_context);
-    ImGui_ImplOpenGL3_Init(glsl_version);
-
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
 
@@ -161,31 +140,26 @@ int main(int, char **)
     // TODO: This was not implemented in SDL3 yet. I did it. Another way or PR?
     SDL_RaiseWindow(windows[0]);
 
-    // Create registry
-    Registry registry;
+    // Video Player
+    VideoPlayer videoPlayer0;
+    videoPlayer0.open("../../../videos/vm1-introduction-small.mp4");
+    videoPlayer0.play();
+    videoPlayer0.setLooping(true);
 
-    // Playback operator
-    PlaybackOperator playbackOperator(registry);
+    VideoPlayer videoPlayer1;
+    videoPlayer1.open("../../../videos/vm1-introduction-small.mp4");
+    videoPlayer1.play();
+    videoPlayer1.setLooping(true);
 
-    // Camera
-    CameraController cameraController;
-    cameraController.setupDetached();
+    VideoPlayer videoPlayer2;
+    videoPlayer2.open("../../../videos/vm1-introduction-small.mp4");
+    videoPlayer2.play();
+    videoPlayer2.setLooping(true);
 
-    // File Assignment Widget
-    FileAssignmentWidget fileAssignmentWidget(playbackOperator, registry);
-
-    // Keyforwarding
-    KeyForwarder keyForwarder;
-
-    // Oled
-    OledUiRenderer oledUiRenderer(registry, FBO_WIDTH, FBO_HEIGHT);
-    oledUiRenderer.initialize();
-
-#ifdef USE_OLED
-    OledController oledController;
-    oledController.setOledUiRenderer(&oledUiRenderer);
-    oledController.start();
-#endif
+    VideoPlayer videoPlayer3;
+    videoPlayer3.open("../../../videos/vm1-introduction-small.mp4");
+    videoPlayer3.play();
+    videoPlayer3.setLooping(true);
 
     // Prepared delta time
     Uint64 lastTime = SDL_GetTicks();
@@ -216,14 +190,6 @@ int main(int, char **)
             {
                 done = true;
             }
-            else if (event.type == SDL_EVENT_DISPLAY_ADDED)
-            {
-                SDL_Log("Display added!\n");
-            }
-            else if (event.type == SDL_EVENT_DISPLAY_REMOVED)
-            {
-                SDL_Log("Display removed!\n");
-            }
         }
         if (SDL_GetWindowFlags(windows[0]) & SDL_WINDOW_MINIMIZED)
         {
@@ -231,17 +197,6 @@ int main(int, char **)
             continue;
         }
 
-        registry.update(deltaTime);
-        playbackOperator.update();
-        keyForwarder.forwardArrowKeys(mainContext, fboContext);
-
-        // START: Render to FBO (OLED) before main gui
-        ImGui::SetCurrentContext(fboContext);
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL3_NewFrame();
-        ImGui::NewFrame();
-        oledUiRenderer.update();
-        //  END: Render to FBO (OLED) before main gui
 
         // Start the Dear ImGui frame
         ImGui::SetCurrentContext(mainContext);
@@ -252,54 +207,44 @@ int main(int, char **)
 
         // Desktop UI
         // TODO: Put in own class.
-        if (registry.settings().showUI)
-        {     
-            {
-                ImGui::Begin("Development");
-                // ImGui::Image((ImTextureID)(intptr_t)oledUiRenderer.texture(), ImVec2(128, 128));
-                static float fadeTimeInSecs = 2.0f;
-                if (ImGui::SliderFloat("Fade Time", &fadeTimeInSecs, 0.0f, 5.0f))
-                {
-                    //videoPlane0.setFadeTime(fadeTimeInSecs);
-                    //videoPlane1.setFadeTime(fadeTimeInSecs);
-                }
-                if (ImGui::Button("Save Registry"))
-                {
-                    registry.save();
-                }
-                ImGui::Checkbox("Enable Video", &isVideoEnabled);
-                if (ImGui::Button("Setup HDMI2CSI"))
-                {
-                    cameraController.setupDetached();
-                }
-                // if (ImGui::Button("Start HDMI2CSI"))
-                // {
-                //     cameraRenderer0.start();
-                // }
-                ImGui::Checkbox("Show HDMI2CSI", &isCameraEnabled);
-                ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-                ImGui::End();
-                //printf("FPS: %f\n", io.Framerate);
-            }
-
-            // OLED debug window
-            {
-                // ImGui::SetNextWindowPos(ImVec2(0, 0));
-                ImGui::SetNextWindowSize(ImVec2(FBO_WIDTH, FBO_HEIGHT));
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-                ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration;
-                ImGui::Begin("OLED Debug Window", nullptr, window_flags);
-                // ImGui::Begin("OLED Debug Window");
-                ImGui::Image((void *)(intptr_t)oledUiRenderer.texture(), ImVec2(FBO_WIDTH, FBO_HEIGHT), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
-                ImGui::End();
-                ImGui::PopStyleVar();
-            }
+        {
+            ImGui::Begin("Development");
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+            ImGui::End();
         }
-            // File Assignment Widget
-            fileAssignmentWidget.render();
-        
 
-        
+        // Compute Shader Test   
+        {
+            ImGui::SetNextWindowSize(ImVec2(960, 540));
+            ImGui::Begin("Video 0");
+            videoPlayer0.update();
+            ImGui::Image((void *)(intptr_t)videoPlayer0.texture(), ImVec2(960, 540));
+            ImGui::End();
+        }
+
+        {
+            ImGui::SetNextWindowSize(ImVec2(960, 540));
+            ImGui::Begin("Video 1");
+            videoPlayer1.update();
+            ImGui::Image((void *)(intptr_t)videoPlayer1.texture(), ImVec2(960, 540));
+            ImGui::End();
+        }
+
+        {
+            ImGui::SetNextWindowSize(ImVec2(960, 540));
+            ImGui::Begin("Video 2");
+            videoPlayer2.update();
+            ImGui::Image((void *)(intptr_t)videoPlayer2.texture(), ImVec2(960, 540));
+            ImGui::End();
+        }
+
+        {
+            ImGui::SetNextWindowSize(ImVec2(960, 540));
+            ImGui::Begin("Video 3");
+            videoPlayer3.update();
+            ImGui::Image((void *)(intptr_t)videoPlayer3.texture(), ImVec2(960, 540));
+            ImGui::End();
+        }
 
         // Rendering window 0
         SDL_GL_MakeCurrent(windows[0], gl_context);
@@ -309,13 +254,9 @@ int main(int, char **)
         glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        playbackOperator.lockCameras();
-        //cameraPlayer0.lockBuffer();
-        
         // Render video content
-        if (isVideoEnabled)
-            playbackOperator.renderPlane(0, deltaTime);
-            //videoPlane0.update(deltaTime);
+        // if (isVideoEnabled)
+        //     playbackOperator.renderPlane(0, deltaTime);
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(windows[0]);
@@ -329,30 +270,21 @@ int main(int, char **)
             glClear(GL_COLOR_BUFFER_BIT);
 
             // Render video content
-            if (isVideoEnabled)
-                playbackOperator.renderPlane(1, deltaTime);
-                //videoPlane1.update(deltaTime);
+            // if (isVideoEnabled)
+            //     playbackOperator.renderPlane(1, deltaTime);
 
             SDL_GL_SwapWindow(windows[1]);
         }
-
-        playbackOperator.unlockCameras();
-        //cameraPlayer0.unlockBuffer();
 
         // End the frame
         ImGui::EndFrame();
     }
 
     // Cleanup
-    ImGui::SetCurrentContext(fboContext);
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL3_Shutdown();
-
     ImGui::SetCurrentContext(mainContext);
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL3_Shutdown();
 
-    ImGui::DestroyContext(fboContext);
     ImGui::DestroyContext(mainContext);
 
     SDL_GL_DestroyContext(gl_context);
