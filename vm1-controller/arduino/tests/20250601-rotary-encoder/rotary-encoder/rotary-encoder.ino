@@ -9,6 +9,7 @@
 #define PIN_ENCODER_0_A 18
 #define PIN_ENCODER_0_B 19
 
+
 rotary_encoder_t encoder0 = { .pin_a = PIN_ENCODER_0_A, .pin_b = PIN_ENCODER_0_B };
 rotary_encoder_t encoder1 = { .pin_a = PIN_ENCODER_1_A, .pin_b = PIN_ENCODER_1_B };
 int32_t encoder0_position;
