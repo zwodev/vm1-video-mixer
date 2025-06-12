@@ -1,8 +1,10 @@
 #include <stdint.h>
 #include <Adafruit_NeoPixel.h>
 #include <stdio.h>
+#include <Wire.h>
+
 // #include "pico/stdlib.h"
-#include "hardware/pio.h"
+// #include "hardware/pio.h"
 #include "hardware/gpio.h"
 #include "stdlib.h"
 #include "Keyboard.h"
@@ -10,6 +12,8 @@
 
 // rotary encoder code taken from:
 // https://www.reddit.com/r/raspberrypipico/comments/pacarb/sharing_some_c_code_to_read_a_rotary_encoder/
+
+#define I2C_SLAVE_ADDRESS 0x08
 
 // four status leds pins
 #define LED_PIN_01 0
@@ -299,6 +303,13 @@ void IRQCallback(uint gpio, uint32_t events)
   m_iEncoderOffset += delta;
 }
 
+void onI2CRequestHandler()
+{
+  char buffer[32];
+  snprintf(buffer, sizeof(buffer), "encoder 1: %ld", encoder_index);
+  Wire.write(buffer);
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -344,6 +355,12 @@ void setup()
   strip.begin();
   strip.setBrightness(25);
   strip.show();
+
+  // I2C
+  Wire.setSDA(20); // GP20 = SDA
+  Wire.setSCL(21); // GP21 = SCL
+  Wire.begin(I2C_SLAVE_ADDRESS);
+  Wire.onRequest(onI2CRequestHandler);
 
 #ifdef DEBUG
   d_current_micros = 0;
