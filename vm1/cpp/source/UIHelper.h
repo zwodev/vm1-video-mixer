@@ -138,7 +138,10 @@ namespace UI
 
         ImDrawList *drawList = ImGui::GetForegroundDrawList();
 
-        std::string text = std::to_string(id);
+        int id16 = id % 16;
+        char bank = id / 16 + 65;
+        std::string text = std::string(1, bank) + std::to_string(id16);
+
         ImVec2 textExtent = ImGui::CalcTextSize(text.c_str());
 
         // ImGui::PushClipRect({}, {1000, 1000}, false); // Disable clipping to prevent cutting corners
@@ -239,7 +242,7 @@ namespace UI
             if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) diff = 1;
             else if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) diff = -1;
         }
-        
+
         if (selected && diff != 0) {
             value += diff;
             if (value < minValue) value = minValue;
@@ -276,7 +279,7 @@ namespace UI
     //     auto config = std::make_unique<HdmiInputConfig>();
     //     HdmiInputConfig* currentConfig = registry->inputMappings().getHdmiInputConfig(id);
     //     if (currentConfig) {
-    //         *config = *currentConfig; 
+    //         *config = *currentConfig;
     //     }
 
     //     bool changed = false;
