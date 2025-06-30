@@ -1,8 +1,10 @@
 #include <stdint.h>
 #include <Adafruit_NeoPixel.h>
 #include <stdio.h>
+#include <Wire.h>
+
 // #include "pico/stdlib.h"
-#include "hardware/pio.h"
+// #include "hardware/pio.h"
 #include "hardware/gpio.h"
 #include "stdlib.h"
 #include "Keyboard.h"
@@ -10,6 +12,8 @@
 
 // rotary encoder code taken from:
 // https://www.reddit.com/r/raspberrypipico/comments/pacarb/sharing_some_c_code_to_read_a_rotary_encoder/
+
+#define I2C_SLAVE_ADDRESS 0x08
 
 // four status leds pins
 #define LED_PIN_01 0
@@ -168,16 +172,16 @@ void update_keyboard()
 
   if (last_button != '\0')
   {
-    Serial.print(last_button);
+    // Serial.print(last_button);
     if (last_button_state == PRESSED)
     {
       Keyboard.press(last_button);
-      Serial.print("Pressed\n");
+      // Serial.print("Pressed\n");
     }
     else
     {
       Keyboard.release(last_button);
-      Serial.print("Released\n");
+      // Serial.print("Released\n");
     }
   }
 
@@ -299,6 +303,13 @@ void IRQCallback(uint gpio, uint32_t events)
   m_iEncoderOffset += delta;
 }
 
+void onI2CRequestHandler()
+{
+  char buffer[32];
+  snprintf(buffer, sizeof(buffer), "encoder 1: %ld", encoder_index);
+  Wire.write(buffer);
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -344,6 +355,12 @@ void setup()
   strip.begin();
   strip.setBrightness(25);
   strip.show();
+
+  // I2C
+  Wire.setSDA(20); // GP20 = SDA
+  Wire.setSCL(21); // GP21 = SCL
+  Wire.begin(I2C_SLAVE_ADDRESS);
+  Wire.onRequest(onI2CRequestHandler);
 
 #ifdef DEBUG
   d_current_micros = 0;
@@ -406,25 +423,33 @@ void loop()
     // }
     // Serial.println();
 
+    print_controller_state(controllerState);
+
     // set bank indicator led
     set_status_led(controllerState.bank);
 
     // set neopixel colors
+
+    // backward-key
     int *color = colorForButtonState(controllerState.backward);
     strip.setPixelColor(0, colorFromArray(color));
 
+    // forward-key
     color = colorForButtonState(controllerState.forward);
     strip.setPixelColor(1, colorFromArray(color));
 
+    // fn-key
     color = colorForButtonState(controllerState.fn);
     strip.setPixelColor(18, colorFromArray(color));
 
+    // 8 edit-keys
     for (uint8_t i = 0; i < 8; i++)
     {
       color = colorForButtonState(controllerState.edit[i]);
       strip.setPixelColor(2 + i, colorFromArray(color));
     }
 
+    // 16 media-keys
     for (uint8_t i = 0; i < 16; i++)
     {
       color = colorForButtonState(controllerState.media[i]);
@@ -433,6 +458,7 @@ void loop()
       else
         strip.setPixelColor(19 + i - 8, colorFromArray(color));
     }
+
     strip.show();
   }
 
@@ -460,6 +486,55 @@ void loop()
     d_previous_micros = d_current_micros;
   }
 #endif
+}
+
+void print_controller_state(ControllerState controllerState)
+{
+  Serial.println();
+  // set bank indicator led
+  Serial.print("Bank:\t\t");
+  Serial.println(controllerState.bank);
+
+  // set neopixel colors
+
+  // backward-key
+  Serial.print("Backward-key:\t");
+  Serial.println(controllerState.backward);
+
+  // forward-key
+  Serial.print("Forward-key:\t");
+  Serial.println(controllerState.forward);
+
+  // fn-key
+  Serial.print("Fn-key:\t\t");
+  Serial.println(controllerState.fn);
+
+  // 8 edit-keys
+  Serial.print("Edit-keys:\t");
+  for (uint8_t i = 0; i < 8; i++)
+  {
+    Serial.print(controllerState.edit[i]);
+    Serial.print("  ");
+  }
+  Serial.println();
+
+  // 16 media-keys
+  Serial.print("Media-keys:\t");
+  for (uint8_t i = 0; i < 16; i++)
+  {
+    Serial.print(controllerState.media[i]);
+    if (i != 7)
+    {
+      Serial.print("  ");
+    }
+    else
+    {
+      Serial.println();
+      Serial.print("\t");
+      Serial.print("\t");
+    }
+  }
+  Serial.println();
 }
 
 void set_debug_msg_core1(const char *message)

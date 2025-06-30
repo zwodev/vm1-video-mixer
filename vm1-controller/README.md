@@ -1,3 +1,10 @@
 # VM-1 Controller
 
-The firmware used for this first prototype can be found in the `arduino`-folder.
+folders:
+
+`arduino` - latest firmware
+
+`firmware`- was a test and is obsolete
+
+`kicad`- the latest pcb
+

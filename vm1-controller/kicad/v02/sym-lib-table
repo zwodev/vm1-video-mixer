@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "vm-1-from-jlcpcb")(type "KiCad")(uri "${KIPRJMOD}/vm-1-from-jlcpcb/symbol/vm-1-from-jlcpcb.kicad_sym")(options "")(descr ""))
+)

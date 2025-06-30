@@ -1,0 +1,39 @@
+JLCPCB Part,Description,
+,,
+V1:,,
+C81598,75V 400mW Single 1V@50mA 4ns 150mA SOD-123  Switching Diode ROHS,
+C307331,50V 100nF X7R ±10% 0402  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS,
+C15195,50V 10nF X7R ±10% 0402  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS,
+C25744,62.5mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0402  Chip Resistor - Surface Mount ROHS,
+C7203002,Raspberry Pi ROHS,
+C273642,8 2V~6V 1 串行至并行或串行 TSSOP-16  Shifting Register ROHS,
+C134120,8 3V~18V 1 ParallelorSerialtoSerial SOP-16  Shifting Register ROHS,
+C2290,White light 0603  Light Emitting Diodes (LED) ROHS,
+C25076,62.5mW Thick Film Resistors ±1% ±200ppm/℃ 100Ω 0402  Chip Resistor - Surface Mount ROHS,
+C2936535,600mcd Colorless transparence Counterpost -40℃~+85℃ 624nm Orange-red 25° 60mW SMD  Light Emitting Diodes (LED) ROHS,
+,,
+V2:,,
+C965555,NeoPixels,https://jlcpcb.com/partdetail/Worldsemi-WS2812B2020/C965555
+C2040,RP2040,https://jlcpcb.com/partdetail/RaspberryPi-RP2040/C2040
+C97521,QSPI Flash,https://jlcpcb.com/partdetail/WinbondElec-W25Q128JVSIQ/C97521
+C2765186,USB-C,https://jlcpcb.com/partdetail/ShouHan-TYPE_C_16PIN_2MD_073/C2765186
+C6186,SOT-223 Voltage Regulators,https://jlcpcb.com/partdetail/Advanced_MonolithicSystems-AMS1117_33/C6186
+C9002,12MHz Surface Mount Crystal 20pF,https://jlcpcb.com/partdetail/Yxc_CrystalOscillators-X322512MSB4SI/C9002
+C720477,Button,https://jlcpcb.com/partdetail/Xunpu-TS_1088AR02016/C720477
+C20625731,12MHz Crystal Abracon,https://jlcpcb.com/partdetail/AbraconLlc-ABM8_272T3/C20625731
+C426705,LogicLevelsShifter,https://jlcpcb.com/partdetail/Nexperia-74LVC1G17GW125/C426705
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+projekt name:,vm-1,
+parts list:,C965555 C2040 C97521 C2765186 C6186 C9002 C720477 C20625731 C426705      ,
+command:,JLC2KiCadLib -dir vm-1-from-jlcpcb -symbol_lib vm-1-from-jlcpcb -footprint_lib vm-1-from-jlcpcb C965555 C2040 C97521 C2765186 C6186 C9002 C720477 C20625731 C426705      ,
+execution dir,/Users/julian/ErnstBusch/02__PROJEKTE/20230707_VM1/25_VM1_Git/vm1-controller/kicad/v02,

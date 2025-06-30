@@ -15,4 +15,35 @@ $ systemctl --user daemon-reload
 # Enable external antenna (on Compute Module only)
 
 1) Add `dtparam=ant2` to `/boot/firmware/config.txt`
-2) Reboot Raspberry Pi
+2) disable power management for wifi adapter with systemd on system level:
+
+```
+sudo nano /etc/systemd/system/wifi-power-save-off.service
+```
+
+content:
+
+```
+[Unit]
+Description=Disable WiFi Power Saving
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/sbin/iwconfig wlan0 power off
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target
+
+```
+
+enable it with:
+
+```
+sudo systemctl daemon-reexec 
+sudo systemctl enable wifi-power-save-off.service
+sudo systemctl start wifi-power-save-off.service   # or reboot
+```
+
+3) Reboot Raspberry Pi
