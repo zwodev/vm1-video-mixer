@@ -12,14 +12,12 @@
 
 
 #include "VideoPlayer.h"
-
+#include "GLHelper.h"
 
 #include <SDL3/SDL_opengl.h>
 #include <SDL3/SDL_opengles2.h>
 #include <EGL/eglext.h>
 #include <GLES3/gl31.h>
-
-
 
 #ifndef fourcc_code
 #define fourcc_code(a, b, c, d) ((uint32_t)(a) | ((uint32_t)(b) << 8) | ((uint32_t)(c) << 16) | ((uint32_t)(d) << 24))
@@ -34,35 +32,11 @@
 #define DRM_FORMAT_RGBA8888 fourcc_code('R', 'A', '2', '4')
 #endif
 
-static bool has_EGL_EXT_image_dma_buf_import;
-static PFNGLACTIVETEXTUREARBPROC glActiveTextureARBFunc;
-static PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOESFunc;
-void NewGlInit()
-{
-    const char *extensions = eglQueryString(eglGetCurrentDisplay(), EGL_EXTENSIONS);
-    if (SDL_strstr(extensions, "EGL_EXT_image_dma_buf_import") != NULL) {
-        has_EGL_EXT_image_dma_buf_import = true;
-    }
-
-    if (SDL_GL_ExtensionSupported("GL_OES_EGL_image")) {
-        glEGLImageTargetTexture2DOESFunc = (PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)eglGetProcAddress("glEGLImageTargetTexture2DOES");
-    }
-
-    glActiveTextureARBFunc = (PFNGLACTIVETEXTUREARBPROC)SDL_GL_GetProcAddress("glActiveTextureARB");
-
-    // if (has_EGL_EXT_image_dma_buf_import &&
-    //     glEGLImageTargetTexture2DOESFunc &&
-    //     glActiveTextureARBFunc) {
-    //     m_hasEglCreateImage = true;
-    // }
-}
-
 const int YUV_IMAGE_WIDTH = 2048;
 const int YUV_IMAGE_HEIGHT = 1530;
  
 VideoPlayer::VideoPlayer()
 {
-    NewGlInit();
     loadShaders();
     createVertexBuffers();
     initializeFramebufferAndTextures();
@@ -100,10 +74,11 @@ void VideoPlayer::createVertexBuffers()
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
 
-    // aPos
+    // Position
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-    // aTexCoord
+   
+    // Texture coordinates
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
@@ -121,7 +96,6 @@ void VideoPlayer::initializeFramebufferAndTextures()
         m_yuvImages.push_back(nullptr);
     }
     
-
     // Generate and bind the output framebuffer (RGB)
     glGenFramebuffers(1, &m_frameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
@@ -362,7 +336,7 @@ AVCodecContext* VideoPlayer::openAudioStream()
     return context;
 }
 
-void VideoPlayer::renderQuads()
+void VideoPlayer::render()
 {
     glViewport(0, 0, 1920, 1080);
     glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
@@ -394,32 +368,6 @@ void VideoPlayer::renderQuads()
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void VideoPlayer::runComputeShader()
-{
-//     glActiveTexture(GL_TEXTURE0);
-//     glBindTexture(GL_TEXTURE_2D, m_yuvTexture);
-//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-//     // Bind the texture to unit
-//     glEGLImageTargetTexture2DOESFunc(GL_TEXTURE_2D, m_yuvImage);
-
-//     m_computeShader.activate();
-//     m_computeShader.bindUniformLocation("inputTexture", 0);
-//     glBindImageTexture(1, m_rgbTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
-
-//     // Round up to next multiple of local_size_x
-//     GLuint workGroupSizeX = (YUV_IMAGE_WIDTH + 15) / 16;
-//     GLuint workGroupSizeY = (YUV_IMAGE_HEIGHT + 15) / 16;
-//     glDispatchCompute(workGroupSizeX, workGroupSizeY, 1);
-
-//     // Ensure all writes are finished before using the output texture
-//     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);    
-//     m_computeShader.deactivate();
 }
 
 void VideoPlayer::update()
@@ -505,7 +453,7 @@ void VideoPlayer::update()
 
     // TODO: Convert frame's texture using compute shader
     //runComputeShader();
-    renderQuads();
+    render();
 
     // Create fence for current frame
     m_fence = eglCreateSync(display, EGL_SYNC_FENCE, NULL);

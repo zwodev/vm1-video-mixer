@@ -72,7 +72,7 @@ private:
     void loadShaders();
     void createVertexBuffers();
     void initializeFramebufferAndTextures();
-    void renderQuads();
+    void render();
     void runComputeShader();
     AVCodecContext* openVideoStream();
     AVCodecContext* openAudioStream();

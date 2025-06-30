@@ -22,6 +22,7 @@
 #include <SDL3/SDL_opengl.h>
 #endif
 
+#include "source/GLHelper.h"
 #include "source/VideoPlayer.h"
 
 
@@ -39,6 +40,9 @@ int main(int, char **)
         printf("Error: SDL_Init(): %s\n", SDL_GetError());
         return -1;
     }
+
+    // Init GL Helper
+    GLHelper_Init();
 
     // Setup OpenGL context for OpenGL ES 3.1
     const char *glsl_version = "#version 300 es";
