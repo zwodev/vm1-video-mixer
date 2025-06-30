@@ -199,6 +199,17 @@ bool Shader::setValue(const char* locName, GLfloat value)
 	return true;
 }
 
+bool Shader::setValue(const char* locName, GLint value)
+{
+	GLint uniformLoc = glGetUniformLocation(m_shaderProgram, locName);
+	if (uniformLoc < 0) {
+		SDL_Log("ERROR: Couldn't get uniform location with this name: %s", locName);
+		return false;
+	}
+	glUniform1i(uniformLoc, value);
+	return true;
+}
+
 void Shader::activate()
 {
 	glUseProgram(m_shaderProgram);
