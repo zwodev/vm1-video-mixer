@@ -10,9 +10,8 @@
  * 
  */
 
-
-#include "VideoPlayer.h"
-#include "GLHelper.h"
+#include "source/GLHelper.h"
+#include "source/VideoPlayer.h"
 
 #include <SDL3/SDL_opengl.h>
 #include <SDL3/SDL_opengles2.h>
@@ -34,9 +33,10 @@
 
 const int YUV_IMAGE_WIDTH = 2048;
 const int YUV_IMAGE_HEIGHT = 1530;
- 
+
 VideoPlayer::VideoPlayer()
 {
+    m_numberOfInputImages = 15;
     loadShaders();
     createVertexBuffers();
     initializeFramebufferAndTextures();
@@ -44,92 +44,20 @@ VideoPlayer::VideoPlayer()
 
 VideoPlayer::~VideoPlayer()
 {
-    close();
+}
+
+void VideoPlayer::reset()
+{
+    m_firstPts = -1.0;
+    m_isFlushing = false;
 }
 
 void VideoPlayer::loadShaders()
 {
-    m_computeShader.load("shaders/pass.comp");
     m_shader.load("shaders/video.vert", "shaders/video.frag");
 }
 
-void VideoPlayer::createVertexBuffers()
-{   
-    float quadVertices[] = {
-        //  x,    y,    u,   v
-        -1.0f, -1.0f,  0.0f, 0.0f, // bottom left
-        1.0f, -1.0f,  1.0f, 0.0f, // bottom right
-        1.0f,  1.0f,  1.0f, 1.0f, // top right
-
-        -1.0f, -1.0f,  0.0f, 0.0f, // bottom left
-        1.0f,  1.0f,  1.0f, 1.0f, // top right
-        -1.0f,  1.0f,  0.0f, 1.0f  // top left
-    };
-
-    // Setup VAO, VBO, and attribute pointers for aPos (vec2) and aTexCoord (vec2)
-    glGenVertexArrays(1, &m_vao);
-    glGenBuffers(1, &m_vbo);
-
-    glBindVertexArray(m_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
-
-    // Position
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-   
-    // Texture coordinates
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-}
-
-void VideoPlayer::initializeFramebufferAndTextures()
-{
-    // Generate input buffer (SAND128 NV12 / YUV)
-    for (int i = 0; i < 15; ++i) {
-        GLuint texId;
-        glGenTextures(1, &texId);
-        m_yuvTextures.push_back(texId);
-        m_yuvImages.push_back(nullptr);
-    }
-    
-    // Generate and bind the output framebuffer (RGB)
-    glGenFramebuffers(1, &m_frameBuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
-
-    // Create output texture (RGB)
-    glGenTextures(1, &m_rgbTexture);
-    glBindTexture(GL_TEXTURE_2D, m_rgbTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, 1920, 1080);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_rgbTexture, 0);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-void VideoPlayer::close()
-{
-    m_isRunning = false;
-    m_frameCV.notify_all();
-    
-    if (m_decoderThread.joinable()) {
-        m_decoderThread.join();
-    }
-    
-    cleanupResources();
-}
-
-bool VideoPlayer::open(std::string fileName, bool useH264)
+bool VideoPlayer::open(const std::string& fileName)
 {
     // Cleanup any existing resources
     close(); 
@@ -170,14 +98,6 @@ bool VideoPlayer::open(std::string fileName, bool useH264)
 
     m_videoStream = av_find_best_stream(m_formatContext, AVMEDIA_TYPE_VIDEO, -1, -1, &m_videoCodec, 0);
     if (m_videoStream >= 0) {
-        if (useH264) {
-            const char *videoCodecName = "h264_v4l2m2m";
-            m_videoCodec = avcodec_find_decoder_by_name(videoCodecName);
-            if (!m_videoCodec) {
-                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't find codec '%s'", videoCodecName);
-                return false;
-            }
-        }
         m_videoContext = openVideoStream();
         if (!m_videoContext) {
             return false;
@@ -211,14 +131,6 @@ bool VideoPlayer::open(std::string fileName, bool useH264)
     }
 
     return true;
-}
-
-void VideoPlayer::play()
-{
-    m_firstPts = -1.0;
-    m_isFlushing = false;
-    m_isRunning = true;
-    m_decoderThread = std::thread(&VideoPlayer::decodingThread, this);
 }
 
 void VideoPlayer::setLooping(bool looping)
@@ -356,8 +268,10 @@ void VideoPlayer::render()
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
         // Bind the texture to unit
-        glEGLImageTargetTexture2DOESFunc(GL_TEXTURE_2D, m_yuvImages[i]);
-        m_shader.bindUniformLocation("inputTexture", 0);
+        if (m_yuvImages[i] != EGL_NO_IMAGE) {
+            GLHelper::glEGLImageTargetTexture2DOESFunc(GL_TEXTURE_2D, m_yuvImages[i]);
+            m_shader.bindUniformLocation("inputTexture", 0);
+        }
 
         m_shader.setValue("stripId", i);
         glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -405,28 +319,6 @@ void VideoPlayer::update()
         } 
     }
     
-    // if (popFrame(frame)) {
-    //     // Create EGL images here in the main thread
-    //     // TODO: Support for multiple planes and images (see older version)
-    //     if (frame.formats.size() > 0) {
-    //         int j = 0;
-    //         EGLAttrib img_attr[] = {
-    //             EGL_LINUX_DRM_FOURCC_EXT,      frame.formats[j],
-    //             EGL_WIDTH,                     frame.widths[j],
-    //             EGL_HEIGHT,                    frame.heights[j],
-    //             EGL_DMA_BUF_PLANE0_FD_EXT,     frame.fds[j],
-    //             EGL_DMA_BUF_PLANE0_OFFSET_EXT, frame.offsets[j],
-    //             EGL_DMA_BUF_PLANE0_PITCH_EXT,  frame.pitches[j],
-    //             EGL_NONE
-    //         };
-            
-    //         EGLImage image = eglCreateImage(display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, img_attr);
-    //         if (image != EGL_NO_IMAGE) {
-    //             m_yuvImage = image;
-    //         }
-    //     }
-    // }
-
     if (popFrame(frame)) {
         // Create EGL images here in the main thread
         // TODO: Support for multiple planes and images (see older version)
@@ -451,15 +343,18 @@ void VideoPlayer::update()
         }
     }
 
-    // TODO: Convert frame's texture using compute shader
-    //runComputeShader();
     render();
 
     // Create fence for current frame
     m_fence = eglCreateSync(display, EGL_SYNC_FENCE, NULL);
 }
 
-void VideoPlayer::decodingThread() {
+void VideoPlayer::startThread()
+{
+    m_decoderThread = std::thread(&VideoPlayer::run, this);
+}
+
+void VideoPlayer::run() {
     while (m_isRunning) {
         if (!m_isFlushing) {
             // Read and decode frames
@@ -520,55 +415,7 @@ void VideoPlayer::decodingThread() {
     }
 }
 
-void VideoPlayer::clearFrames() {
-    std::unique_lock<std::mutex> lock(m_frameMutex);
-    while (!m_frameQueue.empty()) {
-        m_frameQueue.pop();
-    }
-}
-
-void VideoPlayer::pushFrame(VideoFrame& frame) {
-    std::unique_lock<std::mutex> lock(m_frameMutex);
-    m_frameCV.wait(lock, [this]() { 
-        return m_frameQueue.size() < MAX_QUEUE_SIZE || !m_isRunning; 
-    });
-    
-    if (m_isRunning) {
-        m_frameQueue.push(frame);
-        m_frameCV.notify_one();
-    }
-}
-
-bool VideoPlayer::popFrame(VideoFrame& frame) {
-    std::unique_lock<std::mutex> lock(m_frameMutex);
-    if (m_frameQueue.empty()) {
-        return false;
-    }
-    
-    frame = m_frameQueue.front();
-    m_frameQueue.pop();
-    m_frameCV.notify_one();
-    return true;
-}
-
-bool VideoPlayer::peekFrame(VideoFrame& frame) {
-    std::unique_lock<std::mutex> lock(m_frameMutex);
-    if (m_frameQueue.empty()) {
-        return false;
-    }
-    
-    frame = m_frameQueue.front();
-    return true;
-}
-
-GLuint VideoPlayer::texture()
-{
-    return m_rgbTexture;
-}
-
-void VideoPlayer::cleanupResources() {
-    clearFrames();
-
+void VideoPlayer::customCleanup() {
     if (m_audioContext) {
         avcodec_free_context(&m_audioContext);
         m_audioContext = nullptr;

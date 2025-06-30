@@ -23,6 +23,7 @@
 #endif
 
 #include "source/GLHelper.h"
+#include "source/CameraController.h"
 #include "source/VideoPlayer.h"
 
 
@@ -40,9 +41,6 @@ int main(int, char **)
         printf("Error: SDL_Init(): %s\n", SDL_GetError());
         return -1;
     }
-
-    // Init GL Helper
-    GLHelper_Init();
 
     // Setup OpenGL context for OpenGL ES 3.1
     const char *glsl_version = "#version 300 es";
@@ -124,6 +122,10 @@ int main(int, char **)
         SDL_ShowWindow(windows[i]);
     }
 
+    // Init GL Helper
+    bool success = GLHelper::init();
+    printf("Success: %d\n", success);
+
     IMGUI_CHECKVERSION();
 
     // Setup main context for ImGui (screen)
@@ -143,6 +145,9 @@ int main(int, char **)
 
     // TODO: This was not implemented in SDL3 yet. I did it. Another way or PR?
     SDL_RaiseWindow(windows[0]);
+
+    // Camera
+    //CameraController cameraController;
 
     // Video Player
     VideoPlayer videoPlayer0;

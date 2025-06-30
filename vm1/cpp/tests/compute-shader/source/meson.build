@@ -40,7 +40,6 @@ sources = [ 'main.cpp',
             'source/CameraController.cpp', 
             'source/MediaController.cpp', 
             'source/MediaPlayer.cpp', 
-            'source/V4L2Controller.cpp', 
             'source/VideoPlayer.cpp', 
             'source/GLHelper.cpp',
           ]

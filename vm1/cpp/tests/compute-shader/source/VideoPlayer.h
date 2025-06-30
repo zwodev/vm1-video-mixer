@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "source/MediaPlayer.h"
 #include "source/Shader.h"
 
 #include <SDL3/SDL.h>
@@ -39,49 +40,27 @@ static SDL_PixelFormat getTextureFormat(enum AVPixelFormat format);
 static bool isSupportedPixelFormat(enum AVPixelFormat format);
 static enum AVPixelFormat getSupportedPixelFormat(AVCodecContext *s, const enum AVPixelFormat *pix_fmts);
 
-struct VideoFrame {
-    std::vector<EGLImage> images;
-    bool isFirstFrame = false;
-    double pts = 0.0;
-    
-    // Add these fields for DRM frame info
-    std::vector<uint32_t> formats;
-    std::vector<int> widths;
-    std::vector<int> heights;
-    std::vector<int> fds;
-    std::vector<uint32_t> offsets;
-    std::vector<uint32_t> pitches;
-};
 
-class VideoPlayer {
+class VideoPlayer : public MediaPlayer {
 public:
     VideoPlayer();
     ~VideoPlayer();
 
-    bool open(std::string fileName, bool useH264 = false);
-    void play();
-    void close();
-    bool isPlaying() const { return m_isRunning; }
+    bool open(const std::string& fileName) override;
     void setLooping(bool looping);
-    void update();
-    bool popFrame(VideoFrame& frame);
-    bool peekFrame(VideoFrame& frame);
-    GLuint texture();
-
+    void update() override;
+    
 private:
-    void loadShaders();
-    void createVertexBuffers();
-    void initializeFramebufferAndTextures();
+    void reset() override;
+    void loadShaders() override;
+    void startThread() override;
+    void run() override;
     void render();
-    void runComputeShader();
+    void customCleanup() override;
+
     AVCodecContext* openVideoStream();
     AVCodecContext* openAudioStream();
     bool getTextureForDRMFrame(AVFrame *frame, VideoFrame &dstFram);
-    void decodingThread();
-    void cleanupResources();
-    void pushFrame(VideoFrame& frame);
-    void clearFrames();
-    
 
 private:
     // FFMpeg
@@ -98,34 +77,7 @@ private:
     int m_videoStream = -1;
     int m_audioStream = -1;
 
-    // Rendering
-    GLuint m_vao; 
-    GLuint m_vbo;
-    
-    // Threading & Synchronization
-    std::thread m_decoderThread;
-    std::mutex m_frameMutex;
-    std::condition_variable m_frameCV;
-    EGLSyncKHR m_fence = EGL_NO_SYNC;
-    
-    // Textures & Shader
-    GLuint m_frameBuffer = 0;
-    //GLuint m_yuvTexture = 0;
-    GLuint m_rgbTexture = 0;
-    Shader m_computeShader;
-    Shader m_shader;
-
-    // Frames
-    //EGLImage m_yuvImage = nullptr;
-    std::vector<GLuint> m_yuvTextures;
-    std::vector<EGLImage> m_yuvImages;
-    static constexpr size_t MAX_QUEUE_SIZE = 3;
-    VideoFrame m_currentFrame;
-    std::queue<VideoFrame> m_frameQueue;
-    std::vector<VideoFrame> m_framesToDelete;
-
     // State
-    std::atomic<bool> m_isRunning = false;
     std::atomic<bool> m_isLooping = false;
     std::atomic<bool> m_isFlushing = false;
 };

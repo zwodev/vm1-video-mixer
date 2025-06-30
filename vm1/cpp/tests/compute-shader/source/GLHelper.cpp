@@ -8,7 +8,11 @@
 
 #include "GLHelper.h"
 
-bool GLHelper_Init()
+bool GLHelper::has_EGL_EXT_image_dma_buf_import = false;
+PFNGLACTIVETEXTUREARBPROC GLHelper::glActiveTextureARBFunc = nullptr;
+PFNGLEGLIMAGETARGETTEXTURE2DOESPROC GLHelper::glEGLImageTargetTexture2DOESFunc = nullptr;
+
+static bool GLHelper::init()
 {
     const char *extensions = eglQueryString(eglGetCurrentDisplay(), EGL_EXTENSIONS);
     if (SDL_strstr(extensions, "EGL_EXT_image_dma_buf_import") != NULL) {
