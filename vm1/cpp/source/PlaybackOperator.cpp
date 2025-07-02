@@ -223,7 +223,6 @@ void PlaybackOperator::renderPlane(int planeId)
 
 void PlaybackOperator::updateKeyboardController()
 {
-    printf("Begin Keyboard Controller Update:\n");
     InputMappings &inputMappings = m_registry.inputMappings();
 
     ControllerState controllerState;
@@ -239,7 +238,6 @@ void PlaybackOperator::updateKeyboardController()
         else if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
         {
             if (m_mediaSlotIdToPlayerId.contains(i)) {
-                printf("Active Video Media Slot: %d\n", i);
                 controllerState.media[i] = ButtonState::FILE_ASSET_ACTIVE;
             }
             else
@@ -248,10 +246,11 @@ void PlaybackOperator::updateKeyboardController()
         else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
         {
             // TODO: How to handle active HDMI or IMAGE, etc.
-            controllerState.media[i] = ButtonState::LIVECAM;
             if (m_mediaSlotIdToPlayerId.contains(i)) {
-                printf("Active Camera Media Slot: %d\n", i);
+                controllerState.media[i] = ButtonState::LIVECAM_ACTIVE;
             }
+            else
+                controllerState.media[i] = ButtonState::LIVECAM;
         }
     }
     m_keyboardController.send(controllerState);
