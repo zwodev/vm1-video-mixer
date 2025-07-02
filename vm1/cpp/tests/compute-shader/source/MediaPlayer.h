@@ -37,7 +37,7 @@ public:
     virtual ~MediaPlayer();
     
 public:
-    virtual bool open(const std::string& fileName = std::string()) = 0;
+    virtual bool openFile(const std::string& fileName = std::string()) = 0;
     void play();
     void close();
     bool isPlaying() const { return m_isRunning; }

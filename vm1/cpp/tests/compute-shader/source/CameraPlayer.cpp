@@ -16,6 +16,7 @@
 // https://github.com/FearL0rd/RPi5_hdmi_in_card/tree/main
 
 #include "CameraPlayer.h"
+#include "GLHelper.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,6 +48,11 @@ CameraPlayer::CameraPlayer()
 
 CameraPlayer::~CameraPlayer()
 {   
+}
+
+bool CameraPlayer::openFile(const std::string& fileName)
+{
+
 }
 
 void CameraPlayer::lockBuffer()
@@ -156,34 +162,36 @@ bool CameraPlayer::initBuffers(int fd)
             return false;
         }
 
+
+
         buffer.fd = expbuf.fd;
 
-        // Create image
-        EGLAttrib img_attr[] = {
-            EGL_WIDTH, m_fmt.fmt.pix.width / 2,
-            EGL_HEIGHT, m_fmt.fmt.pix.height,
-            EGL_LINUX_DRM_FOURCC_EXT, DRM_FORMAT_ARGB8888,
-            EGL_DMA_BUF_PLANE0_FD_EXT, expbuf.fd,
-            EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
-            EGL_DMA_BUF_PLANE0_PITCH_EXT, m_fmt.fmt.pix.bytesperline,
-            //EGL_DMA_BUF_PLANE0_PITCH_EXT, m_fmt.fmt.pix.width,
-            EGL_NONE
-        };
-        EGLImageKHR image = eglCreateImage(	  
-                                eglGetCurrentDisplay(),
-                                EGL_NO_CONTEXT,
-                                EGL_LINUX_DMA_BUF_EXT,
-                                NULL,
-                                img_attr
-                            );
-        printf("Pitch: %d\n", m_fmt.fmt.pix.bytesperline);
-        if(image == EGL_NO_IMAGE_KHR)
-        {
-            printf("error: eglCreateImageKHR failed: %d\n", eglGetError());
-            return false;
-        }
+        // // Create image
+        // EGLAttrib img_attr[] = {
+        //     EGL_WIDTH, m_fmt.fmt.pix.width / 2,
+        //     EGL_HEIGHT, m_fmt.fmt.pix.height,
+        //     EGL_LINUX_DRM_FOURCC_EXT, DRM_FORMAT_ARGB8888,
+        //     EGL_DMA_BUF_PLANE0_FD_EXT, expbuf.fd,
+        //     EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
+        //     EGL_DMA_BUF_PLANE0_PITCH_EXT, m_fmt.fmt.pix.bytesperline,
+        //     //EGL_DMA_BUF_PLANE0_PITCH_EXT, m_fmt.fmt.pix.width,
+        //     EGL_NONE
+        // };
+        // EGLImageKHR image = eglCreateImage(	  
+        //                         eglGetCurrentDisplay(),
+        //                         EGL_NO_CONTEXT,
+        //                         EGL_LINUX_DMA_BUF_EXT,
+        //                         NULL,
+        //                         img_attr
+        //                     );
+        // printf("Pitch: %d\n", m_fmt.fmt.pix.bytesperline);
+        // if(image == EGL_NO_IMAGE_KHR)
+        // {
+        //     printf("error: eglCreateImageKHR failed: %d\n", eglGetError());
+        //     return false;
+        // }
 
-        buffer.image = image;
+        //buffer.image = image;
         m_buffers.push_back(buffer);
     }
 
@@ -230,9 +238,7 @@ void CameraPlayer::startThread()
 }
 
 void CameraPlayer::run()
-{
-    if (m_isRunning) return;
-    
+{   
     int fd = open("/dev/video0", O_RDWR);
     if (fd == -1) {
         printf("Error opening video device.\n");
@@ -252,7 +258,7 @@ void CameraPlayer::run()
     }
 
     v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    if(ioctl(fd, VIDIOC_STREAMON, &buf_type))
+    if(ioctl(m_fd, VIDIOC_STREAMON, &buf_type))
     {
         perror("VIDIOC_STREAMON");
         return -1;
@@ -261,14 +267,17 @@ void CameraPlayer::run()
 	printf("Camera streaming turned ON\n");
 
     m_isRunning = true;
-
     while (m_isRunning) {
         VideoFrame frame;
         lockBuffer();
-        frame.images.push_back(getBuffer()->image);
+        int fd = getBuffer()->fd;
+        frame.fds.push_back(fd);
         unlockBuffer();
         pushFrame(frame);
+        SDL_Delay(10);
     }
+
+    printf("Camera streaming turned OFF\n");
 
     // TODO: Deallocate resources
 }
@@ -292,7 +301,7 @@ void CameraPlayer::render()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     // Bind the texture to unit
-    glEGLImageTargetTexture2DOESFunc(GL_TEXTURE_2D, m_yuvImages[0]);
+    GLHelper::glEGLImageTargetTexture2DOESFunc(GL_TEXTURE_2D, m_yuvImages[0]);
     m_shader.bindUniformLocation("inputTexture", 0);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -316,7 +325,31 @@ void CameraPlayer::update()
     VideoFrame frame;
     
     if (popFrame(frame)) {
-        if (m_yuvImages.size() > 0 && frame.image != EGL_NO_IMAGE) {
+        if (m_yuvImages.size() > 0 && frame.fds.size() > 0) {
+            // Create image
+            EGLAttrib img_attr[] = {
+                EGL_WIDTH, m_fmt.fmt.pix.width / 2,
+                EGL_HEIGHT, m_fmt.fmt.pix.height,
+                EGL_LINUX_DRM_FOURCC_EXT, DRM_FORMAT_ARGB8888,
+                EGL_DMA_BUF_PLANE0_FD_EXT, frame.fds[0],
+                EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
+                EGL_DMA_BUF_PLANE0_PITCH_EXT, m_fmt.fmt.pix.bytesperline,
+                //EGL_DMA_BUF_PLANE0_PITCH_EXT, m_fmt.fmt.pix.width,
+                EGL_NONE
+            };
+            EGLImageKHR image = eglCreateImage(	  
+                                    eglGetCurrentDisplay(),
+                                    EGL_NO_CONTEXT,
+                                    EGL_LINUX_DMA_BUF_EXT,
+                                    NULL,
+                                    img_attr
+                                );
+            //printf("Pitch: %d\n", m_fmt.fmt.pix.bytesperline);
+            if(image == EGL_NO_IMAGE_KHR)
+            {
+                printf("error: eglCreateImageKHR failed: %d\n", eglGetError());
+                return false;
+            }
             m_yuvImages[0] = image;
         }
     }

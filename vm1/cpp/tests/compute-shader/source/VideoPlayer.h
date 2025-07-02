@@ -46,7 +46,7 @@ public:
     VideoPlayer();
     ~VideoPlayer();
 
-    bool open(const std::string& fileName) override;
+    bool openFile(const std::string& fileName) override;
     void setLooping(bool looping);
     void update() override;
     

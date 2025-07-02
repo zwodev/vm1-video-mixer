@@ -38,6 +38,7 @@ deps += c.find_library('m', required: true)  # `-lm` for math functions
 sources = [ 'main.cpp', 
             'source/Shader.cpp', 
             'source/CameraController.cpp', 
+            'source/CameraPlayer.cpp', 
             'source/MediaController.cpp', 
             'source/MediaPlayer.cpp', 
             'source/V4L2Controller.cpp', 

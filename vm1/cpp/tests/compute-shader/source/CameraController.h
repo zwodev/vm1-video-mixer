@@ -24,9 +24,9 @@ public:
     ~CameraController();
     
     void setupDetached();
-
-private:
     bool setup();
+private:
+    //bool setup();
 
 private:
     std::thread m_thread;

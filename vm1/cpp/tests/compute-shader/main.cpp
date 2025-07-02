@@ -25,6 +25,7 @@
 #include "source/GLHelper.h"
 #include "source/CameraController.h"
 #include "source/VideoPlayer.h"
+#include "source/CameraPlayer.h"
 
 
 #define USE_OLED
@@ -147,26 +148,32 @@ int main(int, char **)
     SDL_RaiseWindow(windows[0]);
 
     // Camera
-    //CameraController cameraController;
+    CameraController cameraController;
+    cameraController.setup();
+
+    // Camera Player
+    CameraPlayer cameraPlayer0;
+    cameraPlayer0.openFile("");
+    cameraPlayer0.play();
 
     // Video Player
     VideoPlayer videoPlayer0;
-    videoPlayer0.open("../../../videos/vm1-introduction-small.mp4");
+    videoPlayer0.openFile("../../../videos/vm1-introduction-small.mp4");
     videoPlayer0.play();
     videoPlayer0.setLooping(true);
 
     VideoPlayer videoPlayer1;
-    videoPlayer1.open("../../../videos/vm1-introduction-small.mp4");
+    videoPlayer1.openFile("../../../videos/vm1-introduction-small.mp4");
     videoPlayer1.play();
     videoPlayer1.setLooping(true);
 
     VideoPlayer videoPlayer2;
-    videoPlayer2.open("../../../videos/vm1-introduction-small.mp4");
+    videoPlayer2.openFile("../../../videos/vm1-introduction-small.mp4");
     videoPlayer2.play();
     videoPlayer2.setLooping(true);
 
     VideoPlayer videoPlayer3;
-    videoPlayer3.open("../../../videos/vm1-introduction-small.mp4");
+    videoPlayer3.openFile("../../../videos/vm1-introduction-small.mp4");
     videoPlayer3.play();
     videoPlayer3.setLooping(true);
 
@@ -222,7 +229,15 @@ int main(int, char **)
             ImGui::End();
         }
 
-        // Compute Shader Test   
+        // Compute Shader Test 
+        {
+            ImGui::SetNextWindowSize(ImVec2(960, 540));
+            ImGui::Begin("Camera 0");
+            cameraPlayer0.update();
+            ImGui::Image((void *)(intptr_t)cameraPlayer0.texture(), ImVec2(960, 540));
+            ImGui::End();
+        }
+
         {
             ImGui::SetNextWindowSize(ImVec2(960, 540));
             ImGui::Begin("Video 0");

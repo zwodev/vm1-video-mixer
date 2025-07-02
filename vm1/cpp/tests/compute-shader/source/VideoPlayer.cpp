@@ -57,7 +57,7 @@ void VideoPlayer::loadShaders()
     m_shader.load("shaders/video.vert", "shaders/video.frag");
 }
 
-bool VideoPlayer::open(const std::string& fileName)
+bool VideoPlayer::openFile(const std::string& fileName)
 {
     // Cleanup any existing resources
     close(); 

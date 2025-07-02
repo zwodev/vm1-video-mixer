@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "MediaPlayer.h"
 #include "Shader.h"
 
 #include <SDL3/SDL_render.h> 
@@ -26,22 +27,26 @@ struct Buffer {
     EGLImage image;
 };
 
-class CameraPlayer {
+class CameraPlayer : public MediaPlayer {
 public: 
     CameraPlayer();
     ~CameraPlayer();
 
 public:
-    bool open(std::fileName);
+    bool openFile(const std::string& fileName);
     void lockBuffer();
     Buffer* getBuffer();
     void unlockBuffer();
+    void update() override;
 
 private:
+    //void reset() override;
     void loadShaders() override;
     void startThread() override;
     void run() override;
-    void update() override;
+    void render();
+    //void customCleanup() override;
+    
     bool setFormat(int fd);
     bool initBuffers(int fd);
     bool queueBuffer(int fd, int index);
@@ -51,4 +56,5 @@ private:
     int m_fd = -1;
     int m_bufferIndex = -1;
     v4l2_format m_fmt;
+    std::vector<Buffer> m_buffers;
 };
