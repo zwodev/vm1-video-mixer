@@ -6,7 +6,18 @@ out vec4 fragColor;
 
 uniform sampler2D inputTexture;
 
+/*
 void main() {
+    const float y_scale = 1080.0f / 1632.0f;
+    const float y_offset = 1092.0f / 1632.0f;
+    vec2 texCoordY = vec2(texCoord.x, texCoord.y);
+    float y = texture(inputTexture, texCoordY).r;
+    fragColor = vec4(y, 0.0f, 0.0f, 1.0f);
+}
+*/
+
+void main() {
+    
 	//vec2 uv = vec2((xNew / IN_TEX_SIZE.x) + D.x, (yNew / IN_TEX_SIZE.y) + D.y);
 
     const float y_scale = 1080.0f / 1632.0f;

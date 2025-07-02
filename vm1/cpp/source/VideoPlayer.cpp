@@ -10,15 +10,13 @@
  * 
  */
 
-
-#include "VideoPlayer.h"
-
+#include "source/GLHelper.h"
+#include "source/VideoPlayer.h"
 
 #include <SDL3/SDL_opengl.h>
 #include <SDL3/SDL_opengles2.h>
 #include <EGL/eglext.h>
-
-
+#include <GLES3/gl31.h>
 
 #ifndef fourcc_code
 #define fourcc_code(a, b, c, d) ((uint32_t)(a) | ((uint32_t)(b) << 8) | ((uint32_t)(c) << 16) | ((uint32_t)(d) << 24))
@@ -32,29 +30,34 @@
 #ifndef DRM_FORMAT_RGBA8888
 #define DRM_FORMAT_RGBA8888 fourcc_code('R', 'A', '2', '4')
 #endif
- 
+
+const int YUV_IMAGE_WIDTH = 2048;
+const int YUV_IMAGE_HEIGHT = 1530;
+
 VideoPlayer::VideoPlayer()
 {
+    m_numberOfInputImages = 15;
+    loadShaders();
+    createVertexBuffers();
+    initializeFramebufferAndTextures();
 }
 
 VideoPlayer::~VideoPlayer()
 {
-    close();
 }
 
-void VideoPlayer::close()
+void VideoPlayer::reset()
 {
-    m_isRunning = false;
-    m_frameCV.notify_all();
-    
-    if (m_decoderThread.joinable()) {
-        m_decoderThread.join();
-    }
-    
-    cleanupResources();
+    m_firstPts = -1.0;
+    m_isFlushing = false;
 }
 
-bool VideoPlayer::open(std::string fileName, bool useH264)
+void VideoPlayer::loadShaders()
+{
+    m_shader.load("shaders/video.vert", "shaders/video.frag");
+}
+
+bool VideoPlayer::openFile(const std::string& fileName)
 {
     // Cleanup any existing resources
     close(); 
@@ -95,14 +98,6 @@ bool VideoPlayer::open(std::string fileName, bool useH264)
 
     m_videoStream = av_find_best_stream(m_formatContext, AVMEDIA_TYPE_VIDEO, -1, -1, &m_videoCodec, 0);
     if (m_videoStream >= 0) {
-        if (useH264) {
-            const char *videoCodecName = "h264_v4l2m2m";
-            m_videoCodec = avcodec_find_decoder_by_name(videoCodecName);
-            if (!m_videoCodec) {
-                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't find codec '%s'", videoCodecName);
-                return false;
-            }
-        }
         m_videoContext = openVideoStream();
         if (!m_videoContext) {
             return false;
@@ -136,14 +131,6 @@ bool VideoPlayer::open(std::string fileName, bool useH264)
     }
 
     return true;
-}
-
-void VideoPlayer::play()
-{
-    m_firstPts = -1.0;
-    m_isFlushing = false;
-    m_isRunning = true;
-    m_decoderThread = std::thread(&VideoPlayer::decodingThread, this);
 }
 
 void VideoPlayer::setLooping(bool looping)
@@ -261,7 +248,108 @@ AVCodecContext* VideoPlayer::openAudioStream()
     return context;
 }
 
-void VideoPlayer::decodingThread() {
+void VideoPlayer::render()
+{
+    glViewport(0, 0, 1920, 1080);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    m_shader.activate();
+    m_shader.setValue("stripWidthNDC", 2.0f/15.0f);
+
+    glBindVertexArray(m_vao);
+    for (int i = 0; i < m_yuvTextures.size(); ++i) {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m_yuvTextures[i]);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        // Bind the texture to unit
+        if (m_yuvImages[i] != EGL_NO_IMAGE) {
+            GLHelper::glEGLImageTargetTexture2DOESFunc(GL_TEXTURE_2D, m_yuvImages[i]);
+            m_shader.bindUniformLocation("inputTexture", 0);
+        }
+
+        m_shader.setValue("stripId", i);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+    }
+
+    glBindVertexArray(0);
+    m_shader.deactivate();
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void VideoPlayer::update()
+{
+    EGLDisplay display = eglGetCurrentDisplay();
+
+    // Wait for fence and delete it
+    eglClientWaitSync(display, m_fence, EGL_SYNC_FLUSH_COMMANDS_BIT, EGL_FOREVER);
+    eglDestroySync(display, m_fence);
+    m_fence = EGL_NO_SYNC;
+
+    // TODO: Can EGLImages be reused? It seems like the DRM-Buf FDs change very often.
+    for (auto& yuvImage : m_yuvImages ) {
+        if (yuvImage != nullptr) {
+            eglDestroyImage(display, yuvImage);
+            yuvImage = nullptr;
+        }
+    }
+
+    VideoFrame frame;
+    
+    // Check PTS
+    if (peekFrame(frame)) {
+        if (frame.isFirstFrame) {
+            m_startTime  = SDL_GetTicks();
+        }
+
+        double pts = frame.pts;
+        double now = (double)(SDL_GetTicks() - m_startTime) / 1000.0;
+        
+        // Do not pop and display frame when PTS is ahead 
+        if (now < (pts - 0.001)) {
+            //printf("Skipping frame because of PTS.\n");
+            return;
+        } 
+    }
+
+    if (popFrame(frame)) {
+        // Create EGL images here in the main thread
+        // TODO: Support for multiple planes and images (see older version)
+        for (int i = 0; i < m_yuvImages.size(); ++i) {
+            if (frame.formats.size() > 0) {
+                int j = 0;
+                EGLAttrib img_attr[] = {
+                    EGL_LINUX_DRM_FOURCC_EXT,      frame.formats[j],
+                    EGL_WIDTH,                     128,
+                    EGL_HEIGHT,                    1632,
+                    EGL_DMA_BUF_PLANE0_FD_EXT,     frame.fds[j],
+                    EGL_DMA_BUF_PLANE0_OFFSET_EXT, i * 128 * 1632,
+                    EGL_DMA_BUF_PLANE0_PITCH_EXT,  128,
+                    EGL_NONE
+                };
+                
+                EGLImage image = eglCreateImage(display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, img_attr);
+                if (image != EGL_NO_IMAGE) {
+                    m_yuvImages[i] = image;
+                }
+            }
+        }
+    }
+
+    render();
+
+    // Create fence for current frame
+    m_fence = eglCreateSync(display, EGL_SYNC_FENCE, NULL);
+}
+
+void VideoPlayer::run() {
     while (m_isRunning) {
         if (!m_isFlushing) {
             // Read and decode frames
@@ -322,58 +410,7 @@ void VideoPlayer::decodingThread() {
     }
 }
 
-void VideoPlayer::clearFrames() {
-    std::unique_lock<std::mutex> lock(m_frameMutex);
-    while (!m_frameQueue.empty()) {
-        m_frameQueue.pop();
-    }
-}
-
-void VideoPlayer::pushFrame(VideoFrame& frame) {
-    std::unique_lock<std::mutex> lock(m_frameMutex);
-    m_frameCV.wait(lock, [this]() { 
-        return m_frameQueue.size() < MAX_QUEUE_SIZE || !m_isRunning; 
-    });
-    
-    if (m_isRunning) {
-        m_frameQueue.push(frame);
-        m_frameCV.notify_one();
-    }
-}
-
-bool VideoPlayer::popFrame(VideoFrame& frame) {
-    std::unique_lock<std::mutex> lock(m_frameMutex);
-    if (m_frameQueue.empty()) {
-        return false;
-    }
-    
-    frame = m_frameQueue.front();
-    m_frameQueue.pop();
-    m_frameCV.notify_one();
-    return true;
-}
-
-bool VideoPlayer::peekFrame(VideoFrame& frame) {
-    std::unique_lock<std::mutex> lock(m_frameMutex);
-    if (m_frameQueue.empty()) {
-        return false;
-    }
-    
-    frame = m_frameQueue.front();
-    return true;
-}
-
-void VideoPlayer::cleanupResources() {
-    EGLDisplay display = eglGetCurrentDisplay();
-    
-    // Cleanup sync fences
-    while (!m_fences.empty()) {
-        eglDestroySync(display, m_fences.front()); 
-        m_fences.pop();
-    }
-
-    clearFrames();
-
+void VideoPlayer::customCleanup() {
     if (m_audioContext) {
         avcodec_free_context(&m_audioContext);
         m_audioContext = nullptr;

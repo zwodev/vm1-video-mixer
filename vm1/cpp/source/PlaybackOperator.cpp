@@ -5,24 +5,91 @@ PlaybackOperator::PlaybackOperator(Registry &registry) : m_registry(registry)
     initialize();
 }
 
+PlaybackOperator::~PlaybackOperator()
+{
+    for (auto videoPlayer : m_videoPlayers) {
+        delete videoPlayer;
+    }
+
+    for (auto cameraPlayer : m_cameraPlayers) {
+        delete cameraPlayer;
+    } 
+
+    for (auto planeRenderer : m_planeRenderers) {
+        delete planeRenderer;
+    } 
+}
+
 void PlaybackOperator::initialize()
 {
+    // Add plane mixers
+    for (int i = 0; i < 2; ++i) {
+        m_planeMixers.push_back(PlaneMixer());
+    } 
+
+    // Add plane renderers
+    for (int i = 0; i < 2; ++i) {
+        m_planeRenderers.push_back(new PlaneRenderer());
+    } 
+
+    // Add video players
+    for (int i = 0; i < 4; ++i) {
+        m_videoPlayers.push_back(new VideoPlayer());
+        MediaPlayer* mediaPlayer = m_videoPlayers[i];
+        m_mediaPlayers.push_back(mediaPlayer);
+    }
+
+    // Add camera players
+    for (int i = 0; i < 1; ++i) {
+        m_cameraPlayers.push_back(new CameraPlayer());
+        MediaPlayer* mediaPlayer = m_cameraPlayers[i];
+        m_mediaPlayers.push_back(mediaPlayer);
+    }
+
     // Open serial port
     std::string serialDevice = m_registry.settings().serialDevice;
     if (!m_keyboardController.connect(serialDevice))
     {
         printf("Could not open serial device: %s\n", serialDevice.c_str());
     }
+}
 
-    // First screen
-    m_planes[0].addVideoPlayer(&(m_videoPlayers[0]));
-    m_planes[0].addVideoPlayer(&(m_videoPlayers[1]));
-    m_planes[0].addCameraPlayer(&(m_cameraPlayers[0]));
+bool PlaybackOperator::getFreeVideoPlayerId(int& id)
+{
+    for (int i = 0; i < m_videoPlayers.size(); ++i) {
+        if(!isPlayerIdActive(i) && dynamic_cast<VideoPlayer *>(m_mediaPlayers[i])) {
+            id = i;
+            return true;
+        }
+    }
 
-    // Second screen
-    m_planes[1].addVideoPlayer(&(m_videoPlayers[2]));
-    m_planes[1].addVideoPlayer(&(m_videoPlayers[3]));
-    m_planes[1].addCameraPlayer(&(m_cameraPlayers[0]));
+    return false;
+}
+
+bool PlaybackOperator::getCameraPlayerIdFromPort(int port, int& id)
+{
+    for (int i = 0; i < m_mediaPlayers.size(); ++i) {     
+        if(CameraPlayer* cameraPlayer = dynamic_cast<CameraPlayer *>(m_mediaPlayers[i])) {
+            if (cameraPlayer->getPort() == port) {
+                id = i;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool PlaybackOperator::isPlayerIdActive(int playerId)
+{
+    for (auto planeMixer : m_planeMixers) {
+        auto activeIds = planeMixer.activeIds();
+        for (int activePlayerId : activeIds) {
+            if (activePlayerId == playerId) return true;
+        }
+    }
+
+    return false;
 }
 
 void PlaybackOperator::showMedia(int mediaSlotId)
@@ -35,11 +102,24 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     if (!inputConfig)
         return;
 
+    // Select plane
+    float fadeTime = float(m_registry.settings().fadeTime); 
+    int planeId = (mediaSlotId / 8) % 2;
+    m_planeMixers[planeId].setFadeTime(fadeTime);
+
+    int playerId = -1;
     if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
     {
         fileName = videoInputConfig->fileName;
         looping = videoInputConfig->looping;
         filePath = m_registry.mediaPool().getVideoFilePath(fileName);
+
+        if (!getFreeVideoPlayerId(playerId)) return;
+        if (m_planeMixers[planeId].startFade(playerId)) {
+            m_mediaPlayers[playerId]->openFile(filePath);
+            m_mediaPlayers[playerId]->play(); 
+            m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
+        }
     }
     else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
     {
@@ -47,67 +127,63 @@ void PlaybackOperator::showMedia(int mediaSlotId)
         {
             fileName = "hdmi0";
             filePath = m_registry.mediaPool().getVideoFilePath(fileName);
-        }
-    }
+            if (!getCameraPlayerIdFromPort(hdmiInputConfig->hdmiPort, playerId)) return;
 
-    // Select plane
-    float fadeTime = float(m_registry.settings().fadeTime); 
-    int oddRow = (mediaSlotId / 8) % 2;
-    if (oddRow == 0)
-    {
-        printf("Play Left: (ID: %d, FILE: %s, LOOP: %d)\n", mediaSlotId, filePath.c_str(), looping);
-        m_planes[0].setFadeTime(fadeTime);
-        int playerIndex = m_planes[0].playAndFade(filePath, looping);
-        printf("Player Index: %d", playerIndex);
-        if (playerIndex >= 0)
-        {
-            m_mediaSlotIdToPlayerId[mediaSlotId] = playerIndex;
-        }
-    }
-    else
-    {
-        printf("Play Right: (ID: %d, FILE: %s, LOOP: %d)\n", mediaSlotId, fileName.c_str(), looping);
-        m_planes[1].setFadeTime(fadeTime);
-        int playerIndex = m_planes[1].playAndFade(filePath, looping);
-        if (playerIndex >= 0)
-        {
-            playerIndex += 2;
-            m_mediaSlotIdToPlayerId[mediaSlotId] = playerIndex;
+            if (!m_mediaPlayers[playerId]->isPlaying()) {
+                m_mediaPlayers[playerId]->play(); 
+            }
+            
+            if (m_planeMixers[planeId].startFade(playerId))  {
+                m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
+            }
         }
     }
 }
 
-void PlaybackOperator::updateRunningPlayer(VideoInputConfig *videoInputConfig, int playerId)
+void PlaybackOperator::update(float deltaTime)
 {
-    // Delete ??
-}
+    for (auto& planeMixer : m_planeMixers) {
+        planeMixer.update(deltaTime);
+    }
 
-void PlaybackOperator::update()
-{
+    for (auto mediaPlayer : m_mediaPlayers) {
+        mediaPlayer->update();
+    }
+
     std::vector<int> idsToDelete;
     for (const auto &[key, value] : m_mediaSlotIdToPlayerId)
     {
         int mediaSlotId = key;
         int playerId = value;
+        MediaPlayer* mediaPlayer = m_mediaPlayers[playerId];
+        //if (!isPlayerIdActive(playerId)) mediaPlayer->close();
 
-        InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
-        if (!inputConfig)
-            continue;
+        InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
+        if (!inputConfig) continue;
 
-        if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
+        if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(inputConfig))
         {
             bool looping = videoInputConfig->looping;
-            VideoPlayer &videoPlayer = m_videoPlayers[playerId];
-            if (videoPlayer.isPlaying())
+            VideoPlayer* videoPlayer = dynamic_cast<VideoPlayer*>(mediaPlayer);
+            if (videoPlayer && videoPlayer->isPlaying())
             {
-                 videoPlayer.setLooping(looping);
+                videoPlayer->setLooping(looping);
             }
-            else
+
+            if (!videoPlayer || !videoPlayer->isPlaying())
             {
                 if(m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
                     idsToDelete.push_back(mediaSlotId);
                 }
             }
+        }
+        else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(inputConfig))
+        {
+            CameraPlayer* cameraPlayer = dynamic_cast<CameraPlayer*>(mediaPlayer);
+            // if (cameraPlayer && cameraPlayer->isPlaying())
+            // {
+            //     cameraPlayer->update();
+            // }
         }
     }
 
@@ -118,25 +194,24 @@ void PlaybackOperator::update()
     updateKeyboardController();
 }
 
-void PlaybackOperator::lockCameras()
+void PlaybackOperator::renderPlane(int planeId)
 {
-    for (int i = 0; i < 1; ++i)
-    {
-        m_cameraPlayers[i].lockBuffer();
-    }
-}
+    if (planeId >= m_planeRenderers.size()) return;
 
-void PlaybackOperator::unlockCameras()
-{
-    for (int i = 0; i < 1; ++i)
-    {
-        m_cameraPlayers[i].unlockBuffer();
+    PlaneRenderer* planeRenderer = m_planeRenderers[planeId];
+    PlaneMixer& planeMixer = m_planeMixers[planeId];
+    int fromId = planeMixer.fromId();
+    int toId = planeMixer.toId();
+    GLuint texture0 = 0;
+    if (fromId >= 0) {
+        texture0 = m_mediaPlayers[fromId]->texture();
     }
-}
+    GLuint texture1 = 0;
+    if (toId >= 0) {
+        texture1 = m_mediaPlayers[toId]->texture();
+    }
 
-void PlaybackOperator::renderPlane(int planeId, float deltaTime)
-{
-    m_planes[planeId].update(deltaTime);
+    planeRenderer->update(texture0, texture1, planeMixer.mixValue());
 }
 
 void PlaybackOperator::updateKeyboardController()

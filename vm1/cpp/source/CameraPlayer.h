@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "MediaPlayer.h"
 #include "Shader.h"
 
 #include <SDL3/SDL_render.h> 
@@ -26,48 +27,28 @@ struct Buffer {
     EGLImage image;
 };
 
-class CameraPlayer {
-
-    struct vec2
-    {
-        vec2(float p_x, float p_y) {
-            x = p_x;
-            y = p_y;
-        }
-
-        float x;
-        float y;
-    };
-
-    struct VertexWithTex
-    {
-        VertexWithTex(float p_x, float p_y, float p_u, float p_v, float p_offset) {
-            x = p_x * 2.0f - 1.0f;
-            y = p_y * 2.0f - 1.0f;
-            u = p_u;
-            v = p_v;
-            offset = p_offset;
-        }
-
-        float x;
-        float y;
-        float u;
-        float v;
-        float offset;
-
-    };
-
+class CameraPlayer : public MediaPlayer {
 public: 
     CameraPlayer();
     ~CameraPlayer();
 
 public:
-    bool start();
+    bool openFile(const std::string& fileName);
     void lockBuffer();
     Buffer* getBuffer();
     void unlockBuffer();
+    void update() override;
+
+    // TODO: Needs to be determined by HDMI port oder dev (/dev/video0)
+    int getPort() { return 0; } 
 
 private:
+    //void reset() override;
+    void loadShaders() override;
+    void run() override;
+    void render();
+    //void customCleanup() override;
+    
     bool setFormat(int fd);
     bool initBuffers(int fd);
     bool queueBuffer(int fd, int index);
@@ -78,6 +59,4 @@ private:
     int m_bufferIndex = -1;
     v4l2_format m_fmt;
     std::vector<Buffer> m_buffers;
-    bool m_isRunning = false;
-    std::vector<EGLImage> m_images;
 };

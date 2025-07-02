@@ -9,6 +9,9 @@
 
 #pragma once
 
+#include "source/MediaPlayer.h"
+#include "source/Shader.h"
+
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_egl.h>
@@ -32,51 +35,35 @@ extern "C"
 #include <libavutil/hwcontext_drm.h>
 }
 
-#include "PlaneRenderer.h"
 
 static SDL_PixelFormat getTextureFormat(enum AVPixelFormat format);
 static bool isSupportedPixelFormat(enum AVPixelFormat format);
 static enum AVPixelFormat getSupportedPixelFormat(AVCodecContext *s, const enum AVPixelFormat *pix_fmts);
 
-struct VideoFrame {
-    std::vector<EGLImage> images;
-    bool isFirstFrame = false;
-    double pts = 0.0;
-    
-    // Add these fields for DRM frame info
-    std::vector<uint32_t> formats;
-    std::vector<int> widths;
-    std::vector<int> heights;
-    std::vector<int> fds;
-    std::vector<uint32_t> offsets;
-    std::vector<uint32_t> pitches;
-};
 
-class VideoPlayer {
+class VideoPlayer : public MediaPlayer {
 public:
     VideoPlayer();
     ~VideoPlayer();
 
-    bool open(std::string fileName, bool useH264 = false);
-    void play();
-    void close();
-    bool isPlaying() const { return m_isRunning; }
+    bool openFile(const std::string& fileName) override;
     void setLooping(bool looping);
-    bool popFrame(VideoFrame& frame);
-    bool peekFrame(VideoFrame& frame);
-
+    void update() override;
+    
 private:
+    void reset() override;
+    void loadShaders() override;
+    void run() override;
+    void render();
+    void customCleanup() override;
+
     AVCodecContext* openVideoStream();
     AVCodecContext* openAudioStream();
     bool getTextureForDRMFrame(AVFrame *frame, VideoFrame &dstFram);
-    void decodingThread();
-    void cleanupResources();
-    void pushFrame(VideoFrame& frame);
-    void clearFrames();
-    
 
 private:
     // FFMpeg
+    Uint64 m_startTime = 0;
     double m_firstPts = -1.0;
     SDL_AudioStream* m_audio;
     AVFormatContext* m_formatContext = nullptr;
@@ -89,20 +76,7 @@ private:
     int m_videoStream = -1;
     int m_audioStream = -1;
 
-    // Threading & Synchronization
-    std::thread m_decoderThread;
-    std::mutex m_frameMutex;
-    std::condition_variable m_frameCV;
-    std::queue<EGLSyncKHR> m_fences;
-    
-    // Frames
-    static constexpr size_t MAX_QUEUE_SIZE = 3;
-    VideoFrame m_currentFrame;
-    std::queue<VideoFrame> m_frameQueue;
-    std::vector<VideoFrame> m_framesToDelete;
-
     // State
-    std::atomic<bool> m_isRunning = false;
     std::atomic<bool> m_isLooping = false;
     std::atomic<bool> m_isFlushing = false;
 };

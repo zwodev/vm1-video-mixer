@@ -22,11 +22,11 @@
 #include <SDL3/SDL_opengl.h>
 #endif
 
+#include "source/GLHelper.h"
 #include "source/Registry.h"
 #include "source/PlaybackOperator.h"
 #include "source/PlaneRenderer.h"
 #include "source/VideoPlayer.h"
-#include "source/VideoPlane.h"
 #include "source/CameraPlayer.h"
 #include "source/FileAssignmentWidget.h"
 #include "source/KeyForwarder.h"
@@ -122,6 +122,10 @@ int main(int, char **)
         printf("Error: SDL_GL_CreateContext(): %s\n", SDL_GetError());
         return -1;
     }
+
+    // Init GL Helper
+    bool success = GLHelper::init();
+    printf("Init GL Helper: %d\n", success);
 
     // Enable vsync and activate all windows
     SDL_GL_SetSwapInterval(1);
@@ -232,7 +236,7 @@ int main(int, char **)
         }
 
         registry.update(deltaTime);
-        playbackOperator.update();
+        playbackOperator.update(deltaTime);
         keyForwarder.forwardArrowKeys(mainContext, fboContext);
 
         // START: Render to FBO (OLED) before main gui
@@ -295,27 +299,20 @@ int main(int, char **)
                 ImGui::PopStyleVar();
             }
         }
-            // File Assignment Widget
-            fileAssignmentWidget.render();
-        
 
+        // File Assignment Widget
+        fileAssignmentWidget.render();
         
-
         // Rendering window 0
         SDL_GL_MakeCurrent(windows[0], gl_context);
         ImGui::Render();
         //glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-        glViewport(0, 0, 1920, 1080);
+        glViewport(0, 60, 1920, 1080);
         glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        playbackOperator.lockCameras();
-        //cameraPlayer0.lockBuffer();
-        
         // Render video content
-        if (isVideoEnabled)
-            playbackOperator.renderPlane(0, deltaTime);
-            //videoPlane0.update(deltaTime);
+        if (isVideoEnabled) playbackOperator.renderPlane(0);
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(windows[0]);
@@ -324,20 +321,15 @@ int main(int, char **)
         if (windows.size() > 1)
         {
             SDL_GL_MakeCurrent(windows[1], gl_context);
-            glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+            glViewport(0, 60, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
             glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
             glClear(GL_COLOR_BUFFER_BIT);
 
             // Render video content
-            if (isVideoEnabled)
-                playbackOperator.renderPlane(1, deltaTime);
-                //videoPlane1.update(deltaTime);
+            if (isVideoEnabled) playbackOperator.renderPlane(1);
 
             SDL_GL_SwapWindow(windows[1]);
         }
-
-        playbackOperator.unlockCameras();
-        //cameraPlayer0.unlockBuffer();
 
         // End the frame
         ImGui::EndFrame();

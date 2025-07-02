@@ -14,8 +14,12 @@
 #include <SDL3/SDL_opengles2.h>
 #include <SDL3/SDL_egl.h>
 
-static bool has_EGL_EXT_image_dma_buf_import;
-static PFNGLACTIVETEXTUREARBPROC glActiveTextureARBFunc;
-static PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOESFunc;
 
-bool GLHelper_Init();
+class GLHelper
+{
+public:
+    static bool init();
+    static bool has_EGL_EXT_image_dma_buf_import;
+    static PFNGLACTIVETEXTUREARBPROC glActiveTextureARBFunc;
+    static PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOESFunc;
+};
