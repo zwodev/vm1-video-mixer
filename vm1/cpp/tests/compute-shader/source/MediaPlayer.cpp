@@ -18,8 +18,8 @@ void MediaPlayer::play()
 {
     reset();
     m_isRunning = true;
-    startThread();
-    //m_decoderThread = std::thread(&MediaPlayer::run, this);
+    //startThread();
+    m_decoderThread = std::thread(&MediaPlayer::run, this);
 }
 
 GLuint MediaPlayer::texture()

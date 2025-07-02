@@ -349,11 +349,6 @@ void VideoPlayer::update()
     m_fence = eglCreateSync(display, EGL_SYNC_FENCE, NULL);
 }
 
-void VideoPlayer::startThread()
-{
-    m_decoderThread = std::thread(&VideoPlayer::run, this);
-}
-
 void VideoPlayer::run() {
     while (m_isRunning) {
         if (!m_isFlushing) {

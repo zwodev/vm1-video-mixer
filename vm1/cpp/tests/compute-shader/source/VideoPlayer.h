@@ -53,7 +53,6 @@ public:
 private:
     void reset() override;
     void loadShaders() override;
-    void startThread() override;
     void run() override;
     void render();
     void customCleanup() override;

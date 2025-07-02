@@ -48,7 +48,6 @@ protected:
     void createVertexBuffers();
     void initializeFramebufferAndTextures();
     virtual void loadShaders() = 0;
-    virtual void startThread() = 0;
     virtual void run() = 0;
     virtual void customCleanup();
     virtual void reset();

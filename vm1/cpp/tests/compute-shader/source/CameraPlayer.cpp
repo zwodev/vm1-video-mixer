@@ -162,36 +162,7 @@ bool CameraPlayer::initBuffers(int fd)
             return false;
         }
 
-
-
         buffer.fd = expbuf.fd;
-
-        // // Create image
-        // EGLAttrib img_attr[] = {
-        //     EGL_WIDTH, m_fmt.fmt.pix.width / 2,
-        //     EGL_HEIGHT, m_fmt.fmt.pix.height,
-        //     EGL_LINUX_DRM_FOURCC_EXT, DRM_FORMAT_ARGB8888,
-        //     EGL_DMA_BUF_PLANE0_FD_EXT, expbuf.fd,
-        //     EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
-        //     EGL_DMA_BUF_PLANE0_PITCH_EXT, m_fmt.fmt.pix.bytesperline,
-        //     //EGL_DMA_BUF_PLANE0_PITCH_EXT, m_fmt.fmt.pix.width,
-        //     EGL_NONE
-        // };
-        // EGLImageKHR image = eglCreateImage(	  
-        //                         eglGetCurrentDisplay(),
-        //                         EGL_NO_CONTEXT,
-        //                         EGL_LINUX_DMA_BUF_EXT,
-        //                         NULL,
-        //                         img_attr
-        //                     );
-        // printf("Pitch: %d\n", m_fmt.fmt.pix.bytesperline);
-        // if(image == EGL_NO_IMAGE_KHR)
-        // {
-        //     printf("error: eglCreateImageKHR failed: %d\n", eglGetError());
-        //     return false;
-        // }
-
-        //buffer.image = image;
         m_buffers.push_back(buffer);
     }
 
@@ -230,11 +201,6 @@ int CameraPlayer::dequeueBuffer(int fd)
 void CameraPlayer::loadShaders()
 {
     m_shader.load("shaders/pass.vert", "shaders/camera.frag");
-}
-
-void CameraPlayer::startThread()
-{
-    m_decoderThread = std::thread(&CameraPlayer::run, this);
 }
 
 void CameraPlayer::run()
@@ -323,9 +289,9 @@ void CameraPlayer::update()
     m_fence = EGL_NO_SYNC;
 
     VideoFrame frame;
-    
     if (popFrame(frame)) {
         if (m_yuvImages.size() > 0 && frame.fds.size() > 0) {
+            
             // Create image
             EGLAttrib img_attr[] = {
                 EGL_WIDTH, m_fmt.fmt.pix.width / 2,
@@ -334,9 +300,9 @@ void CameraPlayer::update()
                 EGL_DMA_BUF_PLANE0_FD_EXT, frame.fds[0],
                 EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
                 EGL_DMA_BUF_PLANE0_PITCH_EXT, m_fmt.fmt.pix.bytesperline,
-                //EGL_DMA_BUF_PLANE0_PITCH_EXT, m_fmt.fmt.pix.width,
                 EGL_NONE
             };
+            
             EGLImageKHR image = eglCreateImage(	  
                                     eglGetCurrentDisplay(),
                                     EGL_NO_CONTEXT,
@@ -344,7 +310,7 @@ void CameraPlayer::update()
                                     NULL,
                                     img_attr
                                 );
-            //printf("Pitch: %d\n", m_fmt.fmt.pix.bytesperline);
+
             if(image == EGL_NO_IMAGE_KHR)
             {
                 printf("error: eglCreateImageKHR failed: %d\n", eglGetError());
