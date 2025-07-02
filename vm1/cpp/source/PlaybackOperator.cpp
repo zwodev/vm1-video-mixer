@@ -156,7 +156,14 @@ void PlaybackOperator::update(float deltaTime)
         int mediaSlotId = key;
         int playerId = value;
         MediaPlayer* mediaPlayer = m_mediaPlayers[playerId];
-        //if (!isPlayerIdActive(playerId)) mediaPlayer->close();
+        if (!isPlayerIdActive(playerId)) {
+            if(m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
+                idsToDelete.push_back(mediaSlotId);
+            }
+            if (VideoPlayer* videoPlayer = dynamic_cast<VideoPlayer*>(mediaPlayer)) {
+                videoPlayer->close();
+            }
+        }
 
         InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
         if (!inputConfig) continue;
@@ -188,7 +195,7 @@ void PlaybackOperator::update(float deltaTime)
     }
 
     for (auto id : idsToDelete) {
-        m_mediaSlotIdToPlayerId.erase(id);
+        m_mediaSlotIdToPlayerId.erase(id);    
     }
 
     updateKeyboardController();
@@ -216,6 +223,7 @@ void PlaybackOperator::renderPlane(int planeId)
 
 void PlaybackOperator::updateKeyboardController()
 {
+    printf("Begin Keyboard Controller Update:\n");
     InputMappings &inputMappings = m_registry.inputMappings();
 
     ControllerState controllerState;
@@ -230,8 +238,10 @@ void PlaybackOperator::updateKeyboardController()
         }
         else if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
         {
-            if (m_mediaSlotIdToPlayerId.contains(i))
+            if (m_mediaSlotIdToPlayerId.contains(i)) {
+                printf("Active Video Media Slot: %d\n", i);
                 controllerState.media[i] = ButtonState::FILE_ASSET_ACTIVE;
+            }
             else
                 controllerState.media[i] = ButtonState::FILE_ASSET;
         }
@@ -239,6 +249,9 @@ void PlaybackOperator::updateKeyboardController()
         {
             // TODO: How to handle active HDMI or IMAGE, etc.
             controllerState.media[i] = ButtonState::LIVECAM;
+            if (m_mediaSlotIdToPlayerId.contains(i)) {
+                printf("Active Camera Media Slot: %d\n", i);
+            }
         }
     }
     m_keyboardController.send(controllerState);
