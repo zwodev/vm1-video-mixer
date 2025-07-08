@@ -5,35 +5,19 @@
 
 #include "pico/stdlib.h"
 
-// #include "hardware/pio.h"
 #include "hardware/gpio.h"
-#include "stdlib.h"
-#include "Keyboard.h"
-#include "rotatorio.h"
+// #include "stdlib.h"
+
+#include "RotaryEncoder.h"
+#include "KeyboardMatrix.h"
 
 #define I2C_SLAVE_ADDRESS 0x08
 
-// input rows pins
-#define ROW1 6
-#define ROW2 5
-#define ROW3 4
-
-// output colums pins
-#define COL1 7
-#define COL2 8
-#define COL3 9
-#define COL4 10
-#define COL5 11
-#define COL6 12
-#define COL7 13
-#define COL8 14
-#define COL9 15
-
 // rotary encoder pins
-#define ROTARY_0_PIN_A 17
-#define ROTARY_0_PIN_B 16
-#define ROTARY_1_PIN_A 19
-#define ROTARY_1_PIN_B 18
+#define ROTARY_0_PIN_A 19
+#define ROTARY_0_PIN_B 18
+#define ROTARY_1_PIN_A 17
+#define ROTARY_1_PIN_B 16
 
 // neopixel
 #define NEOPIXELS_PIN 22
@@ -52,24 +36,6 @@ uint32_t d_current_micros, d_previous_micros;
 uint32_t d_debug_log_interval_micros = 1000000;
 uint32_t d_main_loop_duration_micros;
 #endif
-
-// button-matrix
-#define PRESSED 0
-#define RELEASED 1
-
-const uint8_t NUM_ROWS = 3;
-const uint8_t NUM_COLS = 9;
-uint8_t rowPins[NUM_ROWS] = {ROW3, ROW2, ROW1};
-uint8_t colPins[NUM_COLS] = {COL9, COL8, COL7, COL6, COL5, COL4, COL3, COL2, COL1};
-bool current_keyboard_matrix[NUM_ROWS][NUM_COLS] = {false};
-bool previous_keyboard_matrix[NUM_ROWS][NUM_COLS] = {false};
-char keymap[NUM_ROWS][NUM_COLS] = {
-    {KEY_LEFT_ARROW, 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i'},
-    {KEY_RIGHT_ARROW, 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k'},
-    {KEY_LEFT_SHIFT, 'z', 'x', 'c', 'v', 'b', 'n', 'm', ','},
-};
-char last_button = '\0';
-bool last_button_state = RELEASED;
 
 // encoder
 rotary_encoder_t encoder0 = {.pin_a = ROTARY_0_PIN_A, .pin_b = ROTARY_0_PIN_B};
@@ -131,68 +97,6 @@ struct ControllerState
 // volatile char debug_msg[32] = "- no info -";
 // volatile bool debug_msg_ready = false;
 
-void check_keyboard_matrix()
-{
-  for (uint8_t i = 0; i < NUM_ROWS; i++)
-  {
-    for (uint8_t j = 0; j < NUM_COLS; j++)
-    {
-      if (previous_keyboard_matrix[i][j] != current_keyboard_matrix[i][j])
-      {
-        last_button = keymap[i][j];
-        last_button_state = !current_keyboard_matrix[i][j];
-        return;
-      }
-    }
-  }
-  last_button = '\0';
-}
-
-void update_keyboard()
-{
-  for (uint8_t i = 0; i < NUM_COLS; i++)
-  {
-    gpio_put(colPins[i], true);
-    sleep_us(10);
-
-    uint32_t gpio_state = gpio_get_all();
-    uint8_t row_values = (gpio_state >> 4) & 0b0111;
-
-    current_keyboard_matrix[2][i] = (row_values & 0b0001) == 0b0001;
-    current_keyboard_matrix[1][i] = (row_values & 0b0010) == 0b0010;
-    current_keyboard_matrix[0][i] = (row_values & 0b0100) == 0b0100;
-
-    gpio_put(colPins[i], false);
-    sleep_us(10);
-  }
-
-  check_keyboard_matrix();
-
-  if (last_button != '\0')
-  {
-    // Serial.print(last_button);
-    if (last_button_state == PRESSED)
-    {
-      Keyboard.press(last_button);
-      // Serial.print("Pressed\n");
-    }
-    else
-    {
-      Keyboard.release(last_button);
-      // Serial.print("Released\n");
-    }
-  }
-
-  // store current keyboard matrix
-  for (uint8_t i = 0; i < NUM_ROWS; i++)
-  {
-    for (uint8_t j = 0; j < NUM_COLS; j++)
-    {
-      previous_keyboard_matrix[i][j] = current_keyboard_matrix[i][j];
-    }
-  }
-}
-
 void set_status_led(uint8_t led_index)
 {
   // todo: set neopixel bank indicator
@@ -244,37 +148,35 @@ uint32_t colorFromArray(int color[3])
   return 0;
 }
 
-// const int8_t encoder_table[16] = {
-//     0, -1, 1, 0,
-//     1, 0, 0, -1,
-//     -1, 0, 0, 1,
-//     0, 1, -1, 0};
-
-// volatile uint8_t last_state = 0;
-
-// int8_t ReadEncoderDelta()
-// {
-//   uint8_t pin_a = gpio_get(ROTARY_PIN_A);
-//   uint8_t pin_b = gpio_get(ROTARY_PIN_B);
-//   uint8_t current_state = (pin_a << 1) | pin_b;
-
-//   uint8_t index = (last_state << 2) | current_state;
-//   int8_t delta = encoder_table[index];
-
-//   last_state = current_state;
-//   return delta;
-// }
-
-void IRQCallback(uint gpio, uint32_t events)
+void animateAllNeoPixels()
 {
-  // int8_t delta = ReadEncoderDelta();
-  // m_iEncoderOffset += delta;
+  for (int i = 0; i < NEOPIXEL_COUNT; ++i)
+  {
+    strip.setPixelColor(i, colorFromArray(black));
+  }
+  strip.show();
+
+  for (int i = 0; i < NEOPIXEL_COUNT; ++i)
+  {
+    strip.setPixelColor(i, colorFromArray(red));
+    delay(100);
+    strip.show();
+  }
+
+  delay(500);
+
+  for (int i = 0; i < NEOPIXEL_COUNT; ++i)
+  {
+    strip.setPixelColor(i, colorFromArray(black));
+  }
+  strip.show();
 }
+
 
 void onI2CRequestHandler()
 {
   char buffer[32];
-  // snprintf(buffer, sizeof(buffer), "encoder 1: %ld", encoder_index);
+  snprintf(buffer, sizeof(buffer), "encoder 1: %ld", encoder0_position);
   Wire.write(buffer);
 }
 
@@ -282,21 +184,8 @@ void setup()
 {
   Serial.begin(115200);
 
-  // init button-matrix
-  for (uint8_t i = 0; i < NUM_ROWS; i++)
-  {
-    gpio_init(rowPins[i]);
-    gpio_set_dir(rowPins[i], GPIO_IN);
-  }
-  for (uint8_t i = 0; i < NUM_COLS; i++)
-  {
-    gpio_init(colPins[i]);
-    gpio_set_dir(colPins[i], GPIO_OUT);
-    gpio_put(colPins[i], false);
-  }
-
   // hid-keyboard
-  Keyboard.begin();
+  init_keyboard();
 
   // init encoder
   rotary_encoder_init(&encoder0);
@@ -304,7 +193,7 @@ void setup()
 
   // neopixels
   strip.begin();
-  strip.setBrightness(25);
+  strip.setBrightness(255);
   strip.show();
 
   // I2C
@@ -313,6 +202,7 @@ void setup()
   Wire.begin(I2C_SLAVE_ADDRESS);
   Wire.onRequest(onI2CRequestHandler);
 
+  animateAllNeoPixels();
 #ifdef DEBUG
   d_current_micros = 0;
   d_previous_micros = 0;
@@ -336,10 +226,18 @@ void loop()
     if (enc0 < 0)
     {
       res += ", down";
+
+      Keyboard.press(KEY_UP_ARROW);
+      delay(1);
+      Keyboard.release(KEY_UP_ARROW);
     }
     else if (enc0 > 0)
     {
       res += ", up";
+
+      Keyboard.press(KEY_DOWN_ARROW);
+      delay(1);
+      Keyboard.release(KEY_DOWN_ARROW);
     }
     Serial.println(res);
   }
@@ -360,53 +258,12 @@ void loop()
     Serial.println(res);
   }
 
-  /*
-    encoder_value = m_iEncoderOffset;
-    int delta = encoder_value - encoder_value_old;
-
-    if (delta >= 4)
-    {
-      Keyboard.press(KEY_UP_ARROW);
-      delay(1);
-      Keyboard.release(KEY_UP_ARROW);
-      encoder_value_old += 4;
-      // Serial.println(encoder_value_old);
-    }
-    else if (delta <= -4)
-    {
-      Keyboard.press(KEY_DOWN_ARROW);
-      delay(1);
-      Keyboard.release(KEY_DOWN_ARROW);
-      encoder_value_old -= 4;
-      // Serial.println(encoder_value_old);
-    }
-  */
 
   // Read Serial and set NeoPixels
   if (Serial.available() >= sizeof(ControllerState))
   {
     ControllerState controllerState;
     Serial.readBytes((char *)&controllerState, sizeof(ControllerState));
-
-    // Serial.println();
-    // Serial.println("**** Content of states ****");
-    // Serial.print("backward button: ");
-    // Serial.println(controllerState.backward);
-    // Serial.print("forward button: ");
-    // Serial.println(controllerState.forward);
-    // Serial.print("fn button: ");
-    // Serial.println(controllerState.fn);
-    // Serial.println("edit buttons:");
-    // for (uint8_t i = 0; i < 8; i++)
-    // {
-    //   Serial.printf("[%d] %d - ", i, controllerState.edit[i]);
-    // }
-    // Serial.printf("\r\nmedia buttons:\r\n");
-    // for (uint8_t i = 0; i < 16; i++)
-    // {
-    //   Serial.printf("[%d] %d - ", i, controllerState.media[i]);
-    // }
-    // Serial.println();
 
     // print_controller_state(controllerState);
 
