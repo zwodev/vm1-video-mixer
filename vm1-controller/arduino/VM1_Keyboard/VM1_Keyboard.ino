@@ -3,44 +3,47 @@
 #include <stdio.h>
 #include <Wire.h>
 
-// #include "pico/stdlib.h"
+#include "pico/stdlib.h"
+
 // #include "hardware/pio.h"
 #include "hardware/gpio.h"
 #include "stdlib.h"
 #include "Keyboard.h"
-// #include "RP2040-Encoder/quadrature.h"
-
-// rotary encoder code taken from:
-// https://www.reddit.com/r/raspberrypipico/comments/pacarb/sharing_some_c_code_to_read_a_rotary_encoder/
+#include "rotatorio.h"
 
 #define I2C_SLAVE_ADDRESS 0x08
 
-// four status leds pins
-#define LED_PIN_01 0
-#define LED_PIN_02 1
-#define LED_PIN_03 2
-#define LED_PIN_04 3
 // input rows pins
 #define ROW1 6
 #define ROW2 5
 #define ROW3 4
+
 // output colums pins
-#define COL1 15
-#define COL2 14
-#define COL3 13
-#define COL4 12
+#define COL1 7
+#define COL2 8
+#define COL3 9
+#define COL4 10
 #define COL5 11
-#define COL6 10
-#define COL7 9
-#define COL8 8
-#define COL9 7
+#define COL6 12
+#define COL7 13
+#define COL8 14
+#define COL9 15
+
 // rotary encoder pins
-#define ROTARY_PIN_A 26
-#define ROTARY_PIN_B 27
+#define ROTARY_0_PIN_A 17
+#define ROTARY_0_PIN_B 16
+#define ROTARY_1_PIN_A 19
+#define ROTARY_1_PIN_B 18
+
 // neopixel
 #define NEOPIXELS_PIN 22
-#define NEOPIXEL_COUNT 27
-#define MESSAGEPACK_SIZE 27
+#define NEOPIXEL_COUNT 33
+
+// analog inputs
+#define A0_PIN 26
+#define A1_PIN 27
+#define A2_PIN 28
+#define A3_PIN 29
 
 // debug
 // #define DEBUG
@@ -69,15 +72,10 @@ char last_button = '\0';
 bool last_button_state = RELEASED;
 
 // encoder
-// Quadrature_encoder<ROTARY_PIN_A, ROTARY_PIN_B> encoder = Quadrature_encoder<ROTARY_PIN_A, ROTARY_PIN_B>();
-uint m_uPhasePosition = 0;
-volatile int32_t encoder_value = 0;
-int32_t encoder_value_old = 0;
-int32_t m_iEncoderOffset;
-
-// status leds
-uint8_t status_leds[] = {LED_PIN_01, LED_PIN_02, LED_PIN_03, LED_PIN_04};
-const uint8_t status_led_count = 4;
+rotary_encoder_t encoder0 = {.pin_a = ROTARY_0_PIN_A, .pin_b = ROTARY_0_PIN_B};
+rotary_encoder_t encoder1 = {.pin_a = ROTARY_1_PIN_A, .pin_b = ROTARY_1_PIN_B};
+int32_t encoder0_position;
+int32_t encoder1_position;
 
 // NeoPixels
 Adafruit_NeoPixel strip(NEOPIXEL_COUNT, NEOPIXELS_PIN, NEO_GRB + NEO_KHZ800);
@@ -95,15 +93,15 @@ int yellow[] = {255, 255, 0};
 int magenta[] = {255, 0, 255};
 int cyan[] = {0, 255, 255};
 
-enum StatusLedState : uint8_t
-{
-  RUNNING,
-  LED_0_ON,
-  LED_1_ON,
-  LED_2_ON,
-  LED_3_ON,
-};
-StatusLedState led_state = RUNNING;
+// enum StatusLedState : uint8_t
+// {
+//   RUNNING,
+//   LED_0_ON,
+//   LED_1_ON,
+//   LED_2_ON,
+//   LED_3_ON,
+// };
+// StatusLedState led_state = RUNNING;
 
 enum ButtonState : uint8_t
 {
@@ -130,8 +128,8 @@ struct ControllerState
 #pragma pack()
 
 // shared debug message between both cores
-volatile char debug_msg[32] = "- no info -";
-volatile bool debug_msg_ready = false;
+// volatile char debug_msg[32] = "- no info -";
+// volatile bool debug_msg_ready = false;
 
 void check_keyboard_matrix()
 {
@@ -197,46 +195,16 @@ void update_keyboard()
 
 void set_status_led(uint8_t led_index)
 {
-  for (int8_t i = 0; i < status_led_count; i++)
-  {
-    digitalWrite(status_leds[i], i != led_index);
-  }
+  // todo: set neopixel bank indicator
 }
 
-void blink()
+void blink() // helper function vor anything, e.g. debug message
 {
   unsigned long current_millis = millis();
-
-  static int onboard_led_state = LOW;
   static long time = 0;
-  static int8_t led_index = 0;
 
   if (current_millis - time > 250)
   {
-    if (led_state == RUNNING)
-    {
-      // blink four status leds
-      for (int8_t i = 0; i < status_led_count; i++)
-      {
-        digitalWrite(status_leds[i], i != led_index);
-      }
-      led_index--;
-      if (led_index < 0)
-        led_index = status_led_count - 1;
-    }
-
-    // blink on-board led
-    if (onboard_led_state == HIGH)
-    {
-      onboard_led_state = LOW;
-    }
-    else
-    {
-      onboard_led_state = HIGH;
-    }
-    digitalWrite(LED_BUILTIN, onboard_led_state);
-
-    // Serial.println(encoder.getCount());
     time = current_millis;
   }
 }
@@ -276,50 +244,43 @@ uint32_t colorFromArray(int color[3])
   return 0;
 }
 
-const int8_t encoder_table[16] = {
-    0, -1, 1, 0,
-    1, 0, 0, -1,
-    -1, 0, 0, 1,
-    0, 1, -1, 0};
+// const int8_t encoder_table[16] = {
+//     0, -1, 1, 0,
+//     1, 0, 0, -1,
+//     -1, 0, 0, 1,
+//     0, 1, -1, 0};
 
-volatile uint8_t last_state = 0;
+// volatile uint8_t last_state = 0;
 
-int8_t ReadEncoderDelta()
-{
-  uint8_t pin_a = gpio_get(ROTARY_PIN_A);
-  uint8_t pin_b = gpio_get(ROTARY_PIN_B);
-  uint8_t current_state = (pin_a << 1) | pin_b;
+// int8_t ReadEncoderDelta()
+// {
+//   uint8_t pin_a = gpio_get(ROTARY_PIN_A);
+//   uint8_t pin_b = gpio_get(ROTARY_PIN_B);
+//   uint8_t current_state = (pin_a << 1) | pin_b;
 
-  uint8_t index = (last_state << 2) | current_state;
-  int8_t delta = encoder_table[index];
+//   uint8_t index = (last_state << 2) | current_state;
+//   int8_t delta = encoder_table[index];
 
-  last_state = current_state;
-  return delta;
-}
+//   last_state = current_state;
+//   return delta;
+// }
 
 void IRQCallback(uint gpio, uint32_t events)
 {
-  int8_t delta = ReadEncoderDelta();
-  m_iEncoderOffset += delta;
+  // int8_t delta = ReadEncoderDelta();
+  // m_iEncoderOffset += delta;
 }
 
 void onI2CRequestHandler()
 {
   char buffer[32];
-  snprintf(buffer, sizeof(buffer), "encoder 1: %ld", encoder_index);
+  // snprintf(buffer, sizeof(buffer), "encoder 1: %ld", encoder_index);
   Wire.write(buffer);
 }
 
 void setup()
 {
   Serial.begin(115200);
-
-  // init leds
-  pinMode(LED_BUILTIN, OUTPUT);
-  for (uint8_t i = 0; i < status_led_count; i++)
-  {
-    pinMode(status_leds[i], OUTPUT);
-  }
 
   // init button-matrix
   for (uint8_t i = 0; i < NUM_ROWS; i++)
@@ -338,18 +299,8 @@ void setup()
   Keyboard.begin();
 
   // init encoder
-  // encoder.begin();
-  // encoder.begin(pull_direction::up, resolution::quarter);
-  gpio_init(ROTARY_PIN_A);
-  gpio_set_dir(ROTARY_PIN_A, GPIO_IN);
-  gpio_disable_pulls(ROTARY_PIN_A);
-
-  gpio_init(ROTARY_PIN_B);
-  gpio_set_dir(ROTARY_PIN_B, GPIO_IN);
-  gpio_disable_pulls(ROTARY_PIN_B);
-
-  gpio_set_irq_enabled_with_callback(ROTARY_PIN_A, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &IRQCallback);
-  gpio_set_irq_enabled(ROTARY_PIN_B, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
+  rotary_encoder_init(&encoder0);
+  rotary_encoder_init(&encoder1);
 
   // neopixels
   strip.begin();
@@ -377,25 +328,59 @@ void loop()
   update_keyboard();
 
   // Rotary Encoder(send to Keyboard as UP / DOWN Keys)
-  encoder_value = m_iEncoderOffset;
-  int delta = encoder_value - encoder_value_old;
+  int8_t enc0 = 0;
+  if (enc0 = rotary_encoder_process(&encoder0, encoder0_position))
+  {
+    String res = "Encoder 0: ";
+    res += encoder0_position;
+    if (enc0 < 0)
+    {
+      res += ", down";
+    }
+    else if (enc0 > 0)
+    {
+      res += ", up";
+    }
+    Serial.println(res);
+  }
 
-  if (delta >= 4)
+  int8_t enc1 = 0;
+  if (enc1 = rotary_encoder_process(&encoder1, encoder1_position))
   {
-    Keyboard.press(KEY_UP_ARROW);
-    delay(1);
-    Keyboard.release(KEY_UP_ARROW);
-    encoder_value_old += 4;
-    // Serial.println(encoder_value_old);
+    String res = "Encoder 1: ";
+    res += encoder1_position;
+    if (enc1 < 0)
+    {
+      res += ", down";
+    }
+    else if (enc1 > 0)
+    {
+      res += ", up";
+    }
+    Serial.println(res);
   }
-  else if (delta <= -4)
-  {
-    Keyboard.press(KEY_DOWN_ARROW);
-    delay(1);
-    Keyboard.release(KEY_DOWN_ARROW);
-    encoder_value_old -= 4;
-    // Serial.println(encoder_value_old);
-  }
+
+  /*
+    encoder_value = m_iEncoderOffset;
+    int delta = encoder_value - encoder_value_old;
+
+    if (delta >= 4)
+    {
+      Keyboard.press(KEY_UP_ARROW);
+      delay(1);
+      Keyboard.release(KEY_UP_ARROW);
+      encoder_value_old += 4;
+      // Serial.println(encoder_value_old);
+    }
+    else if (delta <= -4)
+    {
+      Keyboard.press(KEY_DOWN_ARROW);
+      delay(1);
+      Keyboard.release(KEY_DOWN_ARROW);
+      encoder_value_old -= 4;
+      // Serial.println(encoder_value_old);
+    }
+  */
 
   // Read Serial and set NeoPixels
   if (Serial.available() >= sizeof(ControllerState))
@@ -423,7 +408,7 @@ void loop()
     // }
     // Serial.println();
 
-    print_controller_state(controllerState);
+    // print_controller_state(controllerState);
 
     // set bank indicator led
     set_status_led(controllerState.bank);
@@ -458,6 +443,8 @@ void loop()
       else
         strip.setPixelColor(19 + i - 8, colorFromArray(color));
     }
+
+    // todo: 6 bank-pixels
 
     strip.show();
   }
@@ -537,17 +524,17 @@ void print_controller_state(ControllerState controllerState)
   Serial.println();
 }
 
-void set_debug_msg_core1(const char *message)
-{
-  snprintf((char *)debug_msg, sizeof(debug_msg), "%s", message); // Safe string copy into the buffer
-  debug_msg_ready = true;                                        // Set flag to indicate the message is ready
-}
+// void set_debug_msg_core1(const char *message)
+// {
+//   snprintf((char *)debug_msg, sizeof(debug_msg), "%s", message); // Safe string copy into the buffer
+//   debug_msg_ready = true;                                        // Set flag to indicate the message is ready
+// }
 
-void setup1()
-{
-  set_debug_msg_core1("hello from core 1");
-}
+// void setup1()
+// {
+//   set_debug_msg_core1("hello from core 1");
+// }
 
-void loop1()
-{
-}
+// void loop1()
+// {
+// }
