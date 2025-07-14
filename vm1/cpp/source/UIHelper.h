@@ -3,20 +3,18 @@
 #include "imgui.h"
 #include "FontManager.h"
 #include "Registry.h"
+#include "StbRenderer.h"
 
 #include <string>
 #include <algorithm>
 
-//#define ALLOW_SCROLLING
-
-namespace UI
+class UI
 {
-    struct MenuItem {
-        std::string label;
-        std::vector<MenuItem> children;
-        void (*renderFunc)(Registry*, int) = nullptr;
-    };
+private:
+    UI() {}
+    ~UI() {}
 
+public:
     enum TextState
     {
         DEFAULT,
@@ -26,328 +24,33 @@ namespace UI
         WARNING
     };
 
-    float scrollOversizedTextPositionX;
+    static void SetRenderer(StbRenderer* stbRenderer);
+    static void NewFrame();
+    static void FocusNextElement();
+    static void FocusPreviousElement();
+    static void DrawTitle(const std::string& label);
+    static void BeginList(int* focusedIdx);
+    static void EndList();
+    static void BeginListElement();
+    static void EndListElement();
+    static void CenteredText(const std::string &label);
+    static void Text(const std::string &label);
+    static void MediaButtonID(int id);
+    static void MenuTitle(std::string menuTitle);
+    static void InfoScreen(int bank, int id, std::string filename);
+    static bool CheckBox(const std::string& label, bool checked);
+    static bool RadioButton(const std::string& label, bool active);
+    static void SpinBoxInt(const std::string& label, int& value, int minValue, int maxValue);
 
-    void resetTextScrollPosition()
-    {
-        scrollOversizedTextPositionX = 0.0;
-    }
-
-    void setTextSettings(TextState state, ImVec4 &textColor, ImVec4 &bgColor)
-    {
-        const ImVec4 black = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
-        const ImVec4 grey = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
-        const ImVec4 white = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-        const ImVec4 red = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
-        const ImVec4 orange = ImVec4(1.0f, 0.5f, 0.1f, 1.0f);
-        const ImVec4 yellow = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
-
-        switch (state)
-        {
-        case DEFAULT:
-            textColor = white;
-            bgColor = black;
-            break;
-        case SELECTED:
-            textColor = black;
-            bgColor = white;
-            ImGui::SetScrollHereY(0.8f);
-            break;
-        case HIGHLIGHT:
-            textColor = yellow;
-            bgColor = black;
-            break;
-        case ERROR:
-            textColor = red;
-            bgColor = black;
-            break;
-        case WARNING:
-            textColor = orange;
-            bgColor = black;
-            break;
-        default:
-            textColor = grey;
-            bgColor = black;
-            break;
-        }
-    }
-
-    void CenteredText(const std::string &label)
-    {
-        auto windowWidth = ImGui::GetWindowSize().x;
-        auto windowHeight = ImGui::GetWindowSize().y;
-        auto textWidth = ImGui::CalcTextSize(label.c_str()).x;
-        auto textHeight = ImGui::CalcTextSize(label.c_str()).y;
-
-        ImGui::SetCursorPosX((windowWidth - textWidth) * 0.5f);
-        ImGui::SetCursorPosY((windowHeight - textHeight) * 0.5f);
-        ImGui::Text("%s", label.c_str());
-    }
-
-    void Text(const std::string &label, TextState textState)
-    {
-        ImVec4 textColor;
-        ImVec4 bgColor;
-        setTextSettings(textState, textColor, bgColor);
-
-        int padding_x = 2;
-        ImVec2 textSize = ImGui::CalcTextSize(label.c_str()); // Get text dimensions
-        ImVec2 cursorPos = ImGui::GetCursorScreenPos();       // Get screen position of the cursor
-
-        int width = (int)ImGui::GetWindowSize().x;
-
-        bool isOversized = false;
-#ifdef ALLOW_SCROLLING
-        isOversized = textState == TextState::SELECTED && textSize.x >= width;
-        if (isOversized)
-        {
-            // bgColor = ImVec4(255, 0, 0, 255);
-            if (abs(scrollOversizedTextPositionX) < textSize.x - width + 10)
-            {
-                scrollOversizedTextPositionX -= 0.75;
-            }
-        }
-#endif
-
-        ImGui::GetWindowDrawList()->AddRectFilled(
-            ImVec2(cursorPos.x - padding_x, cursorPos.y),
-            ImVec2(cursorPos.x + textSize.x + padding_x * 2, cursorPos.y + textSize.y),
-            ImGui::ColorConvertFloat4ToU32(bgColor) // Convert to ImU32
-        );
-
-        ImGui::PushStyleColor(ImGuiCol_Text, textColor);
-        if (isOversized)
-        {
-            ImGui::SetCursorPosX(cursorPos.x + padding_x + scrollOversizedTextPositionX);
-        }
-        else
-        {
-            ImGui::SetCursorPosX(cursorPos.x + padding_x);
-        }
-        ImGui::Text("%s", label.c_str());
-        ImGui::PopStyleColor();
-    }
-
-    void MediaButtonID(int id)
-    {
-        ImFont *font_big = FontManager::GetInstance().font_big;
-        int width = (int)ImGui::GetWindowSize().x;
-        int height = (int)ImGui::GetWindowSize().y;
-
-        ImGui::PushFont(FontManager::GetInstance().font_big);
-
-        ImDrawList *drawList = ImGui::GetForegroundDrawList();
-
-        int id16 = id % 16;
-        char bank = id / 16 + 65;
-        std::string text = std::string(1, bank) + std::to_string(id16);
-
-        ImVec2 textExtent = ImGui::CalcTextSize(text.c_str());
-
-        // ImGui::PushClipRect({}, {1000, 1000}, false); // Disable clipping to prevent cutting corners
-
-        int x = width - (int)textExtent.x;
-        int y = 0;
-
-        ImVec2 rectStart = ImVec2(x, y);
-        ImVec2 rectEnd = ImVec2(
-            x + static_cast<float>(textExtent.x),
-            y + static_cast<float>(textExtent.y) - 4); // hard-coded 4 pixels less in height
-
-        // printf("textExtend x: %f, y: %f // start-x: %d, start-y: %d, width: %d, height: %d\n", textExtent.x, textExtent.y, x, y, width, height);
-
-        ImU32 rectColor = IM_COL32(255, 255, 255, 255);
-        ImU32 textColor = IM_COL32(0, 0, 0, 255);
-        drawList->AddRectFilled(rectStart, rectEnd, rectColor);
-        // drawList->AddRectFilled(ImVec2(0, 0), ImVec2(width, textExtent.y - 4), rectColor);
-        drawList->AddText(ImVec2(x, y), textColor, text.c_str());
-        // drawList->AddRectFilled(ImVec2(0, rectEnd.y), ImVec2(width, rectEnd.y + 1), rectColor);
-        drawList->AddRectFilled(ImVec2(rectStart.x - 3, 0), ImVec2(rectStart.x - 1, rectEnd.y), textColor);
-
-        // ImGui::PopClipRect();
-        ImGui::PopFont();
-    }
-
-    void MenuTitle(std::string menuTitle)
-    {
-        std::transform(menuTitle.begin(), menuTitle.end(), menuTitle.begin(), ::toupper);
-
-        ImFont *font_big = FontManager::GetInstance().font_big;
-        int width = (int)ImGui::GetWindowSize().x;
-        int height = (int)ImGui::GetWindowSize().y;
-        ImGui::PushFont(FontManager::GetInstance().font_big);
-
-        ImDrawList *drawList = ImGui::GetForegroundDrawList();
-        ImVec2 textExtent = ImGui::CalcTextSize(menuTitle.c_str());
-
-        int x = 0;
-        int y = 0;
-
-        ImVec2 rectStart = ImVec2(x, y);
-        ImVec2 rectEnd = ImVec2(
-            x + static_cast<float>(textExtent.x),
-            y + static_cast<float>(textExtent.y));
-
-        ImU32 bgColor = IM_COL32(255, 255, 255, 255);
-        ImU32 textColor = IM_COL32(0, 0, 0, 255);
-        // drawList->AddRectFilled(rectStart, rectEnd, rectColor);
-        drawList->AddRectFilled(ImVec2(0, 0), ImVec2(width, textExtent.y - 4), bgColor);
-        drawList->AddText(ImVec2(x, y), textColor, menuTitle.c_str());
-        ImGui::PopFont();
-    }
-
-    void InfoScreen(int bank, int id, std::string filename)
-    {
-        ImGui::SetCursorPosY(25);
-        ImGui::Text("Information:");
-        ImGui::Text("%s", filename.c_str());
-        ImGui::Text("Currrent Pos/Duration");
-        ImGui::Text("Loop yes or no");
-        ImGui::Text("%d/%d", bank, id);
-    }
-
-    bool CheckBox(const std::string& label, bool selected, bool checked)
-    {
-        bool oldChecked= checked;
-        bool keyPressed = (ImGui::IsKeyPressed(ImGuiKey_RightArrow) || (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_DownArrow)));
-        if (selected && keyPressed) {
-            checked = !checked;
-        }
-
-        std::string newLabel = "[ ] " + label;
-        if (checked) newLabel = "[x] " + label;
-        Text(newLabel, selected ? TextState::SELECTED : TextState::DEFAULT);
-
-        return checked != oldChecked;
-    }
-
-    bool RadioButton(const std::string& label, bool selected, bool active)
-    {
-        bool keyPressed = (ImGui::IsKeyPressed(ImGuiKey_RightArrow) || (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_DownArrow)));
-        if (selected && !active && keyPressed) {
-            active = true;
-        }
-
-        std::string newLabel = "[ ] " + label;
-        if (active) newLabel = "[*] " + label;
-        Text(newLabel, selected ? TextState::SELECTED : TextState::DEFAULT);
-
-        return selected && active;
-    }
-
-    void SpinBoxInt(const std::string& label, bool selected, int& value, int minValue, int maxValue)
-    {
-        int diff = 0;
-        if (ImGui::IsKeyDown(ImGuiKey_LeftShift)) {
-            if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) diff = 1;
-            else if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) diff = -1;
-        }
-
-        if (selected && diff != 0) {
-            value += diff;
-            if (value < minValue) value = minValue;
-            else if (value > maxValue) value = maxValue;
-        }
-
-        std::string newLabel = label + ": " + std::to_string(value);
-        Text(newLabel, selected ? TextState::SELECTED : TextState::DEFAULT);
-    }
-
-    // int FileSelection(Registry* registry, int id)
-    // {
-    //     auto config = std::make_unique<VideoInputConfig>();
-    //     VideoInputConfig* currentConfig = registry->inputMappings().getVideoInputConfig(id);
-    //     if (currentConfig) {
-    //         *config = *currentConfig;
-    //     }
-
-    //     // need to get that from registry
-    //     std::vector<std::string>& files = registry->mediaPool().getVideoFiles();
-    //     bool changed = false;
-    //     for (int i = 0; i < files.size(); ++i) {
-    //         std::string fileName = files[i];
-    //         if (ImGui::RadioButton(fileName.c_str(), (currentConfig->fileName == fileName))) {
-    //             currentConfig->fileName = fileName;
-    //         }
-    //     }
-
-    //     if (changed)
-    //         registry->inputMappings().addInputConfig(id, std::move(config));
-    // }
-
-    // void LiveInputSelection(Registry* registry, int id) {
-    //     auto config = std::make_unique<HdmiInputConfig>();
-    //     HdmiInputConfig* currentConfig = registry->inputMappings().getHdmiInputConfig(id);
-    //     if (currentConfig) {
-    //         *config = *currentConfig;
-    //     }
-
-    //     bool changed = false;
-    //     changed |= ImGui::RadioButton("HDMI 1", &(config->hdmiPort), 0);
-    //     changed |= ImGui::RadioButton("HDMI 2", &(config->hdmiPort), 1);
-
-    //     if (changed)
-    //         registry->inputMappings().addInputConfig(id, std::move(config));
-    // }
-
-    // void HierarchicalMenuWidget(const MenuItem& root, Registry* registry) {
-    //     static std::vector<int> path;
-    //     static int selectedIdx = 0;
-
-    //     // Traverse to current menu
-    //     const MenuItem* current = &root;
-    //     for (int idx : path) {
-    //         if (idx >= 0 && idx < (int)current->children.size())
-    //             current = &current->children[idx];
-    //         else
-    //             break;
-    //     }
-
-    //     // Render current menu page
-    //     ImGui::BeginChild("MenuPage", ImVec2(0, 200), true);
-    //     for (int i = 0; i < (int)current->children.size(); ++i) {
-    //         bool isSelected = (i == selectedIdx);
-    //         std::string label = current->children[i].label;
-    //         if (ImGui::Selectable(label.c_str(), isSelected)) {
-    //             selectedIdx = i;
-    //         }
-    //     }
-    //     ImGui::EndChild();
-
-    //     // Render dynamic content if present
-    //     if (selectedIdx >= 0 && selectedIdx < (int)current->children.size()) {
-    //         auto& selected = current->children[selectedIdx];
-    //         if (selected.renderFunc) {
-    //             ImGui::Separator();
-    //             selected.renderFunc(registry, 0);
-    //         }
-    //     }
-
-    //     // Handle navigation
-    //     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows)) {
-    //         if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
-    //             // Go deeper if selected item has children or a render_func (treat as a page)
-    //             if (selectedIdx >= 0 && selectedIdx < (int)current->children.size()) {
-    //                 auto& sel = current->children[selectedIdx];
-    //                 if (!sel.children.empty() || sel.renderFunc) {
-    //                     path.push_back(selectedIdx);
-    //                     selectedIdx = 0;
-    //                 }
-    //             }
-    //         }
-    //         if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) {
-    //             // Go up one level
-    //             if (!path.empty()) {
-    //                 path.pop_back();
-    //                 selectedIdx = 0;
-    //             }
-    //         }
-    //         if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
-    //             if (selectedIdx > 0) selectedIdx--;
-    //         }
-    //         if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
-    //             if (selectedIdx + 1 < (int)current->children.size()) selectedIdx++;
-    //         }
-    //     }
-    // }
-}
+private:
+    static StbRenderer* m_stbRenderer;
+    static int m_x;
+    static int m_y;
+    static int m_listSize;
+    static int m_lineHeight;
+    static int m_menuHeight;
+    static int m_visibleListElements;
+    static int* m_focusedIdx;
+    static int m_firstLine;
+    static int m_currentElementHeight;
+};

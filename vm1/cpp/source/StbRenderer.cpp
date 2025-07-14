@@ -54,6 +54,26 @@ StbRenderer::~StbRenderer()
     // stbtt_FreeBitmap(bitmap, nullptr);
 }
 
+int StbRenderer::width() const
+{
+    return m_img.width;
+}
+
+int StbRenderer::height() const
+{
+    return m_img.height;
+}
+
+void StbRenderer::setEnabled(bool enabled)
+{
+    m_isEnabled = enabled;
+}
+
+bool StbRenderer::isEnabled() const 
+{
+    return m_isEnabled;
+}
+
 void StbRenderer::clear()
 {
     m_img.clear();
@@ -61,8 +81,8 @@ void StbRenderer::clear()
 
 void StbRenderer::update()
 {
-    clear();
-    drawText("VM-1", 100, 100, 24);
+    //clear();
+    //drawText("VM-1", 50, 50, 32);
     queueCurrentImage();   
 }
 
@@ -82,8 +102,10 @@ Image StbRenderer::popImage()
     return imageBuffer;
 }
 
-void StbRenderer::drawRect(int x0, int y0, int w, int h, c color)
+void StbRenderer::drawRect(int x0, int y0, int w, int h, Color color)
 {
+    if (!m_isEnabled) return;
+
     for (int y = y0; y < y0 + h; ++y)
         for (int x = x0; x < x0 + w; ++x)
             m_img.setPixel(x, y, color.r, color.g, color.b);
@@ -91,6 +113,8 @@ void StbRenderer::drawRect(int x0, int y0, int w, int h, c color)
 
 void StbRenderer::drawPng(const std::string &filename, int posX, int posY)
 {
+    if (!m_isEnabled) return;
+
     int width, height, channels;
     unsigned char *data = stbi_load(
         filename.c_str(),
@@ -153,8 +177,10 @@ bool StbRenderer::loadFont(const std::string &fontPath)
     return true;
 }
 
-void StbRenderer::drawText(const std::string &text, int posX, int posY, float fontSize, c color)
+void StbRenderer::drawText(const std::string &text, int posX, int posY, float fontSize, Color color)
 {
+    if (!m_isEnabled) return;
+
     float scale = stbtt_ScaleForMappingEmToPixels(&font, fontSize);
 
     // Get font metrics

@@ -34,6 +34,8 @@
 #include "source/OledUiRenderer.h"
 #include "source/OledController.h"
 #include "source/StbRenderer.h"
+#include "source/MenuSystem.h"
+#include "source/UIHelper.h"
 
 #define USE_OLED
 
@@ -146,15 +148,15 @@ int main(int, char **)
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Setup FBO context for ImGui (off-screen)
-    ImGuiContext *fboContext = ImGui::CreateContext();
-    ImGui::SetCurrentContext(fboContext);
-    ImGuiIO &fbo_io = ImGui::GetIO();
-    (void)fbo_io;
-    fbo_io.DisplaySize = ImVec2(FBO_WIDTH, FBO_HEIGHT);
+    // ImGuiContext *fboContext = ImGui::CreateContext();
+    // ImGui::SetCurrentContext(fboContext);
+    // ImGuiIO &fbo_io = ImGui::GetIO();
+    // (void)fbo_io;
+    // fbo_io.DisplaySize = ImVec2(FBO_WIDTH, FBO_HEIGHT);
 
-    // Setup Platform/Renderer backends for main context
-    ImGui_ImplSDL3_InitForOpenGL(windows[0], gl_context);
-    ImGui_ImplOpenGL3_Init(glsl_version);
+    // // Setup Platform/Renderer backends for main context
+    // ImGui_ImplSDL3_InitForOpenGL(windows[0], gl_context);
+    // ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
@@ -163,7 +165,7 @@ int main(int, char **)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // TODO: This was not implemented in SDL3 yet. I did it. Another way or PR?
-    SDL_RaiseWindow(windows[0]);
+    SDL_RaiseWindow(windows[0]);    
 
     // Create registry
     Registry registry;
@@ -179,12 +181,15 @@ int main(int, char **)
     FileAssignmentWidget fileAssignmentWidget(playbackOperator, registry);
 
     // Keyforwarding
-    KeyForwarder keyForwarder;
+    //KeyForwarder keyForwarder;
 
     // Oled
     // OledUiRenderer oledUiRenderer(registry, FBO_WIDTH, FBO_HEIGHT);
     // oledUiRenderer.initialize();
     StbRenderer stbRenderer(FBO_WIDTH, FBO_HEIGHT);
+    UI::SetRenderer(&stbRenderer);
+
+    MenuSystem menuSystem(registry);
     
 
 #ifdef USE_OLED
@@ -239,13 +244,14 @@ int main(int, char **)
 
         registry.update(deltaTime);
         playbackOperator.update(deltaTime);
-        keyForwarder.forwardArrowKeys(mainContext, fboContext);
+        //keyForwarder.forwardArrowKeys(mainContext, fboContext);
 
         // START: Render to FBO (OLED) before main gui
-        ImGui::SetCurrentContext(fboContext);
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL3_NewFrame();
-        ImGui::NewFrame();
+        // ImGui::SetCurrentContext(fboContext);
+        // ImGui_ImplOpenGL3_NewFrame();
+        // ImGui_ImplSDL3_NewFrame();
+        // ImGui::NewFrame();
+        menuSystem.render();
         stbRenderer.update();
         //  END: Render to FBO (OLED) before main gui
 
@@ -338,16 +344,16 @@ int main(int, char **)
     }
 
     // Cleanup
-    ImGui::SetCurrentContext(fboContext);
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL3_Shutdown();
+    // ImGui::SetCurrentContext(fboContext);
+    // ImGui_ImplOpenGL3_Shutdown();
+    // ImGui_ImplSDL3_Shutdown();
 
     ImGui::SetCurrentContext(mainContext);
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL3_Shutdown();
 
-    ImGui::DestroyContext(fboContext);
     ImGui::DestroyContext(mainContext);
+    // ImGui::DestroyContext(fboContext);
 
     SDL_GL_DestroyContext(gl_context);
     for (int i = 0; i < windows.size(); ++i)

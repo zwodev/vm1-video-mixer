@@ -42,7 +42,8 @@ private:
     
 
 private:
-    static void HandleUpAndDownKeys(int* selectedIdx, int menuSize);
+    ///static void HandleUpAndDownKeys(int* selectedIdx, int menuSize);
+    static void HandleUpAndDownKeys();
     static void StartupScreen(Registry* registry, int id, int* selectedIdx);
     static void FileSelection(Registry* registry, int id, int* selectedIdx);
     static void LiveInputSelection(Registry* registry, int id, int* selectedIdx);
@@ -54,7 +55,7 @@ private:
     Registry &m_registry;
     int m_id = 0;
     //int m_bank = 0;
-    int m_selectedIdx = 0;
+    int m_focusedIdx = 0;
     std::vector<int> m_currentMenuPath;
 
     

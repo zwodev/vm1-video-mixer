@@ -12,36 +12,6 @@
 
 #include "OledController.h"
 
-// #pragma pack(push, 1) // Ensure proper struct alignment
-// struct BMPFileHeader
-// {
-//     uint16_t bfType = 0x4D42; // "BM"
-//     uint32_t bfSize;          // File size
-//     uint16_t bfReserved1 = 0;
-//     uint16_t bfReserved2 = 0;
-//     uint32_t bfOffBits = 70; // Pixel data offset (56-byte DIB + 16-byte masks)
-// };
-
-// struct BMPInfoHeaderV3
-// {
-//     uint32_t biSize = 56; // 56-byte BITMAPV3INFOHEADER
-//     int32_t biWidth;
-//     int32_t biHeight;
-//     uint16_t biPlanes = 1;
-//     uint16_t biBitCount = 16;   // 16-bit BMP
-//     uint32_t biCompression = 3; // BI_BITFIELDS (16-bit)
-//     uint32_t biSizeImage;
-//     int32_t biXPelsPerMeter = 2835;
-//     int32_t biYPelsPerMeter = 2835;
-//     uint32_t biClrUsed = 0;
-//     uint32_t biClrImportant = 0;
-//     uint32_t biRedMask = 0xF800;   // 5-bit red
-//     uint32_t biGreenMask = 0x07E0; // 6-bit green
-//     uint32_t biBlueMask = 0x001F;  // 5-bit blue
-//     uint32_t biAlphaMask = 0x0000; // No alpha
-// };
-// #pragma pack(pop)
-
 OledController::OledController()
 {
 }
@@ -144,12 +114,12 @@ void OledController::renderToRGB565(Image& imageBuffer, bool saveAsBmp)
         for (int x = 0; x < width; ++x)
         {
             // Calculate the flipped y index (flip vertically)
-            int flippedY = height - 1 - y;
+            //int flippedY = y;
 
             // Fetch RGBA values from the texture buffer (no horizontal flip)
-            uint8_t r = imageBuffer.pixels[(flippedY * width + x) * 3 + 0];
-            uint8_t g = imageBuffer.pixels[(flippedY * width + x) * 3 + 1];
-            uint8_t b = imageBuffer.pixels[(flippedY * width + x) * 3 + 2];
+            uint8_t r = imageBuffer.pixels[(y * width + x) * 3 + 0];
+            uint8_t g = imageBuffer.pixels[(y * width + x) * 3 + 1];
+            uint8_t b = imageBuffer.pixels[(y * width + x) * 3 + 2];
 
             // Convert to RGB565
             uint16_t rgb565 = (r >> 3) << 11 | (g >> 2) << 5 | (b >> 3);
