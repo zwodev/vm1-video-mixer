@@ -8,7 +8,8 @@
 
 #pragma once
 
-#include "OledUiRenderer.h"
+// #include "OledUiRenderer.h"
+#include "StbRenderer.h"
 
 #include "oled/OLED_1in5_rgb.h"
 #include "oled/DEV_Config.h"
@@ -27,12 +28,11 @@ public:
     int initializeOled();
     int initializeImageBuffer();
 
-    void setOledUiRenderer(OledUiRenderer* oledUiRenderer);
+    void setStbRenderer(StbRenderer* stbRenderer);
     void start();
     void stop();
 
-    void renderToRGB565(ImageBuffer& imageBuffer, bool saveAsBmp);
-    void drawTestBMP();
+    void renderToRGB565(Image& imageBuffer, bool saveAsBmp);
     void render();
 
 private:
@@ -44,6 +44,6 @@ public:
 private:
     bool m_isRunning = false;
     std::thread m_thread;
-    OledUiRenderer* m_oledUiRenderer = nullptr;
+    StbRenderer* m_stbRenderer = nullptr;
     UWORD m_imagesize;
 };

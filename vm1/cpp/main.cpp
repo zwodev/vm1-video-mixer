@@ -33,7 +33,7 @@
 #include "source/CameraController.h"
 #include "source/OledUiRenderer.h"
 #include "source/OledController.h"
-
+#include "source/StbRenderer.h"
 
 #define USE_OLED
 
@@ -182,12 +182,14 @@ int main(int, char **)
     KeyForwarder keyForwarder;
 
     // Oled
-    OledUiRenderer oledUiRenderer(registry, FBO_WIDTH, FBO_HEIGHT);
-    oledUiRenderer.initialize();
+    // OledUiRenderer oledUiRenderer(registry, FBO_WIDTH, FBO_HEIGHT);
+    // oledUiRenderer.initialize();
+    StbRenderer stbRenderer(FBO_WIDTH, FBO_HEIGHT);
+    
 
 #ifdef USE_OLED
     OledController oledController;
-    oledController.setOledUiRenderer(&oledUiRenderer);
+    oledController.setStbRenderer(&stbRenderer);
     oledController.start();
 #endif
 
@@ -244,7 +246,7 @@ int main(int, char **)
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
-        oledUiRenderer.update();
+        stbRenderer.update();
         //  END: Render to FBO (OLED) before main gui
 
         // Start the Dear ImGui frame
@@ -287,17 +289,17 @@ int main(int, char **)
             }
 
             // OLED debug window
-            {
-                // ImGui::SetNextWindowPos(ImVec2(0, 0));
-                ImGui::SetNextWindowSize(ImVec2(FBO_WIDTH, FBO_HEIGHT));
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-                ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration;
-                ImGui::Begin("OLED Debug Window", nullptr, window_flags);
-                // ImGui::Begin("OLED Debug Window");
-                ImGui::Image((void *)(intptr_t)oledUiRenderer.texture(), ImVec2(FBO_WIDTH, FBO_HEIGHT), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
-                ImGui::End();
-                ImGui::PopStyleVar();
-            }
+            // {
+            //     // ImGui::SetNextWindowPos(ImVec2(0, 0));
+            //     ImGui::SetNextWindowSize(ImVec2(FBO_WIDTH, FBO_HEIGHT));
+            //     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+            //     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration;
+            //     ImGui::Begin("OLED Debug Window", nullptr, window_flags);
+            //     // ImGui::Begin("OLED Debug Window");
+            //     ImGui::Image((void *)(intptr_t)stbRenderer.texture(), ImVec2(FBO_WIDTH, FBO_HEIGHT), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+            //     ImGui::End();
+            //     ImGui::PopStyleVar();
+            // }
         }
 
         // File Assignment Widget
