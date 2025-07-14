@@ -39,8 +39,8 @@ void OledUiRenderer::initialize()
     createTheme();
 
     ImGuiIO &fbo_io = ImGui::GetIO();
-    FontManager::GetInstance().font_std = fbo_io.Fonts->AddFontFromFileTTF("subprojects/imgui/imgui/misc/fonts/ProggyClean.ttf", 13.0f);
-    FontManager::GetInstance().font_big = fbo_io.Fonts->AddFontFromFileTTF("subprojects/imgui/imgui/misc/fonts/ProggyClean.ttf", 26.0f);
+    FontManager::GetInstance().font_std = fbo_io.Fonts->AddFontFromFileTTF("fonts/ProggyClean.ttf", 13.0f);
+    FontManager::GetInstance().font_big = fbo_io.Fonts->AddFontFromFileTTF("fonts/ProggyClean.ttf", 26.0f);
     fbo_io.FontDefault = FontManager::GetInstance().font_std;
     fbo_io.Fonts->Build();
 
