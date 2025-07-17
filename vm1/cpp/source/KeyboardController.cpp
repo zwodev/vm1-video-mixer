@@ -1,76 +1,58 @@
 #include "KeyboardController.h"
 
-#include <string>
-#include <iostream>
-// #include <vector>
-#include <fcntl.h>
-#include <termios.h>
-#include <unistd.h>
-#include <cstring>
+#include "stdio.h"
 
-// Helper: Set up serial port
-bool KeyboardController::connect(const std::string &port)
+KeyboardController::KeyboardController()
 {
-    m_fd = open(port.c_str(), O_RDWR);
-    if (m_fd < 0)
-        return false;
-
-    termios tty;
-    memset(&tty, 0, sizeof tty);
-    tcgetattr(m_fd, &tty);
-
-    cfsetispeed(&tty, B115200);
-    cfsetospeed(&tty, B115200);
-    tty.c_cflag |= (CLOCAL | CREAD);
-    tty.c_cflag &= ~CSIZE;
-    tty.c_cflag |= CS8;
-    tty.c_cflag &= ~PARENB;
-    tty.c_cflag &= ~CSTOPB;
-    tty.c_cflag &= ~CRTSCTS;
-    tty.c_lflag = 0;
-    tty.c_iflag = 0;
-    tty.c_oflag = 0;
-
-    tcsetattr(m_fd, TCSANOW, &tty);
-
-    return true;
 }
 
-void KeyboardController::disconnect()
+KeyboardController::~KeyboardController()
 {
-    close(m_fd);
-    m_fd = -1;
 }
 
-void KeyboardController::send(const ControllerState &controllerState)
+void KeyboardController::update(SDL_Event &event)
 {
-    if (m_fd < 0)
+    if (event.type == SDL_EVENT_KEY_DOWN)
     {
-        return;
+        bool shiftPressed = event.key.mod & SDL_KMOD_SHIFT;
+        switch (event.key.key)
+        {
+        case SDLK_UP:
+            if (shiftPressed)
+            {
+            }
+            else
+            {
+            }
+            break;
+        case SDLK_DOWN:
+            if (shiftPressed)
+            {
+            }
+            else
+            {
+            }
+            break;
+        case SDLK_LEFT:
+            break;
+        case SDLK_RIGHT:
+            break;
+        default:
+            break;
+        }
+
+        for(int i = 0; i < m_editKeys.size(); ++i) 
+        {
+
+        }
+
+        for(int i = 0; i < m_mediaKeys.size(); ++i) 
+        {
+            // event = bank * i
+        }
     }
+}
 
-    // Do not send state when nothing has changed (aka hash is the same)
-    size_t hash = controllerState.hash();
-    if (hash == m_lastHash)
-        return;
-
-    m_lastHash = hash;
-
-    printf("bank: %d\n", controllerState.bank);
-    // printf("backward button: %d\n", controllerState.backward);
-    // printf("forward button: %d\n", controllerState.forward);
-    // printf("fn button: %d\n", controllerState.fn);
-    // printf("edit buttons:\n");
-    // for (uint8_t i = 0; i < 8; i++)
-    // {
-    //     printf("%d : %d\r\n", i, controllerState.edit[i]);
-    // }
-    // printf("media buttons:\n");
-    // for (uint8_t i = 0; i < 16; i++)
-    // {
-    //     printf("%d : %d\r\n", i, controllerState.media[i]);
-    // }
-
-    // Send to Pico
-    write(m_fd, (char *)&controllerState, sizeof(ControllerState));
+char KeyboardController::getKeyPress()
+{
 }

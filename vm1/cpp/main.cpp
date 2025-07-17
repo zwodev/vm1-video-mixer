@@ -36,6 +36,9 @@
 #include "source/StbRenderer.h"
 #include "source/MenuSystem.h"
 #include "source/UIHelper.h"
+#include "source/KeyboardController.h"
+#include "source/EventBus.h"
+#include "source/EventHandler.h"
 
 #define USE_OLED
 
@@ -189,6 +192,9 @@ int main(int, char **)
     StbRenderer stbRenderer(FBO_WIDTH, FBO_HEIGHT);
     UI::SetRenderer(&stbRenderer);
 
+    // Keyboard Controller
+    KeyboardController keyboardController;
+
     MenuSystem menuSystem(registry);
     
 
@@ -218,6 +224,8 @@ int main(int, char **)
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
+            keyboardController.update(event);
+
             ImGui_ImplSDL3_ProcessEvent(&event);
             if (event.type == SDL_EVENT_QUIT)
             {
