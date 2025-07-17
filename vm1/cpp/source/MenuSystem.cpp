@@ -275,7 +275,7 @@ void MenuSystem::PlaybackSettings(Registry* registry, int id, int* focusedIdx)
     else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(currentConfig)) {
         std::string label = "Source: HDMI " + hdmiInputConfig->hdmiPort;
 
-        UI::BeginList(*focusedIdx);
+        UI::BeginList(focusedIdx);
         UI::Text(label);
         UI::EndList();
     }
