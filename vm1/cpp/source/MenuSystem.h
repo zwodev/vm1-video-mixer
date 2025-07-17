@@ -12,6 +12,7 @@
 #include <vector>
 #include <string>
 #include "Registry.h"
+#include "EventBus.h"
 
 struct MenuItem {
     std::string label;
@@ -33,16 +34,18 @@ public:
     };
 
 public:
-    MenuSystem(Registry &registry);
+    MenuSystem() = delete;
+    explicit MenuSystem(Registry& registry, EventBus& eventBus);
     void render();
 
 private:
+    void createMenus();
+    void subscribeToEvents();
     void setMenu(MenuType menuType);
     void handleMediaAndEditButtons();
     
 
 private:
-    ///static void HandleUpAndDownKeys(int* selectedIdx, int menuSize);
     static void HandleUpAndDownKeys();
     static void StartupScreen(Registry* registry, int id, int* selectedIdx);
     static void FileSelection(Registry* registry, int id, int* selectedIdx);
@@ -53,12 +56,10 @@ private:
 
 private:
     Registry &m_registry;
+    EventBus &m_eventBus;
     int m_id = 0;
-    //int m_bank = 0;
     int m_focusedIdx = 0;
     std::vector<int> m_currentMenuPath;
-
-    
     std::map<MenuType, MenuItem> m_menus;
     MenuType m_currentMenuType = MT_InputSelection;
 

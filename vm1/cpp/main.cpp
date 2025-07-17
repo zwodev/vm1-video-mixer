@@ -38,7 +38,6 @@
 #include "source/UIHelper.h"
 #include "source/KeyboardController.h"
 #include "source/EventBus.h"
-#include "source/EventHandler.h"
 
 #define USE_OLED
 
@@ -150,17 +149,6 @@ int main(int, char **)
     ImGui_ImplSDL3_InitForOpenGL(windows[0], gl_context);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    // Setup FBO context for ImGui (off-screen)
-    // ImGuiContext *fboContext = ImGui::CreateContext();
-    // ImGui::SetCurrentContext(fboContext);
-    // ImGuiIO &fbo_io = ImGui::GetIO();
-    // (void)fbo_io;
-    // fbo_io.DisplaySize = ImVec2(FBO_WIDTH, FBO_HEIGHT);
-
-    // // Setup Platform/Renderer backends for main context
-    // ImGui_ImplSDL3_InitForOpenGL(windows[0], gl_context);
-    // ImGui_ImplOpenGL3_Init(glsl_version);
-
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
 
@@ -173,6 +161,12 @@ int main(int, char **)
     // Create registry
     Registry registry;
 
+    // Event bus
+    EventBus eventBus;
+
+    // Keyboard controller
+    KeyboardController keyboardController(eventBus);
+
     // Playback operator
     PlaybackOperator playbackOperator(registry);
 
@@ -183,26 +177,18 @@ int main(int, char **)
     // File Assignment Widget
     FileAssignmentWidget fileAssignmentWidget(playbackOperator, registry);
 
-    // Keyforwarding
-    //KeyForwarder keyForwarder;
-
     // Oled
-    // OledUiRenderer oledUiRenderer(registry, FBO_WIDTH, FBO_HEIGHT);
-    // oledUiRenderer.initialize();
     StbRenderer stbRenderer(FBO_WIDTH, FBO_HEIGHT);
     UI::SetRenderer(&stbRenderer);
-
-    // Keyboard Controller
-    KeyboardController keyboardController;
-
-    MenuSystem menuSystem(registry);
-    
-
 #ifdef USE_OLED
     OledController oledController;
     oledController.setStbRenderer(&stbRenderer);
     oledController.start();
 #endif
+
+    // Menu system
+    MenuSystem menuSystem(registry, eventBus);
+    
 
     // Prepared delta time
     Uint64 lastTime = SDL_GetTicks();

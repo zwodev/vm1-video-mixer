@@ -52,18 +52,6 @@ void UI::BeginList(int* focusedIdxPtr)
     m_menuHeight = maxHeight - m_y;
     m_visibleListElements = m_menuHeight / m_lineHeight;
 
-    // int visibleLines = std::clamp(m_visibleListElements, 0, int(menuItems.size()));
-    // m_firstLine = std::clamp(*m_focusedIdxPtr - m_visibleListElements / 2,
-    //                         0, std::max(0, m_listSize - m_visibleListElements));
-    
-    //m_y += m_firstLine * m_lineHeight;
-
-    // std::cout << "FirstLine: " << m_firstLine
-    //         << " focused: " << *m_focusedIdxPtr
-    //         << " visible lines: " << m_visibleListElements
-    //         << " no of entries: " << int(menuItems.size())
-    //         << std::endl;
-
     // int halfVisibleElements = m_visibleListElements / 2;
     // int firstElementId = max(0, *m_focusIndexPtr - halfVisibleElements);
     // int lastElementId = firstElementId + m_visibleListElements;
@@ -119,46 +107,6 @@ void UI::CenteredText(const std::string &label)
     float fontSize = 16.0f;
     Color color = COLOR::WHITE;
     m_stbRenderer->drawText(label, 50, 50, fontSize, COLOR::WHITE);
-}
-
-void UI::MediaButtonID(int id)
-{
-    // ImFont *font_big = FontManager::GetInstance().font_big;
-    // int width = (int)ImGui::GetWindowSize().x;
-    // int height = (int)ImGui::GetWindowSize().y;
-
-    // ImGui::PushFont(FontManager::GetInstance().font_big);
-
-    // ImDrawList *drawList = ImGui::GetForegroundDrawList();
-
-    // int id16 = id % 16;
-    // char bank = id / 16 + 65;
-    // std::string text = std::string(1, bank) + std::to_string(id16);
-
-    // ImVec2 textExtent = ImGui::CalcTextSize(text.c_str());
-
-    // // ImGui::PushClipRect({}, {1000, 1000}, false); // Disable clipping to prevent cutting corners
-
-    // int x = width - (int)textExtent.x;
-    // int y = 0;
-
-    // ImVec2 rectStart = ImVec2(x, y);
-    // ImVec2 rectEnd = ImVec2(
-    //     x + static_cast<float>(textExtent.x),
-    //     y + static_cast<float>(textExtent.y) - 4); // hard-coded 4 pixels less in height
-
-    // // printf("textExtend x: %f, y: %f // start-x: %d, start-y: %d, width: %d, height: %d\n", textExtent.x, textExtent.y, x, y, width, height);
-
-    // ImU32 rectColor = IM_COL32(255, 255, 255, 255);
-    // ImU32 textColor = IM_COL32(0, 0, 0, 255);
-    // drawList->AddRectFilled(rectStart, rectEnd, rectColor);
-    // // drawList->AddRectFilled(ImVec2(0, 0), ImVec2(width, textExtent.y - 4), rectColor);
-    // drawList->AddText(ImVec2(x, y), textColor, text.c_str());
-    // // drawList->AddRectFilled(ImVec2(0, rectEnd.y), ImVec2(width, rectEnd.y + 1), rectColor);
-    // drawList->AddRectFilled(ImVec2(rectStart.x - 3, 0), ImVec2(rectStart.x - 1, rectEnd.y), textColor);
-
-    // // ImGui::PopClipRect();
-    // ImGui::PopFont();
 }
 
 void UI::Text(const std::string &label)

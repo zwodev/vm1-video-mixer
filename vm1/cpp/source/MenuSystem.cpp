@@ -16,8 +16,15 @@
 
 const int NUM_BANKS = 4;
 
-MenuSystem::MenuSystem(Registry &registry) : m_registry(registry)
+MenuSystem::MenuSystem(Registry& registry, EventBus& eventBus) : m_registry(registry), m_eventBus(eventBus)
 {   
+    createMenus();
+    subscribeToEvents();
+    setMenu(MT_StartupScreen);
+}
+
+void MenuSystem::createMenus()
+{
     m_menus[MT_StartupScreen]       =  {"", {}, StartupScreen};
     m_menus[MT_InfoSelection]       =  {"Info", {}};
     m_menus[MT_InputSelection]      =  {"Source", {
@@ -28,8 +35,26 @@ MenuSystem::MenuSystem(Registry &registry) : m_registry(registry)
     m_menus[MT_PlaybackSelection]   = {"Playback", {}, PlaybackSettings};
     m_menus[MT_NetworkInfo]         = {"Network", {}, NetworkInfo};
     m_menus[MT_SettingsSelection]   = {"Settings", {}, GlobalSettings};
+}
 
-    setMenu(MT_StartupScreen);
+void MenuSystem::subscribeToEvents()
+{
+    // Examples:
+
+    // Media Slot Event
+    m_eventBus.subscribe<MediaSlotEvent>([](const MediaSlotEvent& event) {
+        printf("Media Slot Event - (Slot Idx: %d)\n", event.slotId);
+    });
+
+    // Edit Mode Event
+    m_eventBus.subscribe<EditModeEvent>([](const EditModeEvent& event) {
+        printf("Edit Mode Event - (Mode Idx: %d)\n", event.modeId);
+    });
+
+    // Navigation Event
+    m_eventBus.subscribe<NavigationEvent>([](const NavigationEvent& event) {
+        printf("Navigation Event - (Type: %d)\n", (int)event.type);
+    });
 }
 
 void MenuSystem::setMenu(MenuType menuType)
@@ -130,9 +155,6 @@ void MenuSystem::render()
     // Render title
     if (!menuItem->label.empty()) {
         UI::MenuTitle(menuItem->label);
-        if (m_currentMenuType != MT_SettingsSelection && m_currentMenuType != MT_NetworkInfo) {
-            UI::MediaButtonID(m_id + 1);
-        }
     }
 
     // Render bank information

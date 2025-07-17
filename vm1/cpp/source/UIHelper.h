@@ -35,7 +35,6 @@ public:
     static void EndListElement();
     static void CenteredText(const std::string &label);
     static void Text(const std::string &label);
-    static void MediaButtonID(int id);
     static void MenuTitle(std::string menuTitle);
     static void MenuInfo(std::string menuInfo);
     static void InfoScreen(int bank, int id, std::string filename);
