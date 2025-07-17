@@ -1,0 +1,4 @@
+KERNEL=="gpiochip*", GROUP="gpio", MODE="0660"
+KERNEL=="gpiomem*", GROUP="gpio", MODE="0660"
+KERNEL=="spidev*", GROUP="spi", MODE="0660"
+KERNEL=="dma_heap*", GROUP="video", MODE="0660"

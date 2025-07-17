@@ -1,0 +1,29 @@
+---
+name: vm1-basic
+mmdebstrap:
+  packages:
+    - bash
+    - openssh-server
+    - libavcodec59
+    - libavformat59
+    - liblgpio1
+    - mesa-utils
+    - mesa-utils-extra
+    - libgles2
+    - libegl1
+    - libpam-systemd
+    - fdisk
+    - plymouth
+    - plymouth-themes
+    - xvfb
+    - wpasupplicant
+    - network-manager
+    - firmware-brcm80211
+    - raspi-firmware
+    - tzdata
+    - iw
+    - wireless-tools
+    - pi-bluetooth
+    - bluez
+    - dnsmasq
+    - xauth
