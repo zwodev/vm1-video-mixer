@@ -29,7 +29,7 @@ public:
     static void FocusNextElement();
     static void FocusPreviousElement();
     static void DrawTitle(const std::string& label);
-    static void BeginList(int* focusedIdx);
+    static void BeginList(int* focusedIdxPtr);
     static void EndList();
     static void BeginListElement();
     static void EndListElement();
@@ -50,7 +50,7 @@ private:
     static int m_lineHeight;
     static int m_menuHeight;
     static int m_visibleListElements;
-    static int* m_focusedIdx;
+    static int* m_focusedIdxPtr;
     static int m_firstLine;
     static int m_currentElementHeight;
 };
