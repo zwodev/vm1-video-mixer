@@ -37,6 +37,7 @@ public:
     static void Text(const std::string &label);
     static void MediaButtonID(int id);
     static void MenuTitle(std::string menuTitle);
+    static void MenuInfo(std::string menuInfo);
     static void InfoScreen(int bank, int id, std::string filename);
     static bool CheckBox(const std::string& label, bool checked);
     static bool RadioButton(const std::string& label, bool active);

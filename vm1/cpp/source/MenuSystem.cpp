@@ -135,6 +135,17 @@ void MenuSystem::render()
         }
     }
 
+    // Render bank information
+    if (m_currentMenuType == MT_InfoSelection  || 
+        m_currentMenuType == MT_InputSelection || 
+        m_currentMenuType == MT_PlaybackSelection) {
+            int id16 = m_id % 16;
+            char bank = m_id / 16 + 65;
+            std::string mediaSlotString = std::string(1, bank) + std::to_string(id16);
+            UI::MenuInfo(mediaSlotString);
+        }
+
+
     // Render dynamic content (if present)
     if (menuItem->renderFunc) {
         menuItem->renderFunc(&m_registry, m_id, &m_focusedIdx);

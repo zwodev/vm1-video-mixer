@@ -198,7 +198,7 @@ void StbRenderer::drawText(const std::string &text, int posX, int posY, float fo
         int width, height, xoff, yoff;
         unsigned char *bitmap = stbtt_GetCodepointBitmap(&font, 0, scale, c, &width, &height, &xoff, &yoff);
 
-        // std::cout << "Codepoint: " << c << " width: " << width << " height: " << height << " xoff: " << xoff << " yoff: " << yoff;
+        //std::cout << "Codepoint: " << c << " width: " << width << " height: " << height << " xoff: " << xoff << " yoff: " << yoff;
 
         for (int y = 0; y < height; ++y)
         {
@@ -210,7 +210,7 @@ void StbRenderer::drawText(const std::string &text, int posX, int posY, float fo
                 uint8_t r_ = (uint8_t)((float)color.r / 255.0) * (float)value;
                 uint8_t g_ = (uint8_t)((float)color.g / 255.0) * (float)value;
                 uint8_t b_ = (uint8_t)((float)color.b / 255.0) * (float)value;
-                m_img.setPixel(x + posX + xoff, y + posY + yoff + (fontSize / 2), r_, g_, b_);
+                m_img.setPixel(x + posX + xoff, y + posY + yoff + baseline, r_, g_, b_);
             }
         }
 

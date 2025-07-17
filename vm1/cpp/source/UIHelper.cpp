@@ -180,6 +180,13 @@ void UI::MenuTitle(std::string menuTitle)
     m_y += m_stbRenderer->getFontLineHeight(fontSize);
 }
 
+void UI::MenuInfo(std::string menuInfo)
+{
+    float fontSize = 32.0f;
+    int width = m_stbRenderer->width();
+    m_stbRenderer->drawText(menuInfo, width - 28, 0, fontSize, COLOR::WHITE);
+}
+
 void UI::InfoScreen(int bank, int id, std::string filename)
 {
     // ImGui::SetCursorPosY(25);
