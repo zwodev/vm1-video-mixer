@@ -1,0 +1,14 @@
+[Unit]
+Description=Install the VM-1
+After=local-fs.target
+Before=getty.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/install-vm1.sh
+RemainAfterExit=yes
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target

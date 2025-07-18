@@ -1,72 +1,21 @@
-
 #pragma once
 
-#include <msgpack.hpp>
-#include <functional>
-
-enum ButtonState : uint8_t
-{
-    NONE,
-    EMPTY,
-    FILE_ASSET,
-    LIVECAM,
-    SHADER,
-    FILE_ASSET_ACTIVE,
-    LIVECAM_ACTIVE,
-    SHADER_ACTIVE,
-};
-
-#pragma pack(1)
-struct ControllerState
-{
-    uint8_t bank;
-    ButtonState forward = ButtonState::NONE;
-    ButtonState backward = ButtonState::NONE;
-    ButtonState fn = ButtonState::FILE_ASSET;
-    ButtonState edit[8] = {ButtonState::NONE};
-    ButtonState media[16] = {ButtonState::NONE};
-
-    template <typename T>
-    inline void hashCombine(std::size_t &seed, const T &v) const
-    {
-        seed ^= std::hash<T>{}(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-    }
-
-    size_t hash() const
-    {
-        size_t seed = 0;
-        hashCombine(seed, bank);
-        hashCombine(seed, forward);
-        hashCombine(seed, backward);
-        hashCombine(seed, fn);
-
-        for (auto state : edit)
-        {
-            hashCombine(seed, state);
-        }
-
-        for (auto state : media)
-        {
-            hashCombine(seed, state);
-        }
-
-        return seed;
-    }
-};
-#pragma pack()
+#include <vector>
+#include <SDL3/SDL.h>
+#include "EventBus.h"
 
 class KeyboardController
 {
-
 public:
-    KeyboardController() = default;
+    KeyboardController() = delete;
+    explicit KeyboardController(EventBus &eventBus);
     ~KeyboardController() = default;
 
-    bool connect(const std::string &port);
-    void disconnect();
-    void send(const ControllerState &state);
+    void update(SDL_Event &event);
 
 private:
-    int m_fd = -1;
-    size_t m_lastHash = 0;
+    std::vector<SDL_Keycode> m_editKeys = {SDLK_Q, SDLK_W, SDLK_E, SDLK_R, SDLK_T, SDLK_Z, SDLK_U, SDLK_I};
+    std::vector<SDL_Keycode> m_mediaKeys = {SDLK_A, SDLK_S, SDLK_D, SDLK_F, SDLK_G, SDLK_H, SDLK_J, SDLK_K,
+                                                SDLK_Z, SDLK_X, SDLK_C, SDLK_V, SDLK_B, SDLK_N, SDLK_M, SDLK_COMMA};
+    EventBus& m_eventBus;
 };

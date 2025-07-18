@@ -48,7 +48,7 @@ void PlaybackOperator::initialize()
 
     // Open serial port
     std::string serialDevice = m_registry.settings().serialDevice;
-    if (!m_keyboardController.connect(serialDevice))
+    if (!m_serialController.connect(serialDevice))
     {
         printf("Could not open serial device: %s\n", serialDevice.c_str());
     }
@@ -198,7 +198,7 @@ void PlaybackOperator::update(float deltaTime)
         m_mediaSlotIdToPlayerId.erase(id);    
     }
 
-    updateKeyboardController();
+    updateSerialController();
 }
 
 void PlaybackOperator::renderPlane(int planeId)
@@ -221,37 +221,37 @@ void PlaybackOperator::renderPlane(int planeId)
     planeRenderer->update(texture0, texture1, planeMixer.mixValue());
 }
 
-void PlaybackOperator::updateKeyboardController()
+void PlaybackOperator::updateSerialController()
 {
     InputMappings &inputMappings = m_registry.inputMappings();
 
-    ControllerState controllerState;
-    controllerState.bank = uint8_t(inputMappings.bank);
+    VM1DeviceState vm1DeviceState;
+    vm1DeviceState.bank = uint8_t(inputMappings.bank);
     for (int i = 0; i < 16; ++i)
     {
         int mediaSlotId = (inputMappings.bank * 16) + i;
         InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
         if (!inputConfig)
         {
-            controllerState.media[i] = ButtonState::NONE;
+            vm1DeviceState.media[i] = ButtonState::NONE;
         }
         else if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
         {
             if (m_mediaSlotIdToPlayerId.contains(i)) {
-                controllerState.media[i] = ButtonState::FILE_ASSET_ACTIVE;
+                vm1DeviceState.media[i] = ButtonState::FILE_ASSET_ACTIVE;
             }
             else
-                controllerState.media[i] = ButtonState::FILE_ASSET;
+                vm1DeviceState.media[i] = ButtonState::FILE_ASSET;
         }
         else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
         {
             // TODO: How to handle active HDMI or IMAGE, etc.
             if (m_mediaSlotIdToPlayerId.contains(i)) {
-                controllerState.media[i] = ButtonState::LIVECAM_ACTIVE;
+                vm1DeviceState.media[i] = ButtonState::LIVECAM_ACTIVE;
             }
             else
-                controllerState.media[i] = ButtonState::LIVECAM;
+                vm1DeviceState.media[i] = ButtonState::LIVECAM;
         }
     }
-    m_keyboardController.send(controllerState);
+    m_serialController.send(vm1DeviceState);
 }

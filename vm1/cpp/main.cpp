@@ -33,7 +33,11 @@
 #include "source/CameraController.h"
 #include "source/OledUiRenderer.h"
 #include "source/OledController.h"
-
+#include "source/StbRenderer.h"
+#include "source/MenuSystem.h"
+#include "source/UIHelper.h"
+#include "source/KeyboardController.h"
+#include "source/EventBus.h"
 
 #define USE_OLED
 
@@ -145,17 +149,6 @@ int main(int, char **)
     ImGui_ImplSDL3_InitForOpenGL(windows[0], gl_context);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    // Setup FBO context for ImGui (off-screen)
-    ImGuiContext *fboContext = ImGui::CreateContext();
-    ImGui::SetCurrentContext(fboContext);
-    ImGuiIO &fbo_io = ImGui::GetIO();
-    (void)fbo_io;
-    fbo_io.DisplaySize = ImVec2(FBO_WIDTH, FBO_HEIGHT);
-
-    // Setup Platform/Renderer backends for main context
-    ImGui_ImplSDL3_InitForOpenGL(windows[0], gl_context);
-    ImGui_ImplOpenGL3_Init(glsl_version);
-
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
 
@@ -163,10 +156,16 @@ int main(int, char **)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // TODO: This was not implemented in SDL3 yet. I did it. Another way or PR?
-    SDL_RaiseWindow(windows[0]);
+    SDL_RaiseWindow(windows[0]);    
 
     // Create registry
     Registry registry;
+
+    // Event bus
+    EventBus eventBus;
+
+    // Keyboard controller
+    KeyboardController keyboardController(eventBus);
 
     // Playback operator
     PlaybackOperator playbackOperator(registry);
@@ -178,18 +177,18 @@ int main(int, char **)
     // File Assignment Widget
     FileAssignmentWidget fileAssignmentWidget(playbackOperator, registry);
 
-    // Keyforwarding
-    KeyForwarder keyForwarder;
-
     // Oled
-    OledUiRenderer oledUiRenderer(registry, FBO_WIDTH, FBO_HEIGHT);
-    oledUiRenderer.initialize();
-
+    StbRenderer stbRenderer(FBO_WIDTH, FBO_HEIGHT);
+    UI::SetRenderer(&stbRenderer);
 #ifdef USE_OLED
     OledController oledController;
-    oledController.setOledUiRenderer(&oledUiRenderer);
+    oledController.setStbRenderer(&stbRenderer);
     oledController.start();
 #endif
+
+    // Menu system
+    MenuSystem menuSystem(registry, eventBus);
+    
 
     // Prepared delta time
     Uint64 lastTime = SDL_GetTicks();
@@ -211,6 +210,8 @@ int main(int, char **)
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
+            keyboardController.update(event);
+
             ImGui_ImplSDL3_ProcessEvent(&event);
             if (event.type == SDL_EVENT_QUIT)
             {
@@ -237,14 +238,15 @@ int main(int, char **)
 
         registry.update(deltaTime);
         playbackOperator.update(deltaTime);
-        keyForwarder.forwardArrowKeys(mainContext, fboContext);
+        //keyForwarder.forwardArrowKeys(mainContext, fboContext);
 
         // START: Render to FBO (OLED) before main gui
-        ImGui::SetCurrentContext(fboContext);
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL3_NewFrame();
-        ImGui::NewFrame();
-        oledUiRenderer.update();
+        // ImGui::SetCurrentContext(fboContext);
+        // ImGui_ImplOpenGL3_NewFrame();
+        // ImGui_ImplSDL3_NewFrame();
+        // ImGui::NewFrame();
+        menuSystem.render();
+        stbRenderer.update();
         //  END: Render to FBO (OLED) before main gui
 
         // Start the Dear ImGui frame
@@ -287,17 +289,17 @@ int main(int, char **)
             }
 
             // OLED debug window
-            {
-                // ImGui::SetNextWindowPos(ImVec2(0, 0));
-                ImGui::SetNextWindowSize(ImVec2(FBO_WIDTH, FBO_HEIGHT));
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-                ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration;
-                ImGui::Begin("OLED Debug Window", nullptr, window_flags);
-                // ImGui::Begin("OLED Debug Window");
-                ImGui::Image((void *)(intptr_t)oledUiRenderer.texture(), ImVec2(FBO_WIDTH, FBO_HEIGHT), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
-                ImGui::End();
-                ImGui::PopStyleVar();
-            }
+            // {
+            //     // ImGui::SetNextWindowPos(ImVec2(0, 0));
+            //     ImGui::SetNextWindowSize(ImVec2(FBO_WIDTH, FBO_HEIGHT));
+            //     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+            //     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration;
+            //     ImGui::Begin("OLED Debug Window", nullptr, window_flags);
+            //     // ImGui::Begin("OLED Debug Window");
+            //     ImGui::Image((void *)(intptr_t)stbRenderer.texture(), ImVec2(FBO_WIDTH, FBO_HEIGHT), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+            //     ImGui::End();
+            //     ImGui::PopStyleVar();
+            // }
         }
 
         // File Assignment Widget
@@ -336,16 +338,16 @@ int main(int, char **)
     }
 
     // Cleanup
-    ImGui::SetCurrentContext(fboContext);
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL3_Shutdown();
+    // ImGui::SetCurrentContext(fboContext);
+    // ImGui_ImplOpenGL3_Shutdown();
+    // ImGui_ImplSDL3_Shutdown();
 
     ImGui::SetCurrentContext(mainContext);
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL3_Shutdown();
 
-    ImGui::DestroyContext(fboContext);
     ImGui::DestroyContext(mainContext);
+    // ImGui::DestroyContext(fboContext);
 
     SDL_GL_DestroyContext(gl_context);
     for (int i = 0; i < windows.size(); ++i)

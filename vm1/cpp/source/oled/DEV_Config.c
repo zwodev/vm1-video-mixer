@@ -168,33 +168,41 @@ UBYTE DEV_ModuleInit(void)
 #endif
 
 #elif USE_DEV_LIB
-    char buffer[NUM_MAXBUF];
-    FILE *fp1;
+    // This has changed in recent linux kernel versions
+    // char buffer[NUM_MAXBUF];
+    // FILE *fp1;
 
-    fp1 = popen("cat /proc/cpuinfo | grep 'Raspberry Pi 5'", "r");
-    if (fp1 == NULL)
+    // fp1 = popen("cat /proc/cpuinfo | grep 'Raspberry Pi 5'", "r");
+    // if (fp1 == NULL)
+    // {
+    //     printf("It is not possible to determine the model of the Raspberry PI\n");
+    //     return -1;
+    // }
+
+    // if (fgets(buffer, sizeof(buffer), fp1) != NULL)
+    // {
+    //     GPIO_Handle = lgGpiochipOpen(4);
+    //     if (GPIO_Handle < 0)
+    //     {
+    //         printf("gpiochip4 Export Failed\n");
+    //         return -1;
+    //     }
+    // }
+    // else
+    // {
+    //     GPIO_Handle = lgGpiochipOpen(0);
+    //     if (GPIO_Handle < 0)
+    //     {
+    //         printf("gpiochip0 Export Failed\n");
+    //         return -1;
+    //     }
+    // }
+
+    GPIO_Handle = lgGpiochipOpen(0);
+    if (GPIO_Handle < 0)
     {
-        printf("It is not possible to determine the model of the Raspberry PI\n");
+        printf("gpiochip0 Export Failed\n");
         return -1;
-    }
-
-    if (fgets(buffer, sizeof(buffer), fp1) != NULL)
-    {
-        GPIO_Handle = lgGpiochipOpen(4);
-        if (GPIO_Handle < 0)
-        {
-            printf("gpiochip4 Export Failed\n");
-            return -1;
-        }
-    }
-    else
-    {
-        GPIO_Handle = lgGpiochipOpen(0);
-        if (GPIO_Handle < 0)
-        {
-            printf("gpiochip0 Export Failed\n");
-            return -1;
-        }
     }
 
     DEV_GPIO_Init();
