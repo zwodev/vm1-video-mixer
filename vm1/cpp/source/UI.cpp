@@ -1,24 +1,21 @@
-#include "UIHelper.h"
+#include "UI.h"
 
-StbRenderer* UI::m_stbRenderer = 0;
-int UI::m_x = 0;
-int UI::m_y = 0;
-int UI::m_listSize = 0;
-int UI::m_lineHeight = 0;
-int UI::m_menuHeight = 0;
-int UI::m_visibleListElements = 0;
-int* UI::m_focusedIdxPtr = nullptr;
-int UI::m_firstLine = 0;
-int UI::m_currentElementHeight = 0;
 
-void UI::SetRenderer(StbRenderer* stbRenderer)
-{
-    m_stbRenderer = stbRenderer;
+UI::UI(StbRenderer &stbRenderer, EventBus &eventBus) : m_stbRenderer(stbRenderer), m_eventBus(eventBus) {
+    m_x = 0;
+    m_y = 0;
+    m_listSize = 0;
+    m_lineHeight = 0;
+    m_menuHeight = 0;
+    m_visibleListElements = 0;
+    m_focusedIdxPtr = nullptr;
+    m_firstLine = 0;
+    m_currentElementHeight = 0;
 }
 
 void UI::NewFrame()
 {
-    m_stbRenderer->clear();
+    m_stbRenderer.clear();
     m_focusedIdxPtr = nullptr;
     m_x = 0;
     m_y = 0;
@@ -43,12 +40,12 @@ void UI::FocusPreviousElement()
 void UI::BeginList(int* focusedIdxPtr) 
 {   
     if (!focusedIdxPtr) return;
-    //int maxWidth = m_stbRenderer->width();
-    int maxHeight = m_stbRenderer->height();
+    //int maxWidth = m_stbRenderer.width();
+    int maxHeight = m_stbRenderer.height();
     float fontSize = 16.0f;
     m_listSize = 0;
     m_focusedIdxPtr = focusedIdxPtr;
-    m_lineHeight = m_stbRenderer->getFontLineHeight(fontSize);
+    m_lineHeight = m_stbRenderer.getFontLineHeight(fontSize);
     m_menuHeight = maxHeight - m_y;
     m_visibleListElements = m_menuHeight / m_lineHeight;
 
@@ -81,7 +78,7 @@ void UI::BeginList(int* focusedIdxPtr)
 
 void UI::EndList()
 {
-    m_stbRenderer->setEnabled(true);
+    m_stbRenderer.setEnabled(true);
 }
 
 void UI::BeginListElement()
@@ -92,21 +89,21 @@ void UI::BeginListElement()
 
     bool enableRendering = (firstElementId <= m_listSize && m_listSize <= lastElementId); 
     
-    m_stbRenderer->setEnabled(enableRendering);
+    m_stbRenderer.setEnabled(enableRendering);
     m_currentElementHeight = m_lineHeight;
 }
 
 void UI::EndListElement()
 {
     m_listSize++;
-    if (m_stbRenderer->isEnabled()) m_y += m_currentElementHeight;
+    if (m_stbRenderer.isEnabled()) m_y += m_currentElementHeight;
 }
 
 void UI::CenteredText(const std::string &label)
 {
     float fontSize = 16.0f;
     Color color = COLOR::WHITE;
-    m_stbRenderer->drawText(label, 50, 50, fontSize, COLOR::WHITE);
+    m_stbRenderer.drawText(label, 50, 50, fontSize, COLOR::WHITE);
 }
 
 void UI::Text(const std::string &label)
@@ -117,22 +114,22 @@ void UI::Text(const std::string &label)
     if (m_focusedIdxPtr) {
         if ((*m_focusedIdxPtr) == m_listSize) color = COLOR::RED;
     }
-    m_stbRenderer->drawText(label, m_x, m_y, fontSize, color);
+    m_stbRenderer.drawText(label, m_x, m_y, fontSize, color);
     UI::EndListElement();
 }
 
 void UI::MenuTitle(std::string menuTitle)
 {
     float fontSize = 32.0f;
-    m_stbRenderer->drawText(menuTitle, m_x, m_y, fontSize, COLOR::WHITE);
-    m_y += m_stbRenderer->getFontLineHeight(fontSize);
+    m_stbRenderer.drawText(menuTitle, m_x, m_y, fontSize, COLOR::WHITE);
+    m_y += m_stbRenderer.getFontLineHeight(fontSize);
 }
 
 void UI::MenuInfo(std::string menuInfo)
 {
     float fontSize = 32.0f;
-    int width = m_stbRenderer->width();
-    m_stbRenderer->drawText(menuInfo, width - 28, 0, fontSize, COLOR::WHITE);
+    int width = m_stbRenderer.width();
+    m_stbRenderer.drawText(menuInfo, width - 28, 0, fontSize, COLOR::WHITE);
 }
 
 void UI::InfoScreen(int bank, int id, std::string filename)

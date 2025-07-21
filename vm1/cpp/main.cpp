@@ -35,7 +35,7 @@
 #include "source/OledController.h"
 #include "source/StbRenderer.h"
 #include "source/MenuSystem.h"
-#include "source/UIHelper.h"
+#include "source/UI.h"
 #include "source/KeyboardController.h"
 #include "source/EventBus.h"
 
@@ -179,7 +179,7 @@ int main(int, char **)
 
     // Oled
     StbRenderer stbRenderer(FBO_WIDTH, FBO_HEIGHT);
-    UI::SetRenderer(&stbRenderer);
+    UI ui(stbRenderer, eventBus);
 #ifdef USE_OLED
     OledController oledController;
     oledController.setStbRenderer(&stbRenderer);
@@ -187,7 +187,7 @@ int main(int, char **)
 #endif
 
     // Menu system
-    MenuSystem menuSystem(registry, eventBus);
+    MenuSystem menuSystem(ui, registry, eventBus);
     
 
     // Prepared delta time

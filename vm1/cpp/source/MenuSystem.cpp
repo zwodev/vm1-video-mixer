@@ -7,7 +7,7 @@
  */
 
 #include "MenuSystem.h"
-#include "UIHelper.h"
+#include "UI.h"
 #include "NetworkTools.h"
 
 #include <imgui.h>
@@ -16,7 +16,7 @@
 
 const int NUM_BANKS = 4;
 
-MenuSystem::MenuSystem(Registry& registry, EventBus& eventBus) : m_registry(registry), m_eventBus(eventBus)
+MenuSystem::MenuSystem(UI& ui, Registry& registry, EventBus& eventBus) : m_ui(ui), m_registry(registry), m_eventBus(eventBus)
 {   
     createMenus();
     subscribeToEvents();
@@ -25,16 +25,17 @@ MenuSystem::MenuSystem(Registry& registry, EventBus& eventBus) : m_registry(regi
 
 void MenuSystem::createMenus()
 {
-    m_menus[MT_StartupScreen]       =  {"", {}, StartupScreen};
+    // m_menus[MT_StartupScreen]       =  {"", {}, StartupScreen};
+    m_menus[MT_StartupScreen]       =  {"", {}, [=](Registry* r, int id, int* fIdx){StartupScreen(r, id, fIdx);}};
     m_menus[MT_InfoSelection]       =  {"Info", {}};
     m_menus[MT_InputSelection]      =  {"Source", {
-                                            {"File", {}, FileSelection},
-                                            {"Live", {}, LiveInputSelection},
+                                            {"File", {}, [=](Registry* r, int id, int* fIdx){FileSelection(r, id, fIdx);}},
+                                            {"Live", {}, [=](Registry* r, int id, int* fIdx){LiveInputSelection(r, id, fIdx);}},
                                             {"Shader", {}}
                                         }};
-    m_menus[MT_PlaybackSelection]   = {"Playback", {}, PlaybackSettings};
-    m_menus[MT_NetworkInfo]         = {"Network", {}, NetworkInfo};
-    m_menus[MT_SettingsSelection]   = {"Settings", {}, GlobalSettings};
+    m_menus[MT_PlaybackSelection]   = {"Playback", {}, [=](Registry* r, int id, int* fIdx){PlaybackSettings(r, id, fIdx);}};
+    m_menus[MT_NetworkInfo]         = {"Network", {}, [=](Registry* r, int id, int* fIdx){NetworkInfo(r, id, fIdx);}};
+    m_menus[MT_SettingsSelection]   = {"Settings", {}, [=](Registry* r, int id, int* fIdx){GlobalSettings(r, id, fIdx);}};
 }
 
 void MenuSystem::subscribeToEvents()
@@ -124,22 +125,22 @@ void MenuSystem::handleMediaAndEditButtons()
 
 void MenuSystem::HandleUpAndDownKeys()
 {
-    if (!ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
-        UI::FocusPreviousElement();
-    }
-    else if (!ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
-        UI::FocusNextElement();
-    }
+    // if (!ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
+    //     m_ui.FocusPreviousElement();
+    // }
+    // else if (!ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
+    //     m_ui.FocusNextElement();
+    // }
 }
 
 void MenuSystem::render()
 {
-    UI::NewFrame();
+    m_ui.NewFrame();
     handleMediaAndEditButtons();
 
     // if (!m_currentMenu)
     // {
-    //     UI::CenteredText("VM-1");
+    //     m_ui.CenteredText("VM-1");
     //     return;
     // }
 
@@ -154,7 +155,7 @@ void MenuSystem::render()
 
     // Render title
     if (!menuItem->label.empty()) {
-        UI::MenuTitle(menuItem->label);
+        m_ui.MenuTitle(menuItem->label);
     }
 
     // Render bank information
@@ -164,22 +165,22 @@ void MenuSystem::render()
             int id16 = m_id % 16;
             char bank = m_id / 16 + 65;
             std::string mediaSlotString = std::string(1, bank) + std::to_string(id16);
-            UI::MenuInfo(mediaSlotString);
+            m_ui.MenuInfo(mediaSlotString);
         }
 
 
     // Render dynamic content (if present)
-    if (menuItem->renderFunc) {
-        menuItem->renderFunc(&m_registry, m_id, &m_focusedIdx);
+    if (menuItem->func) {
+        menuItem->func(&m_registry, m_id, &m_focusedIdx);
     }
     // Otherwise render static content
     else { 
-        UI::BeginList(&m_focusedIdx);
+        m_ui.BeginList(&m_focusedIdx);
         for (int i = 0; i < (int)menuItem->children.size(); ++i) {
             std::string label = menuItem->children[i].label;
-            UI::Text(label);
+            m_ui.Text(label);
         }
-        UI::EndList();
+        m_ui.EndList();
     }
 
     HandleUpAndDownKeys();
@@ -201,7 +202,7 @@ void MenuSystem::render()
         // Go deeper if selected item has children or a render_func (treat as a page)
         if (m_focusedIdx >= 0 && m_focusedIdx < (int)menuItem->children.size()) {
             auto& sel = menuItem->children[m_focusedIdx];
-            if (!sel.children.empty() || sel.renderFunc) {
+            if (!sel.children.empty() || sel.func) {
                 m_currentMenuPath.push_back(m_focusedIdx);
                 m_focusedIdx = 0;
             }
@@ -226,8 +227,8 @@ void MenuSystem::render()
 // TODO: Could be put in different namespaces
 void MenuSystem::StartupScreen(Registry* registry, int id, int* focusedIdx)
 {
-    UI::CenteredText("VM-1");
-    //UI::Text("VM-1");
+    m_ui.CenteredText("VM-1");
+    //m_ui.Text("VM-1");
 }
 
 void MenuSystem::FileSelection(Registry* registry, int id, int* focusedIdx)
@@ -242,15 +243,15 @@ void MenuSystem::FileSelection(Registry* registry, int id, int* focusedIdx)
 
     std::vector<std::string>& files = registry->mediaPool().getVideoFiles();
     bool changed = false;
-    UI::BeginList(focusedIdx);
+    m_ui.BeginList(focusedIdx);
     for (int i = 0; i < files.size(); ++i) {
         std::string fileName = files[i];
-        if (UI::RadioButton(fileName.c_str(), (config->fileName == fileName))) {
+        if (m_ui.RadioButton(fileName.c_str(), (config->fileName == fileName))) {
             config->fileName = fileName;
             changed = true;
         }
     }
-    UI::EndList(); 
+    m_ui.EndList(); 
 
     if (changed)
         registry->inputMappings().addInputConfig(id, std::move(config));
@@ -263,16 +264,16 @@ void MenuSystem::LiveInputSelection(Registry* registry, int id, int* focusedIdx)
     if (currentConfig) { *config = *currentConfig; }
 
     bool changed = false;
-    UI::BeginList(focusedIdx);
-    if (UI::RadioButton("HDMI 1", currentConfig && (config->hdmiPort == 0))) {
+    m_ui.BeginList(focusedIdx);
+    if (m_ui.RadioButton("HDMI 1", currentConfig && (config->hdmiPort == 0))) {
         config->hdmiPort = 0; 
         changed = true; 
     }
-    if (UI::RadioButton("HDMI 2", currentConfig && (config->hdmiPort == 1))) { 
+    if (m_ui.RadioButton("HDMI 2", currentConfig && (config->hdmiPort == 1))) { 
         config->hdmiPort = 1; 
         changed = true; 
     }
-    UI::EndList();
+    m_ui.EndList();
 
 
     if (changed)  {
@@ -285,32 +286,32 @@ void MenuSystem::PlaybackSettings(Registry* registry, int id, int* focusedIdx)
 {
     InputConfig* currentConfig = registry->inputMappings().getInputConfig(id);
     if (!currentConfig) {
-        UI::BeginList(focusedIdx);
-        UI::Text("No input selected");
-        UI::EndList();
+        m_ui.BeginList(focusedIdx);
+        m_ui.Text("No input selected");
+        m_ui.EndList();
         return;
     }
     
     if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(currentConfig)) {
         int i = 0;
 
-        UI::BeginList(focusedIdx);
-        if (UI::CheckBox("loop", videoInputConfig->looping)) { 
+        m_ui.BeginList(focusedIdx);
+        if (m_ui.CheckBox("loop", videoInputConfig->looping)) { 
             videoInputConfig->looping = !videoInputConfig->looping; 
         }
-        if (UI::CheckBox("backwards", videoInputConfig->backwards)) {
+        if (m_ui.CheckBox("backwards", videoInputConfig->backwards)) {
             videoInputConfig->backwards = !videoInputConfig->backwards;
         }
-        UI::Text("start-time");
-        UI::Text("end-time");
-        UI::EndList();
+        m_ui.Text("start-time");
+        m_ui.Text("end-time");
+        m_ui.EndList();
     }
     else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(currentConfig)) {
         std::string label = "Source: HDMI " + hdmiInputConfig->hdmiPort;
 
-        UI::BeginList(focusedIdx);
-        UI::Text(label);
-        UI::EndList();
+        m_ui.BeginList(focusedIdx);
+        m_ui.Text(label);
+        m_ui.EndList();
     }
 }
 
@@ -322,19 +323,19 @@ void MenuSystem::NetworkInfo(Registry* registry, int id, int* focusedIdx)
     NetworkTools::getIPAddress("eth0", eth0);
     NetworkTools::getIPAddress("wlan0", wlan0);
 
-    UI::BeginList(focusedIdx);
-    if (!eth0.empty()) UI::Text("e: " + eth0);
-    if (!wlan0.empty()) UI::Text("w: " + wlan0);
-    UI::EndList();
+    m_ui.BeginList(focusedIdx);
+    if (!eth0.empty()) m_ui.Text("e: " + eth0);
+    if (!wlan0.empty()) m_ui.Text("w: " + wlan0);
+    m_ui.EndList();
 }
 
 void MenuSystem::GlobalSettings(Registry* registry, int id, int* focusedIdx) 
 {
     Settings& settings = registry->settings();
 
-    UI::BeginList(focusedIdx);
-    UI::SpinBoxInt("Fade Time", settings.fadeTime, 0, 10);
-    if (UI::CheckBox("Show UI", settings.showUI)) { settings.showUI = !settings.showUI; };
-    if (UI::CheckBox("Default Looping", settings.defaultLooping)) { settings.defaultLooping = !settings.defaultLooping; };
-    UI::EndList();
+    m_ui.BeginList(focusedIdx);
+    m_ui.SpinBoxInt("Fade Time", settings.fadeTime, 0, 10);
+    if (m_ui.CheckBox("Show UI", settings.showUI)) { settings.showUI = !settings.showUI; };
+    if (m_ui.CheckBox("Default Looping", settings.defaultLooping)) { settings.defaultLooping = !settings.defaultLooping; };
+    m_ui.EndList();
 }
