@@ -14,6 +14,8 @@ bool SerialController::connect(const std::string &port)
     m_fd = open(port.c_str(), O_RDWR);
     if (m_fd < 0)
         return false;
+    // todo: don't return false, try to open vm1-device with i2c!
+    // todo: rename SerialController to VM1DeviceController
 
     termios tty;
     memset(&tty, 0, sizeof tty);

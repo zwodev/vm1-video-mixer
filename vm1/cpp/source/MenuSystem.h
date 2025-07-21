@@ -18,8 +18,7 @@
 struct MenuItem {
     std::string label;
     std::vector<MenuItem> children;
-    // void (*renderFunc)(Registry*, int, int*) = nullptr;
-    std::function<void(Registry*, int, int*)> func;
+    std::function<void(int, int*)> func;
 };
 
 class MenuSystem
@@ -42,19 +41,20 @@ public:
 
 private:
     void createMenus();
-    void subscribeToEvents();
     void setMenu(MenuType menuType);
     void handleMediaAndEditButtons();
     
-
+    
 private:
-    void HandleUpAndDownKeys();
-    void StartupScreen(Registry* registry, int id, int* selectedIdx);
-    void FileSelection(Registry* registry, int id, int* selectedIdx);
-    void LiveInputSelection(Registry* registry, int id, int* selectedIdx);
-    void PlaybackSettings(Registry* registry, int id, int* selectedIdx);
-    void NetworkInfo(Registry* registry, int id, int* selectedIdx);
-    void GlobalSettings(Registry* registry, int id, int* selectedIdx);
+    void handleUpAndDownKeys();
+    void handleBankSwitching();
+    void handleMenuHierachyNavigation(const MenuItem *menuItem);
+    void StartupScreen(int id, int* selectedIdx);
+    void FileSelection(int id, int* selectedIdx);
+    void LiveInputSelection(int id, int* selectedIdx);
+    void PlaybackSettings(int id, int* selectedIdx);
+    void NetworkInfo(int id, int* selectedIdx);
+    void GlobalSettings(int id, int* selectedIdx);
 
 private:
     Registry &m_registry;

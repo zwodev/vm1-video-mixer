@@ -19,43 +19,21 @@ const int NUM_BANKS = 4;
 MenuSystem::MenuSystem(UI& ui, Registry& registry, EventBus& eventBus) : m_ui(ui), m_registry(registry), m_eventBus(eventBus)
 {   
     createMenus();
-    subscribeToEvents();
     setMenu(MT_StartupScreen);
 }
 
 void MenuSystem::createMenus()
 {
-    // m_menus[MT_StartupScreen]       =  {"", {}, StartupScreen};
-    m_menus[MT_StartupScreen]       =  {"", {}, [=](Registry* r, int id, int* fIdx){StartupScreen(r, id, fIdx);}};
+    m_menus[MT_StartupScreen]       =  {"", {}, [this](int id, int* fIdx){StartupScreen(id, fIdx);}};
     m_menus[MT_InfoSelection]       =  {"Info", {}};
     m_menus[MT_InputSelection]      =  {"Source", {
-                                            {"File", {}, [=](Registry* r, int id, int* fIdx){FileSelection(r, id, fIdx);}},
-                                            {"Live", {}, [=](Registry* r, int id, int* fIdx){LiveInputSelection(r, id, fIdx);}},
+                                            {"File", {}, [this](int id, int* fIdx){FileSelection(id, fIdx);}},
+                                            {"Live", {}, [this](int id, int* fIdx){LiveInputSelection(id, fIdx);}},
                                             {"Shader", {}}
                                         }};
-    m_menus[MT_PlaybackSelection]   = {"Playback", {}, [=](Registry* r, int id, int* fIdx){PlaybackSettings(r, id, fIdx);}};
-    m_menus[MT_NetworkInfo]         = {"Network", {}, [=](Registry* r, int id, int* fIdx){NetworkInfo(r, id, fIdx);}};
-    m_menus[MT_SettingsSelection]   = {"Settings", {}, [=](Registry* r, int id, int* fIdx){GlobalSettings(r, id, fIdx);}};
-}
-
-void MenuSystem::subscribeToEvents()
-{
-    // Examples:
-
-    // Media Slot Event
-    m_eventBus.subscribe<MediaSlotEvent>([](const MediaSlotEvent& event) {
-        printf("Media Slot Event - (Slot Idx: %d)\n", event.slotId);
-    });
-
-    // Edit Mode Event
-    m_eventBus.subscribe<EditModeEvent>([](const EditModeEvent& event) {
-        printf("Edit Mode Event - (Mode Idx: %d)\n", event.modeId);
-    });
-
-    // Navigation Event
-    m_eventBus.subscribe<NavigationEvent>([](const NavigationEvent& event) {
-        printf("Navigation Event - (Type: %d)\n", (int)event.type);
-    });
+    m_menus[MT_PlaybackSelection]   = {"Playback", {}, [this](int id, int* fIdx){PlaybackSettings(id, fIdx);}};
+    m_menus[MT_NetworkInfo]         = {"Network", {}, [this](int id, int* fIdx){NetworkInfo(id, fIdx);}};
+    m_menus[MT_SettingsSelection]   = {"Settings", {}, [this](int id, int* fIdx){GlobalSettings(id, fIdx);}};
 }
 
 void MenuSystem::setMenu(MenuType menuType)
@@ -69,136 +47,74 @@ void MenuSystem::setMenu(MenuType menuType)
 
 void MenuSystem::handleMediaAndEditButtons()
 {
-    int numButtons = m_keyboardShortcuts.size();
-
-    // check the media-buttons
-    for (int i = 0; i < numButtons; ++i)
+    // check the media-slot-ids
+    for (int mediaSlotId : m_ui.getTriggeredMediaSlotIds())
     {
-        ImGuiKey key = m_keyboardShortcuts[i];
-        if (ImGui::IsKeyDown(key))
-        {
-            int bank = m_registry.inputMappings().bank;
-            int id = bank * numButtons + i;
-            m_id = id;
+        m_id = mediaSlotId;
 
-            if (m_currentMenuType == MT_StartupScreen) setMenu(MT_InputSelection);
-            return;
-        }
+        if (m_currentMenuType == MT_StartupScreen) setMenu(MT_InputSelection);
+        return;
     }
 
     // check the edit-buttons
-    for (ImGuiKey editButton : m_keyboardShortcuts_editButtons)
+    for (int editButtonId : m_ui.getTriggeredEditButtons())
     {
-        if (ImGui::IsKeyDown(editButton))
+        switch (editButtonId)
         {
-            switch (editButton)
-            {
-            case ImGuiKey_Q:
-                setMenu(MT_InfoSelection);
-                break;
-            case ImGuiKey_W:
-                setMenu(MT_InputSelection);
-                break;
-            case ImGuiKey_E:
-                setMenu(MT_PlaybackSelection);
-                break;
-            case ImGuiKey_R:
-                break;
-            case ImGuiKey_T:
-                break;
-            case ImGuiKey_Z:
-                break;
-            case ImGuiKey_U:
-                setMenu(MT_NetworkInfo);
-                break;
-            case ImGuiKey_I:
-                setMenu(MT_SettingsSelection);
-                break;
-            default:
-                break;
-            }
-
-            
-        }
-    }
-}
-
-void MenuSystem::HandleUpAndDownKeys()
-{
-    // if (!ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
-    //     m_ui.FocusPreviousElement();
-    // }
-    // else if (!ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
-    //     m_ui.FocusNextElement();
-    // }
-}
-
-void MenuSystem::render()
-{
-    m_ui.NewFrame();
-    handleMediaAndEditButtons();
-
-    // if (!m_currentMenu)
-    // {
-    //     m_ui.CenteredText("VM-1");
-    //     return;
-    // }
-
-    // Traverse to current menu
-    const MenuItem* menuItem = &(m_menus[m_currentMenuType]);
-    for (int idx : m_currentMenuPath) {
-        if (idx >= 0 && idx < (int)menuItem->children.size())
-            menuItem = &menuItem->children[idx];
-        else
+        case 0:
+            setMenu(MT_InfoSelection);
             break;
-    }
-
-    // Render title
-    if (!menuItem->label.empty()) {
-        m_ui.MenuTitle(menuItem->label);
-    }
-
-    // Render bank information
-    if (m_currentMenuType == MT_InfoSelection  || 
-        m_currentMenuType == MT_InputSelection || 
-        m_currentMenuType == MT_PlaybackSelection) {
-            int id16 = m_id % 16;
-            char bank = m_id / 16 + 65;
-            std::string mediaSlotString = std::string(1, bank) + std::to_string(id16);
-            m_ui.MenuInfo(mediaSlotString);
+        case 1:
+            setMenu(MT_InputSelection);
+            break;
+        case 2:
+            setMenu(MT_PlaybackSelection);
+            break;
+        case 3:
+            break;
+        case 4:
+            break;
+        case 5:
+            break;
+        case 6:
+            setMenu(MT_NetworkInfo);
+            break;
+        case 7:
+            setMenu(MT_SettingsSelection);
+            break;
+        default:
+            break;
         }
-
-
-    // Render dynamic content (if present)
-    if (menuItem->func) {
-        menuItem->func(&m_registry, m_id, &m_focusedIdx);
     }
-    // Otherwise render static content
-    else { 
-        m_ui.BeginList(&m_focusedIdx);
-        for (int i = 0; i < (int)menuItem->children.size(); ++i) {
-            std::string label = menuItem->children[i].label;
-            m_ui.Text(label);
-        }
-        m_ui.EndList();
+}
+
+void MenuSystem::handleUpAndDownKeys()
+{
+    if(m_ui.isNavigationEventTriggered(NavigationEvent::Type::FocusNext))
+    {
+        m_ui.FocusNextElement();
     }
+    else if(m_ui.isNavigationEventTriggered(NavigationEvent::Type::FocusPrevious))
+    {
+        m_ui.FocusPreviousElement();
+    }
+}
 
-    HandleUpAndDownKeys();
-    
-
-    // Handle bank switching
-    if (ImGui::IsKeyDown(ImGuiKey_LeftShift) && (ImGui::IsKeyPressed(ImGuiKey_RightArrow))) {
+void MenuSystem::handleBankSwitching()
+{
+    if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::BankDown)) {
         m_registry.inputMappings().bank = (m_registry.inputMappings().bank + 1) % 4; 
     }
-    else if (ImGui::IsKeyDown(ImGuiKey_LeftShift) && (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))) {
+    else if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::BankUp)) {
         m_registry.inputMappings().bank = (m_registry.inputMappings().bank - 1) % 4;
         if (m_registry.inputMappings().bank < 0) m_registry.inputMappings().bank = 3;
     }
+}
 
-
+void MenuSystem::handleMenuHierachyNavigation(const MenuItem *menuItem)
+{
     // Handle navigation
-    if  ( (!ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) || 
-        (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_DownArrow)) ) {
+    if  (m_ui.isNavigationEventTriggered(NavigationEvent::Type::HierarchyDown)) {
         // Go deeper if selected item has children or a render_func (treat as a page)
         if (m_focusedIdx >= 0 && m_focusedIdx < (int)menuItem->children.size()) {
             auto& sel = menuItem->children[m_focusedIdx];
@@ -208,8 +124,7 @@ void MenuSystem::render()
             }
         }
     }
-    else if ( (!ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) || 
-            (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_UpArrow))) 
+    else if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::HierarchyUp)) 
     {
         // Go up one level
         if (!m_currentMenuPath.empty()) {
@@ -223,25 +138,84 @@ void MenuSystem::render()
     }
 }
 
+void MenuSystem::render()
+{
+    m_ui.NewFrame();
+
+    // Traverse to current menu
+    const MenuItem* menuItem = &(m_menus[m_currentMenuType]);
+    for (int idx : m_currentMenuPath) {
+        if (idx >= 0 && idx < (int)menuItem->children.size())
+        menuItem = &menuItem->children[idx];
+        else
+        break;
+    }
+    
+    // Render title
+    if (!menuItem->label.empty()) {
+        m_ui.MenuTitle(menuItem->label);
+    }
+
+    // Render bank information
+    if (m_currentMenuType == MT_InfoSelection  || 
+        m_currentMenuType == MT_InputSelection || 
+        m_currentMenuType == MT_PlaybackSelection) 
+    {
+        int id16 = m_id % 16;
+        char bank = m_id / 16 + 65;
+        std::string mediaSlotString = std::string(1, bank) + std::to_string(id16);
+
+        // int id16 = m_id % 16;
+        // char bank = m_registry.inputMappings().bank;
+        // std::string mediaSlotString = std::string(1, bank) + std::to_string(id16 + 62);
+        m_ui.MenuInfo(mediaSlotString);
+    }
+
+
+    // Render dynamic content (if present)
+    if (menuItem->func) 
+    {
+        menuItem->func(m_id, &m_focusedIdx);
+    }
+    // Otherwise render static content
+    else 
+    { 
+        m_ui.BeginList(&m_focusedIdx);
+        for (int i = 0; i < (int)menuItem->children.size(); ++i) {
+            std::string label = menuItem->children[i].label;
+            m_ui.Text(label);
+        }
+        m_ui.EndList();
+    }
+
+    handleMediaAndEditButtons();
+    handleUpAndDownKeys();    
+    handleBankSwitching();
+    handleMenuHierachyNavigation(menuItem);
+
+
+    m_ui.EndFrame();
+}
+
 // DYNAMIC CONTENT
 // TODO: Could be put in different namespaces
-void MenuSystem::StartupScreen(Registry* registry, int id, int* focusedIdx)
+void MenuSystem::StartupScreen(int id, int* focusedIdx)
 {
     m_ui.CenteredText("VM-1");
     //m_ui.Text("VM-1");
 }
 
-void MenuSystem::FileSelection(Registry* registry, int id, int* focusedIdx)
+void MenuSystem::FileSelection(int id, int* focusedIdx)
 {
     auto config = std::make_unique<VideoInputConfig>();
-    config->looping = registry->settings().defaultLooping;
+    config->looping = m_registry.settings().defaultLooping;
 
-    VideoInputConfig* currentConfig = registry->inputMappings().getVideoInputConfig(id);
+    VideoInputConfig* currentConfig = m_registry.inputMappings().getVideoInputConfig(id);
     if (currentConfig) {
         *config = *currentConfig;
     } 
 
-    std::vector<std::string>& files = registry->mediaPool().getVideoFiles();
+    std::vector<std::string>& files = m_registry.mediaPool().getVideoFiles();
     bool changed = false;
     m_ui.BeginList(focusedIdx);
     for (int i = 0; i < files.size(); ++i) {
@@ -254,13 +228,13 @@ void MenuSystem::FileSelection(Registry* registry, int id, int* focusedIdx)
     m_ui.EndList(); 
 
     if (changed)
-        registry->inputMappings().addInputConfig(id, std::move(config));
+        m_registry.inputMappings().addInputConfig(id, std::move(config));
 }
 
-void MenuSystem::LiveInputSelection(Registry* registry, int id, int* focusedIdx) 
+void MenuSystem::LiveInputSelection(int id, int* focusedIdx) 
 {
     auto config = std::make_unique<HdmiInputConfig>();
-    HdmiInputConfig* currentConfig = registry->inputMappings().getHdmiInputConfig(id);
+    HdmiInputConfig* currentConfig = m_registry.inputMappings().getHdmiInputConfig(id);
     if (currentConfig) { *config = *currentConfig; }
 
     bool changed = false;
@@ -278,13 +252,13 @@ void MenuSystem::LiveInputSelection(Registry* registry, int id, int* focusedIdx)
 
     if (changed)  {
         //printf("ID: %d, PORT: %d\n", id, config->hdmiPort);
-        registry->inputMappings().addInputConfig(id, std::move(config));
+        m_registry.inputMappings().addInputConfig(id, std::move(config));
     }
 }
 
-void MenuSystem::PlaybackSettings(Registry* registry, int id, int* focusedIdx) 
+void MenuSystem::PlaybackSettings(int id, int* focusedIdx) 
 {
-    InputConfig* currentConfig = registry->inputMappings().getInputConfig(id);
+    InputConfig* currentConfig = m_registry.inputMappings().getInputConfig(id);
     if (!currentConfig) {
         m_ui.BeginList(focusedIdx);
         m_ui.Text("No input selected");
@@ -315,9 +289,9 @@ void MenuSystem::PlaybackSettings(Registry* registry, int id, int* focusedIdx)
     }
 }
 
-void MenuSystem::NetworkInfo(Registry* registry, int id, int* focusedIdx) 
+void MenuSystem::NetworkInfo(int id, int* focusedIdx) 
 {
-    Settings& settings = registry->settings();
+    Settings& settings = m_registry.settings();
     std::string eth0;
     std::string wlan0;
     NetworkTools::getIPAddress("eth0", eth0);
@@ -329,9 +303,9 @@ void MenuSystem::NetworkInfo(Registry* registry, int id, int* focusedIdx)
     m_ui.EndList();
 }
 
-void MenuSystem::GlobalSettings(Registry* registry, int id, int* focusedIdx) 
+void MenuSystem::GlobalSettings(int id, int* focusedIdx) 
 {
-    Settings& settings = registry->settings();
+    Settings& settings = m_registry.settings();
 
     m_ui.BeginList(focusedIdx);
     m_ui.SpinBoxInt("Fade Time", settings.fadeTime, 0, 10);

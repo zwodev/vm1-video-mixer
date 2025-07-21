@@ -1,17 +1,89 @@
 #include "UI.h"
 
 
-UI::UI(StbRenderer &stbRenderer, EventBus &eventBus) : m_stbRenderer(stbRenderer), m_eventBus(eventBus) {
-    m_x = 0;
-    m_y = 0;
-    m_listSize = 0;
-    m_lineHeight = 0;
-    m_menuHeight = 0;
-    m_visibleListElements = 0;
-    m_focusedIdxPtr = nullptr;
-    m_firstLine = 0;
-    m_currentElementHeight = 0;
+UI::UI(StbRenderer &stbRenderer, EventBus &eventBus) : m_stbRenderer(stbRenderer), 
+                                                       m_eventBus(eventBus) 
+{
+    subscribeToEvents();
 }
+
+void UI::subscribeToEvents()
+{
+    // Examples:
+
+    // Media Slot Event
+    m_eventBus.subscribe<MediaSlotEvent>([this](const MediaSlotEvent& event) {
+        printf("Media Slot Event - (Slot Idx: %d)\n", event.slotId);
+        mediaSlotEvents.push_back(event);
+    });
+
+    // Edit Mode Event
+    m_eventBus.subscribe<EditModeEvent>([this](const EditModeEvent& event) {
+        printf("Edit Mode Event - (Mode Idx: %d)\n", event.modeId);
+        editModeEvents.push_back(event);
+
+    });
+
+    // Navigation Event
+    m_eventBus.subscribe<NavigationEvent>([this](const NavigationEvent& event) {
+        printf("Navigation Event - (Type: %d)\n", (int)event.type);
+        navigationEvents.push_back(event);
+    });
+}
+
+bool UI::isNavigationEventTriggered(NavigationEvent::Type eventType) 
+{
+    for (auto e : navigationEvents) 
+    {
+        if (e.type == eventType) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool UI::isMediaSlotEventTriggered(int mediaSlotId) 
+{
+    for (auto e : mediaSlotEvents)
+    {
+        if (e.slotId == mediaSlotId) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool UI::isEditModeEventTriggered(int modeId) 
+{
+    for (auto e : editModeEvents) 
+    {
+        if (e.modeId == modeId) {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::vector<int> UI::getTriggeredMediaSlotIds() 
+{
+    std::vector<int> ids;
+    for(auto e : mediaSlotEvents) 
+    {
+        ids.push_back(e.slotId);
+    }
+    return ids;
+}
+
+std::vector<int> UI::getTriggeredEditButtons() 
+{
+    std::vector<int> ids;
+    for(auto e : editModeEvents) 
+    {
+        ids.push_back(e.modeId);
+    }
+    return ids;
+}
+
 
 void UI::NewFrame()
 {
@@ -19,6 +91,13 @@ void UI::NewFrame()
     m_focusedIdxPtr = nullptr;
     m_x = 0;
     m_y = 0;
+}
+
+void UI::EndFrame()
+{
+    navigationEvents.clear();
+    mediaSlotEvents.clear();
+    editModeEvents.clear();
 }
 
 void UI::FocusNextElement()
@@ -129,7 +208,7 @@ void UI::MenuInfo(std::string menuInfo)
 {
     float fontSize = 32.0f;
     int width = m_stbRenderer.width();
-    m_stbRenderer.drawText(menuInfo, width - 28, 0, fontSize, COLOR::WHITE);
+    m_stbRenderer.drawText(menuInfo, width - 36, 0, fontSize, COLOR::WHITE);
 }
 
 void UI::InfoScreen(int bank, int id, std::string filename)
@@ -146,7 +225,7 @@ bool UI::CheckBox(const std::string& label, bool checked)
 {
     if (!m_focusedIdxPtr) return false;
     bool oldChecked = checked;
-    bool keyPressed = (ImGui::IsKeyPressed(ImGuiKey_RightArrow) || (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_DownArrow)));
+    bool keyPressed = (isNavigationEventTriggered(NavigationEvent::Type::SelectItem));
     bool focused = ((*m_focusedIdxPtr) == m_listSize);
     if (focused && keyPressed) {
         checked = !checked;
@@ -162,7 +241,7 @@ bool UI::CheckBox(const std::string& label, bool checked)
 bool UI::RadioButton(const std::string& label, bool active)
 {
     if (!m_focusedIdxPtr) return false;
-    bool keyPressed = (ImGui::IsKeyPressed(ImGuiKey_RightArrow) || (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsKeyPressed(ImGuiKey_DownArrow)));
+    bool keyPressed = (isNavigationEventTriggered(NavigationEvent::Type::SelectItem));
     bool focused = ((*m_focusedIdxPtr) == m_listSize);
     if (focused && !active && keyPressed) {
         active = true;
@@ -179,9 +258,13 @@ void UI::SpinBoxInt(const std::string& label, int& value, int minValue, int maxV
 {
     if (!m_focusedIdxPtr) return;
     int diff = 0;
-    if (ImGui::IsKeyDown(ImGuiKey_LeftShift)) {
-        if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) diff = 1;
-        else if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) diff = -1;
+    if(isNavigationEventTriggered(NavigationEvent::Type::IncreaseValue))
+    {
+        diff = 1;    
+    }
+    else if(isNavigationEventTriggered(NavigationEvent::Type::DecreaseValue))
+    {
+        diff = -1;
     }
 
     bool focused = ((*m_focusedIdxPtr) == m_listSize);

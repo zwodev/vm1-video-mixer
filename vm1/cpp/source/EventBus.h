@@ -48,7 +48,9 @@ struct NavigationEvent {
         DecreaseValue,
         IncreaseValue,
         HierarchyUp,
-        HierarchyDown
+        HierarchyDown,
+        BankUp,
+        BankDown
     };
 
     NavigationEvent() = delete;

@@ -29,7 +29,6 @@
 #include "source/VideoPlayer.h"
 #include "source/CameraPlayer.h"
 #include "source/FileAssignmentWidget.h"
-#include "source/KeyForwarder.h"
 #include "source/CameraController.h"
 #include "source/OledUiRenderer.h"
 #include "source/OledController.h"
@@ -165,7 +164,7 @@ int main(int, char **)
     EventBus eventBus;
 
     // Keyboard controller
-    KeyboardController keyboardController(eventBus);
+    KeyboardController keyboardController(registry, eventBus);
 
     // Playback operator
     PlaybackOperator playbackOperator(registry);

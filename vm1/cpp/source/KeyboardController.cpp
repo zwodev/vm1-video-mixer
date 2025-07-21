@@ -2,7 +2,7 @@
 
 #include "stdio.h"
 
-KeyboardController::KeyboardController(EventBus &eventBus) : m_eventBus(eventBus)
+KeyboardController::KeyboardController(Registry &registry, EventBus &eventBus) : m_registry(registry), m_eventBus(eventBus)
 {
 }
 
@@ -16,7 +16,7 @@ void KeyboardController::update(SDL_Event &event)
         case SDLK_UP:
             if (shiftPressed)
             {
-                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::DecreaseValue));
+                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::IncreaseValue));
             }
             else
             {
@@ -27,7 +27,7 @@ void KeyboardController::update(SDL_Event &event)
         case SDLK_DOWN:
             if (shiftPressed)
             {
-                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::IncreaseValue));
+                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::DecreaseValue));
             }
             else
             {
@@ -36,11 +36,26 @@ void KeyboardController::update(SDL_Event &event)
             return;
             break;
         case SDLK_LEFT:
-             m_eventBus.publish(NavigationEvent(NavigationEvent::Type::HierarchyUp));
-             return;
+            if (shiftPressed)
+            {
+                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::BankUp));
+            }
+            else 
+            {
+                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::HierarchyUp));
+            }
+            return;
             break;
         case SDLK_RIGHT:
-             m_eventBus.publish(NavigationEvent(NavigationEvent::Type::HierarchyDown));
+            if (shiftPressed)
+            {
+                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::BankDown));
+            }
+            else
+            {
+                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::HierarchyDown));
+                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::SelectItem));
+            }
              return;
             break;
         default:
@@ -57,9 +72,9 @@ void KeyboardController::update(SDL_Event &event)
 
         for(int i = 0; i < m_mediaKeys.size(); ++i) 
         {
-            // event = bank * i
+            int mediaSlotId = (m_registry.inputMappings().bank * 16) + i;
             if (event.key.key == m_mediaKeys[i]) {
-                m_eventBus.publish(MediaSlotEvent(i));
+                m_eventBus.publish(MediaSlotEvent(mediaSlotId));
                 return;
             }
         }

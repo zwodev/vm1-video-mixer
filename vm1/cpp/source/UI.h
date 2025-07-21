@@ -24,6 +24,7 @@ public:
     ~UI() = default;
     UI(StbRenderer &stbRenderer, EventBus &eventBus);
     void NewFrame();
+    void EndFrame();
     void FocusNextElement();
     void FocusPreviousElement();
     void DrawTitle(const std::string& label);
@@ -39,17 +40,28 @@ public:
     bool CheckBox(const std::string& label, bool checked);
     bool RadioButton(const std::string& label, bool active);
     void SpinBoxInt(const std::string& label, int& value, int minValue, int maxValue);
-
+    bool isNavigationEventTriggered(NavigationEvent::Type eventType);
+    bool isMediaSlotEventTriggered(int mediaSlotId);
+    bool isEditModeEventTriggered(int modeId);
+    std::vector<int> getTriggeredMediaSlotIds();
+    std::vector<int> getTriggeredEditButtons();
+    
 private:
+    void subscribeToEvents();
+
+    std::vector<MediaSlotEvent> mediaSlotEvents;
+    std::vector<EditModeEvent> editModeEvents;
+    std::vector<NavigationEvent> navigationEvents;
+
     StbRenderer& m_stbRenderer;
     EventBus& m_eventBus;
-    int m_x;
-    int m_y;
-    int m_listSize;
-    int m_lineHeight;
-    int m_menuHeight;
-    int m_visibleListElements;
-    int* m_focusedIdxPtr;
-    int m_firstLine;
-    int m_currentElementHeight;
+    int m_x = 0;
+    int m_y = 0;
+    int m_listSize = 0;
+    int m_lineHeight = 0;
+    int m_menuHeight = 0;
+    int m_visibleListElements = 0;
+    int* m_focusedIdxPtr = 0;
+    int m_firstLine = 0;
+    int m_currentElementHeight = 0;
 };
