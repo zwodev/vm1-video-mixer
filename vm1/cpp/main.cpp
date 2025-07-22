@@ -64,18 +64,18 @@ int main(int, char **)
     int x_offsets[2] = { 0, 0 };
     int y_offsets[2] = { 0, 0 };
     int num_displays;
-    SDL_DisplayID *displays = SDL_GetDisplays(&num_displays);
-    SDL_Log("Found %d display(s)", num_displays);
-    for (int i = 0; i < num_displays; ++i)
-    {
-        SDL_Log("Display ID for %d: %d", i, displays[i]);
-        // SDL_DisplayMode mode;
-        // if (SDL_GetCurrentDisplayMode(displays[i], &mode) == 0) {
-        //     SDL_Log("Display %d native resolution: %dx%d @ %dHz\n",
-        //            i, mode.w, mode.h, mode.refresh_rate);
-        // }
-    }
-    SDL_free(displays);
+    //SDL_DisplayID *displays = SDL_GetDisplays(&num_displays);
+    // SDL_Log("Found %d display(s)", num_displays);
+    // for (int i = 0; i < num_displays; ++i)
+    // {
+    //     //SDL_Log("Display ID for %d: %d", i, displays[i]);
+    //     // SDL_DisplayMode mode;
+    //     // if (SDL_GetCurrentDisplayMode(displays[i], &mode) == 0) {
+    //     //     SDL_Log("Display %d native resolution: %dx%d @ %dHz\n",
+    //     //            i, mode.w, mode.h, mode.refresh_rate);
+    //     // }
+    // }
+    // SDL_free(displays);
 
     // Create window with graphics context
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
@@ -237,16 +237,8 @@ int main(int, char **)
 
         registry.update(deltaTime);
         playbackOperator.update(deltaTime);
-        //keyForwarder.forwardArrowKeys(mainContext, fboContext);
-
-        // START: Render to FBO (OLED) before main gui
-        // ImGui::SetCurrentContext(fboContext);
-        // ImGui_ImplOpenGL3_NewFrame();
-        // ImGui_ImplSDL3_NewFrame();
-        // ImGui::NewFrame();
         menuSystem.render();
         stbRenderer.update();
-        //  END: Render to FBO (OLED) before main gui
 
         // Start the Dear ImGui frame
         ImGui::SetCurrentContext(mainContext);
@@ -265,8 +257,6 @@ int main(int, char **)
                 static float fadeTimeInSecs = 2.0f;
                 if (ImGui::SliderFloat("Fade Time", &fadeTimeInSecs, 0.0f, 5.0f))
                 {
-                    //videoPlane0.setFadeTime(fadeTimeInSecs);
-                    //videoPlane1.setFadeTime(fadeTimeInSecs);
                 }
                 if (ImGui::Button("Save Registry"))
                 {
@@ -277,14 +267,9 @@ int main(int, char **)
                 {
                     cameraController.setupDetached();
                 }
-                // if (ImGui::Button("Start HDMI2CSI"))
-                // {
-                //     cameraRenderer0.start();
-                // }
                 ImGui::Checkbox("Show HDMI2CSI", &isCameraEnabled);
                 ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
                 ImGui::End();
-                //printf("FPS: %f\n", io.Framerate);
             }
 
             // OLED debug window
@@ -337,16 +322,10 @@ int main(int, char **)
     }
 
     // Cleanup
-    // ImGui::SetCurrentContext(fboContext);
-    // ImGui_ImplOpenGL3_Shutdown();
-    // ImGui_ImplSDL3_Shutdown();
-
     ImGui::SetCurrentContext(mainContext);
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL3_Shutdown();
-
     ImGui::DestroyContext(mainContext);
-    // ImGui::DestroyContext(fboContext);
 
     SDL_GL_DestroyContext(gl_context);
     for (int i = 0; i < windows.size(); ++i)

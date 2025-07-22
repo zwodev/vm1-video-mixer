@@ -37,6 +37,7 @@ deps += c.find_library('lgpio', required: true)
 deps += c.find_library('m', required: true)  # `-lm` for math functions
 
 sources = [ 'main.cpp', 
+            'source/VM1Application.cpp',
             'source/FileAssignmentWidget.cpp', 
             'source/CameraPlayer.cpp', 
             'source/PlaneRenderer.cpp', 
