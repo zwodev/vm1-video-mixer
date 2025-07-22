@@ -2,7 +2,6 @@
 
 PlaybackOperator::PlaybackOperator(Registry &registry) : m_registry(registry)
 {
-    initialize();
 }
 
 PlaybackOperator::~PlaybackOperator()

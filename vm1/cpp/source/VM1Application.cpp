@@ -29,12 +29,20 @@ bool VM1Application::initialize()
 {
     if (!initSDL(false)) {
         SDL_Log("Failed to initialize SDL!");
+        return false;
     }
 
     if (!initImGui()) {
         SDL_Log("Failed it initialize ImGui!");
+        return false;
     }
     
+    m_playbackOperator.initialize();
+    m_cameraController.setupDetached();
+    m_oledController.setStbRenderer(&m_stbRenderer);
+    m_oledController.start();
+
+    return true;
 }
 
 bool VM1Application::initSDL(bool withoutVideo)
@@ -126,6 +134,8 @@ bool VM1Application::initSDL(bool withoutVideo)
     {
         SDL_ShowWindow(m_windows[i]);
     }
+
+    return true;
 }
 
 bool VM1Application::initImGui()
@@ -139,7 +149,9 @@ bool VM1Application::initImGui()
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     ImGui::StyleColorsDark();
-    //SDL_RaiseWindow(windows[0]); 
+    //SDL_RaiseWindow(windows[0]);
+
+    return true;
 }
 
 void VM1Application::finalize()
@@ -189,6 +201,11 @@ bool VM1Application::exec()
                 if (event.key.key == SDLK_ESCAPE) {
                     done = true;
                 }
+            }
+            if (SDL_GetWindowFlags(m_windows[0]) & SDL_WINDOW_MINIMIZED)
+            {
+                SDL_Delay(10);
+                continue;
             }
         }
 
