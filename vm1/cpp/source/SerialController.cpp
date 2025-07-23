@@ -40,6 +40,8 @@ bool SerialController::connect(const std::string &port)
 
 void SerialController::disconnect()
 {
+    if (m_fd < 0) return;
+     
     close(m_fd);
     m_fd = -1;
 }

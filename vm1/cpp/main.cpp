@@ -15,7 +15,10 @@
 int main(int, char **)
 {
     VM1Application vm1;
-    if (!vm1.exec()) return 1;
+    //if (!vm1.exec()) return 1;
+    while (true) {
+        if(!vm1.exec()) break;
+    };
 
     return 0;
 }

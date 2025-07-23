@@ -93,6 +93,7 @@ public:
     ~PlaybackOperator();
 
     void initialize();
+    void finalize();
     void showMedia(int mediaId);
     void update(float deltaTime);
     void renderPlane(int planeId);

@@ -9,6 +9,15 @@
 
 #include "VM1Application.h"
 
+#include <fcntl.h>
+#include <unistd.h>
+#include <linux/input.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+
+#define KEYBOARD_DEVICE "/dev/input/event6"
+
 VM1Application::VM1Application() :
     m_keyboardController(m_registry, m_eventBus),
     m_playbackOperator(m_registry),
@@ -22,22 +31,12 @@ VM1Application::VM1Application() :
 
 VM1Application::~VM1Application()
 {
-
+    finalize();
 }
 
 bool VM1Application::initialize()
 {
-    if (!initSDL(false)) {
-        SDL_Log("Failed to initialize SDL!");
-        return false;
-    }
-
-    if (!initImGui()) {
-        SDL_Log("Failed it initialize ImGui!");
-        return false;
-    }
-    
-    m_playbackOperator.initialize();
+    initializeVideo();
     m_cameraController.setupDetached();
     m_oledController.setStbRenderer(&m_stbRenderer);
     m_oledController.start();
@@ -45,9 +44,41 @@ bool VM1Application::initialize()
     return true;
 }
 
-bool VM1Application::initSDL(bool withoutVideo)
+bool VM1Application::initializeVideo()
 {
-    if (withoutVideo) {
+    m_fd = -1;
+    m_isHeadless = false;
+    bool success = initSDL(true);
+    if (success) {
+        if (!initImGui()) {
+            SDL_Log("Failed it initialize ImGui!");
+            return false;
+        }
+    }
+    else {
+        if (initSDL(false)) {
+            m_isHeadless = true;
+            m_fd = open(KEYBOARD_DEVICE, O_RDONLY | O_NONBLOCK);
+            if (m_fd < 0) {
+               SDL_Log("Failed it initialize linux keyboard device!");
+            }
+
+            SDL_Log("Running in headless mode!");          
+        }
+        else {
+            SDL_Log("Failed to initialize SDL!");
+            return false;
+        }
+    }
+    
+    if (!m_isHeadless) m_playbackOperator.initialize();
+    
+    return true;
+}
+
+bool VM1Application::initSDL(bool withVideo)
+{
+    if (!withVideo) {
         if (!SDL_Init(SDL_INIT_GAMEPAD))
         {
             printf("Error: SDL_Init(): %s\n", SDL_GetError());
@@ -156,7 +187,7 @@ bool VM1Application::initImGui()
 
 void VM1Application::finalize()
 {
-    finalizeImGui();
+    if (!m_isHeadless) finalizeImGui();
     finalizeSDL();
 }
 
@@ -166,6 +197,7 @@ void VM1Application::finalizeImGui()
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext(m_imguiContext);
+    m_imguiContext = nullptr;
 }
 
 void VM1Application::finalizeSDL()
@@ -175,7 +207,55 @@ void VM1Application::finalizeSDL()
     {
         SDL_DestroyWindow(m_windows[i]);
     }
+    m_windows.clear();
     SDL_Quit();
+}
+
+bool VM1Application::processSDLInput()
+{
+    SDL_Event event;
+    SDL_PollEvent(&event);
+    m_keyboardController.update(event);
+    if (!m_isHeadless) ImGui_ImplSDL3_ProcessEvent(&event);
+    if (event.type == SDL_EVENT_KEY_DOWN)
+    {
+        if (event.key.key == SDLK_ESCAPE) {
+            return false;
+        }
+        else if (event.key.key == SDLK_SPACE) {
+            m_playbackOperator.finalize();
+            finalize();
+            initializeVideo();
+            SDL_Log("Reinitialize video!"); 
+        }
+    }
+
+    return true;
+}
+
+bool VM1Application::processLinuxInput()
+{
+    if (m_fd < 0) return false;
+
+    input_event ev;
+    ssize_t n = read(m_fd, &ev, sizeof(ev));
+    if (n == (ssize_t)sizeof(ev)) {
+        if (ev.type == EV_KEY) {
+            if (ev.code == KEY_ESC && ev.value == 1) {
+                return false;
+            }
+            else if (ev.code == KEY_SPACE && ev.value == 1) {
+                m_playbackOperator.finalize();
+                finalize();
+                initializeVideo();
+                SDL_Log("Reinitialize video!"); 
+            }
+        }
+    } else if (n == -1 && errno != EAGAIN) {
+        return false;
+    }
+
+    return true;
 }
 
 bool VM1Application::exec()
@@ -191,22 +271,11 @@ bool VM1Application::exec()
         double deltaTime = (currentTime - lastTime) / 1000.0;
         lastTime = currentTime;
 
-        SDL_Event event;
-        while (SDL_PollEvent(&event))
-        {
-            m_keyboardController.update(event);
-            ImGui_ImplSDL3_ProcessEvent(&event);
-            if (event.type == SDL_EVENT_KEY_DOWN)
-            {
-                if (event.key.key == SDLK_ESCAPE) {
-                    done = true;
-                }
-            }
-            if (SDL_GetWindowFlags(m_windows[0]) & SDL_WINDOW_MINIMIZED)
-            {
-                SDL_Delay(10);
-                continue;
-            }
+        if (m_isHeadless) {
+            if (!processLinuxInput()) done = true;
+        }
+        else {
+            if (!processSDLInput()) done = true;
         }
 
         m_registry.update(deltaTime);
@@ -214,15 +283,17 @@ bool VM1Application::exec()
         m_menuSystem.render();
         m_stbRenderer.update();
 
-        renderImGui();
+        if (!m_isHeadless) { 
+            renderImGui();
 
-        for (int i = 0; i < m_windows.size(); ++i) {
-            renderWindow(i);
+            for (int i = 0; i < m_windows.size(); ++i) {
+                renderWindow(i);
+            }
+
+            // End the frame 
+            // TODO: Can this be moved to "renderImGui"?
+            
         }
-
-        // End the frame 
-        // TODO: Can this be moved to "renderImGui"?
-        ImGui::EndFrame();
     }
 
     finalize();
@@ -273,6 +344,7 @@ void VM1Application::renderImGui()
     }
 
     m_fileAssignmentWidget.render();
+    ImGui::EndFrame();
 }
 
 void VM1Application::renderWindow(int windowIndex)

@@ -6,17 +6,7 @@ PlaybackOperator::PlaybackOperator(Registry &registry) : m_registry(registry)
 
 PlaybackOperator::~PlaybackOperator()
 {
-    for (auto videoPlayer : m_videoPlayers) {
-        delete videoPlayer;
-    }
-
-    for (auto cameraPlayer : m_cameraPlayers) {
-        delete cameraPlayer;
-    } 
-
-    for (auto planeRenderer : m_planeRenderers) {
-        delete planeRenderer;
-    } 
+    finalize();
 }
 
 void PlaybackOperator::initialize()
@@ -51,6 +41,29 @@ void PlaybackOperator::initialize()
     {
         printf("Could not open serial device: %s\n", serialDevice.c_str());
     }
+}
+
+void PlaybackOperator::finalize()
+{
+    for (auto videoPlayer : m_videoPlayers) {
+        delete videoPlayer;
+    }
+    m_videoPlayers.clear();
+
+    for (auto cameraPlayer : m_cameraPlayers) {
+        delete cameraPlayer;
+    } 
+    m_cameraPlayers.clear();
+
+    for (auto planeRenderer : m_planeRenderers) {
+        delete planeRenderer;
+    }
+
+    m_mediaPlayers.clear();
+    m_planeRenderers.clear();
+    m_planeMixers.clear();
+    m_mediaSlotIdToPlayerId.clear();
+    m_serialController.disconnect();
 }
 
 bool PlaybackOperator::getFreeVideoPlayerId(int& id)

@@ -41,15 +41,21 @@ public:
 
 private:
     bool initialize();
+    bool initializeVideo();
     bool initSDL(bool withoutVideo);
     bool initImGui();
     void finalize();
     void finalizeImGui();
     void finalizeSDL();
+
+    bool processSDLInput();
+    bool processLinuxInput();
     void renderImGui();
     void renderWindow(int windowIndex);
 
 private:
+    int m_fd = -1;
+    bool m_isHeadless = true;
     SDL_GLContext m_glContext = nullptr;
     std::vector<SDL_Window *> m_windows;
     ImGuiContext* m_imguiContext = nullptr;
