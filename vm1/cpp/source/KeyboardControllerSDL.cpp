@@ -2,7 +2,7 @@
 
 #include "stdio.h"
 
-KeyboardControllerSDL::KeyboardControllerSDL(Registry &registry, EventBus &eventBus) :
+KeyboardControllerSDL::KeyboardControllerSDL(Registry& registry, EventBus& eventBus) :
     KeyboardController(registry, eventBus)
 {
 }
@@ -11,7 +11,7 @@ KeyboardControllerSDL::~KeyboardControllerSDL()
 {
 }
 
-void KeyboardControllerSDL::update(SDL_Event &event)
+void KeyboardControllerSDL::update(SDL_Event& event)
 {
     if (event.type == SDL_EVENT_KEY_DOWN)
     {

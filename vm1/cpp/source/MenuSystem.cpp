@@ -16,7 +16,10 @@
 
 const int NUM_BANKS = 4;
 
-MenuSystem::MenuSystem(UI& ui, Registry& registry, EventBus& eventBus) : m_ui(ui), m_registry(registry), m_eventBus(eventBus)
+MenuSystem::MenuSystem(UI& ui, Registry& registry, EventBus& eventBus) : 
+    m_ui(ui), 
+    m_registry(registry), 
+    m_eventBus(eventBus)
 {   
     createMenus();
     setMenu(MT_StartupScreen);

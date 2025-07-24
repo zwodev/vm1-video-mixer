@@ -22,7 +22,7 @@ public:
     virtual ~InputConfig() = 0;
 
     template <class Archive>
-    void serialize(Archive &ar) {}
+    void serialize(Archive& ar) {}
 };
 inline InputConfig::~InputConfig() = default;
 
@@ -37,7 +37,7 @@ public:
     bool backwards = false;
 
     template <class Archive>
-    void serialize(Archive &ar)
+    void serialize(Archive& ar)
     {
         ar(cereal::base_class<InputConfig>(this), fileName, looping, backwards);
     }
@@ -52,7 +52,7 @@ public:
     int hdmiPort = 0;
 
     template <class Archive>
-    void serialize(Archive &ar)
+    void serialize(Archive& ar)
     {
         ar(cereal::base_class<InputConfig>(this), hdmiPort);
     }
@@ -75,7 +75,7 @@ public:
         m_idsToValue[id] = std::move(inputConfig);
     }
 
-    InputConfig *getInputConfig(int id)
+    InputConfig* getInputConfig(int id)
     {
         InputConfig *inputConfig = nullptr;
 
@@ -88,7 +88,7 @@ public:
         return inputConfig;
     }
 
-    VideoInputConfig *getVideoInputConfig(int id)
+    VideoInputConfig* getVideoInputConfig(int id)
     {
         InputConfig *inputConfig = getInputConfig(id);
         if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
@@ -99,7 +99,7 @@ public:
         return nullptr;
     }
 
-    HdmiInputConfig *getHdmiInputConfig(int id)
+    HdmiInputConfig* getHdmiInputConfig(int id)
     {
         InputConfig *inputConfig = getInputConfig(id);
         if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
@@ -111,7 +111,7 @@ public:
     }
 
     template <class Archive>
-    void serialize(Archive &ar)
+    void serialize(Archive& ar)
     {
         ar(bank, m_idsToValue);
     }
@@ -133,14 +133,14 @@ public:
 
     ~MediaPool() = default;
 
-    std::vector<std::string> &getVideoFiles()
+    std::vector<std::string>& getVideoFiles()
     {
         // TODO: Update only when new files are present.
         updateVideoFiles();
         return m_videoFiles;
     }
 
-    std::string getVideoFilePath(const std::string &fileName)
+    std::string getVideoFilePath(const std::string& fileName)
     {
         return m_videoFilePath + fileName;
     }
@@ -188,9 +188,9 @@ public:
     Registry() { load(); }
     ~Registry() {}
 
-    Settings &settings() { return m_settings; }
-    InputMappings &inputMappings() { return m_inputMappings; }
-    MediaPool &mediaPool() { return m_mediaPool; }
+    Settings& settings() { return m_settings; }
+    InputMappings& inputMappings() { return m_inputMappings; }
+    MediaPool& mediaPool() { return m_mediaPool; }
 
     void update(float deltaTime) {
         m_timeSinceLastHash += deltaTime;

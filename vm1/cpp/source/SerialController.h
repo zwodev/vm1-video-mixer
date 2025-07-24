@@ -62,9 +62,9 @@ public:
     SerialController() = default;
     ~SerialController() = default;
 
-    bool connect(const std::string &port);
+    bool connect(const std::string& port);
     void disconnect();
-    void send(const VM1DeviceState &state);
+    void send(const VM1DeviceState& state);
 
 private:
     int m_fd = -1;

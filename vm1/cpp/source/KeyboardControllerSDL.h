@@ -9,7 +9,7 @@ public:
     explicit KeyboardControllerSDL(Registry &registry, EventBus &eventBus);
     ~KeyboardControllerSDL();
 
-    void update(SDL_Event &event);
+    void update(SDL_Event& event);
 
 private:
     std::vector<SDL_Keycode> m_editKeys = {SDLK_Q, SDLK_W, SDLK_E, SDLK_R, SDLK_T, SDLK_Z, SDLK_U, SDLK_I};

@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-KeyboardControllerLinux::KeyboardControllerLinux(Registry &registry, EventBus &eventBus) : 
+KeyboardControllerLinux::KeyboardControllerLinux(Registry& registry, EventBus& eventBus) : 
     KeyboardController(registry, eventBus)
 {
 }

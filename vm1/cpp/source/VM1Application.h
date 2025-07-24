@@ -22,7 +22,6 @@
 #include "PlaybackOperator.h"
 #include "FileAssignmentWidget.h"
 #include "CameraController.h"
-#include "OledUiRenderer.h"
 #include "OledController.h"
 #include "StbRenderer.h"
 #include "MenuSystem.h"

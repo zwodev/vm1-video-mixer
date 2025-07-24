@@ -38,7 +38,7 @@ extern "C"
 
 static SDL_PixelFormat getTextureFormat(enum AVPixelFormat format);
 static bool isSupportedPixelFormat(enum AVPixelFormat format);
-static enum AVPixelFormat getSupportedPixelFormat(AVCodecContext *s, const enum AVPixelFormat *pix_fmts);
+static enum AVPixelFormat getSupportedPixelFormat(AVCodecContext* s, const enum AVPixelFormat* pix_fmts);
 
 
 class VideoPlayer : public MediaPlayer {

@@ -6,24 +6,6 @@
 #include <typeindex>
 #include <memory>
 
-// enum class Event
-// {
-//     GoToIntroState,
-//     GoToInfoState,
-//     GoToSourceState,
-//     GoToPlaybackState,
-//     GoToValueState,
- 
-//     FocusNext,
-//     FocusPrevious,
-//     SelectItem,
-//     IncreaseValue,
-//     DecreaseValue,
-//     GoToParentMenu,
-
-//     ActivateMediaSlot,
-// };
-
 // Each event type is defined as struct.
 // This way it can have several properties.
 struct MediaSlotEvent 
@@ -73,19 +55,6 @@ struct SubscriberList : ISubscriberList {
 class EventBus
 {
 public:
-    //using Handler = std::function<void()>;
-
-    // void subscribe(Event e, Handler h)
-    // {
-    //     handlers[e].push_back(h);
-    // }
-
-    // void publish(Event e)
-    // {
-    //     for (Handler &h : handlers[e])
-    //         h();
-    // }
-
     // Subscribing to an event with std::function. Could be a lambda function for example.
     // Using std::move prevents the duplication of the whole function object.
     // Since the original one is not needed anymore, this is a more efficient way.

@@ -6,6 +6,7 @@
 #include "VideoPlayer.h"
 #include "SerialController.h"
 #include "Registry.h"
+#include "EventBus.h"
 
 #include <vector>
 #include <map>
@@ -89,7 +90,7 @@ private:
 
 class PlaybackOperator {
 public:
-    PlaybackOperator(Registry &registry);
+    PlaybackOperator(Registry& registry, EventBus& eventBus);
     ~PlaybackOperator();
 
     void initialize();
@@ -99,6 +100,7 @@ public:
     void renderPlane(int planeId);
     
 private:
+    void subscribeToEvents();
     bool getCameraPlayerIdFromPort(int port, int& id);
     bool getFreeVideoPlayerId(int& id);
     bool isPlayerIdActive(int playerId);
@@ -106,6 +108,7 @@ private:
 
 private:
     Registry& m_registry;
+    EventBus& m_eventBus;
     SerialController m_serialController;
 
     // Rendering related

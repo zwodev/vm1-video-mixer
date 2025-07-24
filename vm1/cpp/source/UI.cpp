@@ -1,8 +1,9 @@
 #include "UI.h"
 
 
-UI::UI(StbRenderer &stbRenderer, EventBus &eventBus) : m_stbRenderer(stbRenderer), 
-                                                       m_eventBus(eventBus) 
+UI::UI(StbRenderer &stbRenderer, EventBus &eventBus) : 
+    m_stbRenderer(stbRenderer), 
+    m_eventBus(eventBus) 
 {
     subscribeToEvents();
 }

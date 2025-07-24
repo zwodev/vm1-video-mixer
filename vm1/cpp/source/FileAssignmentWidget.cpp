@@ -8,9 +8,9 @@
 
 #include "FileAssignmentWidget.h"
 
-FileAssignmentWidget::FileAssignmentWidget(PlaybackOperator& playbackOperator, Registry& registry) :
-    m_playbackOperator(playbackOperator),
-    m_registry(registry)
+FileAssignmentWidget::FileAssignmentWidget(Registry& registry, EventBus& eventBus) :
+    m_registry(registry),
+    m_eventBus(eventBus)
 {
 }
 
@@ -40,9 +40,9 @@ void FileAssignmentWidget::renderButtonMatrix() {
         for (int x = 0; x < WIDTH; x++) {
             ImGui::PushID(y * WIDTH + x);
             
-            int id = bank * (WIDTH * HEIGHT) + y * WIDTH + x;
+            int mediaSlotId = bank * (WIDTH * HEIGHT) + y * WIDTH + x;
             std::string filePath;
-            VideoInputConfig* videoInputConfig = m_registry.inputMappings().getVideoInputConfig(id);
+            VideoInputConfig* videoInputConfig = m_registry.inputMappings().getVideoInputConfig(mediaSlotId);
             if (videoInputConfig) {
                 filePath = videoInputConfig->fileName;
             }
@@ -55,7 +55,7 @@ void FileAssignmentWidget::renderButtonMatrix() {
             std::string buttonLabel = m_keyLabels[y][x];
             
             if (ImGui::Button(buttonLabel.c_str(), ImVec2(buttonSize, buttonSize))) {
-                m_playbackOperator.showMedia(id);
+                m_eventBus.publish(MediaSlotEvent(mediaSlotId));
             }
 
             ImGui::PopStyleVar();
@@ -66,7 +66,7 @@ void FileAssignmentWidget::renderButtonMatrix() {
                     auto videoInputConfig = std::make_unique<VideoInputConfig>();
                     videoInputConfig->looping = m_registry.settings().defaultLooping;
                     videoInputConfig->fileName = m_registry.mediaPool().getVideoFilePath(std::string(static_cast<const char*>(payload->Data)));
-                    m_registry.inputMappings().addInputConfig(id, std::move(videoInputConfig));
+                    m_registry.inputMappings().addInputConfig(mediaSlotId, std::move(videoInputConfig));
                 }
                 ImGui::EndDragDropTarget();
             }
@@ -104,23 +104,4 @@ void FileAssignmentWidget::render() {
         ImGui::End();
     }
 
-    handleKeyboardShortcuts();
-}
-
-void FileAssignmentWidget::handleKeyboardShortcuts() {
-    for (int y = 0; y < HEIGHT; y++) {
-        for (int x = 0; x < WIDTH; x++) {
-            ImGuiKey key = m_keyboardShortcuts[y][x];
-            if (ImGui::IsKeyPressed(key) && !ImGui::IsKeyDown(ImGuiKey_LeftShift)) {
-                int id = m_registry.inputMappings().bank * (2 * WIDTH) + (y * WIDTH) + x;
-                m_playbackOperator.showMedia(id);
-                return;
-            }
-        }
-    }
-}
-
-bool FileAssignmentWidget::isButtonHighlighted(int x, int y) {
-    ImGuiKey key = m_keyboardShortcuts[y][x];
-    return ImGui::IsKeyDown(key);
 }

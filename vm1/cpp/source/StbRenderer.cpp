@@ -81,8 +81,6 @@ void StbRenderer::clear()
 
 void StbRenderer::update()
 {
-    //clear();
-    //drawText("VM-1", 50, 50, 32);
     queueCurrentImage();   
 }
 
@@ -111,7 +109,7 @@ void StbRenderer::drawRect(int x0, int y0, int w, int h, Color color)
             m_img.setPixel(x, y, color.r, color.g, color.b);
 }
 
-void StbRenderer::drawPng(const std::string &filename, int posX, int posY)
+void StbRenderer::drawPng(const std::string& filename, int posX, int posY)
 {
     if (!m_isEnabled) return;
 
@@ -149,12 +147,12 @@ void StbRenderer::drawPng(const std::string &filename, int posX, int posY)
     }
 }
 
-void StbRenderer::savePNG(const std::string &filename)
+void StbRenderer::savePNG(const std::string& filename)
 {
     stbi_write_png(filename.c_str(), m_img.width, m_img.height, 3, m_img.pixels.data(), m_img.width * 3);
 }
 
-bool StbRenderer::loadFont(const std::string &fontPath)
+bool StbRenderer::loadFont(const std::string& fontPath)
 {
     std::ifstream file(fontPath, std::ios::binary);
     if (!file)
@@ -177,7 +175,7 @@ bool StbRenderer::loadFont(const std::string &fontPath)
     return true;
 }
 
-void StbRenderer::drawText(const std::string &text, int posX, int posY, float fontSize, Color color)
+void StbRenderer::drawText(const std::string& text, int posX, int posY, float fontSize, Color color)
 {
     if (!m_isEnabled) return;
 
