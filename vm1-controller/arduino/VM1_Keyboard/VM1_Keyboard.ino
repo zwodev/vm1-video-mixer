@@ -69,7 +69,7 @@ enum ButtonState : uint8_t
 };
 
 #pragma pack(1)
-struct ControllerState
+struct DeviceState
 {
   uint8_t bank;
   ButtonState forward = ButtonState::NONE;
@@ -79,6 +79,19 @@ struct ControllerState
   ButtonState media[16] = {ButtonState::NONE};
 };
 #pragma pack()
+
+DeviceState deviceState;
+
+#pragma pack(1)
+struct DeviceBuffer
+{
+  char buttons[8];
+  int32_t encoder0;
+  int32_t encoder1;
+};
+#pragma pack()
+
+DeviceBuffer deviceBuffer;
 
 // shared debug message between both cores
 // volatile char debug_msg[32] = "- no info -";
@@ -157,9 +170,69 @@ void animateAllNeoPixels()
 
 void onI2CRequestHandler()
 {
-  char buffer[32];
-  snprintf(buffer, sizeof(buffer), "encoder 1: %ld", encoder0_position);
-  Wire.write(buffer);
+  // char buffer[32] = "";
+  // snprintf(buffer, sizeof(buffer), "encoder 1: %ld", encoder0_position);
+  // Wire.write(buffer);
+  Wire.write(reinterpret_cast<const uint8_t*>(&deviceBuffer), sizeof(deviceBuffer));
+}
+
+void onI2CReceiveHandler(int numBytes) {
+    
+     if (numBytes == sizeof(deviceState)) {
+        Wire.readBytes(reinterpret_cast<char*>(&deviceState), sizeof(deviceState));
+        setNeoPixels();
+    }
+}
+
+void setNeoPixels()
+{
+    print_controller_state();
+
+    // set neopixel colors
+
+    // backward-key
+    int *color = colorForButtonState(deviceState.backward);
+    strip.setPixelColor(1, colorFromArray(color));
+
+    // forward-key
+    color = colorForButtonState(deviceState.forward);
+    strip.setPixelColor(0, colorFromArray(color));
+
+    // 8 edit-keys
+    for (uint8_t i = 0; i < 8; ++i)
+    {
+      color = colorForButtonState(deviceState.edit[i]);
+      strip.setPixelColor(2 + i, colorFromArray(color));
+    }
+
+    // upper row media-keys
+    for (uint8_t i = 0; i < 8; ++i)
+    {
+      color = colorForButtonState(deviceState.media[8 - i]);
+      strip.setPixelColor(9 + i, colorFromArray(color));
+    }
+    
+    // fn-key
+    color = colorForButtonState(deviceState.fn);
+    strip.setPixelColor(18, colorFromArray(color));
+
+    // lower row media-keys
+    for (uint8_t i = 0; i < 8; ++i)
+    {
+      color = colorForButtonState(deviceState.media[i + 8]);
+      strip.setPixelColor(19 + i, colorFromArray(color));
+    }
+    
+    // 6 bank-pixels (index 27-32)
+    for (uint8_t i = 0; i < 6; ++i)
+    {
+      color = dark_red;
+      if (i == deviceState.bank) 
+        color = red;
+      strip.setPixelColor(32 - i, colorFromArray(color));
+    }
+    
+    strip.show();
 }
 
 void setup()
@@ -183,6 +256,7 @@ void setup()
   Wire.setSCL(21); // GP21 = SCL
   Wire.begin(I2C_SLAVE_ADDRESS);
   Wire.onRequest(onI2CRequestHandler);
+  Wire.onReceive(onI2CReceiveHandler);
 
   animateAllNeoPixels();
 #ifdef DEBUG
@@ -203,6 +277,8 @@ void loop()
   int8_t enc0 = 0;
   if (enc0 = rotary_encoder_process(&encoder0, encoder0_position))
   {
+    deviceBuffer.encoder0 = encoder0_position;
+
     String res = "Encoder 0: ";
     res += encoder0_position;
     if (enc0 < 0)
@@ -227,6 +303,8 @@ void loop()
   int8_t enc1 = 0;
   if (enc1 = rotary_encoder_process(&encoder1, encoder1_position))
   {
+    deviceBuffer.encoder1 = encoder1_position;
+
     String res = "Encoder 1: ";
     res += encoder1_position;
     if (enc1 < 0)
@@ -242,61 +320,12 @@ void loop()
 
 
   // Read Serial and set NeoPixels
-  if (Serial.available() >= sizeof(ControllerState))
+  if (Serial.available() >= sizeof(deviceState))
   {
-    ControllerState controllerState;
-    Serial.readBytes((char *)&controllerState, sizeof(ControllerState));
+    Serial.readBytes((char *)&deviceState, sizeof(deviceState));
 
-    print_controller_state(controllerState);
-
-    // set bank indicator led
-    set_status_led(controllerState.bank);
-
-    // set neopixel colors
-
-    // backward-key
-    int *color = colorForButtonState(controllerState.backward);
-    strip.setPixelColor(1, colorFromArray(color));
-
-    // forward-key
-    color = colorForButtonState(controllerState.forward);
-    strip.setPixelColor(0, colorFromArray(color));
-
-    // 8 edit-keys
-    for (uint8_t i = 0; i < 8; ++i)
-    {
-      color = colorForButtonState(controllerState.edit[i]);
-      strip.setPixelColor(2 + i, colorFromArray(color));
-    }
-
-    // upper row media-keys
-    for (uint8_t i = 0; i < 8; ++i)
-    {
-      color = colorForButtonState(controllerState.media[i]);
-      strip.setPixelColor(10 + i, colorFromArray(color));
-    }
-    
-    // fn-key
-    color = colorForButtonState(controllerState.fn);
-    strip.setPixelColor(18, colorFromArray(color));
-
-    // lower row media-keys
-    for (uint8_t i = 0; i < 8; ++i)
-    {
-      color = colorForButtonState(controllerState.media[i + 8]);
-      strip.setPixelColor(19 + i, colorFromArray(color));
-    }
-    
-    // 6 bank-pixels (index 27-32)
-    for (uint8_t i = 0; i < 6; ++i)
-    {
-      color = dark_red;
-      if (i == controllerState.bank) 
-        color = red;
-      strip.setPixelColor(32 - i, colorFromArray(color));
-    }
-    
-    strip.show();
+    Serial.println("Received DeviceState from Serial");
+    setNeoPixels();
   }
 
 
@@ -323,30 +352,30 @@ void loop()
 #endif
 }
 
-void print_controller_state(ControllerState controllerState)
+void print_controller_state()
 {
   Serial.println();
   // set bank indicator led
   Serial.print("Bank:\t\t");
-  Serial.println(controllerState.bank);
+  Serial.println(deviceState.bank);
 
   // backward-key
   Serial.print("Backward-key:\t");
-  Serial.println(controllerState.backward);
+  Serial.println(deviceState.backward);
 
   // forward-key
   Serial.print("Forward-key:\t");
-  Serial.println(controllerState.forward);
+  Serial.println(deviceState.forward);
 
   // fn-key
   Serial.print("Fn-key:\t\t");
-  Serial.println(controllerState.fn);
+  Serial.println(deviceState.fn);
 
   // 8 edit-keys
   Serial.print("Edit-keys:\t");
   for (uint8_t i = 0; i < 8; i++)
   {
-    Serial.print(controllerState.edit[i]);
+    Serial.print(deviceState.edit[i]);
     Serial.print("  ");
   }
   Serial.println();
@@ -355,7 +384,7 @@ void print_controller_state(ControllerState controllerState)
   Serial.print("Media-keys:\t");
   for (uint8_t i = 0; i < 16; i++)
   {
-    Serial.print(controllerState.media[i]);
+    Serial.print(deviceState.media[i]);
     if (i != 7)
     {
       Serial.print("  ");
