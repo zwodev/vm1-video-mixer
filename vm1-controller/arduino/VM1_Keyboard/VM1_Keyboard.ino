@@ -4,9 +4,7 @@
 #include <Wire.h>
 
 #include "pico/stdlib.h"
-
 #include "hardware/gpio.h"
-// #include "stdlib.h"
 
 #include "RotaryEncoder.h"
 #include "KeyboardMatrix.h"
@@ -29,7 +27,6 @@
 #define A2_PIN 28
 #define A3_PIN 29
 
-// debug
 // #define DEBUG
 #ifdef DEBUG
 uint32_t d_current_micros, d_previous_micros;
@@ -59,16 +56,6 @@ int yellow[] = {255, 255, 0};
 int magenta[] = {255, 0, 255};
 int cyan[] = {0, 255, 255};
 
-// enum StatusLedState : uint8_t
-// {
-//   RUNNING,
-//   LED_0_ON,
-//   LED_1_ON,
-//   LED_2_ON,
-//   LED_3_ON,
-// };
-// StatusLedState led_state = RUNNING;
-
 enum ButtonState : uint8_t
 {
   NONE,
@@ -97,10 +84,6 @@ struct ControllerState
 // volatile char debug_msg[32] = "- no info -";
 // volatile bool debug_msg_ready = false;
 
-void set_status_led(uint8_t led_index)
-{
-  // todo: set neopixel bank indicator
-}
 
 void blink() // helper function vor anything, e.g. debug message
 {
@@ -171,7 +154,6 @@ void animateAllNeoPixels()
   }
   strip.show();
 }
-
 
 void onI2CRequestHandler()
 {
@@ -265,7 +247,7 @@ void loop()
     ControllerState controllerState;
     Serial.readBytes((char *)&controllerState, sizeof(ControllerState));
 
-    // print_controller_state(controllerState);
+    print_controller_state(controllerState);
 
     // set bank indicator led
     set_status_led(controllerState.bank);
@@ -274,40 +256,49 @@ void loop()
 
     // backward-key
     int *color = colorForButtonState(controllerState.backward);
-    strip.setPixelColor(0, colorFromArray(color));
+    strip.setPixelColor(1, colorFromArray(color));
 
     // forward-key
     color = colorForButtonState(controllerState.forward);
-    strip.setPixelColor(1, colorFromArray(color));
-
-    // fn-key
-    color = colorForButtonState(controllerState.fn);
-    strip.setPixelColor(18, colorFromArray(color));
+    strip.setPixelColor(0, colorFromArray(color));
 
     // 8 edit-keys
-    for (uint8_t i = 0; i < 8; i++)
+    for (uint8_t i = 0; i < 8; ++i)
     {
       color = colorForButtonState(controllerState.edit[i]);
       strip.setPixelColor(2 + i, colorFromArray(color));
     }
 
-    // 16 media-keys
-    for (uint8_t i = 0; i < 16; i++)
+    // upper row media-keys
+    for (uint8_t i = 0; i < 8; ++i)
     {
       color = colorForButtonState(controllerState.media[i]);
-      if (i < 8)
-        strip.setPixelColor(17 - i, colorFromArray(color));
-      else
-        strip.setPixelColor(19 + i - 8, colorFromArray(color));
+      strip.setPixelColor(10 + i, colorFromArray(color));
     }
+    
+    // fn-key
+    color = colorForButtonState(controllerState.fn);
+    strip.setPixelColor(18, colorFromArray(color));
 
-    // todo: 6 bank-pixels
-
+    // lower row media-keys
+    for (uint8_t i = 0; i < 8; ++i)
+    {
+      color = colorForButtonState(controllerState.media[i + 8]);
+      strip.setPixelColor(19 + i, colorFromArray(color));
+    }
+    
+    // 6 bank-pixels (index 27-32)
+    for (uint8_t i = 0; i < 6; ++i)
+    {
+      color = dark_red;
+      if (i == controllerState.bank) 
+        color = red;
+      strip.setPixelColor(32 - i, colorFromArray(color));
+    }
+    
     strip.show();
   }
 
-  // handle status leds state
-  // blink();
 
 #ifdef DEBUG
   uint32_t d_time_after_main_loop = micros();
@@ -338,8 +329,6 @@ void print_controller_state(ControllerState controllerState)
   // set bank indicator led
   Serial.print("Bank:\t\t");
   Serial.println(controllerState.bank);
-
-  // set neopixel colors
 
   // backward-key
   Serial.print("Backward-key:\t");
