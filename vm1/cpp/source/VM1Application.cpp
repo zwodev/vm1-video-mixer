@@ -21,8 +21,8 @@
 VM1Application::VM1Application() :
     m_keyboardControllerSdl(m_registry, m_eventBus),
     m_keyboardControllerLinux(m_registry, m_eventBus),
-    m_playbackOperator(m_registry),
-    m_fileAssignmentWidget(m_playbackOperator, m_registry),
+    m_playbackOperator(m_registry, m_eventBus),
+    m_fileAssignmentWidget(m_registry, m_eventBus),
     m_stbRenderer(128, 128),
     m_ui(m_stbRenderer, m_eventBus),
     m_menuSystem(m_ui, m_registry, m_eventBus)

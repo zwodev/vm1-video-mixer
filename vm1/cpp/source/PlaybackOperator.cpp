@@ -1,12 +1,22 @@
 #include "PlaybackOperator.h"
 
-PlaybackOperator::PlaybackOperator(Registry &registry) : m_registry(registry)
+PlaybackOperator::PlaybackOperator(Registry& registry, EventBus& eventBus) : 
+    m_registry(registry),
+    m_eventBus(eventBus)
 {
+    subscribeToEvents();
 }
 
 PlaybackOperator::~PlaybackOperator()
 {
     finalize();
+}
+
+void PlaybackOperator::subscribeToEvents()
+{
+    m_eventBus.subscribe<MediaSlotEvent>([this](const MediaSlotEvent& event) {
+        showMedia(event.slotId);
+    });
 }
 
 void PlaybackOperator::initialize()
