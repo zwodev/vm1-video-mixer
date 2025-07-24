@@ -103,7 +103,7 @@ bool VideoPlayer::openFile(const std::string& fileName)
             return false;
         }
     }
-    
+
     m_audioStream = av_find_best_stream(m_formatContext, AVMEDIA_TYPE_AUDIO, -1, m_videoStream, &m_audioCodec, 0);
     
     // This is just for rtsp steams. Necessary?

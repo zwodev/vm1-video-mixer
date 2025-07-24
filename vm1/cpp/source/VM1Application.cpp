@@ -352,7 +352,7 @@ void VM1Application::renderImGui()
         // }
     }
 
-    //m_fileAssignmentWidget.render();
+    m_fileAssignmentWidget.render();
     ImGui::EndFrame();
 }
 

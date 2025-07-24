@@ -127,8 +127,8 @@ void PlaybackOperator::showMedia(int mediaSlotId)
         filePath = m_registry.mediaPool().getVideoFilePath(fileName);
 
         if (!getFreeVideoPlayerId(playerId)) return;
+        if (!m_mediaPlayers[playerId]->openFile(filePath)) return;
         if (m_planeMixers[planeId].startFade(playerId)) {
-            m_mediaPlayers[playerId]->openFile(filePath);
             m_mediaPlayers[playerId]->play(); 
             m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
         }
