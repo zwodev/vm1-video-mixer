@@ -102,8 +102,6 @@ bool VM1Application::initSDL(bool withVideo)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 
     // Check number of attached displays
-    int x_offsets[2] = { 0, 0 };
-    int y_offsets[2] = { 0, 0 };
     int num_displays;
     SDL_DisplayID *displays = SDL_GetDisplays(&num_displays);
     SDL_Log("Found %d display(s)", num_displays);
@@ -129,24 +127,28 @@ bool VM1Application::initSDL(bool withVideo)
     SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, 1200);
     SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_Y_NUMBER, 0);
 
+    m_windows.resize(num_displays, nullptr);
     for (int i = 0; i < num_displays; ++i)
     {
+        int displayIndex = (num_displays-1) - i;
         // This is the way to associate the second window with the second screen
         // when using the DRM/KMS backend.
-        SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X_NUMBER, 1920 * i);
+        SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X_NUMBER, 1920 * displayIndex);
 
         SDL_Window *window = SDL_CreateWindowWithProperties(props);
         if (window == nullptr)
         {
             printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
+            finalizeSDL();
             return false;
         }
-        m_windows.push_back(window);
+        m_windows[displayIndex] = window;
     }
 
     if (m_windows.size() < 1)
     {
         SDL_Log("Unable to create an SDL window!");
+        finalizeSDL();
         return false;
     }
 
@@ -154,6 +156,7 @@ bool VM1Application::initSDL(bool withVideo)
     if (m_glContext == nullptr)
     {
         printf("Error: SDL_GL_CreateContext(): %s\n", SDL_GetError());
+        finalizeSDL();
         return false;
     }
 
@@ -181,7 +184,6 @@ bool VM1Application::initImGui()
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     ImGui::StyleColorsDark();
-    //SDL_RaiseWindow(windows[0]);
 
     return true;
 }
@@ -206,7 +208,9 @@ void VM1Application::finalizeSDL()
     SDL_GL_DestroyContext(m_glContext);
     for (int i = 0; i < m_windows.size(); ++i)
     {
-        SDL_DestroyWindow(m_windows[i]);
+        if (m_windows[i]) {
+            SDL_DestroyWindow(m_windows[i]);
+        }
     }
     m_windows.clear();
     SDL_Quit();
@@ -298,10 +302,6 @@ bool VM1Application::exec()
             for (int i = 0; i < m_windows.size(); ++i) {
                 renderWindow(i);
             }
-
-            // End the frame 
-            // TODO: Can this be moved to "renderImGui"?
-            
         }
     }
 
@@ -359,13 +359,16 @@ void VM1Application::renderImGui()
 void VM1Application::renderWindow(int windowIndex)
 {        
         SDL_GL_MakeCurrent(m_windows[windowIndex], m_glContext);
-        ImGui::Render();
         glViewport(0, 60, 1920, 1080);
         glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         m_playbackOperator.renderPlane(windowIndex);
 
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        if (!m_isHeadless && windowIndex == 0) {
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        }
+
         SDL_GL_SwapWindow(m_windows[windowIndex]);
 }

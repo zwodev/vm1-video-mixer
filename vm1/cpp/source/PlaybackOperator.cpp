@@ -255,24 +255,24 @@ void PlaybackOperator::updateSerialController()
         InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
         if (!inputConfig)
         {
-            vm1DeviceState.media[i] = ButtonState::NONE;
+            vm1DeviceState.media[mediaSlotId] = ButtonState::NONE;
         }
         else if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
         {
-            if (m_mediaSlotIdToPlayerId.contains(i)) {
-                vm1DeviceState.media[i] = ButtonState::FILE_ASSET_ACTIVE;
+            if (m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
+                vm1DeviceState.media[mediaSlotId] = ButtonState::FILE_ASSET_ACTIVE;
             }
             else
-                vm1DeviceState.media[i] = ButtonState::FILE_ASSET;
+                vm1DeviceState.media[mediaSlotId] = ButtonState::FILE_ASSET;
         }
         else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
         {
             // TODO: How to handle active HDMI or IMAGE, etc.
-            if (m_mediaSlotIdToPlayerId.contains(i)) {
-                vm1DeviceState.media[i] = ButtonState::LIVECAM_ACTIVE;
+            if (m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
+                vm1DeviceState.media[mediaSlotId] = ButtonState::LIVECAM_ACTIVE;
             }
             else
-                vm1DeviceState.media[i] = ButtonState::LIVECAM;
+                vm1DeviceState.media[mediaSlotId] = ButtonState::LIVECAM;
         }
     }
     m_serialController.send(vm1DeviceState);
