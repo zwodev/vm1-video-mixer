@@ -6,24 +6,6 @@
 #include <typeindex>
 #include <memory>
 
-// enum class Event
-// {
-//     GoToIntroState,
-//     GoToInfoState,
-//     GoToSourceState,
-//     GoToPlaybackState,
-//     GoToValueState,
- 
-//     FocusNext,
-//     FocusPrevious,
-//     SelectItem,
-//     IncreaseValue,
-//     DecreaseValue,
-//     GoToParentMenu,
-
-//     ActivateMediaSlot,
-// };
-
 // Each event type is defined as struct.
 // This way it can have several properties.
 struct MediaSlotEvent 

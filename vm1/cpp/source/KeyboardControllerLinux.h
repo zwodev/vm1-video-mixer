@@ -8,7 +8,7 @@ class KeyboardControllerLinux : public KeyboardController
 {
 public:
     KeyboardControllerLinux() = delete;
-    explicit KeyboardControllerLinux(Registry &registry, EventBus &eventBus);
+    explicit KeyboardControllerLinux(Registry& registry, EventBus& eventBus);
     ~KeyboardControllerLinux();
 
     void update(input_event &event);

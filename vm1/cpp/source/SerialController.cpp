@@ -2,14 +2,13 @@
 
 #include <string>
 #include <iostream>
-// #include <vector>
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
 #include <cstring>
 
 // Helper: Set up serial port
-bool SerialController::connect(const std::string &port)
+bool SerialController::connect(const std::string& port)
 {
     m_fd = open(port.c_str(), O_RDWR);
     if (m_fd < 0)
@@ -46,7 +45,7 @@ void SerialController::disconnect()
     m_fd = -1;
 }
 
-void SerialController::send(const VM1DeviceState &vm1DeviceState)
+void SerialController::send(const VM1DeviceState& vm1DeviceState)
 {
     if (m_fd < 0)
     {

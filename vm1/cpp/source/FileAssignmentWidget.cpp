@@ -104,23 +104,4 @@ void FileAssignmentWidget::render() {
         ImGui::End();
     }
 
-    //handleKeyboardShortcuts();
 }
-
-// void FileAssignmentWidget::handleKeyboardShortcuts() {
-//     for (int y = 0; y < HEIGHT; y++) {
-//         for (int x = 0; x < WIDTH; x++) {
-//             ImGuiKey key = m_keyboardShortcuts[y][x];
-//             if (ImGui::IsKeyPressed(key) && !ImGui::IsKeyDown(ImGuiKey_LeftShift)) {
-//                 int id = m_registry.inputMappings().bank * (2 * WIDTH) + (y * WIDTH) + x;
-//                 m_playbackOperator.showMedia(id);
-//                 return;
-//             }
-//         }
-//     }
-// }
-
-// bool FileAssignmentWidget::isButtonHighlighted(int x, int y) {
-//     ImGuiKey key = m_keyboardShortcuts[y][x];
-//     return ImGui::IsKeyDown(key);
-// }

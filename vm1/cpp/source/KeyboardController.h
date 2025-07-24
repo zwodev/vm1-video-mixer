@@ -9,7 +9,7 @@ class KeyboardController
 {
 public:
     KeyboardController() = delete;
-    explicit KeyboardController(Registry &registry, EventBus &eventBus);
+    explicit KeyboardController(Registry& registry, EventBus& eventBus);
     virtual ~KeyboardController() = 0;
 
 protected:

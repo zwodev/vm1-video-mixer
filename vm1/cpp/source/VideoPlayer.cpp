@@ -428,7 +428,7 @@ void VideoPlayer::customCleanup() {
     m_videoCodec = nullptr;
 }
 
-bool VideoPlayer::getTextureForDRMFrame(AVFrame *frame, VideoFrame &dstFrame)
+bool VideoPlayer::getTextureForDRMFrame(AVFrame* frame, VideoFrame& dstFrame)
 {
     int newWidth = 2048;
     int newHeight = 1530;
@@ -521,7 +521,7 @@ static bool isSupportedPixelFormat(enum AVPixelFormat format)
     return false;
 }
 
-static enum AVPixelFormat getSupportedPixelFormat(AVCodecContext *s, const enum AVPixelFormat *pix_fmts)
+static enum AVPixelFormat getSupportedPixelFormat(AVCodecContext* s, const enum AVPixelFormat* pix_fmts)
 {
     const enum AVPixelFormat *p;
 

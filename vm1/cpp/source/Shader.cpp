@@ -16,7 +16,7 @@
 #include <SDL3/SDL_opengles2.h>
 #include <GLES3/gl31.h>
 
-static size_t fileGetLength(FILE *file) {
+static size_t fileGetLength(FILE* file) {
 	
 	size_t length;
 	size_t currPos = ftell(file);
@@ -66,7 +66,7 @@ bool Shader::link()
 	return true;
 }
 
-bool Shader::load(const char *vertFilename, const char *fragFilename){
+bool Shader::load(const char* vertFilename, const char* fragFilename){
 	
 	GLuint vertShader = loadShaderByType(vertFilename, GL_VERTEX_SHADER);
 	if(!vertShader) {
@@ -97,7 +97,7 @@ bool Shader::load(const char *vertFilename, const char *fragFilename){
 	return true;
 }
 
-bool Shader::load(const char *compFilename)
+bool Shader::load(const char* compFilename)
 {
 	GLuint compShader = loadShaderByType(compFilename, GL_COMPUTE_SHADER);
 	if(!compShader) {
@@ -118,7 +118,7 @@ bool Shader::load(const char *compFilename)
 	return true;
 }
 
-GLuint Shader::loadShaderByType(const char *filename, GLenum shaderType) 
+GLuint Shader::loadShaderByType(const char* filename, GLenum shaderType) 
 {
 	GLuint shader;
 	FILE *file = fopen(filename, "r");
