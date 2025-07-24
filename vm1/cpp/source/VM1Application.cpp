@@ -19,7 +19,8 @@
 #define KEYBOARD_DEVICE "/dev/input/event6"
 
 VM1Application::VM1Application() :
-    m_keyboardController(m_registry, m_eventBus),
+    m_keyboardControllerSdl(m_registry, m_eventBus),
+    m_keyboardControllerLinux(m_registry, m_eventBus),
     m_playbackOperator(m_registry),
     m_fileAssignmentWidget(m_playbackOperator, m_registry),
     m_stbRenderer(128, 128),
@@ -215,7 +216,7 @@ bool VM1Application::processSDLInput()
 {
     SDL_Event event;
     SDL_PollEvent(&event);
-    m_keyboardController.update(event);
+    m_keyboardControllerSdl.update(event);
     if (!m_isHeadless) ImGui_ImplSDL3_ProcessEvent(&event);
     if (event.type == SDL_EVENT_KEY_DOWN)
     {
@@ -240,11 +241,12 @@ bool VM1Application::processLinuxInput()
     input_event ev;
     ssize_t n = read(m_fd, &ev, sizeof(ev));
     if (n == (ssize_t)sizeof(ev)) {
-        if (ev.type == EV_KEY) {
-            if (ev.code == KEY_ESC && ev.value == 1) {
+        if (ev.type == EV_KEY && ev.value == 1) {
+            m_keyboardControllerLinux.update(ev);
+            if (ev.code == KEY_ESC) {
                 return false;
             }
-            else if (ev.code == KEY_SPACE && ev.value == 1) {
+            else if (ev.code == KEY_SPACE) {
                 m_playbackOperator.finalize();
                 finalize();
                 initializeVideo();
@@ -269,6 +271,13 @@ bool VM1Application::exec()
     {
         Uint64 currentTime = SDL_GetTicks();
         double deltaTime = (currentTime - lastTime) / 1000.0;
+       
+        // Force to < 60 fps even when in headless mode
+        if (deltaTime < 0.016) {
+            SDL_Delay(1);
+            continue;
+        }
+
         lastTime = currentTime;
 
         if (m_isHeadless) {
@@ -343,7 +352,7 @@ void VM1Application::renderImGui()
         // }
     }
 
-    m_fileAssignmentWidget.render();
+    //m_fileAssignmentWidget.render();
     ImGui::EndFrame();
 }
 

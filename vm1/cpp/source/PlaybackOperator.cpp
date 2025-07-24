@@ -58,9 +58,9 @@ void PlaybackOperator::finalize()
     for (auto planeRenderer : m_planeRenderers) {
         delete planeRenderer;
     }
-
-    m_mediaPlayers.clear();
     m_planeRenderers.clear();
+
+    m_mediaPlayers.clear(); 
     m_planeMixers.clear();
     m_mediaSlotIdToPlayerId.clear();
     m_serialController.disconnect();

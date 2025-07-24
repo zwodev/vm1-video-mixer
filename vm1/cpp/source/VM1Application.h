@@ -27,7 +27,8 @@
 #include "StbRenderer.h"
 #include "MenuSystem.h"
 #include "UI.h"
-#include "KeyboardController.h"
+#include "KeyboardControllerSDL.h"
+#include "KeyboardControllerLinux.h"
 #include "EventBus.h"
 
 class VM1Application {
@@ -62,7 +63,8 @@ private:
     
     Registry m_registry;
     EventBus m_eventBus;
-    KeyboardController m_keyboardController;
+    KeyboardControllerSDL m_keyboardControllerSdl;
+    KeyboardControllerLinux m_keyboardControllerLinux;
     PlaybackOperator m_playbackOperator;
     CameraController m_cameraController;
     FileAssignmentWidget m_fileAssignmentWidget;
