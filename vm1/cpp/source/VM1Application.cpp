@@ -167,22 +167,25 @@ bool VM1Application::initSDL(bool withVideo)
     SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
     SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_Y_NUMBER, 0);
 
-    int maxX = 0;
-    for (int i = 0; i < m_displayModes.size(); ++i) {
-        maxX += m_displayModes[i].w;
-    }
+    int xOffset = 0;
+    // for (int i = 0; i < m_displayModes.size(); ++i) {
+    //     maxX += m_displayModes[i].w;
+    // }
     m_windows.resize(m_displayModes.size(), nullptr);
     for (int i = 0; i < m_displayModes.size(); ++i)
     {
-        int index = (m_displayModes.size()-1) - i;
+        //int index = (m_displayModes.size()-1) - i;
+        int index = i;
         SDL_DisplayMode mode = m_displayModes[index];
-        int x = maxX - mode.w;
+        //int x = maxX - mode.w;
+
 
         // This is the way to associate the second window with the second screen
         // when using the DRM/KMS backend.
         SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, mode.w);
         SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, mode.h);
-        SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X_NUMBER, x);
+        SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X_NUMBER, xOffset);
+        xOffset += mode.w;
         
 
         SDL_Window *window = SDL_CreateWindowWithProperties(props);
@@ -227,6 +230,8 @@ bool VM1Application::initSDL(bool withVideo)
         SDL_ShowWindow(m_windows[i]);
     }
 
+    SDL_RaiseWindow(m_windows[0]);
+
     return true;
 }
 
@@ -240,6 +245,8 @@ bool VM1Application::initImGui()
     const char *glsl_version = "#version 300 es";
     ImGui_ImplOpenGL3_Init(glsl_version);
 
+    //ImGuiIO &io = ImGui::GetIO();
+    //io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
     ImGui::StyleColorsDark();
 
     return true;
@@ -277,19 +284,20 @@ void VM1Application::finalizeSDL()
 bool VM1Application::processSDLInput()
 {
     SDL_Event event;
-    SDL_PollEvent(&event);
-    m_keyboardControllerSdl.update(event);
-    if (!m_isHeadless) ImGui_ImplSDL3_ProcessEvent(&event);
-    if (event.type == SDL_EVENT_KEY_DOWN)
-    {
-        if (event.key.key == SDLK_ESCAPE) {
-            return false;
-        }
-        else if (event.key.key == SDLK_SPACE) {
-            m_playbackOperator.finalize();
-            finalize();
-            initializeVideo();
-            SDL_Log("Reinitialize video!"); 
+    while (SDL_PollEvent(&event)) {
+        ImGui_ImplSDL3_ProcessEvent(&event);
+        m_keyboardControllerSdl.update(event);
+        if (event.type == SDL_EVENT_KEY_DOWN)
+        {
+            if (event.key.key == SDLK_ESCAPE) {
+                return false;
+            }
+            else if (event.key.key == SDLK_SPACE) {
+                m_playbackOperator.finalize();
+                finalize();
+                initializeVideo();
+                SDL_Log("Reinitialize video!"); 
+            }
         }
     }
 
@@ -333,7 +341,7 @@ bool VM1Application::exec()
     {
         Uint64 currentTime = SDL_GetTicks();
         double deltaTime = (currentTime - lastTime) / 1000.0;
-       
+
         // Force to < 60 fps even when in headless mode
         if (deltaTime < 0.016) {
             SDL_Delay(1);
@@ -375,7 +383,6 @@ void VM1Application::renderImGui()
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
-
 
     // Desktop UI
     // TODO: Put in own class.
@@ -435,11 +442,18 @@ void VM1Application::renderWindow(int windowIndex)
         xOffset = (mode.w - width) / 2;
     }
 
-    SDL_GL_MakeCurrent(m_windows[windowIndex], m_glContext);
+    SDL_GL_MakeCurrent(m_windows[windowIndex], m_glContext);    
     glViewport(xOffset, yOffset, width, height);
     //glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
     glClearColor(0.0f, 0.0f, 0.0f, 1.00f);
     glClear(GL_COLOR_BUFFER_BIT);
+
+    if (m_registry.settings().showUI) {
+        ImGui::SetMouseCursor(ImGuiMouseCursor_Arrow);;
+    }
+    else {
+        ImGui::SetMouseCursor(ImGuiMouseCursor_None);;
+    }
 
     m_playbackOperator.renderPlane(windowIndex);
 
