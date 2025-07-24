@@ -30,6 +30,12 @@
 #include "KeyboardControllerLinux.h"
 #include "EventBus.h"
 
+// class DisplayConfig {
+//     int width;
+//     int height;
+//     double refreshRate;
+// };
+
 class VM1Application {
 
 public:
@@ -42,6 +48,7 @@ public:
 private:
     bool initialize();
     bool initializeVideo();
+    std::vector<SDL_DisplayMode> getBestDisplaysModes();
     bool initSDL(bool withoutVideo);
     bool initImGui();
     void finalize();
@@ -58,6 +65,7 @@ private:
     bool m_isHeadless = true;
     SDL_GLContext m_glContext = nullptr;
     std::vector<SDL_Window *> m_windows;
+    std::vector<SDL_DisplayMode> m_displayModes;
     ImGuiContext* m_imguiContext = nullptr;
     
     Registry m_registry;

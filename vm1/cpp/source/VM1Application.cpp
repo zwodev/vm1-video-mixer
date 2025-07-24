@@ -77,6 +77,48 @@ bool VM1Application::initializeVideo()
     return true;
 }
 
+std::vector<SDL_DisplayMode> VM1Application::getBestDisplaysModes() 
+{
+    std::vector<SDL_DisplayMode> bestDisplayModes;
+
+    int numDisplays;
+    SDL_DisplayID* displays = SDL_GetDisplays(&numDisplays);
+    SDL_Log("Found %d display(s)", numDisplays);
+
+    for (int i = 0; i < numDisplays; ++i) {
+        SDL_Log("Display ID: %d", displays[i]);
+        int numModes;
+        SDL_DisplayMode** displayModes = SDL_GetFullscreenDisplayModes(displays[i], &numModes);
+        if (numModes < 1) {
+            SDL_Log("No display modes found!");
+            return bestDisplayModes;
+        }
+
+        SDL_DisplayMode bestMode = {0};
+        bool found = false;
+        for (int i = 0; i < numModes; ++i) {
+            SDL_DisplayMode mode = *(displayModes[i]);
+            //SDL_Log("Mode: %dx%d @%f", mode.w, mode.h, mode.refresh_rate);
+
+            // Only consider modes up to 1920x1080
+            if (mode.w <= 1920 && mode.refresh_rate <= 60.0) {
+                if (!found ||
+                    (mode.w > bestMode.w) ||
+                    (mode.w == bestMode.w && mode.h > bestMode.h) ||
+                    (mode.w == bestMode.w && mode.h == bestMode.h && mode.refresh_rate > bestMode.refresh_rate)) {
+                    bestMode = mode;
+                    found = true;
+                }
+            }
+        }
+
+        if (found) bestDisplayModes.push_back(bestMode);
+    }
+    SDL_free(displays);
+
+    return bestDisplayModes;
+}
+
 bool VM1Application::initSDL(bool withVideo)
 {
     if (!withVideo) {
@@ -102,10 +144,10 @@ bool VM1Application::initSDL(bool withVideo)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 
     // Check number of attached displays
-    int num_displays;
-    SDL_DisplayID *displays = SDL_GetDisplays(&num_displays);
-    SDL_Log("Found %d display(s)", num_displays);
-    SDL_free(displays);
+    m_displayModes = getBestDisplaysModes();
+    for (const auto& mode : m_displayModes) {
+        SDL_Log("Mode: %dx%d @%f", mode.w, mode.h, mode.refresh_rate);
+    }
 
     // Create window with graphics context
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
@@ -123,17 +165,25 @@ bool VM1Application::initSDL(bool withVideo)
     SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_WAYLAND_CREATE_EGL_WINDOW_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
-    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, 1920);
-    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, 1200);
     SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_Y_NUMBER, 0);
 
-    m_windows.resize(num_displays, nullptr);
-    for (int i = 0; i < num_displays; ++i)
+    int maxX = 0;
+    for (int i = 0; i < m_displayModes.size(); ++i) {
+        maxX += m_displayModes[i].w;
+    }
+    m_windows.resize(m_displayModes.size(), nullptr);
+    for (int i = 0; i < m_displayModes.size(); ++i)
     {
-        int displayIndex = (num_displays-1) - i;
+        int index = (m_displayModes.size()-1) - i;
+        SDL_DisplayMode mode = m_displayModes[index];
+        int x = maxX - mode.w;
+
         // This is the way to associate the second window with the second screen
         // when using the DRM/KMS backend.
-        SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X_NUMBER, 1920 * displayIndex);
+        SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, mode.w);
+        SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, mode.h);
+        SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X_NUMBER, x);
+        
 
         SDL_Window *window = SDL_CreateWindowWithProperties(props);
         if (window == nullptr)
@@ -142,7 +192,14 @@ bool VM1Application::initSDL(bool withVideo)
             finalizeSDL();
             return false;
         }
-        m_windows[displayIndex] = window;
+
+        m_windows[index] = window;
+    }
+
+    for (int i = 0; i < m_windows.size(); ++i) {
+        if (!SDL_SetWindowFullscreenMode(m_windows[i], &(m_displayModes[i]))) {
+            SDL_Log("Unable to set fullscreen mode!");
+        }
     }
 
     if (m_windows.size() < 1)
@@ -213,6 +270,7 @@ void VM1Application::finalizeSDL()
         }
     }
     m_windows.clear();
+    m_displayModes.clear();
     SDL_Quit();
 }
 
@@ -357,18 +415,38 @@ void VM1Application::renderImGui()
 }
 
 void VM1Application::renderWindow(int windowIndex)
-{        
-        SDL_GL_MakeCurrent(m_windows[windowIndex], m_glContext);
-        glViewport(0, 60, 1920, 1080);
-        glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
-        glClear(GL_COLOR_BUFFER_BIT);
+{   
+    // TODO: Move viewport calculation to init method
+    // Maybe create struct which has SDL_DisplayMode and SDL_Window?
+    SDL_DisplayMode mode = m_displayModes[windowIndex];
+    float contentAspect = 16.0f/9.0f;
+    float displayAspect = (float)mode.w / (float)mode.h;
 
-        m_playbackOperator.renderPlane(windowIndex);
+    int width = mode.w;
+    int height = mode.h;
+    int xOffset = 0;
+    int yOffset = 0;
+    if (displayAspect <= contentAspect) {
+        height = int((float)width / contentAspect);
+        yOffset = (mode.h - height) / 2;
+    }
+    else {
+        width = int((float)height * contentAspect);
+        xOffset = (mode.w - width) / 2;
+    }
 
-        if (!m_isHeadless && windowIndex == 0) {
-            ImGui::Render();
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        }
+    SDL_GL_MakeCurrent(m_windows[windowIndex], m_glContext);
+    glViewport(xOffset, yOffset, width, height);
+    //glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.00f);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-        SDL_GL_SwapWindow(m_windows[windowIndex]);
+    m_playbackOperator.renderPlane(windowIndex);
+
+    if (!m_isHeadless && windowIndex == 0) {
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
+
+    SDL_GL_SwapWindow(m_windows[windowIndex]);
 }
