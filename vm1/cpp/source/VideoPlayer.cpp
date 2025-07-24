@@ -237,13 +237,13 @@ AVCodecContext* VideoPlayer::openAudioStream()
         return nullptr;
     }
 
-    // SDL_AudioSpec spec = { SDL_AUDIO_F32, codecpar->ch_layout.nb_channels, codecpar->sample_rate };
-    // m_audio = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, NULL, NULL);
-    // if (m_audio) {
-    //     SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_audio));
-    // } else {
-    //     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't open audio: %s", SDL_GetError());
-    // }
+    SDL_AudioSpec spec = { SDL_AUDIO_F32, codecpar->ch_layout.nb_channels, codecpar->sample_rate };
+    m_audio = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, NULL, NULL);
+    if (m_audio) {
+        SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_audio));
+    } else {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't open audio: %s", SDL_GetError());
+    }
 
     return context;
 }
@@ -325,12 +325,13 @@ void VideoPlayer::update()
         for (int i = 0; i < m_yuvImages.size(); ++i) {
             if (frame.formats.size() > 0) {
                 int j = 0;
+                int height = frame.heights[j] + (frame.heights[j] / 2);
                 EGLAttrib img_attr[] = {
                     EGL_LINUX_DRM_FOURCC_EXT,      frame.formats[j],
                     EGL_WIDTH,                     128,
-                    EGL_HEIGHT,                    1632,
+                    EGL_HEIGHT,                    height,
                     EGL_DMA_BUF_PLANE0_FD_EXT,     frame.fds[j],
-                    EGL_DMA_BUF_PLANE0_OFFSET_EXT, i * 128 * 1632,
+                    EGL_DMA_BUF_PLANE0_OFFSET_EXT, i * 128 * height,
                     EGL_DMA_BUF_PLANE0_PITCH_EXT,  128,
                     EGL_NONE
                 };
@@ -347,6 +348,80 @@ void VideoPlayer::update()
 
     // Create fence for current frame
     m_fence = eglCreateSync(display, EGL_SYNC_FENCE, NULL);
+}
+
+static SDL_AudioFormat GetAudioFormat(int format)
+{
+    switch (format) {
+    case AV_SAMPLE_FMT_U8:
+    case AV_SAMPLE_FMT_U8P:
+        return SDL_AUDIO_U8;
+    case AV_SAMPLE_FMT_S16:
+    case AV_SAMPLE_FMT_S16P:
+        return SDL_AUDIO_S16;
+    case AV_SAMPLE_FMT_S32:
+    case AV_SAMPLE_FMT_S32P:
+        return SDL_AUDIO_S32;
+    case AV_SAMPLE_FMT_FLT:
+    case AV_SAMPLE_FMT_FLTP:
+        return SDL_AUDIO_F32;
+    default:
+        /* Unsupported */
+        return SDL_AUDIO_UNKNOWN;
+    }
+}
+
+static bool IsPlanarAudioFormat(int format)
+{
+    switch (format) {
+    case AV_SAMPLE_FMT_U8P:
+    case AV_SAMPLE_FMT_S16P:
+    case AV_SAMPLE_FMT_S32P:
+    case AV_SAMPLE_FMT_FLTP:
+    case AV_SAMPLE_FMT_DBLP:
+    case AV_SAMPLE_FMT_S64P:
+        return true;
+    default:
+        return false;
+    }
+}
+
+void VideoPlayer::interleaveAudio(AVFrame* frame, const SDL_AudioSpec* spec)
+{
+    int c, n;
+    int samplesize = SDL_AUDIO_BYTESIZE(spec->format);
+    int framesize = SDL_AUDIO_FRAMESIZE(*spec);
+    Uint8 *data = (Uint8 *)SDL_malloc(frame->nb_samples * framesize);
+    if (!data) {
+        return;
+    }
+
+    /* This could be optimized with SIMD and not allocating memory each time */
+    for (c = 0; c < spec->channels; ++c) {
+        const Uint8 *src = frame->data[c];
+        Uint8 *dst = data + c * samplesize;
+        for (n = frame->nb_samples; n--;) {
+            SDL_memcpy(dst, src, samplesize);
+            src += samplesize;
+            dst += framesize;
+        }
+    }
+    SDL_PutAudioStreamData(m_audio, data, frame->nb_samples * framesize);
+    SDL_free(data);
+}
+
+void VideoPlayer::handleAudioFrame(AVFrame *frame)
+{
+    if (m_audio) {
+        SDL_AudioSpec spec = { GetAudioFormat(frame->format), frame->ch_layout.nb_channels, frame->sample_rate };
+        SDL_SetAudioStreamFormat(m_audio, &spec, NULL);
+
+        if (frame->ch_layout.nb_channels > 1 && IsPlanarAudioFormat(frame->format)) {
+            interleaveAudio(frame, &spec);
+        } else {
+            SDL_PutAudioStreamData(m_audio, frame->data[0], frame->nb_samples * SDL_AUDIO_FRAMESIZE(spec));
+        }
+    }
 }
 
 void VideoPlayer::run() {
@@ -386,6 +461,14 @@ void VideoPlayer::run() {
             }
         }
         
+        if (m_audioContext) {
+            while (avcodec_receive_frame(m_audioContext, m_frame) >= 0) {
+                handleAudioFrame(m_frame);
+            }
+            if (m_isFlushing) {
+                SDL_FlushAudioStream(m_audio);
+            }
+        }
         // Process decoded frames
         if (m_videoContext) { 
             while (avcodec_receive_frame(m_videoContext, m_frame) >= 0) {
@@ -429,11 +512,11 @@ void VideoPlayer::customCleanup() {
 }
 
 bool VideoPlayer::getTextureForDRMFrame(AVFrame* frame, VideoFrame& dstFrame)
-{
-    int newWidth = 2048;
-    int newHeight = 1530;
-    
+{ 
+    AVHWFramesContext *frames = (AVHWFramesContext *)(frame->hw_frames_ctx ? frame->hw_frames_ctx->data : NULL);
     const AVDRMFrameDescriptor *desc = (const AVDRMFrameDescriptor *)frame->data[0];
+
+    //printf("%dx%d\n", frames->width, frames->height);
 
     int imageIndex = 0;
     for (int i = 0; i < desc->nb_layers; ++i) {
@@ -445,11 +528,11 @@ bool VideoPlayer::getTextureForDRMFrame(AVFrame* frame, VideoFrame& dstFrame)
             
             // Store DRM frame info instead of creating EGL image
             dstFrame.formats.push_back(formats[j]);
-            dstFrame.widths.push_back(newWidth / (imageIndex + 1));
-            dstFrame.heights.push_back(newHeight / (imageIndex + 1));
+            dstFrame.widths.push_back(frames->width);
+            dstFrame.heights.push_back(frames->height);
             dstFrame.fds.push_back(object->fd);
             dstFrame.offsets.push_back(plane->offset);
-            dstFrame.pitches.push_back(newWidth);
+            dstFrame.pitches.push_back(frames->width);
             imageIndex++;
         }
     }

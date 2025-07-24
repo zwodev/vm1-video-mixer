@@ -59,7 +59,10 @@ private:
 
     AVCodecContext* openVideoStream();
     AVCodecContext* openAudioStream();
-    bool getTextureForDRMFrame(AVFrame *frame, VideoFrame &dstFram);
+    void interleaveAudio(AVFrame* frame, const SDL_AudioSpec* spec);
+    void handleAudioFrame(AVFrame* frame);
+    bool getTextureForDRMFrame(AVFrame* frame, VideoFrame& dstFrame);
+
 
 private:
     // FFMpeg
