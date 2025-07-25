@@ -1,17 +1,33 @@
 # Home of VM-1
 
-## About
-VM-1 is a creative coding tool for live mixing of videos, camera images and generative graphics. It will initially be developed for the widely used and inexpensive Raspberry Pi platform, allowing creative media projects at.
+The VM-1 is an open-source hardware project for live mixing of videos, camera images and generative graphics. It is based on the widely used and affordable Raspberry Pi (5) platform, allowing creative media projects of all sorts.
 
-**The pitch:**
-Think of it as [Sonic Pi](https://github.com/sonic-pi-net/sonic-pi) for moving images!
+# 🚀 Quick Start
 
-## Content
-At the moment this repository consists of 2 main parts:
+You want to build your very own VM-1?! Awesome! This is how you do it:
 
-1. A Python-based proof-of-concept demonstrating hardware-accelerated video playback and camera input: [Python](https://github.com/zwodev/vm1-video-mixer/tree/master/python)
+1. **Order the Parts**
+You're lucky! We've prepared a shopping list for you. This is a link to the shopping cart at BerryBase (Berlin, Germany). You don't have to buy the parts there and this is no affiliate link. It's just for your convenience!
+This list includes everything you need. If you already own some parts, just delete them from the cart.
 
-2. A simple C++ based framework that incorportates libraries like SDL, OpenGL and Dear Imgui. This will be used as starting ground for VM-1's development. Besides hardware-accelerated video playback there is nothing much to see at the moment, but feel free to check it out: [C++](https://github.com/zwodev/vm1-video-mixer/tree/master/cpp)
+[Shopping List](https://www.berrybase.de/loadBasket/sqdnehV_owC)
+
+2. **Print your Case**
+Don't worry, you do not have wildly connect all the parts. We've prepared a neat little housing for your VM-1. You just have to print it on your own, your friend's or your makerspace's 3D-printer. If you have trouble getting your case printed, don't worry and drop us a line.
+
+[3D Printing Files](#)
+
+3. **Download VM-1 image and flash your SD card**
+TODO
+
+4. **Assemble the VM-1**
+TODO
+
+5. **First Steps**
+TODO
+
+
+
 
 
 
