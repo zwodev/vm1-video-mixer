@@ -25,7 +25,8 @@
 void init_keyboard();
 void check_keyboard_matrix();
 void update_keyboard();
-void set_keyboard_buffer(char* buffer, uint8_t size);
+void set_keyboard_buffer(char* buffer, uint8_t size, bool* shiftkey);
 void clear_keyboard_buffer();
+void add_to_keyboard_buffer(char c);
 
 #endif

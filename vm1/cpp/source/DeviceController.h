@@ -4,6 +4,9 @@
 #include <string>
 #include <functional>
 #include <stdint.h>
+#include "VM1DeviceDefinitions.h"
+#include "EventBus.h"
+#include "Registry.h"
 
 enum ButtonState : uint8_t
 {
@@ -23,9 +26,9 @@ struct VM1DeviceState
     uint8_t bank;
     ButtonState forward = ButtonState::NONE;
     ButtonState backward = ButtonState::NONE;
-    ButtonState fn = ButtonState::FILE_ASSET;
-    ButtonState edit[8] = {ButtonState::NONE};
-    ButtonState media[16] = {ButtonState::NONE};
+    ButtonState fn = ButtonState::NONE;
+    ButtonState editButtons[EDIT_BUTTON_COUNT] = {ButtonState::NONE};
+    ButtonState mediaButtons[MEDIA_BUTTON_COUNT] = {ButtonState::EMPTY};
 
     template <typename T>
     inline void hashCombine(std::size_t &seed, const T &v) const
@@ -41,12 +44,12 @@ struct VM1DeviceState
         hashCombine(seed, backward);
         hashCombine(seed, fn);
 
-        for (auto state : edit)
+        for (auto state : editButtons)
         {
             hashCombine(seed, state);
         }
 
-        for (auto state : media)
+        for (auto state : mediaButtons)
         {
             hashCombine(seed, state);
         }
@@ -56,16 +59,27 @@ struct VM1DeviceState
 };
 #pragma pack()
 
+#pragma pack(1)
+struct DeviceBuffer
+{
+  char buttons[8];
+  bool shiftPressed;
+  int32_t rotary_0;
+  int32_t rotary_1;
+};
+#pragma pack()
+
 class DeviceController
 {
 
 public:
-    DeviceController() = default;
+    DeviceController(EventBus& eventBus, Registry& registry);
     ~DeviceController();
 
     bool connect(const std::string& port);
     void disconnect();
     void send(const VM1DeviceState& state);
+    void requestVM1DeviceBuffer();
 
 private:
     bool connectSerial(const std::string& port);
@@ -74,4 +88,12 @@ private:
     int m_gpioHandler = -1;
     int m_fd = -1;
     size_t m_lastHash = 0;
+    EventBus& m_eventBus;
+    Registry& m_registry;
+
+    std::vector<char> m_editKeys =  {'q', 'w', 'e', 'r', 't', 'y', 'u', 'i'};
+    std::vector<char> m_mediaKeys = {'a', 's', 'd', 'f', 'g', 'h', 'j', 'k',
+                                      'z', 'x', 'c', 'v', 'b', 'n', 'm', ','};
+
+
 };

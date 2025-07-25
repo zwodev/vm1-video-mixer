@@ -21,6 +21,7 @@ bool last_button_state = RELEASED;
 char *buttonBufferPtr = nullptr;
 uint8_t buttonBufferSize = 0;
 uint8_t buttonBufferIndex = 0;
+bool *shiftKey = nullptr;
 
 void init_keyboard()
 {
@@ -82,17 +83,19 @@ void update_keyboard()
         // Serial.print(last_button);
         if (last_button_state == PRESSED)
         {
-            if(buttonBufferIndex < buttonBufferSize) { // check if buffer is full
-                buttonBufferPtr[buttonBufferIndex] = last_button;
-                buttonBufferIndex++;
+            if(last_button == KEY_LEFT_SHIFT) {
+                *shiftKey = true;
             } else {
-                // clear_keyboard_buffer(); // buffer is cleared after it's sent to i2c
+                add_to_keyboard_buffer(last_button);
             }
             Keyboard.press(last_button);
             // Serial.print("Pressed\n");
         }
         else
         {
+            if(last_button == KEY_LEFT_SHIFT) {
+                *shiftKey = false;
+            } 
             Keyboard.release(last_button);
             // Serial.print("Released\n");
         }
@@ -108,12 +111,21 @@ void update_keyboard()
     }
 }
 
-void set_keyboard_buffer(char* buffer, uint8_t size) 
+void set_keyboard_buffer(char* buffer, uint8_t size, bool* shiftkey) 
 {
     buttonBufferPtr = buffer;
     buttonBufferSize = size;
     buttonBufferIndex = 0;
+
+    shiftKey = shiftkey;
 } 
+
+void add_to_keyboard_buffer(char c) {
+    if(buttonBufferIndex < buttonBufferSize) { // check if buffer is full
+        buttonBufferPtr[buttonBufferIndex] = c;
+        buttonBufferIndex++;
+    } 
+}
 
 void clear_keyboard_buffer()
 {

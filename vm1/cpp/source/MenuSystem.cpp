@@ -9,6 +9,7 @@
 #include "MenuSystem.h"
 #include "UI.h"
 #include "NetworkTools.h"
+#include "VM1DeviceDefinitions.h"
 
 #include <imgui.h>
 #include <vector>
@@ -106,11 +107,11 @@ void MenuSystem::handleUpAndDownKeys()
 void MenuSystem::handleBankSwitching()
 {
     if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::BankDown)) {
-        m_registry.inputMappings().bank = (m_registry.inputMappings().bank + 1) % 4; 
+        m_registry.inputMappings().bank = (m_registry.inputMappings().bank + 1) % BANK_COUNT; 
     }
     else if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::BankUp)) {
-        m_registry.inputMappings().bank = (m_registry.inputMappings().bank - 1) % 4;
-        if (m_registry.inputMappings().bank < 0) m_registry.inputMappings().bank = 3;
+        m_registry.inputMappings().bank = (m_registry.inputMappings().bank - 1) % BANK_COUNT;
+        if (m_registry.inputMappings().bank < 0) m_registry.inputMappings().bank = BANK_COUNT - 1;
     }
 }
 
@@ -164,13 +165,10 @@ void MenuSystem::render()
         m_currentMenuType == MT_InputSelection || 
         m_currentMenuType == MT_PlaybackSelection) 
     {
-        int id16 = m_id % 16;
-        char bank = m_id / 16 + 65;
+        int id16 = m_id % MEDIA_BUTTON_COUNT;
+        char bank = m_id / MEDIA_BUTTON_COUNT + 65; // "+65" to get ASCII code
         std::string mediaSlotString = std::string(1, bank) + std::to_string(id16);
 
-        // int id16 = m_id % 16;
-        // char bank = m_registry.inputMappings().bank;
-        // std::string mediaSlotString = std::string(1, bank) + std::to_string(id16 + 62);
         m_ui.MenuInfo(mediaSlotString);
     }
 

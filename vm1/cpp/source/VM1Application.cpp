@@ -8,7 +8,7 @@
 
 
 #include "VM1Application.h"
-
+#include "VM1DeviceDefinitions.h"
 #include <fcntl.h>
 #include <unistd.h>
 #include <linux/input.h>
@@ -21,14 +21,13 @@
 VM1Application::VM1Application() :
     m_keyboardControllerSdl(m_registry, m_eventBus),
     m_keyboardControllerLinux(m_registry, m_eventBus),
-    m_playbackOperator(m_registry, m_eventBus),
+    m_playbackOperator(m_registry, m_eventBus, m_deviceController),
     m_fileAssignmentWidget(m_registry, m_eventBus),
-    m_stbRenderer(128, 128),
+    m_stbRenderer(DISPLAY_WIDTH, DISPLAY_HEIGHT),
     m_ui(m_stbRenderer, m_eventBus),
-    m_menuSystem(m_ui, m_registry, m_eventBus)
-{
-
-}
+    m_menuSystem(m_ui, m_registry, m_eventBus),
+    m_deviceController(m_eventBus, m_registry)
+{}
 
 VM1Application::~VM1Application()
 {
@@ -41,6 +40,13 @@ bool VM1Application::initialize()
     m_cameraController.setupDetached();
     m_oledController.setStbRenderer(&m_stbRenderer);
     m_oledController.start();
+
+    // Open VM-1Device
+    std::string serialDevice = m_registry.settings().serialDevice;
+    if (!m_deviceController.connect(serialDevice))
+    {
+        printf("Could not connect to VM1-Device on Serial or I2C.\n");
+    }
 
     return true;
 }
@@ -254,6 +260,7 @@ bool VM1Application::initImGui()
 
 void VM1Application::finalize()
 {
+    m_deviceController.disconnect();
     if (!m_isHeadless) finalizeImGui();
     finalizeSDL();
 }
@@ -357,6 +364,7 @@ bool VM1Application::exec()
             if (!processSDLInput()) done = true;
         }
 
+        m_deviceController.requestVM1DeviceBuffer();
         m_registry.update(deltaTime);
         m_playbackOperator.update(deltaTime);
         m_menuSystem.render();

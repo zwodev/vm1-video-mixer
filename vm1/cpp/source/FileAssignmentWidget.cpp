@@ -55,7 +55,8 @@ void FileAssignmentWidget::renderButtonMatrix() {
             std::string buttonLabel = m_keyLabels[y][x];
             
             if (ImGui::Button(buttonLabel.c_str(), ImVec2(buttonSize, buttonSize))) {
-                m_eventBus.publish(MediaSlotEvent(mediaSlotId));
+                if(mediaSlotId < MEDIA_SLOT_COUNT)
+                    m_eventBus.publish(MediaSlotEvent(mediaSlotId));
             }
 
             ImGui::PopStyleVar();
