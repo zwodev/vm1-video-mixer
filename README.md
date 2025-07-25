@@ -1,4 +1,4 @@
-# Home of VM-1
+# VM-1 / The Video Mixer for Everyone
 
 The VM-1 is an open-source hardware project for live mixing of videos, camera images and generative graphics. It is based on the widely used and affordable Raspberry Pi (5) platform, allowing creative media projects of all sorts.
 
