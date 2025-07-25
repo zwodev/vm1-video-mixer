@@ -92,6 +92,8 @@ struct DeviceBuffer
 #pragma pack()
 
 DeviceBuffer deviceBuffer;
+uint8_t buttonBufferIndex;
+const uint8_t buttonBufferSize = sizeof(deviceBuffer.buttons);
 
 // shared debug message between both cores
 // volatile char debug_msg[32] = "- no info -";
