@@ -29,6 +29,7 @@
 #include "KeyboardControllerSDL.h"
 #include "KeyboardControllerLinux.h"
 #include "EventBus.h"
+#include "DeviceController.h"
 
 // class DisplayConfig {
 //     int width;
@@ -79,4 +80,6 @@ private:
     UI m_ui;
     OledController m_oledController;
     MenuSystem m_menuSystem;
+    DeviceController m_deviceController;
+
 };

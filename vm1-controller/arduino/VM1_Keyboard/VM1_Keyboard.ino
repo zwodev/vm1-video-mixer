@@ -75,8 +75,8 @@ struct DeviceState
   ButtonState forward = ButtonState::NONE;
   ButtonState backward = ButtonState::NONE;
   ButtonState fn = ButtonState::NONE;
-  ButtonState edit[8] = {ButtonState::NONE};
-  ButtonState media[16] = {ButtonState::NONE};
+  ButtonState editButtons[8] = {ButtonState::NONE};
+  ButtonState mediaButtons[16] = {ButtonState::NONE};
 };
 #pragma pack()
 
@@ -86,6 +86,7 @@ DeviceState deviceState;
 struct DeviceBuffer
 {
   char buttons[8];
+  bool shiftPressed;
   int32_t encoder0;
   int32_t encoder1;
 };
@@ -186,26 +187,26 @@ void onI2CReceiveHandler(int numBytes)
 
 void setNeoPixels()
 {
-  // backward-key [ 0]
-  int *color = colorForButtonState(deviceState.backward);
-  strip.setPixelColor(1, colorFromArray(color));
-
-  // forward-key [1]
-  color = colorForButtonState(deviceState.forward);
+  // forward-key [0]
+  int *color = colorForButtonState(deviceState.forward);
   strip.setPixelColor(0, colorFromArray(color));
+  
+  // backward-key [1]
+  color = colorForButtonState(deviceState.backward);
+  strip.setPixelColor(1, colorFromArray(color));
 
   // 8 edit-keys [2-9]
   for (uint8_t i = 0; i < 8; ++i)
   {
-    color = colorForButtonState(deviceState.edit[i]);
+    color = colorForButtonState(deviceState.editButtons[i]);
     strip.setPixelColor(2 + i, colorFromArray(color));
   }
 
   // upper row media-keys [10-17]
   for (uint8_t i = 0; i < 8; ++i)
   {
-    color = colorForButtonState(deviceState.media[8 - i]);
-    strip.setPixelColor(9 + i, colorFromArray(color));
+    color = colorForButtonState(deviceState.mediaButtons[7 - i]);
+    strip.setPixelColor(10 + i, colorFromArray(color));
   }
 
   // fn-key [18]
@@ -215,7 +216,7 @@ void setNeoPixels()
   // lower row media-keys [19-26]
   for (uint8_t i = 0; i < 8; ++i)
   {
-    color = colorForButtonState(deviceState.media[i + 8]);
+    color = colorForButtonState(deviceState.mediaButtons[8 + i]);
     strip.setPixelColor(19 + i, colorFromArray(color));
   }
 
@@ -237,7 +238,7 @@ void setup()
 
   // hid-keyboard
   init_keyboard();
-  set_keyboard_buffer(deviceBuffer.buttons, sizeof(deviceBuffer.buttons));
+  set_keyboard_buffer(deviceBuffer.buttons, sizeof(deviceBuffer.buttons), &deviceBuffer.shiftPressed);
 
   // init encoder
   rotary_encoder_init(&encoder0);
@@ -282,6 +283,7 @@ void loop()
     {
       res += ", down";
 
+      add_to_keyboard_buffer(KEY_UP_ARROW);
       Keyboard.press(KEY_UP_ARROW);
       // todo: add keycode to keyboard buffer ('KEY_UP_ARROW')
       delay(1);
@@ -291,6 +293,7 @@ void loop()
     {
       res += ", up";
       
+      add_to_keyboard_buffer(KEY_DOWN_ARROW);
       Keyboard.press(KEY_DOWN_ARROW);
       // todo: add keycode to keyboard buffer ('KEY_DOWN_ARROW')
       delay(1);
@@ -375,7 +378,7 @@ void print_controller_state()
   Serial.print("Edit-keys:\t");
   for (uint8_t i = 0; i < 8; i++)
   {
-    Serial.print(deviceState.edit[i]);
+    Serial.print(deviceState.editButtons[i]);
     Serial.print("  ");
   }
   Serial.println();
@@ -384,7 +387,7 @@ void print_controller_state()
   Serial.print("Media-keys:\t");
   for (uint8_t i = 0; i < 16; i++)
   {
-    Serial.print(deviceState.media[i]);
+    Serial.print(deviceState.mediaButtons[i]);
     if (i != 7)
     {
       Serial.print("  ");

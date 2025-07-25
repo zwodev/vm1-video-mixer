@@ -1,5 +1,5 @@
 #include "KeyboardControllerSDL.h"
-
+#include "VM1DeviceDefinitions.h"
 #include "stdio.h"
 
 KeyboardControllerSDL::KeyboardControllerSDL(Registry& registry, EventBus& eventBus) :
@@ -77,7 +77,7 @@ void KeyboardControllerSDL::update(SDL_Event& event)
 
         for(int i = 0; i < m_mediaKeys.size(); ++i) 
         {
-            int mediaSlotId = (m_registry.inputMappings().bank * 16) + i;
+            int mediaSlotId = (m_registry.inputMappings().bank * MEDIA_BUTTON_COUNT) + i;
             if (event.key.key == m_mediaKeys[i]) {
                 m_eventBus.publish(MediaSlotEvent(mediaSlotId));
                 return;

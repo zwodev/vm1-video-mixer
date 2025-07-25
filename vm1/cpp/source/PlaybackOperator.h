@@ -90,7 +90,7 @@ private:
 
 class PlaybackOperator {
 public:
-    PlaybackOperator(Registry& registry, EventBus& eventBus);
+    PlaybackOperator(Registry& registry, EventBus& eventBus, DeviceController& deviceController);
     ~PlaybackOperator();
 
     void initialize();
@@ -109,7 +109,7 @@ private:
 private:
     Registry& m_registry;
     EventBus& m_eventBus;
-    DeviceController m_deviceController;
+    DeviceController& m_deviceController;
 
     // Rendering related
     std::vector<PlaneMixer> m_planeMixers;

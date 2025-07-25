@@ -1,5 +1,5 @@
 #include "KeyboardControllerLinux.h"
-
+#include "VM1DeviceDefinitions.h"
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -95,7 +95,7 @@ void KeyboardControllerLinux::update(input_event& event)
 
         for(int i = 0; i < m_mediaKeys.size(); ++i) 
         {
-            int mediaSlotId = (m_registry.inputMappings().bank * 16) + i;
+            int mediaSlotId = (m_registry.inputMappings().bank * MEDIA_BUTTON_COUNT) + i;
             if (event.code == m_mediaKeys[i]) {
                 m_eventBus.publish(MediaSlotEvent(mediaSlotId));
                 return;

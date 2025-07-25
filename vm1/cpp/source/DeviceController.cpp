@@ -1,5 +1,5 @@
 #include "DeviceController.h"
-
+#include "VM1DeviceDefinitions.h"
 #include <string>
 #include <iostream>
 #include <fcntl.h>
@@ -7,6 +7,11 @@
 #include <unistd.h>
 #include <cstring>
 #include <lgpio.h>
+
+DeviceController::DeviceController(EventBus& eventBus, Registry& registry) : 
+    m_eventBus(eventBus),
+    m_registry(registry)
+{}
 
 DeviceController::~DeviceController(){
     disconnect();
@@ -115,4 +120,107 @@ void DeviceController::send(const VM1DeviceState& vm1DeviceState)
         lgI2cWriteDevice(m_i2c_handle, reinterpret_cast<const char*>(&vm1DeviceState), sizeof(VM1DeviceState));
     }
 
+}
+
+void DeviceController::requestVM1DeviceBuffer() 
+{
+    if(m_i2c_handle < 0) return;
+    
+    DeviceBuffer deviceBuffer;
+    int count = lgI2cReadDevice(m_i2c_handle, reinterpret_cast<char*>(&deviceBuffer), sizeof(DeviceBuffer));
+    if (count < 0)
+    {
+        std::cerr << "Failed to read from I2C device\n";
+    }
+    else
+    {
+        // std::cout << "Received " << count << " bytes: " << std::endl;
+        // std::cout << "Rotary 0: " <<  deviceBuffer.rotary_0 << std::endl;
+        // std::cout << "Rotary 1: " <<  deviceBuffer.rotary_1 << std::endl;
+        // std::cout << "Shift pressed: " <<  deviceBuffer.shiftPressed << std::endl;
+        // for(uint8_t i = 0; i < sizeof(deviceBuffer.buttons); ++i) {
+        //     std::cout << deviceBuffer.buttons[i] << "(" << static_cast<int>(deviceBuffer.buttons[i]) << ")\t";
+        // }
+        // std::cout << std::endl;
+        
+        for(uint8_t i = 0; i < sizeof(deviceBuffer.buttons); ++i) 
+        {
+            char currentChar = deviceBuffer.buttons[i];
+            bool isShiftPressed = deviceBuffer.shiftPressed;
+
+            if(currentChar == '\0') 
+                break;
+
+            switch (currentChar)
+            {
+                case 218: // KEY_UP:
+                    if (isShiftPressed)
+                    {
+                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::IncreaseValue));
+                    }
+                    else
+                    {
+                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::FocusPrevious));
+                    }
+                    return;
+                    break;
+                case 217: // KEY_DOWN:
+                    if (isShiftPressed)
+                    {
+                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::DecreaseValue));
+                    }
+                    else
+                    {
+                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::FocusNext));
+                    }
+                    return;
+                    break;
+                case 216: // KEY_LEFT
+                    if (isShiftPressed)
+                    {
+                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::BankUp));
+                    }
+                    else 
+                    {
+                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::HierarchyUp));
+                    }
+                    return;
+                    break;
+                case 215: // KEY_RIGHT
+                    if (isShiftPressed)
+                    {
+                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::BankDown));
+                    }
+                    else
+                    {
+                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::HierarchyDown));
+                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::SelectItem));
+                    }
+                    return;
+                    break;
+                default:
+                    break;
+            }
+            
+            for(int j = 0; j < m_editKeys.size(); ++j) 
+            {
+                if (currentChar == m_editKeys[j]) {
+                    m_eventBus.publish(EditModeEvent(j));
+                    return;
+                }
+            }
+            
+            for(int j = 0; j < m_mediaKeys.size(); ++j) 
+            {
+                int mediaSlotId = (m_registry.inputMappings().bank * MEDIA_BUTTON_COUNT) + j;
+                if (currentChar == m_mediaKeys[j]) {
+                    m_eventBus.publish(MediaSlotEvent(mediaSlotId));
+                    return;
+                }
+            }
+        }
+
+        
+        
+    }
 }

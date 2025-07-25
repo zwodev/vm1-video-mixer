@@ -1,8 +1,10 @@
 #include "PlaybackOperator.h"
+#include "VM1DeviceDefinitions.h"
 
-PlaybackOperator::PlaybackOperator(Registry& registry, EventBus& eventBus) : 
+PlaybackOperator::PlaybackOperator(Registry& registry, EventBus& eventBus, DeviceController& deviceController) : 
     m_registry(registry),
-    m_eventBus(eventBus)
+    m_eventBus(eventBus),
+    m_deviceController(deviceController)
 {
     subscribeToEvents();
 }
@@ -44,13 +46,6 @@ void PlaybackOperator::initialize()
         MediaPlayer* mediaPlayer = m_cameraPlayers[i];
         m_mediaPlayers.push_back(mediaPlayer);
     }
-
-    // Open serial port
-    std::string serialDevice = m_registry.settings().serialDevice;
-    if (!m_deviceController.connect(serialDevice))
-    {
-        printf("Could not open serial device: %s\n", serialDevice.c_str());
-    }
 }
 
 void PlaybackOperator::finalize()
@@ -73,7 +68,6 @@ void PlaybackOperator::finalize()
     m_mediaPlayers.clear(); 
     m_planeMixers.clear();
     m_mediaSlotIdToPlayerId.clear();
-    m_deviceController.disconnect();
 }
 
 bool PlaybackOperator::getFreeVideoPlayerId(int& id)
@@ -126,7 +120,7 @@ void PlaybackOperator::showMedia(int mediaSlotId)
 
     // Select plane
     float fadeTime = float(m_registry.settings().fadeTime); 
-    int planeId = (mediaSlotId / 8) % 2;
+    int planeId = (mediaSlotId / (MEDIA_BUTTON_COUNT / 2)) % 2;
     m_planeMixers[planeId].setFadeTime(fadeTime);
 
     int playerId = -1;
@@ -246,33 +240,32 @@ void PlaybackOperator::renderPlane(int planeId)
 void PlaybackOperator::updateDeviceController()
 {
     InputMappings &inputMappings = m_registry.inputMappings();
-
     VM1DeviceState vm1DeviceState;
     vm1DeviceState.bank = uint8_t(inputMappings.bank);
-    for (int i = 0; i < 16; ++i)
+    for (int i = 0; i < MEDIA_BUTTON_COUNT; ++i)
     {
-        int mediaSlotId = (inputMappings.bank * 16) + i;
+        int mediaSlotId = (inputMappings.bank * MEDIA_BUTTON_COUNT) + i;
         InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
         if (!inputConfig)
         {
-            vm1DeviceState.media[mediaSlotId] = ButtonState::NONE;
+            vm1DeviceState.mediaButtons[i] = ButtonState::NONE;
         }
         else if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
         {
             if (m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
-                vm1DeviceState.media[mediaSlotId] = ButtonState::FILE_ASSET_ACTIVE;
+                vm1DeviceState.mediaButtons[i] = ButtonState::FILE_ASSET_ACTIVE;
             }
             else
-                vm1DeviceState.media[mediaSlotId] = ButtonState::FILE_ASSET;
+                vm1DeviceState.mediaButtons[i] = ButtonState::FILE_ASSET;
         }
         else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
         {
             // TODO: How to handle active HDMI or IMAGE, etc.
             if (m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
-                vm1DeviceState.media[mediaSlotId] = ButtonState::LIVECAM_ACTIVE;
+                vm1DeviceState.mediaButtons[i] = ButtonState::LIVECAM_ACTIVE;
             }
             else
-                vm1DeviceState.media[mediaSlotId] = ButtonState::LIVECAM;
+                vm1DeviceState.mediaButtons[i] = ButtonState::LIVECAM;
         }
     }
     m_deviceController.send(vm1DeviceState);
