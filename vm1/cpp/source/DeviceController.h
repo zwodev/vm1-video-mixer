@@ -56,18 +56,22 @@ struct VM1DeviceState
 };
 #pragma pack()
 
-class SerialController
+class DeviceController
 {
 
 public:
-    SerialController() = default;
-    ~SerialController() = default;
+    DeviceController() = default;
+    ~DeviceController();
 
     bool connect(const std::string& port);
     void disconnect();
     void send(const VM1DeviceState& state);
 
 private:
+    bool connectSerial(const std::string& port);
+    bool connectI2C();
+    int m_i2c_handle = -1;
+    int m_gpioHandler = -1;
     int m_fd = -1;
     size_t m_lastHash = 0;
 };

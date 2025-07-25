@@ -283,33 +283,37 @@ void loop()
       res += ", down";
 
       Keyboard.press(KEY_UP_ARROW);
+      // todo: add keycode to keyboard buffer ('KEY_UP_ARROW')
       delay(1);
       Keyboard.release(KEY_UP_ARROW);
     }
     else if (enc0 > 0)
     {
       res += ", up";
-
+      
       Keyboard.press(KEY_DOWN_ARROW);
+      // todo: add keycode to keyboard buffer ('KEY_DOWN_ARROW')
       delay(1);
       Keyboard.release(KEY_DOWN_ARROW);
     }
     Serial.println(res);
   }
-
+  
   int8_t enc1 = 0;
   if (enc1 = rotary_encoder_process(&encoder1, encoder1_position))
   {
     deviceBuffer.encoder1 = encoder1_position;
-
+    
     String res = "Encoder 1: ";
     res += encoder1_position;
     if (enc1 < 0)
     {
+      // todo: add keycode to keyboard buffer ('+')
       res += ", down";
     }
     else if (enc1 > 0)
     {
+      // todo: add keycode to keyboard buffer ('-')
       res += ", up";
     }
     Serial.println(res);

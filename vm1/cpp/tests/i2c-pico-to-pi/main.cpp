@@ -90,6 +90,8 @@ int main()
         auto current_time = std::chrono::steady_clock::now();
         if (current_time - frame_duration >= elapsed_time_millis)
         {
+            elapsed_time_millis = current_time;
+            
             // send a command:
             // ===============
             VM1DeviceState deviceState;
@@ -101,7 +103,6 @@ int main()
 
             // send a request:
             // ===============
-            elapsed_time_millis = current_time;
             std::cout << "requesting i2c..." << std::endl;
             int count = lgI2cReadDevice(i2c_handle, reinterpret_cast<char*>(&deviceBuffer), sizeof(deviceBuffer));
             if (count < 0)

@@ -47,7 +47,7 @@ void PlaybackOperator::initialize()
 
     // Open serial port
     std::string serialDevice = m_registry.settings().serialDevice;
-    if (!m_serialController.connect(serialDevice))
+    if (!m_deviceController.connect(serialDevice))
     {
         printf("Could not open serial device: %s\n", serialDevice.c_str());
     }
@@ -73,7 +73,7 @@ void PlaybackOperator::finalize()
     m_mediaPlayers.clear(); 
     m_planeMixers.clear();
     m_mediaSlotIdToPlayerId.clear();
-    m_serialController.disconnect();
+    m_deviceController.disconnect();
 }
 
 bool PlaybackOperator::getFreeVideoPlayerId(int& id)
@@ -220,7 +220,7 @@ void PlaybackOperator::update(float deltaTime)
         m_mediaSlotIdToPlayerId.erase(id);    
     }
 
-    updateSerialController();
+    updateDeviceController();
 }
 
 void PlaybackOperator::renderPlane(int planeId)
@@ -243,7 +243,7 @@ void PlaybackOperator::renderPlane(int planeId)
     planeRenderer->update(texture0, texture1, planeMixer.mixValue());
 }
 
-void PlaybackOperator::updateSerialController()
+void PlaybackOperator::updateDeviceController()
 {
     InputMappings &inputMappings = m_registry.inputMappings();
 
@@ -275,5 +275,5 @@ void PlaybackOperator::updateSerialController()
                 vm1DeviceState.media[mediaSlotId] = ButtonState::LIVECAM;
         }
     }
-    m_serialController.send(vm1DeviceState);
+    m_deviceController.send(vm1DeviceState);
 }

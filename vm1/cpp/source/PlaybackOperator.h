@@ -4,7 +4,7 @@
 #include "PlaneRenderer.h"
 #include "CameraPlayer.h"
 #include "VideoPlayer.h"
-#include "SerialController.h"
+#include "DeviceController.h"
 #include "Registry.h"
 #include "EventBus.h"
 
@@ -104,12 +104,12 @@ private:
     bool getCameraPlayerIdFromPort(int port, int& id);
     bool getFreeVideoPlayerId(int& id);
     bool isPlayerIdActive(int playerId);
-    void updateSerialController();
+    void updateDeviceController();
 
 private:
     Registry& m_registry;
     EventBus& m_eventBus;
-    SerialController m_serialController;
+    DeviceController m_deviceController;
 
     // Rendering related
     std::vector<PlaneMixer> m_planeMixers;
