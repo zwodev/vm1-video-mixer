@@ -91,21 +91,22 @@ struct DeviceBuffer
 };
 #pragma pack()
 
-DeviceBuffer deviceBuffer;
+DeviceBuffer deviceBuffer = {};
 
 // shared debug message between both cores
 // volatile char debug_msg[32] = "- no info -";
 // volatile bool debug_msg_ready = false;
 
-
-void blink() // helper function vor anything, e.g. debug message
+void blink() // helper function for anything, e.g. debug message
 {
   unsigned long current_millis = millis();
   static long time = 0;
 
-  if (current_millis - time > 250)
+  if (current_millis - time > 1000)
   {
     time = current_millis;
+
+    // print_keyboard_buffer();
   }
 }
 
@@ -155,11 +156,11 @@ void animateAllNeoPixels()
   for (int i = 0; i < NEOPIXEL_COUNT; ++i)
   {
     strip.setPixelColor(i, colorFromArray(red));
-    delay(100);
+    delay(25);
     strip.show();
   }
 
-  delay(500);
+  delay(250);
 
   for (int i = 0; i < NEOPIXEL_COUNT; ++i)
   {
@@ -170,69 +171,64 @@ void animateAllNeoPixels()
 
 void onI2CRequestHandler()
 {
-  // char buffer[32] = "";
-  // snprintf(buffer, sizeof(buffer), "encoder 1: %ld", encoder0_position);
-  // Wire.write(buffer);
-  Wire.write(reinterpret_cast<const uint8_t*>(&deviceBuffer), sizeof(deviceBuffer));
+  Wire.write(reinterpret_cast<const uint8_t *>(&deviceBuffer), sizeof(deviceBuffer));
+  clear_keyboard_buffer();
 }
 
-void onI2CReceiveHandler(int numBytes) {
-    
-     if (numBytes == sizeof(deviceState)) {
-        Wire.readBytes(reinterpret_cast<char*>(&deviceState), sizeof(deviceState));
-        setNeoPixels();
-    }
+void onI2CReceiveHandler(int numBytes)
+{
+  if (numBytes == sizeof(deviceState))
+  {
+    Wire.readBytes(reinterpret_cast<char *>(&deviceState), sizeof(deviceState));
+    setNeoPixels();
+  }
 }
 
 void setNeoPixels()
 {
-    print_controller_state();
+  // backward-key [ 0]
+  int *color = colorForButtonState(deviceState.backward);
+  strip.setPixelColor(1, colorFromArray(color));
 
-    // set neopixel colors
+  // forward-key [1]
+  color = colorForButtonState(deviceState.forward);
+  strip.setPixelColor(0, colorFromArray(color));
 
-    // backward-key
-    int *color = colorForButtonState(deviceState.backward);
-    strip.setPixelColor(1, colorFromArray(color));
+  // 8 edit-keys [2-9]
+  for (uint8_t i = 0; i < 8; ++i)
+  {
+    color = colorForButtonState(deviceState.edit[i]);
+    strip.setPixelColor(2 + i, colorFromArray(color));
+  }
 
-    // forward-key
-    color = colorForButtonState(deviceState.forward);
-    strip.setPixelColor(0, colorFromArray(color));
+  // upper row media-keys [10-17]
+  for (uint8_t i = 0; i < 8; ++i)
+  {
+    color = colorForButtonState(deviceState.media[8 - i]);
+    strip.setPixelColor(9 + i, colorFromArray(color));
+  }
 
-    // 8 edit-keys
-    for (uint8_t i = 0; i < 8; ++i)
-    {
-      color = colorForButtonState(deviceState.edit[i]);
-      strip.setPixelColor(2 + i, colorFromArray(color));
-    }
+  // fn-key [18]
+  color = colorForButtonState(deviceState.fn);
+  strip.setPixelColor(18, colorFromArray(color));
 
-    // upper row media-keys
-    for (uint8_t i = 0; i < 8; ++i)
-    {
-      color = colorForButtonState(deviceState.media[8 - i]);
-      strip.setPixelColor(9 + i, colorFromArray(color));
-    }
-    
-    // fn-key
-    color = colorForButtonState(deviceState.fn);
-    strip.setPixelColor(18, colorFromArray(color));
+  // lower row media-keys [19-26]
+  for (uint8_t i = 0; i < 8; ++i)
+  {
+    color = colorForButtonState(deviceState.media[i + 8]);
+    strip.setPixelColor(19 + i, colorFromArray(color));
+  }
 
-    // lower row media-keys
-    for (uint8_t i = 0; i < 8; ++i)
-    {
-      color = colorForButtonState(deviceState.media[i + 8]);
-      strip.setPixelColor(19 + i, colorFromArray(color));
-    }
-    
-    // 6 bank-pixels (index 27-32)
-    for (uint8_t i = 0; i < 6; ++i)
-    {
-      color = dark_red;
-      if (i == deviceState.bank) 
-        color = red;
-      strip.setPixelColor(32 - i, colorFromArray(color));
-    }
-    
-    strip.show();
+  // 6 bank-pixels [27-32]
+  for (uint8_t i = 0; i < 6; ++i)
+  {
+    color = dark_red;
+    if (i == deviceState.bank)
+      color = red;
+    strip.setPixelColor(32 - i, colorFromArray(color));
+  }
+
+  strip.show();
 }
 
 void setup()
@@ -241,6 +237,7 @@ void setup()
 
   // hid-keyboard
   init_keyboard();
+  set_keyboard_buffer(deviceBuffer.buttons, sizeof(deviceBuffer.buttons));
 
   // init encoder
   rotary_encoder_init(&encoder0);
@@ -318,7 +315,6 @@ void loop()
     Serial.println(res);
   }
 
-
   // Read Serial and set NeoPixels
   if (Serial.available() >= sizeof(deviceState))
   {
@@ -327,7 +323,6 @@ void loop()
     Serial.println("Received DeviceState from Serial");
     setNeoPixels();
   }
-
 
 #ifdef DEBUG
   uint32_t d_time_after_main_loop = micros();
@@ -350,6 +345,7 @@ void loop()
     d_previous_micros = d_current_micros;
   }
 #endif
+  blink();
 }
 
 void print_controller_state()
@@ -395,6 +391,21 @@ void print_controller_state()
       Serial.print("\t");
       Serial.print("\t");
     }
+  }
+  Serial.println();
+}
+
+void print_keyboard_buffer()
+{
+  Serial.print("ButtonBuffer: ");
+  for (int i = 0; i < sizeof(deviceBuffer.buttons); ++i)
+  {
+    Serial.print(deviceBuffer.buttons[i]);
+    Serial.print("(");
+    Serial.print((uint8_t)deviceBuffer.buttons[i]);
+    Serial.print(")");
+    if (i < (sizeof(deviceBuffer.buttons) - 1))
+      Serial.print("\t");
   }
   Serial.println();
 }

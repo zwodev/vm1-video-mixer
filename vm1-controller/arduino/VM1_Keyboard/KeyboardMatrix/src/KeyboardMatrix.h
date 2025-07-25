@@ -25,5 +25,7 @@
 void init_keyboard();
 void check_keyboard_matrix();
 void update_keyboard();
+void set_keyboard_buffer(char* buffer, uint8_t size);
+void clear_keyboard_buffer();
 
 #endif

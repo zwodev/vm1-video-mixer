@@ -209,7 +209,9 @@ void UI::MenuInfo(std::string menuInfo)
 {
     float fontSize = 32.0f;
     int width = m_stbRenderer.width();
-    m_stbRenderer.drawText(menuInfo, width - 36, 0, fontSize, COLOR::WHITE);
+    int textWidth = m_stbRenderer.getTextWidth(menuInfo, fontSize);
+    // std::cout << "text width for '" << menuInfo << "': " << textWidth << std::endl;
+    m_stbRenderer.drawText(menuInfo, width - textWidth, 0, fontSize, COLOR::WHITE);
 }
 
 void UI::InfoScreen(int bank, int id, std::string filename)

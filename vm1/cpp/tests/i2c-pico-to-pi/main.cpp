@@ -81,7 +81,7 @@ int main()
         return 1;
     }
     
-    const auto frame_duration = std::chrono::milliseconds(2000);
+    const auto frame_duration = std::chrono::milliseconds(1000/60);
     auto elapsed_time_millis = std::chrono::steady_clock::now();
     
     DeviceBuffer deviceBuffer;
@@ -113,6 +113,10 @@ int main()
                 std::cout << "Received " << count << " bytes: " << std::endl;
                 std::cout << "Rotary 0: " <<  deviceBuffer.rotary_0 << std::endl;
                 std::cout << "Rotary 1: " <<  deviceBuffer.rotary_1 << std::endl;
+                for(uint8_t i = 0; i < sizeof(deviceBuffer.buttons); ++i) {
+                    std::cout << deviceBuffer.buttons[i] << "(" << static_cast<int>(deviceBuffer.buttons[i]) << ")\t";
+                }
+                std::cout << std::endl;
             }
         }
     }

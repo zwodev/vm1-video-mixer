@@ -89,4 +89,5 @@ public:
     void drawRect(int x0, int y0, int w, int h, Color color = COLOR::WHITE);
     void drawText(const std::string& text, int posX, int posY, float fontSize, Color color = COLOR::WHITE);
     int getFontLineHeight(float fontSize);
+    int getTextWidth(const std::string& text, float fontSize);
 };

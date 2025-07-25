@@ -18,6 +18,9 @@ char keymap[NUM_ROWS][NUM_COLS] = {
 };
 char last_button = '\0';
 bool last_button_state = RELEASED;
+char *buttonBufferPtr = nullptr;
+uint8_t buttonBufferSize = 0;
+uint8_t buttonBufferIndex = 0;
 
 void init_keyboard()
 {
@@ -79,6 +82,12 @@ void update_keyboard()
         // Serial.print(last_button);
         if (last_button_state == PRESSED)
         {
+            if(buttonBufferIndex < buttonBufferSize) { // check if buffer is full
+                buttonBufferPtr[buttonBufferIndex] = last_button;
+                buttonBufferIndex++;
+            } else {
+                // clear_keyboard_buffer(); // buffer is cleared after it's sent to i2c
+            }
             Keyboard.press(last_button);
             // Serial.print("Pressed\n");
         }
@@ -97,4 +106,19 @@ void update_keyboard()
             previous_keyboard_matrix[i][j] = current_keyboard_matrix[i][j];
         }
     }
+}
+
+void set_keyboard_buffer(char* buffer, uint8_t size) 
+{
+    buttonBufferPtr = buffer;
+    buttonBufferSize = size;
+    buttonBufferIndex = 0;
+} 
+
+void clear_keyboard_buffer()
+{
+    for(uint8_t i = 0; i < buttonBufferSize; ++i){
+        buttonBufferPtr[i] = '\0';
+    }
+    buttonBufferIndex = 0;
 }
