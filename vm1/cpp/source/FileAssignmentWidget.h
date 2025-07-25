@@ -9,12 +9,10 @@
 #pragma once
 
 #include <imgui.h>
-#include <filesystem>
+// #include <filesystem>
 #include <vector>
 #include <string>
 
-
-//#include "VideoPlane.h"
 #include "PlaybackOperator.h"
 #include "Registry.h"
 #include "EventBus.h"
@@ -33,7 +31,6 @@ private:
     void renderFileList();
     void renderButtonMatrix();
     void renderSettings();
-    //bool isButtonHighlighted(int x, int y);
 
 private:
     static const int SPACING = 6;
@@ -51,7 +48,4 @@ private:
 
     std::string m_keyLabels[HEIGHT][WIDTH] = {{"A", "S", "D", "F", "G", "H", "J", "K"},
                                               {"Z", "X", "C", "V", "B", "N", "M", ","}};
-
-    // ImGuiKey m_keyboardShortcuts[HEIGHT][WIDTH] = {{ImGuiKey_A, ImGuiKey_S, ImGuiKey_D, ImGuiKey_F, ImGuiKey_G, ImGuiKey_H, ImGuiKey_J, ImGuiKey_K},
-    //                                                {ImGuiKey_Z, ImGuiKey_X, ImGuiKey_C, ImGuiKey_V, ImGuiKey_B, ImGuiKey_N, ImGuiKey_M, ImGuiKey_Comma}};
 };

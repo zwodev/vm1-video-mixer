@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include <imgui.h>
 #include <vector>
 #include <string>
 #include "Registry.h"
@@ -65,16 +64,4 @@ private:
     std::vector<int> m_currentMenuPath;
     std::map<MenuType, MenuItem> m_menus;
     MenuType m_currentMenuType = MT_InputSelection;
-
-
-    // Keyboard Shortcuts
-    std::vector<ImGuiKey> m_keyboardShortcuts = {
-        ImGuiKey_A, ImGuiKey_S, ImGuiKey_D, ImGuiKey_F,
-        ImGuiKey_G, ImGuiKey_H, ImGuiKey_J, ImGuiKey_K,
-        ImGuiKey_Z, ImGuiKey_X, ImGuiKey_C, ImGuiKey_V,
-        ImGuiKey_B, ImGuiKey_N, ImGuiKey_M, ImGuiKey_Comma};
-
-    std::vector<ImGuiKey> m_keyboardShortcuts_editButtons = {
-        ImGuiKey_Q, ImGuiKey_W, ImGuiKey_E, ImGuiKey_R,
-        ImGuiKey_T, ImGuiKey_Y, ImGuiKey_U, ImGuiKey_I};
 };

@@ -1,8 +1,9 @@
 
 #pragma once
 
-#include <msgpack.hpp>
+#include <string>
 #include <functional>
+#include <stdint.h>
 
 enum ButtonState : uint8_t
 {
