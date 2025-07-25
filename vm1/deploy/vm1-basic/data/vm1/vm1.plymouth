@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=vm1
+Description=VM-1 Splash
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/vm1
+ScriptFile=/usr/share/plymouth/themes/vm1/vm1.script

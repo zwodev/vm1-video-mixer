@@ -1,0 +1,7 @@
+# Comments are supported
+DEVICE_HOSTNAME=vm-1
+# All variables will be translated to lower case and made available to hooks
+device_user1=vm1
+dEvIcE_UsER1pASs=vmone
+# Variables set in the .cfg file can be overridden
+IMAGE_NAME=vm1-basic
