@@ -228,3 +228,21 @@ int StbRenderer::getFontLineHeight(float fontSize)
     int baseline = (int)(ascent * scale);
     return baseline + 3; // '+3' is just a 'random' value for aesthetic purpose
 }
+
+int StbRenderer::getTextWidth(const std::string& text, float fontSize)
+{
+    float scale = stbtt_ScaleForMappingEmToPixels(&font, fontSize);
+    int textWidth = 0;
+    for (char c : text)
+    {
+        int width, height, xoff, yoff;
+        unsigned char *bitmap = stbtt_GetCodepointBitmap(&font, 0, scale, c, &width, &height, &xoff, &yoff);
+        int advanceWidth, leftSideBearing;
+        stbtt_GetCodepointHMetrics(&font, c, &advanceWidth, &leftSideBearing);
+        textWidth += advanceWidth * scale;
+        // std::cout << c << ": ";
+        // std::cout << "width: " << width << " advancedWidth: " << advanceWidth << " advancedWidth*Scale: " << advanceWidth*scale << " textWidth: " << textWidth << std::endl;
+    }
+
+    return textWidth;
+}
