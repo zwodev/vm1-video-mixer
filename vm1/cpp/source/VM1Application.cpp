@@ -37,6 +37,8 @@ VM1Application::~VM1Application()
 bool VM1Application::initialize()
 {
     initializeVideo();
+    
+    //m_audioSystem.initialize();
     m_cameraController.setupDetached();
     m_oledController.setStbRenderer(&m_stbRenderer);
     m_oledController.start();
@@ -262,6 +264,7 @@ void VM1Application::finalize()
 {
     m_deviceController.disconnect();
     if (!m_isHeadless) finalizeImGui();
+    //m_audioSystem.finalize();
     finalizeSDL();
 }
 

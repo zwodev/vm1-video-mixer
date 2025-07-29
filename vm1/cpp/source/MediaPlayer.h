@@ -1,6 +1,8 @@
 #pragma once
 
-#include "source/Shader.h"
+#include "Shader.h"
+#include "ThreadableQueue.h"
+#include "AudioDevice.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_render.h>
@@ -30,6 +32,13 @@ struct VideoFrame {
     std::vector<uint32_t> pitches;
 };
 
+struct AudioFrame {
+    bool isFirstFrame = false;
+    double pts = 0.0;
+    SDL_AudioSpec spec = {0};
+    std::vector<Uint8> data;
+};
+
 class MediaPlayer {
 
 public:
@@ -37,7 +46,7 @@ public:
     virtual ~MediaPlayer();
     
 public:
-    virtual bool openFile(const std::string& fileName = std::string()) = 0;
+    virtual bool openFile(const std::string& fileName = std::string(), AudioDevice* audioDevice = nullptr) = 0;
     void play();
     void close();
     bool isPlaying() const { return m_isRunning; }
@@ -51,9 +60,6 @@ protected:
     virtual void run() = 0;
     virtual void customCleanup();
     virtual void reset();
-    void pushFrame(VideoFrame& frame);
-    bool popFrame(VideoFrame& frame);
-    bool peekFrame(VideoFrame& frame);
 
 private: 
     void cleanup();
@@ -63,27 +69,21 @@ protected:
     std::atomic<bool> m_isRunning = false;
     int m_numberOfInputImages = 1;
 
-    // Rendering
     GLuint m_vao; 
     GLuint m_vbo;
 
-    // Threading & Synchronization
+    AudioDevice* m_audioDevice = nullptr;
+    SDL_AudioStream* m_audio = nullptr;
+
     std::thread m_decoderThread;
-    std::mutex m_frameMutex;
-    std::condition_variable m_frameCV;
+    ThreadableQueue<VideoFrame> m_videoQueue;
+    ThreadableQueue<AudioFrame> m_audioQueue;
     EGLSyncKHR m_fence = EGL_NO_SYNC;
     
-    // Textures & Shader
     GLuint m_frameBuffer = 0;
     GLuint m_rgbTexture = 0;
     Shader m_shader;
 
-    // Frames
     std::vector<GLuint> m_yuvTextures;
     std::vector<EGLImage> m_yuvImages;
-
-    static constexpr size_t MAX_QUEUE_SIZE = 3;
-    VideoFrame m_currentFrame;
-    std::queue<VideoFrame> m_frameQueue;
-    std::vector<VideoFrame> m_framesToDelete;
 };

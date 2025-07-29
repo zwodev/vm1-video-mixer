@@ -30,6 +30,7 @@
 #include "KeyboardControllerLinux.h"
 #include "EventBus.h"
 #include "DeviceController.h"
+#include "AudioSystem.h"
 
 // class DisplayConfig {
 //     int width;
@@ -81,5 +82,5 @@ private:
     OledController m_oledController;
     MenuSystem m_menuSystem;
     DeviceController m_deviceController;
-
+    //AudioSystem m_audioSystem;
 };

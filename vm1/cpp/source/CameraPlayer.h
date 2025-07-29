@@ -33,7 +33,7 @@ public:
     ~CameraPlayer();
 
 public:
-    bool openFile(const std::string& fileName);
+    bool openFile(const std::string& fileName, AudioDevice* audioDevice = nullptr);
     void lockBuffer();
     Buffer* getBuffer();
     void unlockBuffer();

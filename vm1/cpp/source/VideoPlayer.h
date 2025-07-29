@@ -46,7 +46,7 @@ public:
     VideoPlayer();
     ~VideoPlayer();
 
-    bool openFile(const std::string& fileName) override;
+    bool openFile(const std::string& fileName, AudioDevice* audioDevice = nullptr) override;
     void setLooping(bool looping);
     void update() override;
     
@@ -59,7 +59,6 @@ private:
 
     AVCodecContext* openVideoStream();
     AVCodecContext* openAudioStream();
-    void interleaveAudio(AVFrame* frame, const SDL_AudioSpec* spec);
     void handleAudioFrame(AVFrame* frame);
     bool getTextureForDRMFrame(AVFrame* frame, VideoFrame& dstFrame);
 
@@ -68,7 +67,7 @@ private:
     // FFMpeg
     Uint64 m_startTime = 0;
     double m_firstPts = -1.0;
-    SDL_AudioStream* m_audio;
+    double m_firstAudioPts = -1.0;
     AVFormatContext* m_formatContext = nullptr;
     const AVCodec* m_audioCodec = nullptr;
     const AVCodec* m_videoCodec = nullptr;

@@ -17,6 +17,8 @@ MediaPlayer::~MediaPlayer()
 void MediaPlayer::play()
 {
     reset();
+    m_audioQueue.setActive(true);
+    m_videoQueue.setActive(true);
     m_isRunning = true;
     m_decoderThread = std::thread(&MediaPlayer::run, this);
 }
@@ -29,10 +31,17 @@ GLuint MediaPlayer::texture()
 void MediaPlayer::close()
 {
     m_isRunning = false;
-    m_frameCV.notify_all();
+    m_videoQueue.setActive(false);
+    m_audioQueue.setActive(false);
     
     if (m_decoderThread.joinable()) {
         m_decoderThread.join();
+    }
+
+    if (m_audioDevice && m_audio) {
+        m_audioDevice->removeStream(m_audio);
+        m_audioDevice = nullptr;
+        m_audio = nullptr;
     }
     
     cleanup();
@@ -50,7 +59,9 @@ void MediaPlayer::cleanup()
         m_fence = EGL_NO_SYNC;
     }
 
-    clearFrames();
+    m_videoQueue.clearFrames();
+    m_audioQueue.clearFrames();
+
     customCleanup();
 }
 
@@ -126,45 +137,4 @@ void MediaPlayer::initializeFramebufferAndTextures()
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-void MediaPlayer::clearFrames() {
-    std::unique_lock<std::mutex> lock(m_frameMutex);
-    while (!m_frameQueue.empty()) {
-        m_frameQueue.pop();
-    }
-}
-
-void MediaPlayer::pushFrame(VideoFrame& frame) {
-    std::unique_lock<std::mutex> lock(m_frameMutex);
-    m_frameCV.wait(lock, [this]() { 
-        return m_frameQueue.size() < MAX_QUEUE_SIZE || !m_isRunning; 
-    });
-    
-    if (m_isRunning) {
-        m_frameQueue.push(frame);
-        m_frameCV.notify_one();
-    }
-}
-
-bool MediaPlayer::popFrame(VideoFrame& frame) {
-    std::unique_lock<std::mutex> lock(m_frameMutex);
-    if (m_frameQueue.empty()) {
-        return false;
-    }
-    
-    frame = m_frameQueue.front();
-    m_frameQueue.pop();
-    m_frameCV.notify_one();
-    return true;
-}
-
-bool MediaPlayer::peekFrame(VideoFrame& frame) {
-    std::unique_lock<std::mutex> lock(m_frameMutex);
-    if (m_frameQueue.empty()) {
-        return false;
-    }
-    
-    frame = m_frameQueue.front();
-    return true;
 }

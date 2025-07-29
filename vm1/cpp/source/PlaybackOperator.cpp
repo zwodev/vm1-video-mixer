@@ -23,33 +23,33 @@ void PlaybackOperator::subscribeToEvents()
 
 void PlaybackOperator::initialize()
 {
-    // Add plane mixers
     for (int i = 0; i < 2; ++i) {
         m_planeMixers.push_back(PlaneMixer());
     } 
 
-    // Add plane renderers
     for (int i = 0; i < 2; ++i) {
         m_planeRenderers.push_back(new PlaneRenderer());
     } 
 
-    // Add video players
     for (int i = 0; i < 4; ++i) {
         m_videoPlayers.push_back(new VideoPlayer());
         MediaPlayer* mediaPlayer = m_videoPlayers[i];
         m_mediaPlayers.push_back(mediaPlayer);
     }
 
-    // Add camera players
     for (int i = 0; i < 1; ++i) {
         m_cameraPlayers.push_back(new CameraPlayer());
         MediaPlayer* mediaPlayer = m_cameraPlayers[i];
         m_mediaPlayers.push_back(mediaPlayer);
     }
+
+    m_audioSystem.initialize();
 }
 
 void PlaybackOperator::finalize()
 {
+    m_audioSystem.finalize();
+
     for (auto videoPlayer : m_videoPlayers) {
         delete videoPlayer;
     }
@@ -131,7 +131,8 @@ void PlaybackOperator::showMedia(int mediaSlotId)
         filePath = m_registry.mediaPool().getVideoFilePath(fileName);
 
         if (!getFreeVideoPlayerId(playerId)) return;
-        if (!m_mediaPlayers[playerId]->openFile(filePath)) return;
+        AudioDevice* audioDevice = m_audioSystem.audioDevice(0);
+        if (!m_mediaPlayers[playerId]->openFile(filePath, audioDevice)) return;
         if (m_planeMixers[planeId].startFade(playerId)) {
             m_mediaPlayers[playerId]->play(); 
             m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;

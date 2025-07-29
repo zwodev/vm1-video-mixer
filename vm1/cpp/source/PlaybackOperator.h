@@ -4,6 +4,7 @@
 #include "PlaneRenderer.h"
 #include "CameraPlayer.h"
 #include "VideoPlayer.h"
+#include "AudioSystem.h"
 #include "DeviceController.h"
 #include "Registry.h"
 #include "EventBus.h"
@@ -110,12 +111,11 @@ private:
     Registry& m_registry;
     EventBus& m_eventBus;
     DeviceController& m_deviceController;
-
-    // Rendering related
+    
+    AudioSystem m_audioSystem;
     std::vector<PlaneMixer> m_planeMixers;
     std::vector<PlaneRenderer*> m_planeRenderers;
 
-    // Player related
     std::vector<VideoPlayer*> m_videoPlayers;
     std::vector<CameraPlayer*> m_cameraPlayers;
     std::vector<MediaPlayer*> m_mediaPlayers;

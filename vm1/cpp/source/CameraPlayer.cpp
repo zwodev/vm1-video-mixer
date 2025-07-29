@@ -50,7 +50,7 @@ CameraPlayer::~CameraPlayer()
 {   
 }
 
-bool CameraPlayer::openFile(const std::string& fileName)
+bool CameraPlayer::openFile(const std::string& fileName, AudioDevice* audioDevice)
 {
 
 }
@@ -239,7 +239,7 @@ void CameraPlayer::run()
         int fd = getBuffer()->fd;
         frame.fds.push_back(fd);
         unlockBuffer();
-        pushFrame(frame);
+        m_videoQueue.pushFrame(frame);
         SDL_Delay(10);
     }
 
@@ -289,7 +289,7 @@ void CameraPlayer::update()
     m_fence = EGL_NO_SYNC;
 
     VideoFrame frame;
-    if (popFrame(frame)) {
+    if (m_videoQueue.popFrame(frame)) {
         if (m_yuvImages.size() > 0 && frame.fds.size() > 0) {
             
             // Create image
