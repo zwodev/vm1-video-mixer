@@ -120,4 +120,7 @@ private:
     std::vector<CameraPlayer*> m_cameraPlayers;
     std::vector<MediaPlayer*> m_mediaPlayers;
     std::map<int, int> m_mediaSlotIdToPlayerId;
+
+    int m_selectedEditButton = -1;
+
 };

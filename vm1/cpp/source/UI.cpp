@@ -185,7 +185,7 @@ void UI::EndListElement()
 void UI::startUpLogo() {
     int centerX = m_stbRenderer.width() / 2;
     int centerY = m_stbRenderer.height() / 2;
-    int quadSize = 80;
+    int quadSize = 60;
     m_stbRenderer.drawEmptyRect(centerX - quadSize / 2, centerY - quadSize /2, quadSize, quadSize, COLOR::WHITE);
 
     CenteredText("VM-1");

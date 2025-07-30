@@ -19,6 +19,10 @@ void PlaybackOperator::subscribeToEvents()
     m_eventBus.subscribe<MediaSlotEvent>([this](const MediaSlotEvent& event) {
         showMedia(event.slotId);
     });
+
+    m_eventBus.subscribe<EditModeEvent>([this](const EditModeEvent& event) {
+        m_selectedEditButton = event.modeId;
+    });
 }
 
 void PlaybackOperator::initialize()
@@ -243,6 +247,17 @@ void PlaybackOperator::updateDeviceController()
     InputMappings &inputMappings = m_registry.inputMappings();
     VM1DeviceState vm1DeviceState;
     vm1DeviceState.bank = uint8_t(inputMappings.bank);
+    
+    
+    for (int i = 0; i < EDIT_BUTTON_COUNT; ++i)
+    {
+        if (i == m_selectedEditButton) {
+            vm1DeviceState.editButtons[i] = ButtonState::EMPTY; // "EMPTY" is simply white color. todo: rename
+        } else {
+            vm1DeviceState.editButtons[i] = ButtonState::NONE;
+        }
+    }
+    
     for (int i = 0; i < MEDIA_BUTTON_COUNT; ++i)
     {
         int mediaSlotId = (inputMappings.bank * MEDIA_BUTTON_COUNT) + i;
