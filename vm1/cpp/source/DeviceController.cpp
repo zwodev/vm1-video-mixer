@@ -156,7 +156,7 @@ void DeviceController::requestVM1DeviceBuffer()
                 case 218: // KEY_UP:
                     if (isShiftPressed)
                     {
-                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::IncreaseValue));
+                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::DecreaseValue));
                     }
                     else
                     {
@@ -167,7 +167,7 @@ void DeviceController::requestVM1DeviceBuffer()
                 case 217: // KEY_DOWN:
                     if (isShiftPressed)
                     {
-                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::DecreaseValue));
+                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::IncreaseValue));
                     }
                     else
                     {
@@ -214,7 +214,12 @@ void DeviceController::requestVM1DeviceBuffer()
             {
                 int mediaSlotId = (m_registry.inputMappings().bank * MEDIA_BUTTON_COUNT) + j;
                 if (currentChar == m_mediaKeys[j]) {
-                    m_eventBus.publish(MediaSlotEvent(mediaSlotId));
+                    if(isShiftPressed){
+                        m_eventBus.publish(MediaSlotEvent(mediaSlotId, false)); // do not trigger playback
+                    }
+                    else {
+                        m_eventBus.publish(MediaSlotEvent(mediaSlotId));
+                    }
                     return;
                 }
             }

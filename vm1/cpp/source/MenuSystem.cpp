@@ -35,7 +35,7 @@ void MenuSystem::createMenus()
                                             {"Live", {}, [this](int id, int* fIdx){LiveInputSelection(id, fIdx);}},
                                             {"Shader", {}}
                                         }};
-    m_menus[MT_PlaybackSelection]   = {"Playback", {}, [this](int id, int* fIdx){PlaybackSettings(id, fIdx);}};
+    m_menus[MT_PlaybackSelection]   = {"Play", {}, [this](int id, int* fIdx){PlaybackSettings(id, fIdx);}};
     m_menus[MT_NetworkInfo]         = {"Network", {}, [this](int id, int* fIdx){NetworkInfo(id, fIdx);}};
     m_menus[MT_SettingsSelection]   = {"Settings", {}, [this](int id, int* fIdx){GlobalSettings(id, fIdx);}};
 }
@@ -56,13 +56,20 @@ void MenuSystem::handleMediaAndEditButtons()
     {
         m_id = mediaSlotId;
 
-        if (m_currentMenuType == MT_StartupScreen) setMenu(MT_InputSelection);
+        
+        if (m_currentMenuType == MT_StartupScreen) {
+            m_eventBus.publish(EditModeEvent(1)); // event needs to be published to update DeviceController
+            setMenu(MT_InputSelection); // todo: calling setMenu() here shouldn't be necessary. 
+                                        // It should automatically be called in the for-loop below.
+        }
         return;
     }
 
     // check the edit-buttons
     for (int editButtonId : m_ui.getTriggeredEditButtons())
     {
+        std::cout << "editButtonId: " << editButtonId << std::endl;
+
         switch (editButtonId)
         {
         case 0:
@@ -108,10 +115,12 @@ void MenuSystem::handleBankSwitching()
 {
     if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::BankDown)) {
         m_registry.inputMappings().bank = (m_registry.inputMappings().bank + 1) % BANK_COUNT; 
+        m_ui.StartOverlay([this](){m_ui.ShowBankInfo(m_registry.inputMappings().bank);});
     }
     else if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::BankUp)) {
         m_registry.inputMappings().bank = (m_registry.inputMappings().bank - 1) % BANK_COUNT;
         if (m_registry.inputMappings().bank < 0) m_registry.inputMappings().bank = BANK_COUNT - 1;
+        m_ui.StartOverlay([this](){m_ui.ShowBankInfo(m_registry.inputMappings().bank);});
     }
 }
 
@@ -165,7 +174,7 @@ void MenuSystem::render()
         m_currentMenuType == MT_InputSelection || 
         m_currentMenuType == MT_PlaybackSelection) 
     {
-        int id16 = m_id % MEDIA_BUTTON_COUNT;
+        int id16 = (m_id % MEDIA_BUTTON_COUNT) + 1;
         char bank = m_id / MEDIA_BUTTON_COUNT + 65; // "+65" to get ASCII code
         std::string mediaSlotString = std::string(1, bank) + std::to_string(id16);
 
@@ -189,6 +198,9 @@ void MenuSystem::render()
         m_ui.EndList();
     }
 
+    // Render Overlay
+    m_ui.ShowOverlay();
+
     handleMediaAndEditButtons();
     handleUpAndDownKeys();    
     handleBankSwitching();
@@ -202,8 +214,7 @@ void MenuSystem::render()
 // TODO: Could be put in different namespaces
 void MenuSystem::StartupScreen(int id, int* focusedIdx)
 {
-    m_ui.CenteredText("VM-1");
-    //m_ui.Text("VM-1");
+    m_ui.startUpLogo();
 }
 
 void MenuSystem::FileSelection(int id, int* focusedIdx)

@@ -17,7 +17,17 @@ PlaybackOperator::~PlaybackOperator()
 void PlaybackOperator::subscribeToEvents()
 {
     m_eventBus.subscribe<MediaSlotEvent>([this](const MediaSlotEvent& event) {
-        showMedia(event.slotId);
+        if(event.triggerPlayback) {
+            m_selectedMediaButton = -1;
+            showMedia(event.slotId);
+        } else {
+            m_selectedMediaButton = event.slotId % MEDIA_BUTTON_COUNT;
+            std::cout << "m_selectedMediaButton: " << m_selectedMediaButton << std::endl;
+        }
+    });
+
+    m_eventBus.subscribe<EditModeEvent>([this](const EditModeEvent& event) {
+        m_selectedEditButton = event.modeId;
     });
 }
 
@@ -243,6 +253,17 @@ void PlaybackOperator::updateDeviceController()
     InputMappings &inputMappings = m_registry.inputMappings();
     VM1DeviceState vm1DeviceState;
     vm1DeviceState.bank = uint8_t(inputMappings.bank);
+    
+    
+    for (int i = 0; i < EDIT_BUTTON_COUNT; ++i)
+    {
+        if (i == m_selectedEditButton) {
+            vm1DeviceState.editButtons[i] = ButtonState::EMPTY; // "EMPTY" is simply white color. todo: rename
+        } else {
+            vm1DeviceState.editButtons[i] = ButtonState::NONE;
+        }
+    }
+    
     for (int i = 0; i < MEDIA_BUTTON_COUNT; ++i)
     {
         int mediaSlotId = (inputMappings.bank * MEDIA_BUTTON_COUNT) + i;
@@ -269,5 +290,10 @@ void PlaybackOperator::updateDeviceController()
                 vm1DeviceState.mediaButtons[i] = ButtonState::LIVECAM;
         }
     }
+
+    if(m_selectedMediaButton > -1) {
+        vm1DeviceState.mediaButtons[m_selectedMediaButton] = ButtonState::MEDIABUTTON_SELECTED;
+    }
+
     m_deviceController.send(vm1DeviceState);
 }

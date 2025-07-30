@@ -45,27 +45,40 @@ Adafruit_NeoPixel strip(NEOPIXEL_COUNT, NEOPIXELS_PIN, NEO_GRB + NEO_KHZ800);
 int dimmed_divider = 20;
 int black[] = {0, 0, 0};
 int grey[] = {10, 10, 10};
-int red[] = {255, 0, 0};
-int dark_red[] = {255 / dimmed_divider, 0, 0};
-int green[] = {0, 255, 0};
-int dark_green[] = {0, 255 / dimmed_divider, 0};
-int blue[] = {0, 0, 255};
-int dark_blue[] = {0, 0, 255 / dimmed_divider};
 int white[] = {255, 255, 255};
-int yellow[] = {255, 255, 0};
-int magenta[] = {255, 0, 255};
-int cyan[] = {0, 255, 255};
+int red[] = {255, 0, 0};
+int red_dimmed[] = {red[0] / dimmed_divider,
+                    red[1] / dimmed_divider,
+                    red[2] / dimmed_divider};
+int blue[] = {0, 0, 255};
+int blue_dimmed[] = {blue[0] / dimmed_divider, 
+                   blue[1] / dimmed_divider, 
+                   blue[2] / dimmed_divider};
+int yellow[] = {255, 150, 0};
+int yellow_dimmed[] = {yellow[0] / dimmed_divider,
+                       yellow[1] / dimmed_divider,
+                       yellow[2] / dimmed_divider};
+int orange[] = {255, 137, 79};
+int orange_dimmed[] = {orange[0] / dimmed_divider,
+                       orange[1] / dimmed_divider,
+                       orange[2] / dimmed_divider};
+
 
 enum ButtonState : uint8_t
 {
   NONE,
+
   EMPTY,
+
   FILE_ASSET,
   LIVECAM,
   SHADER,
+  
   FILE_ASSET_ACTIVE,
   LIVECAM_ACTIVE,
   SHADER_ACTIVE,
+  
+  MEDIABUTTON_SELECTED,
 };
 
 #pragma pack(1)
@@ -111,29 +124,34 @@ void blink() // helper function for anything, e.g. debug message
   }
 }
 
+
 int *colorForButtonState(ButtonState state)
 {
   switch (state)
   {
   case NONE:
     return black;
+
   case EMPTY:
     return grey;
 
-  case FILE_ASSET:
-    return dark_green;
   case FILE_ASSET_ACTIVE:
-    return green;
+      return red;
+  case FILE_ASSET:
+    return red_dimmed;
 
-  case LIVECAM:
-    return dark_red;
   case LIVECAM_ACTIVE:
-    return red;
+    return orange;
+  case LIVECAM:
+    return orange_dimmed;
 
-  case SHADER:
-    return dark_blue;
   case SHADER_ACTIVE:
-    return blue;
+    return yellow;
+  case SHADER:
+    return yellow_dimmed;
+
+  case MEDIABUTTON_SELECTED:
+    return blue_dimmed;
 
   default:
     return black;
@@ -142,8 +160,9 @@ int *colorForButtonState(ButtonState state)
 
 uint32_t colorFromArray(int color[3])
 {
-  return strip.Color(color[0], color[1], color[2]);
-  return 0;
+  return strip.Color(color[0],
+                     color[1],
+                     color[2]);
 }
 
 void animateAllNeoPixels()
@@ -156,7 +175,7 @@ void animateAllNeoPixels()
 
   for (int i = 0; i < NEOPIXEL_COUNT; ++i)
   {
-    strip.setPixelColor(i, colorFromArray(red));
+    strip.setPixelColor(i, colorFromArray(red_dimmed));
     delay(25);
     strip.show();
   }
@@ -223,9 +242,9 @@ void setNeoPixels()
   // 6 bank-pixels [27-32]
   for (uint8_t i = 0; i < 6; ++i)
   {
-    color = dark_red;
+    color = red_dimmed;
     if (i == deviceState.bank)
-      color = red;
+      color = orange_dimmed;
     strip.setPixelColor(32 - i, colorFromArray(color));
   }
 

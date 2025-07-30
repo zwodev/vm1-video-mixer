@@ -18,6 +18,7 @@ enum ButtonState : uint8_t
     FILE_ASSET_ACTIVE,
     LIVECAM_ACTIVE,
     SHADER_ACTIVE,
+    MEDIABUTTON_SELECTED,
 };
 
 #pragma pack(1)

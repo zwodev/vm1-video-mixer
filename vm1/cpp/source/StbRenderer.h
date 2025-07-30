@@ -34,8 +34,11 @@ struct Color
 namespace COLOR
 {
     static constexpr Color WHITE = {255, 255, 255};
+    static constexpr Color GREY= {127, 127, 127};
     static constexpr Color BLACK = {0, 0, 0};
     static constexpr Color RED = {255, 0, 0};
+    static constexpr Color GREEN = {0, 255, 0};
+    static constexpr Color BLUE = {0, 0, 255};
     static constexpr Color FOREGROUND = COLOR::WHITE;
     static constexpr Color INVERTED = COLOR::BLACK;
 };
@@ -87,6 +90,7 @@ public:
     bool loadFont(const std::string& fontPath);
     void drawPng(const std::string& filename, int posX = 0, int posY = 0);
     void drawRect(int x0, int y0, int w, int h, Color color = COLOR::WHITE);
+    void drawEmptyRect(int x0, int y0, int w, int h, Color color = COLOR::WHITE);
     void drawText(const std::string& text, int posX, int posY, float fontSize, Color color = COLOR::WHITE);
     int getFontLineHeight(float fontSize);
     int getTextWidth(const std::string& text, float fontSize);
