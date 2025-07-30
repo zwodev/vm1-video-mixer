@@ -156,7 +156,7 @@ void DeviceController::requestVM1DeviceBuffer()
                 case 218: // KEY_UP:
                     if (isShiftPressed)
                     {
-                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::IncreaseValue));
+                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::DecreaseValue));
                     }
                     else
                     {
@@ -167,7 +167,7 @@ void DeviceController::requestVM1DeviceBuffer()
                 case 217: // KEY_DOWN:
                     if (isShiftPressed)
                     {
-                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::DecreaseValue));
+                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::IncreaseValue));
                     }
                     else
                     {
