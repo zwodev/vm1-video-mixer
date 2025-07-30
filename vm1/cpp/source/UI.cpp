@@ -10,24 +10,22 @@ UI::UI(StbRenderer &stbRenderer, EventBus &eventBus) :
 
 void UI::subscribeToEvents()
 {
-    // Examples:
-
     // Media Slot Event
     m_eventBus.subscribe<MediaSlotEvent>([this](const MediaSlotEvent& event) {
-        printf("Media Slot Event - (Slot Idx: %d)\n", event.slotId);
+        //printf("Media Slot Event - (Slot Idx: %d)\n", event.slotId);
         mediaSlotEvents.push_back(event);
     });
 
     // Edit Mode Event
     m_eventBus.subscribe<EditModeEvent>([this](const EditModeEvent& event) {
-        printf("Edit Mode Event - (Mode Idx: %d)\n", event.modeId);
+        //printf("Edit Mode Event - (Mode Idx: %d)\n", event.modeId);
         editModeEvents.push_back(event);
 
     });
 
     // Navigation Event
     m_eventBus.subscribe<NavigationEvent>([this](const NavigationEvent& event) {
-        printf("Navigation Event - (Type: %d)\n", (int)event.type);
+        //("Navigation Event - (Type: %d)\n", (int)event.type);
         navigationEvents.push_back(event);
     });
 }

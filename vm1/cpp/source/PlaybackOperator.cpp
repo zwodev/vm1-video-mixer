@@ -141,10 +141,15 @@ void PlaybackOperator::showMedia(int mediaSlotId)
         filePath = m_registry.mediaPool().getVideoFilePath(fileName);
 
         if (!getFreeVideoPlayerId(playerId)) return;
+        SDL_Log("Play PlayerId: %d", playerId);
         AudioDevice* audioDevice = m_audioSystem.audioDevice(0);
         if (!m_mediaPlayers[playerId]->openFile(filePath, audioDevice)) return;
         if (m_planeMixers[planeId].startFade(playerId)) {
             m_mediaPlayers[playerId]->play(); 
+            if (m_mediaSlotIdToPlayerId.find(mediaSlotId) != m_mediaSlotIdToPlayerId.end()) {
+                int oldPlayerId = m_mediaSlotIdToPlayerId[mediaSlotId];
+                m_recentlyUsedPlayerIds.push_back(oldPlayerId);
+            }
             m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
         }
     }
@@ -219,6 +224,18 @@ void PlaybackOperator::update(float deltaTime)
             //     cameraPlayer->update();
             // }
         }
+    }
+
+    std::vector<int> recentlyUsedPlayerIds = m_recentlyUsedPlayerIds;
+    for (int playerId : recentlyUsedPlayerIds) {
+        MediaPlayer* mediaPlayer = m_mediaPlayers[playerId];
+        if (!isPlayerIdActive(playerId)) {
+            if (VideoPlayer* videoPlayer = dynamic_cast<VideoPlayer*>(mediaPlayer)) {
+                videoPlayer->close();
+                m_recentlyUsedPlayerIds.erase(std::find(m_recentlyUsedPlayerIds.begin(), m_recentlyUsedPlayerIds.end(), playerId));
+                SDL_Log("Close Video Player (Id): %d", playerId);
+            }
+        } 
     }
 
     for (auto id : idsToDelete) {
