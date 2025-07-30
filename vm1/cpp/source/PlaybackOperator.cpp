@@ -18,7 +18,11 @@ void PlaybackOperator::subscribeToEvents()
 {
     m_eventBus.subscribe<MediaSlotEvent>([this](const MediaSlotEvent& event) {
         if(event.triggerPlayback) {
+            m_selectedMediaButton = -1;
             showMedia(event.slotId);
+        } else {
+            m_selectedMediaButton = event.slotId % MEDIA_BUTTON_COUNT;
+            std::cout << "m_selectedMediaButton: " << m_selectedMediaButton << std::endl;
         }
     });
 
@@ -286,5 +290,10 @@ void PlaybackOperator::updateDeviceController()
                 vm1DeviceState.mediaButtons[i] = ButtonState::LIVECAM;
         }
     }
+
+    if(m_selectedMediaButton > -1) {
+        vm1DeviceState.mediaButtons[m_selectedMediaButton] = ButtonState::SHADER;
+    }
+
     m_deviceController.send(vm1DeviceState);
 }

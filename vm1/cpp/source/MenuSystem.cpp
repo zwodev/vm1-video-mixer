@@ -56,13 +56,20 @@ void MenuSystem::handleMediaAndEditButtons()
     {
         m_id = mediaSlotId;
 
-        if (m_currentMenuType == MT_StartupScreen) setMenu(MT_InputSelection);
+        
+        if (m_currentMenuType == MT_StartupScreen) {
+            m_eventBus.publish(EditModeEvent(1)); // event needs to be published to update DeviceController
+            setMenu(MT_InputSelection); // todo: calling setMenu() here shouldn't be necessary. 
+                                        // It should automatically be called in the for-loop below.
+        }
         return;
     }
 
     // check the edit-buttons
     for (int editButtonId : m_ui.getTriggeredEditButtons())
     {
+        std::cout << "editButtonId: " << editButtonId << std::endl;
+
         switch (editButtonId)
         {
         case 0:

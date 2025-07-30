@@ -122,5 +122,6 @@ private:
     std::map<int, int> m_mediaSlotIdToPlayerId;
 
     int m_selectedEditButton = -1;
+    int m_selectedMediaButton = -1;
 
 };
