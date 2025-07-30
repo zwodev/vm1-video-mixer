@@ -115,10 +115,12 @@ void MenuSystem::handleBankSwitching()
 {
     if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::BankDown)) {
         m_registry.inputMappings().bank = (m_registry.inputMappings().bank + 1) % BANK_COUNT; 
+        m_ui.StartOverlay([this](){m_ui.ShowBankInfo(m_registry.inputMappings().bank);});
     }
     else if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::BankUp)) {
         m_registry.inputMappings().bank = (m_registry.inputMappings().bank - 1) % BANK_COUNT;
         if (m_registry.inputMappings().bank < 0) m_registry.inputMappings().bank = BANK_COUNT - 1;
+        m_ui.StartOverlay([this](){m_ui.ShowBankInfo(m_registry.inputMappings().bank);});
     }
 }
 
@@ -172,7 +174,7 @@ void MenuSystem::render()
         m_currentMenuType == MT_InputSelection || 
         m_currentMenuType == MT_PlaybackSelection) 
     {
-        int id16 = m_id % MEDIA_BUTTON_COUNT;
+        int id16 = (m_id % MEDIA_BUTTON_COUNT) + 1;
         char bank = m_id / MEDIA_BUTTON_COUNT + 65; // "+65" to get ASCII code
         std::string mediaSlotString = std::string(1, bank) + std::to_string(id16);
 
@@ -195,6 +197,9 @@ void MenuSystem::render()
         }
         m_ui.EndList();
     }
+
+    // Render Overlay
+    m_ui.ShowOverlay();
 
     handleMediaAndEditButtons();
     handleUpAndDownKeys();    

@@ -8,6 +8,7 @@
 
 #include <string>
 #include <algorithm>
+#include <functional>
 
 class UI
 {
@@ -25,6 +26,9 @@ public:
     UI(StbRenderer &stbRenderer, EventBus &eventBus);
     void NewFrame();
     void EndFrame();
+    void StartOverlay(std::function<void()> overlay);
+    void ShowOverlay();
+    void StopOverlay();
     void FocusNextElement();
     void FocusPreviousElement();
     void DrawTitle(const std::string& label);
@@ -38,6 +42,7 @@ public:
     void MenuTitle(std::string menuTitle);
     void MenuInfo(std::string menuInfo);
     void InfoScreen(int bank, int id, std::string filename);
+    void ShowBankInfo(int bank);
     bool CheckBox(const std::string& label, bool checked);
     bool RadioButton(const std::string& label, bool active);
     void SpinBoxInt(const std::string& label, int& value, int minValue, int maxValue);
@@ -69,4 +74,8 @@ private:
     int m_titlePaddingBottom = 10;
     int m_textPaddingBottom = 2;
     int m_listPaddingLeft = 10;
+
+    std::function<void()> m_overlay;
+    int64_t m_overlayStartTimeMs;
+    int64_t m_overlayDurationMs = 600;
 };

@@ -1,5 +1,5 @@
 #include "UI.h"
-
+#include "VM1DeviceDefinitions.h"
 
 UI::UI(StbRenderer &stbRenderer, EventBus &eventBus) : 
     m_stbRenderer(stbRenderer), 
@@ -99,6 +99,32 @@ void UI::EndFrame()
     navigationEvents.clear();
     mediaSlotEvents.clear();
     editModeEvents.clear();
+}
+
+void UI::StartOverlay(std::function<void()> overlay)
+{
+    m_overlay = overlay;
+    auto now = std::chrono::steady_clock::now();
+    m_overlayStartTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+}
+
+void UI::ShowOverlay()
+{
+    auto now = std::chrono::steady_clock::now();
+    int64_t now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+    if (now_ms >= m_overlayStartTimeMs + m_overlayDurationMs) 
+    {
+        StopOverlay();
+    }
+    if(m_overlay)
+    {
+        m_overlay();
+    }
+}
+
+void UI::StopOverlay()
+{
+    m_overlay = nullptr;
 }
 
 void UI::FocusNextElement()
@@ -256,6 +282,29 @@ void UI::InfoScreen(int bank, int id, std::string filename)
     // ImGui::Text("Currrent Pos/Duration");
     // ImGui::Text("Loop yes or no");
     // ImGui::Text("%d/%d", bank, id);
+}
+
+void UI::ShowBankInfo(int bank)
+{
+    int width = m_stbRenderer.width();
+    int height = m_stbRenderer.height();
+    m_stbRenderer.clear();
+    
+    int quadPadding = 5;
+    int quadSize = (width / BANK_COUNT) - quadPadding;
+    int fontSize = 16;
+    for(int i = 0; i < BANK_COUNT; i++)
+    {
+        int x = quadPadding / 2 + i * (quadSize + quadPadding);
+        int y = height/2 - quadSize / 2;
+        if(bank == i) {
+            m_stbRenderer.drawRect(x, y, quadSize, quadSize, COLOR::WHITE);
+            m_stbRenderer.drawText(std::string(1, static_cast<char>(i + 65)), x + 4, y + 3, fontSize, COLOR::BLACK);
+        } else {
+            m_stbRenderer.drawEmptyRect(x, y, quadSize, quadSize, COLOR::WHITE);
+            m_stbRenderer.drawText(std::string(1, static_cast<char>(i + 65)), x + 4, y + 3, fontSize, COLOR::WHITE);
+        }
+    }
 }
 
 bool UI::CheckBox(const std::string& label, bool checked)
