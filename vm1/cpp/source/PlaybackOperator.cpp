@@ -292,7 +292,7 @@ void PlaybackOperator::updateDeviceController()
     }
 
     if(m_selectedMediaButton > -1) {
-        vm1DeviceState.mediaButtons[m_selectedMediaButton] = ButtonState::SHADER;
+        vm1DeviceState.mediaButtons[m_selectedMediaButton] = ButtonState::MEDIABUTTON_SELECTED;
     }
 
     m_deviceController.send(vm1DeviceState);
