@@ -41,6 +41,7 @@ public:
         m_streams.erase(std::find(m_streams.begin(), m_streams.end(), stream));
         SDL_UnbindAudioStream(stream);
         SDL_DestroyAudioStream(stream);
+        SDL_Log("Unbind and Destroy audio stream!");
     }
 
     SDL_AudioDeviceID deviceId() const

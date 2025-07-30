@@ -432,8 +432,8 @@ void VideoPlayer::handleAudioFrame(AVFrame *frame)
     
     AudioFrame audioFrame;
     audioFrame.pts = pts;
-    SDL_Log("Audio Format: %d", m_audioDevice->audioSpec().format);
-    SDL_Log("Audio Frame Format: %d", GetAudioFormat(frame->format));
+    //SDL_Log("Audio Format: %d", m_audioDevice->audioSpec().format);
+    //SDL_Log("Audio Frame Format: %d", GetAudioFormat(frame->format));
     //SDL_Log("Audio Frame Rate: %d", frame->sample_rate);
     //SDL_Log("Audio Frame Channels: %d", frame->ch_layout.nb_channels);
     
@@ -441,7 +441,7 @@ void VideoPlayer::handleAudioFrame(AVFrame *frame)
     int samplesize = SDL_AUDIO_BYTESIZE(GetAudioFormat(frame->format));
     int framesize = SDL_AUDIO_FRAMESIZE(audioFrame.spec);
     audioFrame.data.resize(frame->nb_samples * framesize);
-    SDL_Log("Sample Size: %d", samplesize);
+    //SDL_Log("Sample Size: %d", samplesize);
 
     if (frame->ch_layout.nb_channels > 1 && IsPlanarAudioFormat(frame->format)) {
         // Interleave audio
