@@ -35,7 +35,7 @@ void MenuSystem::createMenus()
                                             {"Live", {}, [this](int id, int* fIdx){LiveInputSelection(id, fIdx);}},
                                             {"Shader", {}}
                                         }};
-    m_menus[MT_PlaybackSelection]   = {"Playback", {}, [this](int id, int* fIdx){PlaybackSettings(id, fIdx);}};
+    m_menus[MT_PlaybackSelection]   = {"Play", {}, [this](int id, int* fIdx){PlaybackSettings(id, fIdx);}};
     m_menus[MT_NetworkInfo]         = {"Network", {}, [this](int id, int* fIdx){NetworkInfo(id, fIdx);}};
     m_menus[MT_SettingsSelection]   = {"Settings", {}, [this](int id, int* fIdx){GlobalSettings(id, fIdx);}};
 }
@@ -202,8 +202,7 @@ void MenuSystem::render()
 // TODO: Could be put in different namespaces
 void MenuSystem::StartupScreen(int id, int* focusedIdx)
 {
-    m_ui.CenteredText("VM-1");
-    //m_ui.Text("VM-1");
+    m_ui.startUpLogo();
 }
 
 void MenuSystem::FileSelection(int id, int* focusedIdx)

@@ -125,7 +125,7 @@ void UI::BeginList(int* focusedIdxPtr)
     float fontSize = 16.0f;
     m_listSize = 0;
     m_focusedIdxPtr = focusedIdxPtr;
-    m_lineHeight = m_stbRenderer.getFontLineHeight(fontSize);
+    m_lineHeight = m_stbRenderer.getFontLineHeight(fontSize) + m_textPaddingBottom;
     m_menuHeight = maxHeight - m_y;
     m_visibleListElements = m_menuHeight / m_lineHeight;
 
@@ -176,14 +176,35 @@ void UI::BeginListElement()
 void UI::EndListElement()
 {
     m_listSize++;
-    if (m_stbRenderer.isEnabled()) m_y += m_currentElementHeight;
+    if (m_stbRenderer.isEnabled()) {
+        m_y += m_currentElementHeight;
+        m_y += m_textPaddingBottom;
+    }
+}
+
+void UI::startUpLogo() {
+    int centerX = m_stbRenderer.width() / 2;
+    int centerY = m_stbRenderer.height() / 2;
+    int quadSize = 80;
+    m_stbRenderer.drawEmptyRect(centerX - quadSize / 2, centerY - quadSize /2, quadSize, quadSize, COLOR::WHITE);
+
+    CenteredText("VM-1");
 }
 
 void UI::CenteredText(const std::string &label)
 {
     float fontSize = 16.0f;
-    Color color = COLOR::WHITE;
-    m_stbRenderer.drawText(label, 50, 50, fontSize, COLOR::WHITE);
+    float fontWidth = m_stbRenderer.getTextWidth(label, fontSize);
+    float fontHeight = m_stbRenderer.getFontLineHeight(fontSize);
+
+    int centerX = m_stbRenderer.width() / 2;
+    int centerY = m_stbRenderer.height() / 2;
+
+    m_stbRenderer.drawText(label, 
+                           centerX - fontWidth / 2, 
+                           centerY - fontHeight / 2, 
+                           fontSize, 
+                           COLOR::WHITE);
 }
 
 void UI::Text(const std::string &label)
@@ -192,7 +213,10 @@ void UI::Text(const std::string &label)
     float fontSize = 16.0f;
     Color color = COLOR::WHITE;
     if (m_focusedIdxPtr) {
-        if ((*m_focusedIdxPtr) == m_listSize) color = COLOR::RED;
+        if ((*m_focusedIdxPtr) == m_listSize){            
+            m_stbRenderer.drawRect(m_x, m_y - 1, m_stbRenderer.width() - m_x, fontSize - 2, COLOR::WHITE);
+            color = COLOR::BLACK;
+        } 
     }
     m_stbRenderer.drawText(label, m_x, m_y, fontSize, color);
     UI::EndListElement();
@@ -203,6 +227,7 @@ void UI::MenuTitle(std::string menuTitle)
     float fontSize = 32.0f;
     m_stbRenderer.drawText(menuTitle, m_x, m_y, fontSize, COLOR::WHITE);
     m_y += m_stbRenderer.getFontLineHeight(fontSize);
+    m_y += m_titlePaddingBottom;
 }
 
 void UI::MenuInfo(std::string menuInfo)
@@ -211,7 +236,16 @@ void UI::MenuInfo(std::string menuInfo)
     int width = m_stbRenderer.width();
     int textWidth = m_stbRenderer.getTextWidth(menuInfo, fontSize);
     // std::cout << "text width for '" << menuInfo << "': " << textWidth << std::endl;
-    m_stbRenderer.drawText(menuInfo, width - textWidth, 0, fontSize, COLOR::WHITE);
+    m_stbRenderer.drawEmptyRect(width - textWidth - 2, 
+                                0, 
+                                textWidth + 1, 
+                                m_stbRenderer.getFontLineHeight(fontSize) - 1, 
+                                COLOR::WHITE);
+    m_stbRenderer.drawText(menuInfo, 
+                           width - textWidth - 1, 
+                           0, 
+                           fontSize, 
+                           COLOR::WHITE);
 }
 
 void UI::InfoScreen(int bank, int id, std::string filename)
@@ -234,10 +268,18 @@ bool UI::CheckBox(const std::string& label, bool checked)
         checked = !checked;
     }
 
-    std::string newLabel = "[ ] " + label;
-    if (checked) newLabel = "[x] " + label;
-    Text(newLabel);
-
+    // std::string newLabel = "[ ] " + label;
+    // if (checked) newLabel = "[x] " + label;
+    // Text(newLabel);
+    if(checked) {
+        m_stbRenderer.drawRect(m_x, m_y + 2, 7, 7, COLOR::WHITE);
+    }
+    else {
+        m_stbRenderer.drawEmptyRect(m_x, m_y + 2, 7, 7, COLOR::WHITE);
+    }
+    m_x = 10;
+    Text(label);
+    m_x = 0;
     return checked != oldChecked;
 }
 
@@ -250,9 +292,13 @@ bool UI::RadioButton(const std::string& label, bool active)
         active = true;
     }
 
-    std::string newLabel = "[ ] " + label;
-    if (active) newLabel = "[*] " + label;
-    Text(newLabel);
+    // std::string newLabel = "[ ] " + label;
+    // if (active) newLabel = "[*] " + label;
+    // Text(newLabel);
+    if(active) m_stbRenderer.drawRect(m_x, m_y + 2, 7, 7, COLOR::WHITE);
+    m_x = m_listPaddingLeft;
+    Text(label);
+    m_x = 0;
 
     return focused && active;
 }

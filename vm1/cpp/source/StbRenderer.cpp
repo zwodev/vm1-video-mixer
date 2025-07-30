@@ -109,6 +109,22 @@ void StbRenderer::drawRect(int x0, int y0, int w, int h, Color color)
             m_img.setPixel(x, y, color.r, color.g, color.b);
 }
 
+void StbRenderer::drawEmptyRect(int x0, int y0, int w, int h, Color color)
+{
+    if (!m_isEnabled) return;
+
+    for (int x = x0; x < x0 + w; ++x)
+    {
+        m_img.setPixel(x, y0, color.r, color.g, color.b);
+        m_img.setPixel(x, y0 + h, color.r, color.g, color.b);
+    }
+    for (int y = y0; y < y0 + h; ++y)
+    {
+        m_img.setPixel(x0, y, color.r, color.g, color.b);
+        m_img.setPixel(x0 + w, y, color.r, color.g, color.b);
+    }
+}
+
 void StbRenderer::drawPng(const std::string& filename, int posX, int posY)
 {
     if (!m_isEnabled) return;

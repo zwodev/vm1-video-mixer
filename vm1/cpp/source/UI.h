@@ -33,6 +33,7 @@ public:
     void BeginListElement();
     void EndListElement();
     void CenteredText(const std::string &label);
+    void startUpLogo();
     void Text(const std::string &label);
     void MenuTitle(std::string menuTitle);
     void MenuInfo(std::string menuInfo);
@@ -64,4 +65,8 @@ private:
     int* m_focusedIdxPtr = 0;
     int m_firstLine = 0;
     int m_currentElementHeight = 0;
+
+    int m_titlePaddingBottom = 10;
+    int m_textPaddingBottom = 2;
+    int m_listPaddingLeft = 10;
 };
