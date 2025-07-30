@@ -11,8 +11,12 @@
 struct MediaSlotEvent 
 {
     MediaSlotEvent() = delete;
-    MediaSlotEvent(int slotId) { this->slotId = slotId; }
+    MediaSlotEvent(int slotId, bool triggerPlayback = true){
+            this->slotId = slotId; 
+            this->triggerPlayback = triggerPlayback;         
+    }
     int slotId;
+    bool triggerPlayback;
 };
 
 struct EditModeEvent

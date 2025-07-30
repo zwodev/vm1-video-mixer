@@ -214,7 +214,12 @@ void DeviceController::requestVM1DeviceBuffer()
             {
                 int mediaSlotId = (m_registry.inputMappings().bank * MEDIA_BUTTON_COUNT) + j;
                 if (currentChar == m_mediaKeys[j]) {
-                    m_eventBus.publish(MediaSlotEvent(mediaSlotId));
+                    if(isShiftPressed){
+                        m_eventBus.publish(MediaSlotEvent(mediaSlotId, false)); // do not trigger playback
+                    }
+                    else {
+                        m_eventBus.publish(MediaSlotEvent(mediaSlotId));
+                    }
                     return;
                 }
             }

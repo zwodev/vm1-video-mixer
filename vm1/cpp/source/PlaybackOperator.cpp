@@ -17,7 +17,9 @@ PlaybackOperator::~PlaybackOperator()
 void PlaybackOperator::subscribeToEvents()
 {
     m_eventBus.subscribe<MediaSlotEvent>([this](const MediaSlotEvent& event) {
-        showMedia(event.slotId);
+        if(event.triggerPlayback) {
+            showMedia(event.slotId);
+        }
     });
 
     m_eventBus.subscribe<EditModeEvent>([this](const EditModeEvent& event) {

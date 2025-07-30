@@ -15,11 +15,11 @@ void KeyboardControllerSDL::update(SDL_Event& event)
 {
     if (event.type == SDL_EVENT_KEY_DOWN)
     {
-        bool shiftPressed = event.key.mod & SDL_KMOD_SHIFT;
+        bool isShiftPressed = event.key.mod & SDL_KMOD_SHIFT;
         switch (event.key.key)
         {
         case SDLK_UP:
-            if (shiftPressed)
+            if (isShiftPressed)
             {
                 m_eventBus.publish(NavigationEvent(NavigationEvent::Type::IncreaseValue));
             }
@@ -30,7 +30,7 @@ void KeyboardControllerSDL::update(SDL_Event& event)
             return;
             break;
         case SDLK_DOWN:
-            if (shiftPressed)
+            if (isShiftPressed)
             {
                 m_eventBus.publish(NavigationEvent(NavigationEvent::Type::DecreaseValue));
             }
@@ -41,7 +41,7 @@ void KeyboardControllerSDL::update(SDL_Event& event)
             return;
             break;
         case SDLK_LEFT:
-            if (shiftPressed)
+            if (isShiftPressed)
             {
                 m_eventBus.publish(NavigationEvent(NavigationEvent::Type::BankUp));
             }
@@ -52,7 +52,7 @@ void KeyboardControllerSDL::update(SDL_Event& event)
             return;
             break;
         case SDLK_RIGHT:
-            if (shiftPressed)
+            if (isShiftPressed)
             {
                 m_eventBus.publish(NavigationEvent(NavigationEvent::Type::BankDown));
             }
@@ -79,7 +79,12 @@ void KeyboardControllerSDL::update(SDL_Event& event)
         {
             int mediaSlotId = (m_registry.inputMappings().bank * MEDIA_BUTTON_COUNT) + i;
             if (event.key.key == m_mediaKeys[i]) {
-                m_eventBus.publish(MediaSlotEvent(mediaSlotId));
+                if(isShiftPressed){
+                    m_eventBus.publish(MediaSlotEvent(mediaSlotId, false)); // do not trigger playback
+                }
+                else {
+                    m_eventBus.publish(MediaSlotEvent(mediaSlotId));
+                }
                 return;
             }
         }
