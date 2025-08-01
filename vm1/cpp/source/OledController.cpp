@@ -35,6 +35,11 @@ void OledController::start()
 void OledController::stop()
 {   
     m_isRunning = false;
+
+    // Call update to unlock the conditonal_variable.wait() in StbRenderer.
+    if (m_stbRenderer) {
+        m_stbRenderer->update();
+    }
     if (m_thread.joinable()) {
         m_thread.join();
     }
@@ -47,7 +52,6 @@ void OledController::process()
     initializeOled();
     initializeImageBuffer();
     while (m_isRunning) {
-        // ImageBuffer imageBuffer = m_oledUiRenderer->popImage();
         Image imageBuffer = m_stbRenderer->popImage();
         renderToRGB565(imageBuffer, false);
         render();
@@ -55,22 +59,24 @@ void OledController::process()
 
     OLED_1in5_rgb_Clear();
     DEV_ModuleExit();
+    //delete oledImage;
+    //oledImage = nullptr;
 }
 
 void OledController::Handler(int signo)
 {
-    // System Exit
-    //OLED_1in5_rgb_Clear();
+    // // System Exit
+    // OLED_1in5_rgb_Clear();
 
-    //printf("\r\nHandler:exit\r\n");
-    //DEV_ModuleExit();
+    // printf("\r\nHandler:exit\r\n");
+    // DEV_ModuleExit();
 
     //exit(0);
 }
 
 int OledController::initializeOled()
 {
-    //signal(SIGINT, OledController::Handler);
+    signal(SIGINT, OledController::Handler);
 
     if (DEV_ModuleInit() != 0)
     {

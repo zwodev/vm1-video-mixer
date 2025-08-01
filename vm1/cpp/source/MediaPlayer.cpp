@@ -54,15 +54,7 @@ void MediaPlayer::close()
         m_audio = nullptr;
     }
     
-    cleanup();
-}
-
-void MediaPlayer::cleanup()
-{
     EGLDisplay display = eglGetCurrentDisplay();
-    
-    // Cleanup sync fences
-    // Wait for fence and delete it
     if (m_fence != EGL_NO_SYNC) {
         eglClientWaitSync(display, m_fence, EGL_SYNC_FLUSH_COMMANDS_BIT, EGL_FOREVER);
         eglDestroySync(display, m_fence);
@@ -71,16 +63,9 @@ void MediaPlayer::cleanup()
 
     m_videoQueue.clearFrames();
     m_audioQueue.clearFrames();
-
-    //customCleanup();
 }
 
 void MediaPlayer::reset()
-{
-    //
-}
-
-void MediaPlayer::customCleanup()
 {
     //
 }

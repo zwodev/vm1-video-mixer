@@ -48,7 +48,7 @@ public:
 public:
     virtual bool openFile(const std::string& fileName = std::string(), AudioStream* audioStream = nullptr) = 0;
     void play();
-    void close();
+    virtual void close();
     bool isPlaying() const { return m_isRunning; }
     virtual void update() = 0;
     bool isFrameReady();
@@ -59,11 +59,9 @@ protected:
     void initializeFramebufferAndTextures();
     virtual void loadShaders() = 0;
     virtual void run() = 0;
-    virtual void customCleanup();
     virtual void reset();
 
 private: 
-    void cleanup();
     void clearFrames();
 
 protected:

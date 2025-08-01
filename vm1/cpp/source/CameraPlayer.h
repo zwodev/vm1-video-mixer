@@ -34,6 +34,7 @@ public:
 
 public:
     bool openFile(const std::string& fileName, AudioStream* audioStream = nullptr);
+    void close() override;
     void lockBuffer();
     Buffer* getBuffer();
     void unlockBuffer();
@@ -43,11 +44,9 @@ public:
     int getPort() { return 0; } 
 
 private:
-    //void reset() override;
     void loadShaders() override;
     void run() override;
     void render();
-    //void customCleanup() override;
     
     bool setFormat(int fd);
     bool initBuffers(int fd);

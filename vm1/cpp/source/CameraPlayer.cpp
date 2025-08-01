@@ -55,6 +55,10 @@ bool CameraPlayer::openFile(const std::string& fileName, AudioStream* audioStrea
 
 }
 
+void CameraPlayer::close()
+{
+}
+
 void CameraPlayer::lockBuffer()
 {
     if (!m_isRunning) return;    

@@ -47,6 +47,7 @@ public:
     ~VideoPlayer();
 
     bool openFile(const std::string& fileName, AudioStream* audioStream = nullptr) override;
+    void close() override;
     void setLooping(bool looping);
     void update() override;
     
@@ -55,7 +56,7 @@ private:
     void loadShaders() override;
     void run() override;
     void render();
-    void customCleanup() override;
+    
 
     AVCodecContext* openVideoStream();
     AVCodecContext* openAudioStream();

@@ -45,11 +45,11 @@ VideoPlayer::VideoPlayer()
 VideoPlayer::~VideoPlayer()
 {
     close();
-    customCleanup();
 }
 
 void VideoPlayer::reset()
 {
+    MediaPlayer::reset();
     m_startTime = 0;
     m_firstPts = -1.0;
     m_firstAudioPts = -1.0;
@@ -63,7 +63,6 @@ void VideoPlayer::loadShaders()
 
 bool VideoPlayer::openFile(const std::string& fileName, AudioStream* audioStream)
 {
-    // Cleanup any existing resources
     close(); 
     
     // This is just for rtsp steams. Necessary?
@@ -135,6 +134,34 @@ bool VideoPlayer::openFile(const std::string& fileName, AudioStream* audioStream
     }
 
     return true;
+}
+
+void VideoPlayer::close()
+{
+    MediaPlayer::close();
+    if (m_packet) {
+        av_packet_free(&m_packet);
+        m_packet = nullptr;
+    }
+    if (m_frame) {
+        av_frame_free(&m_frame);
+        m_frame = nullptr;
+    }
+    if (m_audioContext) {
+        avcodec_free_context(&m_audioContext);
+        m_audioContext = nullptr;
+    }
+    if (m_videoContext) {
+        avcodec_free_context(&m_videoContext);
+        m_videoContext = nullptr;
+    }
+    if (m_formatContext) {
+        avformat_close_input(&m_formatContext);
+        m_formatContext = nullptr;
+    }
+
+    m_audioCodec = nullptr;
+    m_videoCodec = nullptr;
 }
 
 void VideoPlayer::setLooping(bool looping)
@@ -509,32 +536,6 @@ void VideoPlayer::run() {
 
         if (m_isFlushing) m_isRunning = false;
     }
-}
-
-void VideoPlayer::customCleanup() {
-    if (m_audioContext) {
-        avcodec_free_context(&m_audioContext);
-        m_audioContext = nullptr;
-    }
-    if (m_videoContext) {
-        avcodec_free_context(&m_videoContext);
-        m_videoContext = nullptr;
-    }
-    if (m_formatContext) {
-        avformat_close_input(&m_formatContext);
-        avformat_free_context(m_formatContext);
-        m_formatContext = nullptr;
-    }
-    if (m_packet) {
-        av_packet_free(&m_packet);
-        m_packet = nullptr;
-    }
-    if (m_frame) {
-        av_frame_free(&m_frame);
-        m_frame = nullptr;
-    }
-    m_audioCodec = nullptr;
-    m_videoCodec = nullptr;
 }
 
 bool VideoPlayer::getTextureForDRMFrame(AVFrame* frame, VideoFrame& dstFrame)
