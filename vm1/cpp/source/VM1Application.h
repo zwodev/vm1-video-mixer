@@ -75,7 +75,7 @@ private:
     KeyboardControllerSDL m_keyboardControllerSdl;
     KeyboardControllerLinux m_keyboardControllerLinux;
     PlaybackOperator m_playbackOperator;
-    // CameraController m_cameraController;
+    CameraController m_cameraController;
     FileAssignmentWidget m_fileAssignmentWidget;
     StbRenderer m_stbRenderer;
     UI m_ui;

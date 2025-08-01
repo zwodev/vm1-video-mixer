@@ -287,7 +287,7 @@ MediaController::fetchDevices() {
         int fd = open(devicePath.c_str(), O_RDWR);
         if (fd == -1) continue;
 
-        struct media_device_info mdi;
+        struct media_device_info mdi = {0};
         if (ioctl(fd, MEDIA_IOC_DEVICE_INFO, &mdi) == 0) {
             deviceMap[std::string(mdi.model)] = std::string(devicePath);
         }

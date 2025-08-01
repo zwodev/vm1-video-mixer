@@ -17,7 +17,9 @@ CameraController::CameraController()
 
 CameraController::~CameraController() 
 {
-    //
+    if (m_thread.joinable()) {
+        m_thread.join();
+    }
 }
 
 void CameraController::setupDetached()

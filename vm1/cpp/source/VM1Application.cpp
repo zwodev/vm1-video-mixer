@@ -38,7 +38,7 @@ bool VM1Application::initialize()
 {
     initializeVideo();
     
-    // //m_cameraController.setupDetached();
+    m_cameraController.setupDetached();
     m_oledController.setStbRenderer(&m_stbRenderer);
     m_oledController.start();
 
