@@ -1,0 +1,154 @@
+{
+   Destroy SDL_Window read
+   Memcheck:Addr8
+   obj:/usr/lib/aarch64-linux-gnu/libEGL_mesa.so.0.0.0
+   fun:KMSDRM_DestroySurfaces
+}
+
+{
+   Destroy SDL_Window write
+   Memcheck:Addr1
+   obj:/usr/lib/aarch64-linux-gnu/libEGL_mesa.so.0.0.0
+   fun:KMSDRM_DestroySurfaces
+}
+
+{
+   DLOPEN
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:malloc
+   fun:_dl_map_object_deps
+   fun:dl_open_worker_begin
+   fun:_dl_catch_exception
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_exception
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen_implementation
+   fun:dlopen@@GLIBC_2.34
+}
+
+{
+   KMSDRM_AddDisplay 1
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:drmModeObjectGetProperties
+   fun:KMSDRM_CrtcGetVrr
+   fun:KMSDRM_AddDisplay
+   fun:KMSDRM_InitDisplays
+   fun:KMSDRM_VideoInit
+   fun:SDL_VideoInit
+}
+
+{
+   KMSDRM_AddDisplay 2
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:drmModeObjectGetProperties
+   fun:KMSDRM_ConnectorCheckVrrCapable
+   fun:KMSDRM_AddDisplay
+   fun:KMSDRM_InitDisplays
+   fun:KMSDRM_VideoInit
+}
+
+{
+   lgpio thread var leak 1 ?
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:calloc
+   fun:allocate_dtv
+   fun:_dl_allocate_tls
+   fun:allocate_stack
+   fun:pthread_create@@GLIBC_2.34
+   fun:lgPthTxStart
+   fun:lgGpiochipOpen
+   fun:_ZN16DeviceController10connectI2CEv
+   fun:_ZN16DeviceController7connectERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
+   fun:_ZN14VM1Application10initializeEv
+   fun:_ZN14VM1Application4execEv
+   fun:main
+}
+
+{
+   lgpio thread var leak 2 ?
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:calloc
+   fun:allocate_dtv
+   fun:_dl_allocate_tls
+   fun:allocate_stack
+   fun:pthread_create@@GLIBC_2.34
+   fun:lgPthAlertStart
+   fun:lgGpiochipOpen
+   fun:_ZN16DeviceController10connectI2CEv
+   fun:_ZN16DeviceController7connectERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
+   fun:_ZN14VM1Application10initializeEv
+   fun:_ZN14VM1Application4execEv
+   fun:main
+}
+
+{
+   OLED lgpio 1
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:lgCtxGet
+   fun:lgHdlAlloc
+   fun:lgGpiochipOpen
+   fun:DEV_ModuleInit
+   fun:_ZN14OledController14initializeOledEv
+   fun:_ZN14OledController7processEv
+   fun:_ZSt13__invoke_implIvM14OledControllerFvvEPS0_JEET_St21__invoke_memfun_derefOT0_OT1_DpOT2_
+   fun:_ZSt8__invokeIM14OledControllerFvvEJPS0_EENSt15__invoke_resultIT_JDpT0_EE4typeEOS5_DpOS6_
+   fun:_ZNSt6thread8_InvokerISt5tupleIJM14OledControllerFvvEPS2_EEE9_M_invokeIJLm0ELm1EEEEvSt12_Index_tupleIJXspT_EEE
+   fun:_ZNSt6thread8_InvokerISt5tupleIJM14OledControllerFvvEPS2_EEEclEv
+   fun:_ZNSt6thread11_State_implINS_8_InvokerISt5tupleIJM14OledControllerFvvEPS3_EEEEE6_M_runEv
+}
+
+{
+   OLED lgpio 2
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:calloc
+   fun:allocate_dtv
+   fun:_dl_allocate_tls
+   fun:allocate_stack
+   fun:pthread_create@@GLIBC_2.34
+   fun:lgPthTxStart
+   fun:lgGpiochipOpen
+   fun:DEV_ModuleInit
+   fun:_ZN14OledController14initializeOledEv
+   fun:_ZN14OledController7processEv
+   fun:_ZSt13__invoke_implIvM14OledControllerFvvEPS0_JEET_St21__invoke_memfun_derefOT0_OT1_DpOT2_
+   fun:_ZSt8__invokeIM14OledControllerFvvEJPS0_EENSt15__invoke_resultIT_JDpT0_EE4typeEOS5_DpOS6_
+   fun:_ZNSt6thread8_InvokerISt5tupleIJM14OledControllerFvvEPS2_EEE9_M_invokeIJLm0ELm1EEEEvSt12_Index_tupleIJXspT_EEE
+}
+
+{
+   OLED lgpio 3
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:calloc
+   fun:allocate_dtv
+   fun:_dl_allocate_tls
+   fun:allocate_stack
+   fun:pthread_create@@GLIBC_2.34
+   fun:lgPthAlertStart
+   fun:lgGpiochipOpen
+   fun:DEV_ModuleInit
+   fun:_ZN14OledController14initializeOledEv
+   fun:_ZN14OledController7processEv
+   fun:_ZSt13__invoke_implIvM14OledControllerFvvEPS0_JEET_St21__invoke_memfun_derefOT0_OT1_DpOT2_
+   fun:_ZSt8__invokeIM14OledControllerFvvEJPS0_EENSt15__invoke_resultIT_JDpT0_EE4typeEOS5_DpOS6_
+   fun:_ZNSt6thread8_InvokerISt5tupleIJM14OledControllerFvvEPS2_EEE9_M_invokeIJLm0ELm1EEEEvSt12_Index_tupleIJXspT_EEE
+}
