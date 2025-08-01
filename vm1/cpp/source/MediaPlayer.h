@@ -35,7 +35,7 @@ struct VideoFrame {
 struct AudioFrame {
     bool isFirstFrame = false;
     double pts = 0.0;
-    SDL_AudioSpec spec = {0};
+    SDL_AudioSpec spec{};
     std::vector<Uint8> data;
 };
 

@@ -273,20 +273,6 @@ AVCodecContext* VideoPlayer::openAudioStream()
         m_audio->createAndBind(spec);   
     }
 
-    // if (m_audio) {
-    //     SDL_AudioSpec spec = { SDL_AUDIO_F32, codecpar->ch_layout.nb_channels, codecpar->sample_rate };
-    //     if (SDL_SetAudioStreamFormat(m_audio->stream, &spec, &spec) != 0) {
-    //         SDL_Log("Failed to set audio stream format: %s", SDL_GetError());
-    //     }
-
-    //     // m_audio = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, NULL, NULL);
-    //     // if (m_audio) {
-    //     //     SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_audio));
-    //     // } else {
-    //     //     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't open audio: %s", SDL_GetError());
-    //     // }
-    // }
-
     return context;
 }
 
@@ -301,7 +287,7 @@ void VideoPlayer::render()
     m_shader.setValue("stripWidthNDC", 2.0f/15.0f);
 
     glBindVertexArray(m_vao);
-    for (int i = 0; i < m_yuvTextures.size(); ++i) {
+    for (size_t i = 0; i < m_yuvTextures.size(); ++i) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, m_yuvTextures[i]);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -315,7 +301,7 @@ void VideoPlayer::render()
             m_shader.bindUniformLocation("inputTexture", 0);
         }
 
-        m_shader.setValue("stripId", i);
+        m_shader.setValue("stripId", static_cast<int>(i));
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 
@@ -359,7 +345,7 @@ void VideoPlayer::update()
     if (processVideoFrame && m_videoQueue.popFrame(videoFrame)) {
         // Create EGL images here in the main thread
         // TODO: Support for multiple planes and images (see older version)
-        for (int i = 0; i < m_yuvImages.size(); ++i) {
+        for (size_t i = 0; i < m_yuvImages.size(); ++i) {
             if (videoFrame.formats.size() > 0) {
                 int j = 0;
                 int height = videoFrame.heights[j] + (videoFrame.heights[j] / 2);
@@ -368,7 +354,7 @@ void VideoPlayer::update()
                     EGL_WIDTH,                     128,
                     EGL_HEIGHT,                    height,
                     EGL_DMA_BUF_PLANE0_FD_EXT,     videoFrame.fds[j],
-                    EGL_DMA_BUF_PLANE0_OFFSET_EXT, i * 128 * height,
+                    EGL_DMA_BUF_PLANE0_OFFSET_EXT, static_cast<int>(i) * 128 * height,
                     EGL_DMA_BUF_PLANE0_PITCH_EXT,  128,
                     EGL_NONE
                 };
@@ -435,10 +421,8 @@ static bool IsPlanarAudioFormat(int format)
 void VideoPlayer::handleAudioFrame(AVFrame *frame)
 {
     double pts = ((double)frame->pts * m_audioContext->pkt_timebase.num) / m_audioContext->pkt_timebase.den;
-    bool firstFrame = false;
     if (m_firstAudioPts < 0.0) {
         m_firstAudioPts = pts;
-        firstFrame = true;
     }
     pts -= m_firstAudioPts;
     
@@ -465,7 +449,6 @@ void VideoPlayer::handleAudioFrame(AVFrame *frame)
         SDL_memcpy(&(audioFrame.data[0]), frame->data[0], framesize);
     }
 
-    //SDL_memcpy(&(audioFrame.data[0]), frame->data[0], framesize);
     m_audioQueue.pushFrame(audioFrame);
 }
 
