@@ -3,12 +3,10 @@
 
 AudioSystem::AudioSystem()
 {
-    initialize();
 }
 
 AudioSystem::~AudioSystem()
 {
-    finalize();
 }
 
 void AudioSystem::initialize()
@@ -19,7 +17,6 @@ void AudioSystem::initialize()
         SDL_AudioDeviceID deviceId = devices[0];
         char *name = SDL_GetAudioDeviceName(deviceId);
         printf("Device %u: %s\n", deviceId, name);
-        SDL_free(name);
         SDL_free(devices);
 
         SDL_AudioSpec spec = {0};
@@ -33,10 +30,9 @@ void AudioSystem::initialize()
             return;
         }
 
-        AudioDevice audioDevice(id, spec);
-        m_audioDevices.push_back(audioDevice);
+        auto audioDevice = std::make_unique<AudioDevice>(id, spec);
+        m_audioDevices.push_back(std::move(audioDevice));
         SDL_ResumeAudioDevice(id);
-
         SDL_Log("Initialized audio system.");
     }
 }
@@ -50,8 +46,9 @@ AudioDevice* AudioSystem::audioDevice(int index)
 {
     AudioDevice* audioDevice = nullptr;
     if (index < m_audioDevices.size()) {
-        audioDevice = &(m_audioDevices[index]);
+        audioDevice = m_audioDevices[index].get();
     }
 
     return audioDevice;
 }
+

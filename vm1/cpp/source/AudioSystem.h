@@ -3,6 +3,7 @@
 #include "AudioDevice.h"
 #include <SDL3/SDL.h>
 #include <vector>
+#include <memory>
 
 
 class AudioSystem
@@ -20,5 +21,5 @@ private:
 
 
 private:
-    std::vector<AudioDevice> m_audioDevices; 
+    std::vector<std::unique_ptr<AudioDevice>> m_audioDevices; 
 };

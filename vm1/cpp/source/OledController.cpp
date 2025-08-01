@@ -35,7 +35,9 @@ void OledController::start()
 void OledController::stop()
 {   
     m_isRunning = false;
-    m_thread.join();
+    if (m_thread.joinable()) {
+        m_thread.join();
+    }
 }
 
 void OledController::process()
@@ -50,22 +52,25 @@ void OledController::process()
         renderToRGB565(imageBuffer, false);
         render();
     }   
+
+    OLED_1in5_rgb_Clear();
+    DEV_ModuleExit();
 }
 
 void OledController::Handler(int signo)
 {
     // System Exit
-    OLED_1in5_rgb_Clear();
+    //OLED_1in5_rgb_Clear();
 
-    printf("\r\nHandler:exit\r\n");
-    DEV_ModuleExit();
+    //printf("\r\nHandler:exit\r\n");
+    //DEV_ModuleExit();
 
-    exit(0);
+    //exit(0);
 }
 
 int OledController::initializeOled()
 {
-    signal(SIGINT, OledController::Handler);
+    //signal(SIGINT, OledController::Handler);
 
     if (DEV_ModuleInit() != 0)
     {

@@ -48,6 +48,11 @@ public:
         return m_mixValue;
     }
 
+    void activate()
+    {
+        if (m_isFading) m_isActive = true;
+    }
+
     bool startFade(int toId)
     {
         if (m_isFading) return false;
@@ -62,7 +67,7 @@ public:
 
     void update(float deltaTime)
     {
-        if (!m_isFading) return;
+        if (!m_isFading || !m_isActive) return;
 
         m_mixValue = m_mixValue + ((deltaTime / m_fadeTime) * m_fadeDir);
         // if (m_mixValue <= 0.0f) {
@@ -75,12 +80,14 @@ public:
         if (m_mixValue >= 1.0f) {
             m_mixValue = 0.0f;
             m_isFading = false;
+            m_isActive = false;
             m_fromId = m_toId;
             m_toId = -1;
         }
     }
 
 private:
+    bool m_isActive = false;
     bool m_isFading = false;
     float m_fadeTime = 2.0f;
     float m_fadeDir = 1.0f;
@@ -115,6 +122,7 @@ private:
     AudioSystem m_audioSystem;
     std::vector<PlaneMixer> m_planeMixers;
     std::vector<PlaneRenderer*> m_planeRenderers;
+    std::vector<AudioStream*> m_audioStreams;
 
     std::vector<VideoPlayer*> m_videoPlayers;
     std::vector<CameraPlayer*> m_cameraPlayers;

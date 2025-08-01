@@ -54,12 +54,18 @@ void PlaybackOperator::initialize()
     }
 
     m_audioSystem.initialize();
+    for (int i = 0; i < m_mediaPlayers.size(); ++i) {
+        AudioDevice* audioDevice = m_audioSystem.audioDevice(0);
+        AudioStream* audioStream = nullptr;
+        if (audioDevice) {
+            audioStream = audioDevice->createStream();
+        }
+        m_audioStreams.push_back(audioStream);
+    }
 }
 
 void PlaybackOperator::finalize()
 {
-    m_audioSystem.finalize();
-
     for (auto videoPlayer : m_videoPlayers) {
         delete videoPlayer;
     }
@@ -78,6 +84,9 @@ void PlaybackOperator::finalize()
     m_mediaPlayers.clear(); 
     m_planeMixers.clear();
     m_mediaSlotIdToPlayerId.clear();
+    m_audioStreams.clear();
+
+    m_audioSystem.finalize();
 }
 
 bool PlaybackOperator::getFreeVideoPlayerId(int& id)
@@ -128,7 +137,6 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     if (!inputConfig)
         return;
 
-    // Select plane
     float fadeTime = float(m_registry.settings().fadeTime); 
     int planeId = (mediaSlotId / (MEDIA_BUTTON_COUNT / 2)) % 2;
     m_planeMixers[planeId].setFadeTime(fadeTime);
@@ -141,9 +149,8 @@ void PlaybackOperator::showMedia(int mediaSlotId)
         filePath = m_registry.mediaPool().getVideoFilePath(fileName);
 
         if (!getFreeVideoPlayerId(playerId)) return;
-        SDL_Log("Play PlayerId: %d", playerId);
-        AudioDevice* audioDevice = m_audioSystem.audioDevice(0);
-        if (!m_mediaPlayers[playerId]->openFile(filePath, audioDevice)) return;
+        AudioStream* audioStream = m_audioStreams[playerId];
+        if (!m_mediaPlayers[playerId]->openFile(filePath, audioStream)) return;
         if (m_planeMixers[planeId].startFade(playerId)) {
             m_mediaPlayers[playerId]->play(); 
             if (m_mediaSlotIdToPlayerId.find(mediaSlotId) != m_mediaSlotIdToPlayerId.end()) {
@@ -175,6 +182,10 @@ void PlaybackOperator::showMedia(int mediaSlotId)
 void PlaybackOperator::update(float deltaTime)
 {
     for (auto& planeMixer : m_planeMixers) {
+        int playerId = planeMixer.toId();
+        if (playerId >= 0 && m_mediaPlayers[playerId]->isFrameReady()) {
+            planeMixer.activate();
+        }
         planeMixer.update(deltaTime);
     }
 
@@ -233,7 +244,6 @@ void PlaybackOperator::update(float deltaTime)
             if (VideoPlayer* videoPlayer = dynamic_cast<VideoPlayer*>(mediaPlayer)) {
                 videoPlayer->close();
                 m_recentlyUsedPlayerIds.erase(std::find(m_recentlyUsedPlayerIds.begin(), m_recentlyUsedPlayerIds.end(), playerId));
-                SDL_Log("Close Video Player (Id): %d", playerId);
             }
         } 
     }
@@ -249,20 +259,27 @@ void PlaybackOperator::renderPlane(int planeId)
 {
     if (planeId >= m_planeRenderers.size()) return;
 
+    float volume = float(m_registry.settings().volume) / 10.0f;
     PlaneRenderer* planeRenderer = m_planeRenderers[planeId];
     PlaneMixer& planeMixer = m_planeMixers[planeId];
+    
     int fromId = planeMixer.fromId();
     int toId = planeMixer.toId();
+
     GLuint texture0 = 0;
     if (fromId >= 0) {
         texture0 = m_mediaPlayers[fromId]->texture();
+        AudioStream* audioStream = m_audioStreams[fromId];
+        if (audioStream) audioStream->setVolume((1.0f - planeMixer.mixValue()) * volume);
     }
     GLuint texture1 = 0;
     if (toId >= 0) {
         texture1 = m_mediaPlayers[toId]->texture();
+        AudioStream* audioStream = m_audioStreams[toId];
+        if (audioStream) audioStream->setVolume(planeMixer.mixValue());
     }
 
-    planeRenderer->update(texture0, texture1, planeMixer.mixValue());
+    planeRenderer->update(texture0, texture1, planeMixer.mixValue() * volume);
 }
 
 void PlaybackOperator::updateDeviceController()

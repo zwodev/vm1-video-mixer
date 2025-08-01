@@ -44,6 +44,8 @@ VideoPlayer::VideoPlayer()
 
 VideoPlayer::~VideoPlayer()
 {
+    close();
+    customCleanup();
 }
 
 void VideoPlayer::reset()
@@ -59,17 +61,17 @@ void VideoPlayer::loadShaders()
     m_shader.load("shaders/video.vert", "shaders/video.frag");
 }
 
-bool VideoPlayer::openFile(const std::string& fileName, AudioDevice* audioDevice)
+bool VideoPlayer::openFile(const std::string& fileName, AudioStream* audioStream)
 {
     // Cleanup any existing resources
     close(); 
     
     // This is just for rtsp steams. Necessary?
-    AVDictionary* opts = NULL;
-    av_dict_set(&opts, "rtsp_transport", "tcp", 0);
+    //AVDictionary* opts = NULL;
+    //av_dict_set(&opts, "rtsp_transport", "tcp", 0);
 
     // Open the video file
-    int result = avformat_open_input(&m_formatContext, fileName.c_str(), NULL, &opts);
+    int result = avformat_open_input(&m_formatContext, fileName.c_str(), NULL, NULL);
     if (result < 0) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't open %s: %d", fileName.c_str(), result);
         return false;
@@ -109,11 +111,11 @@ bool VideoPlayer::openFile(const std::string& fileName, AudioDevice* audioDevice
     m_audioStream = av_find_best_stream(m_formatContext, AVMEDIA_TYPE_AUDIO, -1, m_videoStream, &m_audioCodec, 0);
     
     // This is just for rtsp steams. Necessary?
-    m_formatContext->max_analyze_duration = 5 * AV_TIME_BASE;
-    m_formatContext->probesize = 5 * 1024 * 1024;
+    //m_formatContext->max_analyze_duration = 5 * AV_TIME_BASE;
+    //m_formatContext->probesize = 5 * 1024 * 1024;
     //av_dump_format(m_formatContext, 0, "format_dump.txt", 0);
 
-    m_audioDevice = audioDevice;
+    m_audio = audioStream;
     if (m_audioStream >= 0) {
         m_audioContext = openAudioStream();
         if (!m_audioContext) {
@@ -239,11 +241,9 @@ AVCodecContext* VideoPlayer::openAudioStream()
         return nullptr;
     }
 
-    if (m_audioDevice) {
+    if (m_audio) {
         SDL_AudioSpec spec = { SDL_AUDIO_F32, codecpar->ch_layout.nb_channels, codecpar->sample_rate };
-        SDL_Log("Channels: %d", codecpar->ch_layout.nb_channels);
-        SDL_Log("Samplerate: %d", codecpar->sample_rate);
-        m_audio = m_audioDevice->addStream(spec);
+        m_audio->createAndBind(spec);   
     }
 
     // if (m_audio) {
@@ -354,32 +354,17 @@ void VideoPlayer::update()
         }
     }
 
-    // if (m_audio) {
-    //     AudioFrame audioFrame;
-    //     while (m_audioQueue.peekFrame(audioFrame)) {
-    //         m_audioQueue.popFrame(audioFrame);
-    //     }
-
-    // }
     if (m_audio) {
         AudioFrame audioFrame;
         while (m_audioQueue.peekFrame(audioFrame)) {
-            //double pts = audioFrame.pts;
-
             if (m_audioQueue.popFrame(audioFrame)) {
-                if (!SDL_PutAudioStreamData(m_audio, audioFrame.data.data(), audioFrame.data.size())) {
-                    SDL_Log("Failed to put audio stream data: %s", SDL_GetError());
-                }
-                else {
-                    //SDL_Log("Data: %d", audioFrame.data[800]);
-                }
+                m_audio->putData(audioFrame.data);
             }
         }
     }
 
     if (processVideoFrame) {
         render();
-        // Create fence for current frame
         m_fence = eglCreateSync(display, EGL_SYNC_FENCE, NULL);
     }
 }
@@ -432,16 +417,11 @@ void VideoPlayer::handleAudioFrame(AVFrame *frame)
     
     AudioFrame audioFrame;
     audioFrame.pts = pts;
-    //SDL_Log("Audio Format: %d", m_audioDevice->audioSpec().format);
-    //SDL_Log("Audio Frame Format: %d", GetAudioFormat(frame->format));
-    //SDL_Log("Audio Frame Rate: %d", frame->sample_rate);
-    //SDL_Log("Audio Frame Channels: %d", frame->ch_layout.nb_channels);
     
     audioFrame.spec = { GetAudioFormat(frame->format), frame->ch_layout.nb_channels, frame->sample_rate };
     int samplesize = SDL_AUDIO_BYTESIZE(GetAudioFormat(frame->format));
     int framesize = SDL_AUDIO_FRAMESIZE(audioFrame.spec);
     audioFrame.data.resize(frame->nb_samples * framesize);
-    //SDL_Log("Sample Size: %d", samplesize);
 
     if (frame->ch_layout.nb_channels > 1 && IsPlanarAudioFormat(frame->format)) {
         // Interleave audio
@@ -544,6 +524,14 @@ void VideoPlayer::customCleanup() {
         avformat_close_input(&m_formatContext);
         avformat_free_context(m_formatContext);
         m_formatContext = nullptr;
+    }
+    if (m_packet) {
+        av_packet_free(&m_packet);
+        m_packet = nullptr;
+    }
+    if (m_frame) {
+        av_frame_free(&m_frame);
+        m_frame = nullptr;
     }
     m_audioCodec = nullptr;
     m_videoCodec = nullptr;

@@ -31,15 +31,14 @@ VM1Application::VM1Application() :
 
 VM1Application::~VM1Application()
 {
-    finalize();
+    //finalize();
 }
 
 bool VM1Application::initialize()
 {
     initializeVideo();
     
-    //m_audioSystem.initialize();
-    m_cameraController.setupDetached();
+    // //m_cameraController.setupDetached();
     m_oledController.setStbRenderer(&m_stbRenderer);
     m_oledController.start();
 
@@ -121,6 +120,7 @@ std::vector<SDL_DisplayMode> VM1Application::getBestDisplaysModes()
         }
 
         if (found) bestDisplayModes.push_back(bestMode);
+        SDL_free(displayModes);
     }
     SDL_free(displays);
 
@@ -137,7 +137,6 @@ bool VM1Application::initSDL(bool withVideo)
         }
         return true;
     }
-
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD))
     {
@@ -176,17 +175,11 @@ bool VM1Application::initSDL(bool withVideo)
     SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_Y_NUMBER, 0);
 
     int xOffset = 0;
-    // for (int i = 0; i < m_displayModes.size(); ++i) {
-    //     maxX += m_displayModes[i].w;
-    // }
     m_windows.resize(m_displayModes.size(), nullptr);
     for (int i = 0; i < m_displayModes.size(); ++i)
     {
-        //int index = (m_displayModes.size()-1) - i;
         int index = i;
         SDL_DisplayMode mode = m_displayModes[index];
-        //int x = maxX - mode.w;
-
 
         // This is the way to associate the second window with the second screen
         // when using the DRM/KMS backend.
@@ -253,8 +246,6 @@ bool VM1Application::initImGui()
     const char *glsl_version = "#version 300 es";
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    //ImGuiIO &io = ImGui::GetIO();
-    //io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
     ImGui::StyleColorsDark();
 
     return true;
@@ -262,9 +253,9 @@ bool VM1Application::initImGui()
 
 void VM1Application::finalize()
 {
+    m_playbackOperator.finalize();
     m_deviceController.disconnect();
     if (!m_isHeadless) finalizeImGui();
-    //m_audioSystem.finalize();
     finalizeSDL();
 }
 
@@ -279,15 +270,18 @@ void VM1Application::finalizeImGui()
 
 void VM1Application::finalizeSDL()
 {
-    SDL_GL_DestroyContext(m_glContext);
     for (int i = 0; i < m_windows.size(); ++i)
     {
         if (m_windows[i]) {
             SDL_DestroyWindow(m_windows[i]);
         }
     }
+    SDL_GL_DestroyContext(m_glContext);
     m_windows.clear();
     m_displayModes.clear();
+
+    //SDL_QuitSubSystem(SDL_INIT_VIDEO);
+    //SDL_QuitSubSystem(SDL_INIT_AUDIO);
     SDL_Quit();
 }
 
@@ -303,7 +297,6 @@ bool VM1Application::processSDLInput()
                 return false;
             }
             else if (event.key.key == SDLK_SPACE) {
-                m_playbackOperator.finalize();
                 finalize();
                 initializeVideo();
                 SDL_Log("Reinitialize video!"); 
@@ -327,7 +320,6 @@ bool VM1Application::processLinuxInput()
                 return false;
             }
             else if (ev.code == KEY_SPACE) {
-                m_playbackOperator.finalize();
                 finalize();
                 initializeVideo();
                 SDL_Log("Reinitialize video!"); 
@@ -342,6 +334,13 @@ bool VM1Application::processLinuxInput()
 
 bool VM1Application::exec()
 {
+    // initSDL(true);
+    // SDL_Delay(1000);
+    // renderWindow(0);
+    // renderWindow(1);
+    // SDL_Delay(1000);
+    // finalizeSDL();
+
     if (!initialize()) return false;
 
     Uint64 lastTime = SDL_GetTicks();
@@ -367,22 +366,26 @@ bool VM1Application::exec()
             if (!processSDLInput()) done = true;
         }
 
-        m_deviceController.requestVM1DeviceBuffer();
-        m_registry.update(deltaTime);
-        m_playbackOperator.update(deltaTime);
-        m_menuSystem.render();
-        m_stbRenderer.update();
+        if (!done) {
+            m_deviceController.requestVM1DeviceBuffer();
+            m_registry.update(deltaTime);
+            m_playbackOperator.update(deltaTime);
+            m_menuSystem.render();
+            m_stbRenderer.update();
 
-        if (!m_isHeadless) { 
-            renderImGui();
+            if (!m_isHeadless) { 
+                renderImGui();
 
-            for (int i = 0; i < m_windows.size(); ++i) {
-                renderWindow(i);
+                for (int i = 0; i < m_windows.size(); ++i) {
+                    renderWindow(i);
+                }
             }
         }
     }
 
     finalize();
+
+    SDL_Delay(10);
 
     return true;
 }
@@ -407,25 +410,12 @@ void VM1Application::renderImGui()
             }
             if (ImGui::Button("Setup HDMI2CSI"))
             {
-               m_cameraController.setupDetached();
+               //m_cameraController.setupDetached();
             }
             ImGuiIO &io = ImGui::GetIO();
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
             ImGui::End();
         }
-
-        // OLED debug window
-        // {
-        //     // ImGui::SetNextWindowPos(ImVec2(0, 0));
-        //     ImGui::SetNextWindowSize(ImVec2(FBO_WIDTH, FBO_HEIGHT));
-        //     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-        //     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration;
-        //     ImGui::Begin("OLED Debug Window", nullptr, window_flags);
-        //     // ImGui::Begin("OLED Debug Window");
-        //     ImGui::Image((void *)(intptr_t)stbRenderer.texture(), ImVec2(FBO_WIDTH, FBO_HEIGHT), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
-        //     ImGui::End();
-        //     ImGui::PopStyleVar();
-        // }
     }
 
     m_fileAssignmentWidget.render();
@@ -455,7 +445,6 @@ void VM1Application::renderWindow(int windowIndex)
 
     SDL_GL_MakeCurrent(m_windows[windowIndex], m_glContext);    
     glViewport(xOffset, yOffset, width, height);
-    //glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
     glClearColor(0.0f, 0.0f, 0.0f, 1.00f);
     glClear(GL_COLOR_BUFFER_BIT);
 

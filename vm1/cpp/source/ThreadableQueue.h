@@ -58,6 +58,11 @@ public:
         return true;
     }
 
+    bool isFrameReady() {
+        std::unique_lock<std::mutex> lock(m_frameMutex);
+        return !m_frameQueue.empty();
+    }
+
 private:
     static constexpr size_t MAX_QUEUE_SIZE = 3;
     std::atomic<bool> m_isActive = true;

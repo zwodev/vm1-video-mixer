@@ -11,7 +11,14 @@ MediaPlayer::MediaPlayer()
 
 MediaPlayer::~MediaPlayer()
 {
-    close();
+    if (m_vbo) {
+        glDeleteBuffers(1, &m_vbo);
+        m_vbo = 0;
+    }
+    if (m_vao) {
+        glDeleteVertexArrays(1, &m_vao);
+        m_vao = 0;
+    }
 }
 
 void MediaPlayer::play()
@@ -21,6 +28,10 @@ void MediaPlayer::play()
     m_videoQueue.setActive(true);
     m_isRunning = true;
     m_decoderThread = std::thread(&MediaPlayer::run, this);
+}
+
+bool MediaPlayer::isFrameReady() {
+    return m_videoQueue.isFrameReady();
 }
 
 GLuint MediaPlayer::texture()
@@ -38,9 +49,8 @@ void MediaPlayer::close()
         m_decoderThread.join();
     }
 
-    if (m_audioDevice && m_audio) {
-        m_audioDevice->removeStream(m_audio);
-        m_audioDevice = nullptr;
+    if (m_audio) {
+        m_audio->unbindAndDestroy();
         m_audio = nullptr;
     }
     
@@ -62,7 +72,7 @@ void MediaPlayer::cleanup()
     m_videoQueue.clearFrames();
     m_audioQueue.clearFrames();
 
-    customCleanup();
+    //customCleanup();
 }
 
 void MediaPlayer::reset()

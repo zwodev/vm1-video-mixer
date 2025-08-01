@@ -210,6 +210,7 @@ void StbRenderer::drawText(const std::string& text, int posX, int posY, float fo
     for (char c : text)
     {
         int width, height, xoff, yoff;
+        // TODO: We need some caching eg. create a character map with these bitmaps.
         unsigned char *bitmap = stbtt_GetCodepointBitmap(&font, 0, scale, c, &width, &height, &xoff, &yoff);
 
         //std::cout << "Codepoint: " << c << " width: " << width << " height: " << height << " xoff: " << xoff << " yoff: " << yoff;
@@ -233,6 +234,8 @@ void StbRenderer::drawText(const std::string& text, int posX, int posY, float fo
         // std::cout << " advanceWidth: " << (float)advanceWidth * scale
         //           << " leftSideBearing: " << (float)leftSideBearing * scale << std::endl;
         posX += advanceWidth * scale;
+
+        stbtt_FreeBitmap(bitmap, nullptr);
     }
 }
 
@@ -252,12 +255,9 @@ int StbRenderer::getTextWidth(const std::string& text, float fontSize)
     for (char c : text)
     {
         int width, height, xoff, yoff;
-        unsigned char *bitmap = stbtt_GetCodepointBitmap(&font, 0, scale, c, &width, &height, &xoff, &yoff);
         int advanceWidth, leftSideBearing;
         stbtt_GetCodepointHMetrics(&font, c, &advanceWidth, &leftSideBearing);
         textWidth += advanceWidth * scale;
-        // std::cout << c << ": ";
-        // std::cout << "width: " << width << " advancedWidth: " << advanceWidth << " advancedWidth*Scale: " << advanceWidth*scale << " textWidth: " << textWidth << std::endl;
     }
 
     return textWidth;

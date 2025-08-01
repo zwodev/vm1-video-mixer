@@ -96,6 +96,10 @@ void DeviceController::disconnect()
     {
         lgI2cClose(m_i2c_handle);
         m_i2c_handle = -1;
+        
+    }
+
+    if (m_gpioHandler >= 0) {
         lgGpiochipClose(m_gpioHandler);
         m_gpioHandler = -1;
     }

@@ -46,11 +46,12 @@ public:
     virtual ~MediaPlayer();
     
 public:
-    virtual bool openFile(const std::string& fileName = std::string(), AudioDevice* audioDevice = nullptr) = 0;
+    virtual bool openFile(const std::string& fileName = std::string(), AudioStream* audioStream = nullptr) = 0;
     void play();
     void close();
     bool isPlaying() const { return m_isRunning; }
     virtual void update() = 0;
+    bool isFrameReady();
     GLuint texture();
 
 protected:
@@ -72,8 +73,7 @@ protected:
     GLuint m_vao; 
     GLuint m_vbo;
 
-    AudioDevice* m_audioDevice = nullptr;
-    SDL_AudioStream* m_audio = nullptr;
+    AudioStream* m_audio = nullptr;
 
     std::thread m_decoderThread;
     ThreadableQueue<VideoFrame> m_videoQueue;

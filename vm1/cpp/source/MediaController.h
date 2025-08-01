@@ -24,7 +24,7 @@
 class MediaController {
 
 private:
-    int m_fd;
+    int m_fd = -1;
 
     struct EntityInfo {
         __u32 id;

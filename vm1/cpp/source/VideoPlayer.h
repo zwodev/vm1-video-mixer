@@ -46,7 +46,7 @@ public:
     VideoPlayer();
     ~VideoPlayer();
 
-    bool openFile(const std::string& fileName, AudioDevice* audioDevice = nullptr) override;
+    bool openFile(const std::string& fileName, AudioStream* audioStream = nullptr) override;
     void setLooping(bool looping);
     void update() override;
     
@@ -69,6 +69,7 @@ private:
     double m_firstPts = -1.0;
     double m_firstAudioPts = -1.0;
     AVFormatContext* m_formatContext = nullptr;
+    //AVDictionary* m_options = nullptr;
     const AVCodec* m_audioCodec = nullptr;
     const AVCodec* m_videoCodec = nullptr;
     AVCodecContext* m_audioContext = nullptr;

@@ -50,7 +50,7 @@ CameraPlayer::~CameraPlayer()
 {   
 }
 
-bool CameraPlayer::openFile(const std::string& fileName, AudioDevice* audioDevice)
+bool CameraPlayer::openFile(const std::string& fileName, AudioStream* audioStream)
 {
 
 }

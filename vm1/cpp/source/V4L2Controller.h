@@ -21,7 +21,7 @@
 
 class V4L2Controller {
 private:
-    int fd;
+    int fd = -1;
     std::string device_path;
 
     static constexpr size_t MAX_EDID_SIZE = 256;

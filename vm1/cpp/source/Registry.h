@@ -171,7 +171,8 @@ struct Settings
 {
     bool showUI = true;
     bool defaultLooping = true;
-    int fadeTime = 2.0f;
+    int fadeTime = 2;
+    int volume = 10;
     std::string videoFilePath = "../videos/";
     std::string serialDevice = "/dev/ttyACM0";
 

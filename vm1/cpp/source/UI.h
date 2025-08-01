@@ -76,6 +76,6 @@ private:
     int m_listPaddingLeft = 10;
 
     std::function<void()> m_overlay;
-    int64_t m_overlayStartTimeMs;
+    int64_t m_overlayStartTimeMs = 0;
     int64_t m_overlayDurationMs = 600;
 };

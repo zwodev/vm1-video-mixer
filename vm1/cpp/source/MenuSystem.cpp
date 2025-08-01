@@ -321,6 +321,7 @@ void MenuSystem::GlobalSettings(int id, int* focusedIdx)
 
     m_ui.BeginList(focusedIdx);
     m_ui.SpinBoxInt("Fade Time", settings.fadeTime, 0, 10);
+    m_ui.SpinBoxInt("Volume", settings.volume, 0, 10);
     if (m_ui.CheckBox("Show UI", settings.showUI)) { settings.showUI = !settings.showUI; };
     if (m_ui.CheckBox("Default Looping", settings.defaultLooping)) { settings.defaultLooping = !settings.defaultLooping; };
     m_ui.EndList();

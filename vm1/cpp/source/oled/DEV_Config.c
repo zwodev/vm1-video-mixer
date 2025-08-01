@@ -295,4 +295,9 @@ void DEV_ModuleExit(void)
 #elif USE_DEV_LIB
 
 #endif
+
+    if (GPIO_Handle >= 0) {
+        lgGpiochipClose(GPIO_Handle);
+        GPIO_Handle = -1;
+    }
 }
