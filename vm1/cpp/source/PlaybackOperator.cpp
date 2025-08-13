@@ -286,7 +286,8 @@ void PlaybackOperator::updateDeviceController()
 {
     InputMappings &inputMappings = m_registry.inputMappings();
     VM1DeviceState vm1DeviceState;
-    vm1DeviceState.bank = uint8_t(inputMappings.bank);
+    vm1DeviceState.bank = static_cast<uint8_t>(inputMappings.bank);
+    vm1DeviceState.rotarySensitivity = static_cast<uint8_t>(m_registry.settings().rotarySensitivity);
     
     
     for (int i = 0; i < EDIT_BUTTON_COUNT; ++i)

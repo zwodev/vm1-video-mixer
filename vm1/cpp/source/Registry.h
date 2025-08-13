@@ -173,13 +173,14 @@ struct Settings
     bool defaultLooping = true;
     int fadeTime = 2;
     int volume = 10;
+    int rotarySensitivity = 128;
     std::string videoFilePath = "../videos/";
     std::string serialDevice = "/dev/ttyACM0";
 
     template <class Archive>
     void serialize(Archive &ar)
     {
-        ar(showUI, defaultLooping, fadeTime, volume, videoFilePath, serialDevice);
+        ar(showUI, defaultLooping, fadeTime, volume, rotarySensitivity, videoFilePath, serialDevice);
     }
 };
 

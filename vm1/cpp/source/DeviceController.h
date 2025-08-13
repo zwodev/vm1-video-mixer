@@ -24,6 +24,7 @@ enum ButtonState : uint8_t
 #pragma pack(1)
 struct VM1DeviceState
 {
+    uint8_t rotarySensitivity;
     uint8_t bank;
     ButtonState forward = ButtonState::NONE;
     ButtonState backward = ButtonState::NONE;
@@ -95,6 +96,5 @@ private:
     std::vector<char> m_editKeys =  {'q', 'w', 'e', 'r', 't', 'y', 'u', 'i'};
     std::vector<char> m_mediaKeys = {'a', 's', 'd', 'f', 'g', 'h', 'j', 'k',
                                       'z', 'x', 'c', 'v', 'b', 'n', 'm', ','};
-
 
 };

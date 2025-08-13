@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#define KEYBOARD_DEVICE "/dev/input/event6"
+#define KEYBOARD_DEVICE "/dev/input/event5"
 
 VM1Application::VM1Application() :
     m_keyboardControllerSdl(m_registry, m_eventBus),
