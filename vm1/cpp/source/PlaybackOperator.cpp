@@ -276,7 +276,7 @@ void PlaybackOperator::renderPlane(int planeId)
     if (toId >= 0) {
         texture1 = m_mediaPlayers[toId]->texture();
         AudioStream* audioStream = m_audioStreams[toId];
-        if (audioStream) audioStream->setVolume(planeMixer.mixValue());
+        if (audioStream) audioStream->setVolume(planeMixer.mixValue() * volume);
     }
 
     planeRenderer->update(texture0, texture1, planeMixer.mixValue());
