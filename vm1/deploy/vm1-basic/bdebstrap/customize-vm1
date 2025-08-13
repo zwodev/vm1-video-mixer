@@ -16,7 +16,7 @@ chroot $1 apt install -y /tmp/LocalSend-1.17.0-linux-arm-64.deb
 
 cat ../data/localsend/shared_preferences.json.tpl | sed \
    -e "s|<VM1_VIDEO_DIR>|/home/$IGconf_device_user1/videos|g" \
-   > $1/home/$IGconf_device_user1/.local/share/org.localsend.localsend_app/shared_preferences.json
+   > $1/home/$IGconf_device_user1/.local/share/localsend_app/shared_preferences.json
 
 cat ../data/localsend/localsend.service.tpl | sed \
    -e "s|<VM1_USER>|$IGconf_device_user1|g" \
