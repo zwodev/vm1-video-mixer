@@ -88,7 +88,8 @@ bool VideoPlayer::openFile(const std::string& fileName, AudioStream* audioStream
         if (codecpar->codec_type == AVMEDIA_TYPE_VIDEO &&
             codecpar->width == 1920 &&
             codecpar->height == 1080 &&
-            codecpar->codec_id == AV_CODEC_ID_HEVC) {
+            codecpar->codec_id == AV_CODEC_ID_HEVC &&
+            codecpar->color_space == AVCOL_SPC_BT709) {
             foundStream = true;
             break;
         }
