@@ -279,7 +279,7 @@ void PlaybackOperator::renderPlane(int planeId)
         if (audioStream) audioStream->setVolume(planeMixer.mixValue());
     }
 
-    planeRenderer->update(texture0, texture1, planeMixer.mixValue() * volume);
+    planeRenderer->update(texture0, texture1, planeMixer.mixValue());
 }
 
 void PlaybackOperator::updateDeviceController()

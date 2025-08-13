@@ -65,13 +65,13 @@ void OledController::process()
 
 void OledController::Handler(int signo)
 {
-    // // System Exit
-    // OLED_1in5_rgb_Clear();
+    // System Exit
+    OLED_1in5_rgb_Clear();
 
-    // printf("\r\nHandler:exit\r\n");
-    // DEV_ModuleExit();
+    printf("\r\nHandler:exit\r\n");
+    DEV_ModuleExit();
 
-    //exit(0);
+    exit(0);
 }
 
 int OledController::initializeOled()
