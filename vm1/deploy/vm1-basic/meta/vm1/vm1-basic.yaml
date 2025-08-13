@@ -13,8 +13,6 @@ mmdebstrap:
     - libegl1
     - libpam-systemd
     - fdisk
-    - plymouth
-    - plymouth-themes
     - xvfb
     - wpasupplicant
     - network-manager
