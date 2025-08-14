@@ -212,26 +212,30 @@ void CameraPlayer::run()
     int fd = open("/dev/video0", O_RDWR);
     if (fd == -1) {
         printf("Error opening video device.\n");
-        return false;
+        return;
     }
     m_fd = fd;
 
     // Set the pixel format for V4L2
-    if (!setFormat(fd)) return false;
+    if (!setFormat(fd)) return;
 
     // Intialize and export the buffers
-    if (!initBuffers(fd)) return false;
+    if (!initBuffers(fd)) return;
 
+    printf("CameraPlayer run(): buffer init ok.\n");
+    
     // Queue all buffers
     for (int i = 0; i < m_buffers.size(); i++) {
-        if (!queueBuffer(fd, i)) return false;
+        if (!queueBuffer(fd, i)) return;
     }
+
+    printf("CameraPlayer run(): queue all buffers ok.\n");
 
     v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if(ioctl(m_fd, VIDIOC_STREAMON, &buf_type))
     {
         perror("VIDIOC_STREAMON");
-        return -1;
+        return;
     }
 
 	printf("Camera streaming turned ON\n");

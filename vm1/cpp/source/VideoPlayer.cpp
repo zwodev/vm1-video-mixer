@@ -88,9 +88,14 @@ bool VideoPlayer::openFile(const std::string& fileName, AudioStream* audioStream
         if (codecpar->codec_type == AVMEDIA_TYPE_VIDEO &&
             codecpar->width == 1920 &&
             codecpar->height == 1080 &&
-            codecpar->codec_id == AV_CODEC_ID_HEVC &&
-            codecpar->color_space == AVCOL_SPC_BT709) {
+            codecpar->codec_id == AV_CODEC_ID_HEVC
+            // && (codecpar->color_space == AVCOL_SPC_BT709 || codecpar->color_space == AVCOL_SPC_RGB)
+        )
+        {
             foundStream = true;
+            std::cout << "***** CODEC: color_primaries: " << codecpar->color_primaries << std::endl;
+            std::cout << "***** CODEC: color_trc: " << codecpar->color_trc << std::endl;
+            std::cout << "***** CODEC: color_space: " << codecpar->color_space << std::endl;
             break;
         }
     }
@@ -606,10 +611,12 @@ static bool isSupportedPixelFormat(enum AVPixelFormat format)
 {
     if (/* m_hasEglCreateImage && */
         (format == AV_PIX_FMT_VAAPI || format == AV_PIX_FMT_DRM_PRIME)) {
-        return true;
-    }
-
+            std::cout << "prime: " << format << std::endl;
+            return true;
+        }
+        
     if (getTextureFormat(format) != SDL_PIXELFORMAT_UNKNOWN) {
+        std::cout << "get texture format: " << format << std::endl;
         return true;
     }
     return false;
