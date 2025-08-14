@@ -55,7 +55,7 @@ public:
 
     bool startFade(int toId)
     {
-        if (m_isFading) return false;
+        if (m_isFading && m_isActive) return false;
 
         m_toId = toId;
         m_isFading = true;

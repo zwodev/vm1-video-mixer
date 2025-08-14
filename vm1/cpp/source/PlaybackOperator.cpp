@@ -150,14 +150,21 @@ void PlaybackOperator::showMedia(int mediaSlotId)
 
         if (!getFreeVideoPlayerId(playerId)) return;
         AudioStream* audioStream = m_audioStreams[playerId];
-        if (!m_mediaPlayers[playerId]->openFile(filePath, audioStream)) return;
+        if (!m_mediaPlayers[playerId]->openFile(filePath, audioStream)) {
+            printf("Could not play!!\n");
+            return;
+        }
         if (m_planeMixers[planeId].startFade(playerId)) {
+            printf("Start fade!!\n");
             m_mediaPlayers[playerId]->play(); 
             if (m_mediaSlotIdToPlayerId.find(mediaSlotId) != m_mediaSlotIdToPlayerId.end()) {
                 int oldPlayerId = m_mediaSlotIdToPlayerId[mediaSlotId];
                 m_recentlyUsedPlayerIds.push_back(oldPlayerId);
             }
             m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
+        } 
+        else {
+            printf("Fade failed: %d\n", playerId);
         }
     }
     else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
