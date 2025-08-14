@@ -27,7 +27,7 @@ void main() {
     vec4 yuyv = texture(inputTexture, coord);
 
 	//float y = (mod(pixelX, 2.0) < 1.0) ? yuyv.g : yuyv.a;
-	float y = mix(yuyv.a, yuyv.g, floor(mod(pixelX, 2.0)));
+	float y = mix(yuyv.g, yuyv.a, floor(mod(pixelX, 2.0)));
     float u = yuyv.b - 0.5f;
     float v = yuyv.r - 0.5f;
 
