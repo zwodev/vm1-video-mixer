@@ -40,6 +40,10 @@ rotary_encoder_t encoder1 = {.pin_a = ROTARY_1_PIN_A, .pin_b = ROTARY_1_PIN_B};
 int32_t encoder0_position;
 int32_t encoder1_position;
 
+int press_up = 0;
+int press_down = 0;
+
+
 // NeoPixels
 Adafruit_NeoPixel strip(NEOPIXEL_COUNT, NEOPIXELS_PIN, NEO_GRB + NEO_KHZ800);
 int dimmed_divider = 20;
@@ -301,23 +305,29 @@ void loop()
     res += encoder0_position;
     if (enc0 < 0)
     {
-      res += ", down";
-
-      add_to_keyboard_buffer(KEY_UP_ARROW);
-      Keyboard.press(KEY_UP_ARROW);
-      // todo: add keycode to keyboard buffer ('KEY_UP_ARROW')
-      delay(1);
-      Keyboard.release(KEY_UP_ARROW);
+      press_down = 0;
+      press_up++;
+      if(press_up % deviceState.rotarySensitivity == 0) { 
+        res += ", down";
+        add_to_keyboard_buffer(KEY_UP_ARROW);
+        Keyboard.press(KEY_UP_ARROW);
+        // todo: add keycode to keyboard buffer ('KEY_UP_ARROW')
+        delay(1);
+        Keyboard.release(KEY_UP_ARROW);
+      }
     }
     else if (enc0 > 0)
     {
-      res += ", up";
-      
-      add_to_keyboard_buffer(KEY_DOWN_ARROW);
-      Keyboard.press(KEY_DOWN_ARROW);
-      // todo: add keycode to keyboard buffer ('KEY_DOWN_ARROW')
-      delay(1);
-      Keyboard.release(KEY_DOWN_ARROW);
+      press_up = 0;
+      press_down++;
+      if(press_down % deviceState.rotarySensitivity == 0) {
+        res += ", up";
+        add_to_keyboard_buffer(KEY_DOWN_ARROW);
+        Keyboard.press(KEY_DOWN_ARROW);
+        // todo: add keycode to keyboard buffer ('KEY_DOWN_ARROW')
+        delay(1);
+        Keyboard.release(KEY_DOWN_ARROW);
+      }
     }
     Serial.println(res);
   }
