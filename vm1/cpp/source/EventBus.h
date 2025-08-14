@@ -5,6 +5,8 @@
 #include <vector> 
 #include <typeindex>
 #include <memory>
+#include <queue>
+#include <mutex>
 
 // Each event type is defined as struct.
 // This way it can have several properties.
@@ -56,6 +58,21 @@ struct SubscriberList : ISubscriberList {
     std::vector<std::function<void(const T&)>> subscribers;
 };
 
+// Base class for queued events (type-erased)
+struct IQueuedEvent {
+    virtual ~IQueuedEvent() = default;
+    virtual void dispatch(class EventBus& bus) = 0;
+};
+
+template<typename T>
+struct QueuedEvent : IQueuedEvent {
+    T event;
+    explicit QueuedEvent(const T& e) : event(e) {}
+    void dispatch(class EventBus& bus) override {
+        bus.publish(event);
+    }
+};
+
 class EventBus
 {
 public:
@@ -84,6 +101,29 @@ public:
         }
     }
 
+    // Thread-safe queueing of an event
+    template<typename T>
+    void enqueue(const T& event) {
+        std::lock_guard<std::mutex> lock(m_queueMutex);
+        m_eventQueue.push(std::make_unique<QueuedEvent<T>>(event));
+    }
+
+    // Called from main thread to process and dispatch queued events
+    void processEvents() {
+        std::queue<std::unique_ptr<IQueuedEvent>> localQueue;
+
+        {   // Swap under lock
+            std::lock_guard<std::mutex> lock(m_queueMutex);
+            std::swap(localQueue, m_eventQueue);
+        }
+
+        // Dispatch all events
+        while (!localQueue.empty()) {
+            localQueue.front()->dispatch(*this);
+            localQueue.pop();
+        }
+    }
+
 private:
     template<typename T>
     SubscriberList<T>& getOrCreateSubscriberList()
@@ -98,4 +138,6 @@ private:
 
 private:
     std::unordered_map<std::type_index, std::unique_ptr<ISubscriberList>> m_subscriberLists;
+    std::mutex m_queueMutex;
+    std::queue<std::unique_ptr<IQueuedEvent>> m_eventQueue;
 };
