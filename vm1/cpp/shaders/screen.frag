@@ -22,7 +22,7 @@ uniform float mixValue;
 
 void main() {
 	// Mix images
-	vec2 coord = vec2(texCoord.x, 1.0f - texCoord.y);
+	vec2 coord = vec2(texCoord.x, (1.0f - texCoord.y));
 	vec4 col0 = texture(inputTexture0, coord);
 	vec4 col1 = texture(inputTexture1, coord);
 	fragColor = mix(col0, col1, mixValue);

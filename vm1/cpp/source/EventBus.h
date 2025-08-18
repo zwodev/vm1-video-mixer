@@ -10,6 +10,16 @@
 
 // Each event type is defined as struct.
 // This way it can have several properties.
+struct SystemEvent {
+    enum Type {
+        Restart
+    };
+
+    SystemEvent() = delete;
+    SystemEvent(Type type) { this->type = type; }
+    Type type;
+};
+
 struct MediaSlotEvent 
 {
     MediaSlotEvent() = delete;

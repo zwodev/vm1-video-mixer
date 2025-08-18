@@ -25,3 +25,4 @@ mmdebstrap:
     - bluez
     - dnsmasq
     - xauth
+    - libkms++0

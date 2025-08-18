@@ -169,13 +169,17 @@ private:
 
 struct Settings
 {
+    // Saved
     bool showUI = true;
     bool defaultLooping = true;
     int fadeTime = 2;
     int volume = 10;
-    int rotarySensitivity = 128;
+    int rotarySensitivity = 1;
     std::string videoFilePath = "../videos/";
     std::string serialDevice = "/dev/ttyACM0";
+
+    // Volatile
+    bool isReady = false;
 
     template <class Archive>
     void serialize(Archive &ar)

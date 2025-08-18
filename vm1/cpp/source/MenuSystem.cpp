@@ -322,7 +322,14 @@ void MenuSystem::GlobalSettings(int id, int* focusedIdx)
     m_ui.BeginList(focusedIdx);
     m_ui.SpinBoxInt("Fade Time", settings.fadeTime, 0, 10);
     m_ui.SpinBoxInt("Volume", settings.volume, 0, 10);
-    m_ui.SpinBoxInt("Rotary Sensitivity", settings.rotarySensitivity, 0, 255);
+    m_ui.SpinBoxInt("Rot. Sensit.", settings.rotarySensitivity, 1, 20);
+    bool restart = false;
+    if (m_ui.CheckBox("Restart", restart)) {
+        if (m_registry.settings().isReady) {
+            m_registry.settings().isReady = false;
+            m_eventBus.publish(SystemEvent(SystemEvent::Type::Restart));
+        }
+    }
     if (m_ui.CheckBox("Show UI", settings.showUI)) { settings.showUI = !settings.showUI; };
     if (m_ui.CheckBox("Default Looping", settings.defaultLooping)) { settings.defaultLooping = !settings.defaultLooping; };
     m_ui.EndList();

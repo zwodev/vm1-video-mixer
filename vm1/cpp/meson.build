@@ -32,6 +32,7 @@ deps += dependency('sdl3',
 deps += c.find_library('SDL3_image', required: true)
 deps += c.find_library('SDL3_test', required: true)
 deps += c.find_library('unwind', required: true)
+deps += c.find_library('kms++', required: true)
 
 deps += c.find_library('lgpio', required: true)
 deps += c.find_library('m', required: true)  # `-lm` for math functions

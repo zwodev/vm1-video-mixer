@@ -32,11 +32,10 @@
 #include "DeviceController.h"
 #include "AudioSystem.h"
 
-// class DisplayConfig {
-//     int width;
-//     int height;
-//     double refreshRate;
-// };
+struct DisplayConf {
+    SDL_DisplayMode defaultMode = {};
+    SDL_DisplayMode bestMode = {};
+};
 
 class VM1Application {
 
@@ -48,9 +47,10 @@ public:
     bool exec();
 
 private:
+    void subscribeToEvents();
     bool initialize();
     bool initializeVideo();
-    std::vector<SDL_DisplayMode> getBestDisplaysModes();
+    std::vector<DisplayConf> getBestDisplaysConfigs();
     bool initSDL(bool withoutVideo);
     bool initImGui();
     void finalize();
@@ -67,7 +67,7 @@ private:
     bool m_isHeadless = true;
     SDL_GLContext m_glContext = nullptr;
     std::vector<SDL_Window *> m_windows;
-    std::vector<SDL_DisplayMode> m_displayModes;
+    std::vector<DisplayConf> m_displayConfigs;
     ImGuiContext* m_imguiContext = nullptr;
     
     Registry m_registry;

@@ -9,6 +9,11 @@
 
 #include "VM1Application.h"
 #include "VM1DeviceDefinitions.h"
+
+#include <kms++/card.h>
+#include <kms++/connector.h>
+#include <kms++/videomode.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <linux/input.h>
@@ -27,11 +32,29 @@ VM1Application::VM1Application() :
     m_ui(m_stbRenderer, m_eventBus),
     m_menuSystem(m_ui, m_registry, m_eventBus),
     m_deviceController(m_eventBus, m_registry)
-{}
+{
+    subscribeToEvents();
+}
 
 VM1Application::~VM1Application()
 {
     //finalize();
+}
+
+void VM1Application::subscribeToEvents()
+{
+    m_eventBus.subscribe<SystemEvent>([this](const SystemEvent& event) {
+        if (event.type == SystemEvent::Type::Restart) {
+            finalize();
+            initializeVideo();
+            m_cameraController.setupDetached();
+            std::string serialDevice = m_registry.settings().serialDevice;
+            if (!m_deviceController.connect(serialDevice))
+            {
+                printf("Could not connect to VM1-Device on Serial or I2C.\n");
+            }
+        }
+    });
 }
 
 bool VM1Application::initialize()
@@ -39,6 +62,7 @@ bool VM1Application::initialize()
     initializeVideo();
     
     m_cameraController.setupDetached();
+
     m_oledController.setStbRenderer(&m_stbRenderer);
     m_oledController.start();
 
@@ -81,12 +105,51 @@ bool VM1Application::initializeVideo()
     
     if (!m_isHeadless) m_playbackOperator.initialize();
     
+    m_registry.settings().isReady = true;
+
     return true;
 }
 
-std::vector<SDL_DisplayMode> VM1Application::getBestDisplaysModes() 
+bool getDefaultMode(int id, SDL_DisplayMode& defaultDisplayMode)
 {
-    std::vector<SDL_DisplayMode> bestDisplayModes;
+    int fd = open("/dev/dri/card1", O_RDWR | O_CLOEXEC);
+    if (fd < 0) { std::cerr << "Failed open.\n"; return false; }
+
+    kms::Card card(fd, true);
+
+    auto connectors = card.get_connectors();
+    // Assume 'connectors' is some container or pointer array; iterate appropriately
+
+    std::string connectorName = "HDMI-A-" + std::to_string(id+1);
+    kms::Connector* connector = nullptr;
+    for (auto c : connectors) {
+        std::cout << c->fullname() << std::endl;
+        if (c->fullname() == connectorName && c->connected()) {
+        connector = c;
+        break;
+        }
+    }
+
+    if (!connector) {
+        std::cerr << "No HDMI-A-1 connector found\n";
+        close(fd);
+        return false;
+    }
+
+    kms::Videomode defaultMode = connector->get_default_mode();
+    defaultDisplayMode.w = defaultMode.hdisplay;
+    defaultDisplayMode.h = defaultMode.vdisplay;
+    
+    std::cerr << defaultMode.hdisplay << "x" << defaultMode.vdisplay << "\n";
+
+    close(fd);
+
+    return true;
+}
+
+std::vector<DisplayConf> VM1Application::getBestDisplaysConfigs() 
+{
+    std::vector<DisplayConf> bestDisplayConfigs;
 
     int numDisplays;
     SDL_DisplayID* displays = SDL_GetDisplays(&numDisplays);
@@ -94,21 +157,32 @@ std::vector<SDL_DisplayMode> VM1Application::getBestDisplaysModes()
 
     for (int i = 0; i < numDisplays; ++i) {
         SDL_Log("Display ID: %d", displays[i]);
+        SDL_DisplayMode* defaultDisplayMode = SDL_GetCurrentDisplayMode(displays[i]);
+        if (!defaultDisplayMode) {
+            SDL_Log("Could not get default display mode!");
+            return bestDisplayConfigs;
+        }
+
+        SDL_DisplayMode defaultMode = *(defaultDisplayMode);
+        getDefaultMode(i, defaultMode);
+
+        SDL_Log("Default Mode: %dx%d @%f", defaultMode.w, defaultMode.h, defaultMode.refresh_rate);
+
         int numModes;
         SDL_DisplayMode** displayModes = SDL_GetFullscreenDisplayModes(displays[i], &numModes);
         if (numModes < 1) {
             SDL_Log("No display modes found!");
-            return bestDisplayModes;
+            return bestDisplayConfigs;
         }
 
         SDL_DisplayMode bestMode = {0};
         bool found = false;
         for (int i = 0; i < numModes; ++i) {
             SDL_DisplayMode mode = *(displayModes[i]);
-            //SDL_Log("Mode: %dx%d @%f", mode.w, mode.h, mode.refresh_rate);
+            SDL_Log("Mode: %dx%d @%f", mode.w, mode.h, mode.refresh_rate);
 
             // Only consider modes up to 1920x1080
-            if (mode.w <= 1920 && mode.refresh_rate <= 60.0) {
+            if (mode.w <= 3840 && mode.refresh_rate <= 61.0) {
                 if (!found ||
                     (mode.w > bestMode.w) ||
                     (mode.w == bestMode.w && mode.h > bestMode.h) ||
@@ -119,12 +193,18 @@ std::vector<SDL_DisplayMode> VM1Application::getBestDisplaysModes()
             }
         }
 
-        if (found) bestDisplayModes.push_back(bestMode);
+
+        if (found)  {
+            DisplayConf displayConfig;
+            displayConfig.bestMode = bestMode;
+            displayConfig.defaultMode = defaultMode;
+            bestDisplayConfigs.push_back(displayConfig);
+        }
         SDL_free(displayModes);
     }
     SDL_free(displays);
 
-    return bestDisplayModes;
+    return bestDisplayConfigs;
 }
 
 bool VM1Application::initSDL(bool withVideo)
@@ -151,9 +231,9 @@ bool VM1Application::initSDL(bool withVideo)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 
     // Check number of attached displays
-    m_displayModes = getBestDisplaysModes();
-    for (const auto& mode : m_displayModes) {
-        SDL_Log("Mode: %dx%d @%f", mode.w, mode.h, mode.refresh_rate);
+    m_displayConfigs = getBestDisplaysConfigs();
+    for (const auto& config : m_displayConfigs) {
+        SDL_Log("Mode: %dx%d @%f", config.bestMode.w, config.bestMode.h, config.bestMode.refresh_rate);
     }
 
     // Create window with graphics context
@@ -175,11 +255,11 @@ bool VM1Application::initSDL(bool withVideo)
     SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_Y_NUMBER, 0);
 
     int xOffset = 0;
-    m_windows.resize(m_displayModes.size(), nullptr);
-    for (int i = 0; i < m_displayModes.size(); ++i)
+    m_windows.resize(m_displayConfigs.size(), nullptr);
+    for (int i = 0; i < m_displayConfigs.size(); ++i)
     {
         int index = i;
-        SDL_DisplayMode mode = m_displayModes[index];
+        SDL_DisplayMode mode = m_displayConfigs[index].bestMode;
 
         // This is the way to associate the second window with the second screen
         // when using the DRM/KMS backend.
@@ -201,7 +281,7 @@ bool VM1Application::initSDL(bool withVideo)
     }
 
     for (int i = 0; i < m_windows.size(); ++i) {
-        if (!SDL_SetWindowFullscreenMode(m_windows[i], &(m_displayModes[i]))) {
+        if (!SDL_SetWindowFullscreenMode(m_windows[i], &(m_displayConfigs[i].bestMode))) {
             SDL_Log("Unable to set fullscreen mode!");
         }
     }
@@ -278,7 +358,7 @@ void VM1Application::finalizeSDL()
     }
     SDL_GL_DestroyContext(m_glContext);
     m_windows.clear();
-    m_displayModes.clear();
+    m_displayConfigs.clear();
 
     //SDL_QuitSubSystem(SDL_INIT_VIDEO);
     //SDL_QuitSubSystem(SDL_INIT_AUDIO);
@@ -426,22 +506,31 @@ void VM1Application::renderWindow(int windowIndex)
 {   
     // TODO: Move viewport calculation to init method
     // Maybe create struct which has SDL_DisplayMode and SDL_Window?
-    SDL_DisplayMode mode = m_displayModes[windowIndex];
+    SDL_DisplayMode bestMode = m_displayConfigs[windowIndex].bestMode;
+    SDL_DisplayMode defaultMode = m_displayConfigs[windowIndex].defaultMode;    
     float contentAspect = 16.0f/9.0f;
-    float displayAspect = (float)mode.w / (float)mode.h;
+    float displayAspect = (float)bestMode.w / (float)bestMode.h;
+    
+    // This is du to a strange situation. The default resolution seems to count here!
+    float xScale = (float)defaultMode.h * contentAspect / (float)defaultMode.w;
+    float yScale = (float)defaultMode.w * (1.0f/contentAspect) / (float)defaultMode.h;
+    //float yScale = (float)1920 * (1.0f/contentAspect) / (float)1200;
 
-    int width = mode.w;
-    int height = mode.h;
+    int width = bestMode.w;
+    int height = bestMode.h;
     int xOffset = 0;
     int yOffset = 0;
+
     if (displayAspect <= contentAspect) {
-        height = int((float)width / contentAspect);
-        yOffset = (mode.h - height) / 2;
+        height = int((float)height * yScale);
+        yOffset = (bestMode.h - height) / 2;
     }
     else {
-        width = int((float)height * contentAspect);
-        xOffset = (mode.w - width) / 2;
+        width = int((float)width * xScale);
+        xOffset = (bestMode.w - width) / 2;
     }
+
+    //printf("W: %d, H: %d, S:%f\n", width, height, yScale);
 
     SDL_GL_MakeCurrent(m_windows[windowIndex], m_glContext);    
     glViewport(xOffset, yOffset, width, height);

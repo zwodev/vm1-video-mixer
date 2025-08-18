@@ -20,8 +20,8 @@ const lowp vec4 white = vec4(1.0);
 
 void main() {
 	color = white;
-	//texCoord = vec2(in_TexCoord.y, in_TexCoord.x); 
-	texCoord = in_TexCoord; 
+	texCoord = vec2(in_TexCoord.x, in_TexCoord.y); 
 	offset = in_Offset;
-	gl_Position = vec4(in_Position, 0.0, 1.0);
+	vec2 pos = vec2(in_Position.x, in_Position.y);
+	gl_Position = vec4(pos, 0.0, 1.0);
 }
