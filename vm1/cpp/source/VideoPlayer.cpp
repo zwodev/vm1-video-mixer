@@ -90,6 +90,7 @@ bool VideoPlayer::openFile(const std::string& fileName, AudioStream* audioStream
             codecpar->height == 1080 &&
             codecpar->codec_id == AV_CODEC_ID_HEVC &&
             codecpar->format == AV_PIX_FMT_YUV420P &&
+            codecpar->format == AV_PIX_FMT_YUVJ420P &&
             codecpar->color_space != AVCOL_SPC_BT2020_NCL &&
             codecpar->color_space != AVCOL_SPC_BT2020_CL
         )
