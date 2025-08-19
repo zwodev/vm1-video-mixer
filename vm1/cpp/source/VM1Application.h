@@ -28,6 +28,7 @@
 #include "UI.h"
 #include "KeyboardControllerSDL.h"
 #include "KeyboardControllerLinux.h"
+#include "KeyboardHotplug.h"
 #include "EventBus.h"
 #include "DeviceController.h"
 #include "AudioSystem.h"
@@ -74,6 +75,7 @@ private:
     EventBus m_eventBus;
     KeyboardControllerSDL m_keyboardControllerSdl;
     KeyboardControllerLinux m_keyboardControllerLinux;
+    KeyboardHotplug m_keyboardHotplug;
     PlaybackOperator m_playbackOperator;
     CameraController m_cameraController;
     FileAssignmentWidget m_fileAssignmentWidget;

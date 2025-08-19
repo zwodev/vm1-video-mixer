@@ -47,13 +47,7 @@ void VM1Application::subscribeToEvents()
     m_eventBus.subscribe<SystemEvent>([this](const SystemEvent& event) {
         if (event.type == SystemEvent::Type::Restart) {
             finalize();
-            initializeVideo();
-            m_cameraController.setupDetached();
-            std::string serialDevice = m_registry.settings().serialDevice;
-            if (!m_deviceController.connect(serialDevice))
-            {
-                printf("Could not connect to VM1-Device on Serial or I2C.\n");
-            }
+            initialize();
         }
     });
 
@@ -67,11 +61,9 @@ bool VM1Application::initialize()
 {
     initializeVideo();
     
-    m_cameraController.setupDetached();
-    //m_cameraController.setup();
+    if (m_isHeadless) m_keyboardHotplug.start();
 
-    m_oledController.setStbRenderer(&m_stbRenderer);
-    m_oledController.start();
+    m_cameraController.setupDetached();
 
     // Open VM-1Device
     std::string serialDevice = m_registry.settings().serialDevice;
@@ -97,10 +89,10 @@ bool VM1Application::initializeVideo()
     else {
         if (initSDL(false)) {
             m_isHeadless = true;
-            m_fd = open(KEYBOARD_DEVICE, O_RDONLY | O_NONBLOCK);
-            if (m_fd < 0) {
-               SDL_Log("Failed initialize linux keyboard device!");
-            }
+            // m_fd = open(KEYBOARD_DEVICE, O_RDONLY | O_NONBLOCK);
+            // if (m_fd < 0) {
+            //    SDL_Log("Failed initialize linux keyboard device!");
+            // }
 
             SDL_Log("Running in headless mode!");          
         }
@@ -110,9 +102,12 @@ bool VM1Application::initializeVideo()
         }
     }
     
-    if (!m_isHeadless) m_playbackOperator.initialize();
+    if (!m_isHeadless) {
+        m_playbackOperator.initialize();
+    } 
     
     m_registry.settings().isHdmiOutputReady = true;
+
     m_registry.settings().hdmiOutputConfigString1 = "Not connected";
     m_registry.settings().hdmiOutputConfigString2 = "Not connected";
     if (m_displayConfigs.size() > 0) {
@@ -353,6 +348,7 @@ void VM1Application::finalize()
     m_playbackOperator.finalize();
     m_deviceController.disconnect();
     if (!m_isHeadless) finalizeImGui();
+    if (m_isHeadless) m_keyboardHotplug.stop();
     finalizeSDL();
 }
 
@@ -406,11 +402,28 @@ bool VM1Application::processSDLInput()
 
 bool VM1Application::processLinuxInput()
 {
-    if (m_fd < 0) return false;
+    // if (m_fd < 0) return false;
 
-    input_event ev;
-    ssize_t n = read(m_fd, &ev, sizeof(ev));
-    if (n == (ssize_t)sizeof(ev)) {
+    // input_event ev;
+    // ssize_t n = read(m_fd, &ev, sizeof(ev));
+    // if (n == (ssize_t)sizeof(ev)) {
+    //     if (ev.type == EV_KEY && ev.value == 1) {
+    //         m_keyboardControllerLinux.update(ev);
+    //         if (ev.code == KEY_ESC) {
+    //             return false;
+    //         }
+    //         else if (ev.code == KEY_SPACE) {
+    //             finalize();
+    //             initializeVideo();
+    //             SDL_Log("Reinitialize video!"); 
+    //         }
+    //     }
+    // } else if (n == -1 && errno != EAGAIN) {
+    //     return false;
+    // }
+
+    std::vector<input_event> events = m_keyboardHotplug.getAllEvents();
+    for (auto& ev : events) {
         if (ev.type == EV_KEY && ev.value == 1) {
             m_keyboardControllerLinux.update(ev);
             if (ev.code == KEY_ESC) {
@@ -422,8 +435,6 @@ bool VM1Application::processLinuxInput()
                 SDL_Log("Reinitialize video!"); 
             }
         }
-    } else if (n == -1 && errno != EAGAIN) {
-        return false;
     }
 
     return true;
@@ -439,6 +450,9 @@ bool VM1Application::exec()
     // finalizeSDL();
 
     if (!initialize()) return false;
+
+    m_oledController.setStbRenderer(&m_stbRenderer);
+    m_oledController.start();
 
     Uint64 lastTime = SDL_GetTicks();
     bool done = false;

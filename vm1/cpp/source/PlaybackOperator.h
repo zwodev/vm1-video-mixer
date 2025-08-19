@@ -130,6 +130,7 @@ private:
     std::map<int, int> m_mediaSlotIdToPlayerId;
     std::vector<int> m_recentlyUsedPlayerIds;
 
+    bool m_isInitialized = false;
     int m_selectedEditButton = -1;
     int m_selectedMediaButton = -1;
 

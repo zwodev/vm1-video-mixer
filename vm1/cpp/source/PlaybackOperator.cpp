@@ -62,10 +62,14 @@ void PlaybackOperator::initialize()
         }
         m_audioStreams.push_back(audioStream);
     }
+
+    m_isInitialized = true;
 }
 
 void PlaybackOperator::finalize()
 {
+    m_isInitialized = false;
+
     for (auto videoPlayer : m_videoPlayers) {
         delete videoPlayer;
     }
@@ -129,6 +133,13 @@ bool PlaybackOperator::isPlayerIdActive(int playerId)
 
 void PlaybackOperator::showMedia(int mediaSlotId)
 {
+    if (!m_isInitialized) return;
+
+    if (!m_registry.settings().isHdmiOutputReady) {
+        // Send event and show pop-up in menu eg. "HDMI output not ready",
+        return;
+    }
+
     std::string fileName;
     std::string filePath;
     bool looping = false;
@@ -137,10 +148,6 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     if (!inputConfig)
         return;
 
-    if (!m_registry.settings().isHdmiOutputReady) {
-        // Send event and show pop-up in menu eg. "HDMI output not ready",
-        return;
-    }
 
     float fadeTime = float(m_registry.settings().fadeTime); 
     int planeId = (mediaSlotId / (MEDIA_BUTTON_COUNT / 2)) % 2;
@@ -198,6 +205,8 @@ void PlaybackOperator::showMedia(int mediaSlotId)
 
 void PlaybackOperator::update(float deltaTime)
 {
+    if (!m_isInitialized) return; 
+
     for (auto& planeMixer : m_planeMixers) {
         int playerId = planeMixer.toId();
         if (playerId >= 0 && m_mediaPlayers[playerId]->isFrameReady()) {
@@ -274,6 +283,8 @@ void PlaybackOperator::update(float deltaTime)
 
 void PlaybackOperator::renderPlane(int planeId)
 {
+    if (!m_isInitialized) return;
+
     if (planeId >= m_planeRenderers.size()) return;
 
     float volume = float(m_registry.settings().volume) / 10.0f;
