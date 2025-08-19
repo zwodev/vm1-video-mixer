@@ -83,7 +83,7 @@ bool VM1Application::initializeVideo()
     bool success = initSDL(true);
     if (success) {
         if (!initImGui()) {
-            SDL_Log("Failed it initialize ImGui!");
+            SDL_Log("Failed initialize ImGui!");
             return false;
         }
     }
@@ -92,7 +92,7 @@ bool VM1Application::initializeVideo()
             m_isHeadless = true;
             m_fd = open(KEYBOARD_DEVICE, O_RDONLY | O_NONBLOCK);
             if (m_fd < 0) {
-               SDL_Log("Failed it initialize linux keyboard device!");
+               SDL_Log("Failed initialize linux keyboard device!");
             }
 
             SDL_Log("Running in headless mode!");          
@@ -182,7 +182,7 @@ std::vector<DisplayConf> VM1Application::getBestDisplaysConfigs()
             SDL_Log("Mode: %dx%d @%f", mode.w, mode.h, mode.refresh_rate);
 
             // Only consider modes up to 1920x1080
-            if (mode.w <= 3840 && mode.refresh_rate <= 61.0) {
+            if (mode.w <= 1920 && mode.refresh_rate <= 61.0) {
                 if (!found ||
                     (mode.w > bestMode.w) ||
                     (mode.w == bestMode.w && mode.h > bestMode.h) ||
