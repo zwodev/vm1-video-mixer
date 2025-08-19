@@ -20,6 +20,12 @@ struct SystemEvent {
     Type type;
 };
 
+struct HdmiCaptureInitEvent {
+    HdmiCaptureInitEvent() = delete;
+    HdmiCaptureInitEvent(std::string configString) { this->configString = configString; }
+    std::string configString;
+};
+
 struct MediaSlotEvent 
 {
     MediaSlotEvent() = delete;

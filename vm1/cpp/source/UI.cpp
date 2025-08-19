@@ -305,6 +305,16 @@ void UI::ShowBankInfo(int bank)
     }
 }
 
+bool UI::Action(const std::string& label)
+{
+    if (!m_focusedIdxPtr) return false;
+    bool keyPressed = (isNavigationEventTriggered(NavigationEvent::Type::SelectItem));
+    bool focused = ((*m_focusedIdxPtr) == m_listSize);
+
+    Text(label + " ->");
+    return (focused && keyPressed);
+}
+
 bool UI::CheckBox(const std::string& label, bool checked)
 {
     if (!m_focusedIdxPtr) return false;

@@ -10,6 +10,7 @@
 
 #include "V4L2Controller.h"
 #include "MediaController.h"
+#include "EventBus.h"
 
 #include <thread>
 
@@ -20,15 +21,13 @@ private:
     MediaController m_mediaController;
 
 public:
-    CameraController();
+    CameraController(EventBus& eventBus);
     ~CameraController();
     
     void setupDetached();
-
-private:
     bool setup();
 
 private:
     std::thread m_thread;
-
+    EventBus& m_eventBus;
 };

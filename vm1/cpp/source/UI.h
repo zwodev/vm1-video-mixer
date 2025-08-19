@@ -43,6 +43,7 @@ public:
     void MenuInfo(std::string menuInfo);
     void InfoScreen(int bank, int id, std::string filename);
     void ShowBankInfo(int bank);
+    bool Action(const std::string& label);
     bool CheckBox(const std::string& label, bool checked);
     bool RadioButton(const std::string& label, bool active);
     void SpinBoxInt(const std::string& label, int& value, int minValue, int maxValue);

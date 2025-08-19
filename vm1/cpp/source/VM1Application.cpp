@@ -31,7 +31,8 @@ VM1Application::VM1Application() :
     m_stbRenderer(DISPLAY_WIDTH, DISPLAY_HEIGHT),
     m_ui(m_stbRenderer, m_eventBus),
     m_menuSystem(m_ui, m_registry, m_eventBus),
-    m_deviceController(m_eventBus, m_registry)
+    m_deviceController(m_eventBus, m_registry),
+    m_cameraController(m_eventBus)
 {
     subscribeToEvents();
 }
@@ -55,6 +56,11 @@ void VM1Application::subscribeToEvents()
             }
         }
     });
+
+    m_eventBus.subscribe<HdmiCaptureInitEvent>([this](const HdmiCaptureInitEvent& event) {
+        m_registry.settings().hdmiInputConfigString1 = event.configString;
+        m_registry.settings().isHdmiInputReady = true;
+    });
 }
 
 bool VM1Application::initialize()
@@ -62,6 +68,7 @@ bool VM1Application::initialize()
     initializeVideo();
     
     m_cameraController.setupDetached();
+    //m_cameraController.setup();
 
     m_oledController.setStbRenderer(&m_stbRenderer);
     m_oledController.start();
@@ -105,7 +112,17 @@ bool VM1Application::initializeVideo()
     
     if (!m_isHeadless) m_playbackOperator.initialize();
     
-    m_registry.settings().isReady = true;
+    m_registry.settings().isHdmiOutputReady = true;
+    m_registry.settings().hdmiOutputConfigString1 = "Not connected";
+    m_registry.settings().hdmiOutputConfigString2 = "Not connected";
+    if (m_displayConfigs.size() > 0) {
+        SDL_DisplayMode mode = m_displayConfigs[0].bestMode;
+        m_registry.settings().hdmiOutputConfigString1 = std::to_string(mode.w) + "x" + std::to_string(mode.h) + "/" + std::to_string(int(std::round(mode.refresh_rate))) + "Hz";
+    }
+    if (m_displayConfigs.size() > 1) {
+        SDL_DisplayMode mode = m_displayConfigs[1].bestMode;
+        m_registry.settings().hdmiOutputConfigString2 = std::to_string(mode.w) + "x" + std::to_string(mode.h) + "/" + std::to_string(int(std::round(mode.refresh_rate))) + "Hz";
+    }
 
     return true;
 }
@@ -438,6 +455,8 @@ bool VM1Application::exec()
         }
 
         lastTime = currentTime;
+
+        m_eventBus.processEvents();
 
         if (m_isHeadless) {
             if (!processLinuxInput()) done = true;

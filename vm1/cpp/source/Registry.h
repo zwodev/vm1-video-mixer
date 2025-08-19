@@ -179,7 +179,12 @@ struct Settings
     std::string serialDevice = "/dev/ttyACM0";
 
     // Volatile
-    bool isReady = false;
+    bool isHdmiOutputReady = false;
+    bool isHdmiInputReady = false;
+    std::string hdmiOutputConfigString1 = "Not connected";
+    std::string hdmiOutputConfigString2 = "Not connected";
+    std::string hdmiInputConfigString1 = "Not connected";
+    std::string hdmiInputConfigString2 = "Not connected";
 
     template <class Archive>
     void serialize(Archive &ar)

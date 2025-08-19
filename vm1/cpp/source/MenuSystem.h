@@ -29,6 +29,7 @@ public:
         MT_InfoSelection,
         MT_InputSelection,
         MT_PlaybackSelection,
+        MT_DeviceSettings,
         MT_NetworkInfo,
         MT_SettingsSelection
     };
@@ -54,6 +55,7 @@ private:
     void PlaybackSettings(int id, int* selectedIdx);
     void NetworkInfo(int id, int* selectedIdx);
     void GlobalSettings(int id, int* selectedIdx);
+    void DeviceSettings(int id, int* focusedIdx);
 
 private:
     Registry &m_registry;

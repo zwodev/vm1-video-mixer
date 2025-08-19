@@ -23,6 +23,7 @@
 #include <time.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <sys/ioctl.h>
 
 #include <drm/drm_fourcc.h>
@@ -47,7 +48,9 @@ CameraPlayer::CameraPlayer()
 }
 
 CameraPlayer::~CameraPlayer()
-{   
+{
+    MediaPlayer::close();
+    close();  
 }
 
 bool CameraPlayer::openFile(const std::string& fileName, AudioStream* audioStream)
@@ -217,10 +220,16 @@ void CameraPlayer::run()
     m_fd = fd;
 
     // Set the pixel format for V4L2
-    if (!setFormat(fd)) return;
+    if (!setFormat(fd)) {
+        ::close(fd);
+        return;
+    } 
 
     // Intialize and export the buffers
-    if (!initBuffers(fd)) return;
+    if (!initBuffers(fd)) {
+        ::close(fd);
+        return;
+    }
 
     printf("CameraPlayer run(): buffer init ok.\n");
     
@@ -235,6 +244,7 @@ void CameraPlayer::run()
     if(ioctl(m_fd, VIDIOC_STREAMON, &buf_type))
     {
         perror("VIDIOC_STREAMON");
+        ::close(fd);
         return;
     }
 
@@ -244,16 +254,54 @@ void CameraPlayer::run()
     while (m_isRunning) {
         VideoFrame frame;
         lockBuffer();
-        int fd = getBuffer()->fd;
-        frame.fds.push_back(fd);
-        unlockBuffer();
-        m_videoQueue.pushFrame(frame);
+        Buffer* buffer = getBuffer();
+        if (buffer) {
+            int fd = getBuffer()->fd;
+            frame.fds.push_back(fd);
+            unlockBuffer();
+            m_videoQueue.pushFrame(frame);
+        }
         SDL_Delay(10);
     }
 
     printf("Camera streaming turned OFF\n");
 
-    // TODO: Deallocate resources
+    // 1. Stop streaming if started
+    enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    if (ioctl(fd, VIDIOC_STREAMOFF, &type) == -1) {
+        printf("Error stopping stream.\n");
+        // Not returning false here, try to cleanup anyway
+    }
+
+    // 2. Release each exported buffer (close fd)
+    for (auto& buffer : m_buffers) {
+        dequeueBuffer(fd);
+    }
+    for (auto& buffer : m_buffers) {
+        if (buffer.fd >= 0) {
+            ::close(buffer.fd);
+        }
+    }
+    m_buffers.clear();
+
+    // 3. Release buffer allocation in driver
+    struct v4l2_requestbuffers req = {0};
+    req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    req.memory = V4L2_MEMORY_MMAP;
+    req.count = 0; // Tell kernel to release buffers
+    if (ioctl(fd, VIDIOC_REQBUFS, &req) == -1) {
+        printf("Error releasing buffers.\n");
+        // Not returning false here, try to cleanup device anyway
+    }
+
+    // 4. Close the device
+    if (fd >= 0) {
+        ::close(fd);
+        fd = -1;
+        m_fd = -1;
+    }
+
+    return;
 }
 
 void CameraPlayer::render()

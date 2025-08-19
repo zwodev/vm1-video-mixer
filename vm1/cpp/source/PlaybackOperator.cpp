@@ -137,6 +137,11 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     if (!inputConfig)
         return;
 
+    if (!m_registry.settings().isHdmiOutputReady) {
+        // Send event and show pop-up in menu eg. "HDMI output not ready",
+        return;
+    }
+
     float fadeTime = float(m_registry.settings().fadeTime); 
     int planeId = (mediaSlotId / (MEDIA_BUTTON_COUNT / 2)) % 2;
     m_planeMixers[planeId].setFadeTime(fadeTime);
@@ -169,6 +174,11 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     }
     else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
     {
+        if (!m_registry.settings().isHdmiInputReady) {
+            // Send event and show pop-up in menu eg. "HDMI input not ready",
+            return;
+        }
+
         if (hdmiInputConfig->hdmiPort == 0)
         {
             fileName = "hdmi0";

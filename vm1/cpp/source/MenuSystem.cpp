@@ -38,6 +38,8 @@ void MenuSystem::createMenus()
     m_menus[MT_PlaybackSelection]   = {"Play", {}, [this](int id, int* fIdx){PlaybackSettings(id, fIdx);}};
     m_menus[MT_NetworkInfo]         = {"Network", {}, [this](int id, int* fIdx){NetworkInfo(id, fIdx);}};
     m_menus[MT_SettingsSelection]   = {"Settings", {}, [this](int id, int* fIdx){GlobalSettings(id, fIdx);}};
+    m_menus[MT_DeviceSettings]      = {"Devices", {}, [this](int id, int* fIdx){DeviceSettings(id, fIdx);}};
+    
 }
 
 void MenuSystem::setMenu(MenuType menuType)
@@ -86,6 +88,7 @@ void MenuSystem::handleMediaAndEditButtons()
         case 4:
             break;
         case 5:
+            setMenu(MT_DeviceSettings);
             break;
         case 6:
             setMenu(MT_NetworkInfo);
@@ -323,14 +326,29 @@ void MenuSystem::GlobalSettings(int id, int* focusedIdx)
     m_ui.SpinBoxInt("Fade Time", settings.fadeTime, 0, 10);
     m_ui.SpinBoxInt("Volume", settings.volume, 0, 10);
     m_ui.SpinBoxInt("Rot. Sensit.", settings.rotarySensitivity, 1, 20);
-    bool restart = false;
-    if (m_ui.CheckBox("Restart", restart)) {
-        if (m_registry.settings().isReady) {
-            m_registry.settings().isReady = false;
-            m_eventBus.publish(SystemEvent(SystemEvent::Type::Restart));
-        }
-    }
     if (m_ui.CheckBox("Show UI", settings.showUI)) { settings.showUI = !settings.showUI; };
     if (m_ui.CheckBox("Default Looping", settings.defaultLooping)) { settings.defaultLooping = !settings.defaultLooping; };
+    m_ui.EndList();
+}
+
+void MenuSystem::DeviceSettings(int id, int* focusedIdx) 
+{
+    Settings& settings = m_registry.settings();
+
+    m_ui.BeginList(focusedIdx);
+    if (m_registry.settings().isHdmiOutputReady && m_registry.settings().isHdmiInputReady) {
+        if (m_ui.Action("Scan for new")) {
+            m_registry.settings().isHdmiOutputReady = false;
+            m_registry.settings().isHdmiInputReady = false;
+            m_eventBus.publish(SystemEvent(SystemEvent::Type::Restart));  
+        }
+    }
+    else {
+        m_ui.Text("Scanning...");
+    }
+    m_ui.Text(std::string("O1: ") + m_registry.settings().hdmiOutputConfigString1);
+    m_ui.Text(std::string("O2: ") + m_registry.settings().hdmiOutputConfigString2);
+    m_ui.Text(std::string("I1: ") + m_registry.settings().hdmiInputConfigString1);
+    m_ui.Text(std::string("I2: ") + m_registry.settings().hdmiInputConfigString2);
     m_ui.EndList();
 }
