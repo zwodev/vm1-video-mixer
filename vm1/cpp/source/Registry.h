@@ -181,10 +181,11 @@ struct Settings
     // Volatile
     bool isHdmiOutputReady = false;
     bool isHdmiInputReady = false;
-    std::string hdmiOutputConfigString1 = "Not connected";
-    std::string hdmiOutputConfigString2 = "Not connected";
-    std::string hdmiInputConfigString1 = "Not connected";
-    std::string hdmiInputConfigString2 = "Not connected";
+    std::vector<std::string> hdmiOutputs = std::vector<std::string>(2, std::string());
+    std::vector<std::string> hdmiInputs = std::vector<std::string>(2, std::string());
+
+    //std::string hdmiInputConfigString1 = "Not connected";
+    //std::string hdmiInputConfigString2 = "Not connected";
 
     template <class Archive>
     void serialize(Archive &ar)

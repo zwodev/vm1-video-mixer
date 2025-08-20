@@ -27,6 +27,20 @@ struct HdmiCaptureInitEvent {
     std::string configString;
 };
 
+struct PlaybackEvent {
+    enum Type {
+        NoDisplay,
+        NoMedia,
+        FileNotSupported,
+        InputNotReady
+    };
+
+    PlaybackEvent() = delete;
+    PlaybackEvent(Type type, std::string message = std::string()) { this->type = type; this->message = message; }
+    Type type;
+    std::string message;
+};
+
 struct MediaSlotEvent 
 {
     MediaSlotEvent() = delete;

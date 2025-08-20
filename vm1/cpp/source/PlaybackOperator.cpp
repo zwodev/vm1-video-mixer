@@ -136,7 +136,7 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     if (!m_isInitialized) return;
 
     if (!m_registry.settings().isHdmiOutputReady) {
-        // Send event and show pop-up in menu eg. "HDMI output not ready",
+        m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::NoDisplay, "Still scanning"));
         return;
     }
 
@@ -145,13 +145,21 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     bool looping = false;
 
     InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
-    if (!inputConfig)
+    if (!inputConfig) {
+        m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::NoMedia, "No media"));
         return;
+    }
 
 
     float fadeTime = float(m_registry.settings().fadeTime); 
     int planeId = (mediaSlotId / (MEDIA_BUTTON_COUNT / 2)) % 2;
     m_planeMixers[planeId].setFadeTime(fadeTime);
+
+    if (m_registry.settings().hdmiOutputs[planeId].empty()) {
+        std::string message = "No display #" + std::to_string(planeId);
+        m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::NoDisplay, message));
+        return;
+    }
 
     int playerId = -1;
     if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
@@ -164,10 +172,10 @@ void PlaybackOperator::showMedia(int mediaSlotId)
         AudioStream* audioStream = m_audioStreams[playerId];
         if (!m_mediaPlayers[playerId]->openFile(filePath, audioStream)) {
             printf("Could not play!!\n");
+            m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::FileNotSupported, "File not supported"));
             return;
         }
         if (m_planeMixers[planeId].startFade(playerId)) {
-            printf("Start fade!!\n");
             m_mediaPlayers[playerId]->play(); 
             if (m_mediaSlotIdToPlayerId.find(mediaSlotId) != m_mediaSlotIdToPlayerId.end()) {
                 int oldPlayerId = m_mediaSlotIdToPlayerId[mediaSlotId];
@@ -175,21 +183,22 @@ void PlaybackOperator::showMedia(int mediaSlotId)
             }
             m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
         } 
-        else {
-            printf("Fade failed: %d\n", playerId);
-        }
     }
     else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
     {
         if (!m_registry.settings().isHdmiInputReady) {
-            // Send event and show pop-up in menu eg. "HDMI input not ready",
+            m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::InputNotReady, "Still scanning"));
+            return;
+        }
+
+        if (m_registry.settings().hdmiInputs[hdmiInputConfig->hdmiPort] != "1920x1080/30Hz") {
+            std::string message = "No input #" + std::to_string(hdmiInputConfig->hdmiPort);
+            m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::NoDisplay, message));
             return;
         }
 
         if (hdmiInputConfig->hdmiPort == 0)
         {
-            fileName = "hdmi0";
-            filePath = m_registry.mediaPool().getVideoFilePath(fileName);
             if (!getCameraPlayerIdFromPort(hdmiInputConfig->hdmiPort, playerId)) return;
 
             if (!m_mediaPlayers[playerId]->isPlaying()) {

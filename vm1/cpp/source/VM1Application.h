@@ -34,6 +34,7 @@
 #include "AudioSystem.h"
 
 struct DisplayConf {
+    std::string name;
     SDL_DisplayMode defaultMode = {};
     SDL_DisplayMode bestMode = {};
 };

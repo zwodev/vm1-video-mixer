@@ -53,7 +53,7 @@ void VM1Application::subscribeToEvents()
     });
 
     m_eventBus.subscribe<HdmiCaptureInitEvent>([this](const HdmiCaptureInitEvent& event) {
-        m_registry.settings().hdmiInputConfigString1 = event.configString;
+        m_registry.settings().hdmiInputs[0] = event.configString;
         m_registry.settings().isHdmiInputReady = true;
     });
 }
@@ -103,16 +103,14 @@ bool VM1Application::initializeVideo()
     } 
     
     m_registry.settings().isHdmiOutputReady = true;
-
-    m_registry.settings().hdmiOutputConfigString1 = "Not connected";
-    m_registry.settings().hdmiOutputConfigString2 = "Not connected";
-    if (m_displayConfigs.size() > 0) {
-        SDL_DisplayMode mode = m_displayConfigs[0].bestMode;
-        m_registry.settings().hdmiOutputConfigString1 = std::to_string(mode.w) + "x" + std::to_string(mode.h) + "/" + std::to_string(int(std::round(mode.refresh_rate))) + "Hz";
-    }
-    if (m_displayConfigs.size() > 1) {
-        SDL_DisplayMode mode = m_displayConfigs[1].bestMode;
-        m_registry.settings().hdmiOutputConfigString2 = std::to_string(mode.w) + "x" + std::to_string(mode.h) + "/" + std::to_string(int(std::round(mode.refresh_rate))) + "Hz";
+    m_registry.settings().hdmiOutputs = std::vector<std::string>(2, std::string());
+    for (const auto& displayConf : m_displayConfigs) {
+        SDL_DisplayMode mode = displayConf.bestMode;
+        std::string configString = std::to_string(mode.w) + "x" + std::to_string(mode.h) + "/" + std::to_string(int(std::round(mode.refresh_rate))) + "Hz";
+        if (displayConf.name == "HDMI-A-1")
+            m_registry.settings().hdmiOutputs[0] = configString;
+        else if (displayConf.name == "HDMI-A-2")
+            m_registry.settings().hdmiOutputs[1] = configString;
     }
 
     return true;
@@ -130,16 +128,16 @@ bool getDefaultMode(int id, SDL_DisplayMode& defaultDisplayMode)
 
     std::string connectorName = "HDMI-A-" + std::to_string(id+1);
     kms::Connector* connector = nullptr;
-    for (auto c : connectors) {
-        std::cout << c->fullname() << std::endl;
+    for (auto c : connectors) {    
         if (c->fullname() == connectorName && c->connected()) {
-        connector = c;
-        break;
+            std::cout << c->fullname() << std::endl;
+            connector = c;
+            break;
         }
     }
 
     if (!connector) {
-        std::cerr << "No HDMI-A-1 connector found\n";
+        std::cerr << connectorName << " connector not found\n";
         close(fd);
         return false;
     }
@@ -165,6 +163,13 @@ std::vector<DisplayConf> VM1Application::getBestDisplaysConfigs()
 
     for (int i = 0; i < numDisplays; ++i) {
         SDL_Log("Display ID: %d", displays[i]);
+        const char *name = SDL_GetDisplayName(displays[i]);
+        std::string displayName;
+        if (name) {
+            displayName = std::string(name);
+            std::cout << displayName << std::endl;
+        }
+
         SDL_DisplayMode* defaultDisplayMode = SDL_GetCurrentDisplayMode(displays[i]);
         if (!defaultDisplayMode) {
             SDL_Log("Could not get default display mode!");
@@ -172,7 +177,7 @@ std::vector<DisplayConf> VM1Application::getBestDisplaysConfigs()
         }
 
         SDL_DisplayMode defaultMode = *(defaultDisplayMode);
-        getDefaultMode(i, defaultMode);
+        getDefaultMode(displays[i], defaultMode);
 
         SDL_Log("Default Mode: %dx%d @%f", defaultMode.w, defaultMode.h, defaultMode.refresh_rate);
 
@@ -201,9 +206,9 @@ std::vector<DisplayConf> VM1Application::getBestDisplaysConfigs()
             }
         }
 
-
         if (found)  {
             DisplayConf displayConfig;
+            displayConfig.name = displayName;
             displayConfig.bestMode = bestMode;
             displayConfig.defaultMode = defaultMode;
             bestDisplayConfigs.push_back(displayConfig);

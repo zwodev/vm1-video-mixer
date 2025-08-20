@@ -42,6 +42,7 @@ public:
     void MenuTitle(std::string menuTitle);
     void MenuInfo(std::string menuInfo);
     void InfoScreen(int bank, int id, std::string filename);
+    void ShowPopupMessage(std::string message);
     void ShowBankInfo(int bank);
     bool Action(const std::string& label);
     bool CheckBox(const std::string& label, bool checked);
@@ -50,15 +51,16 @@ public:
     bool isNavigationEventTriggered(NavigationEvent::Type eventType);
     bool isMediaSlotEventTriggered(int mediaSlotId);
     bool isEditModeEventTriggered(int modeId);
+
     std::vector<int> getTriggeredMediaSlotIds();
     std::vector<int> getTriggeredEditButtons();
     
 private:
     void subscribeToEvents();
 
-    std::vector<MediaSlotEvent> mediaSlotEvents;
-    std::vector<EditModeEvent> editModeEvents;
     std::vector<NavigationEvent> navigationEvents;
+    std::vector<EditModeEvent> editModeEvents;
+    std::vector<MediaSlotEvent> mediaSlotEvents;
 
     StbRenderer& m_stbRenderer;
     EventBus& m_eventBus;

@@ -40,15 +40,16 @@ public:
     void render();
 
 private:
+    void subscribeToEvents();
     void createMenus();
     void setMenu(MenuType menuType);
+    void handlePopupMessage();
     void handleMediaAndEditButtons();
-    
-    
-private:
     void handleUpAndDownKeys();
     void handleBankSwitching();
     void handleMenuHierachyNavigation(const MenuItem *menuItem);
+
+private:
     void StartupScreen(int id, int* selectedIdx);
     void FileSelection(int id, int* selectedIdx);
     void LiveInputSelection(int id, int* selectedIdx);
@@ -66,4 +67,6 @@ private:
     std::vector<int> m_currentMenuPath;
     std::map<MenuType, MenuItem> m_menus;
     MenuType m_currentMenuType = MT_InputSelection;
+    bool m_launchPopup = false;
+    std::string m_lastPopupMessage;
 };

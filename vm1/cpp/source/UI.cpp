@@ -282,6 +282,19 @@ void UI::InfoScreen(int bank, int id, std::string filename)
     // ImGui::Text("%d/%d", bank, id);
 }
 
+void UI::ShowPopupMessage(std::string message)
+{
+    int width = m_stbRenderer.width();
+    int height = m_stbRenderer.height();
+    m_stbRenderer.clear();
+
+    int fontSize = 16;
+    int x = 4;
+    int y = height/2 - fontSize/2;
+
+    m_stbRenderer.drawText(message, x, y, fontSize, COLOR::WHITE);
+}
+
 void UI::ShowBankInfo(int bank)
 {
     int width = m_stbRenderer.width();

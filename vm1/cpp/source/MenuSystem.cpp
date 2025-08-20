@@ -22,8 +22,17 @@ MenuSystem::MenuSystem(UI& ui, Registry& registry, EventBus& eventBus) :
     m_registry(registry), 
     m_eventBus(eventBus)
 {   
+    subscribeToEvents();
     createMenus();
     setMenu(MT_StartupScreen);
+}
+
+void MenuSystem::subscribeToEvents()
+{
+    m_eventBus.subscribe<PlaybackEvent>([this](const PlaybackEvent& event) {
+        m_lastPopupMessage = event.message;
+        m_launchPopup = true;
+    });
 }
 
 void MenuSystem::createMenus()
@@ -48,6 +57,14 @@ void MenuSystem::setMenu(MenuType menuType)
     {
         m_currentMenuType = menuType;
         m_focusedIdx = 0;
+    }
+}
+
+void MenuSystem::handlePopupMessage()
+{
+    if (m_launchPopup && !m_lastPopupMessage.empty()) {
+        m_ui.StartOverlay([this]() { m_ui.ShowPopupMessage(m_lastPopupMessage); });
+        m_launchPopup = false;
     }
 }
 
@@ -204,6 +221,7 @@ void MenuSystem::render()
     // Render Overlay
     m_ui.ShowOverlay();
 
+    handlePopupMessage();
     handleMediaAndEditButtons();
     handleUpAndDownKeys();    
     handleBankSwitching();
@@ -346,9 +364,18 @@ void MenuSystem::DeviceSettings(int id, int* focusedIdx)
     else {
         m_ui.Text("Scanning...");
     }
-    m_ui.Text(std::string("O1: ") + m_registry.settings().hdmiOutputConfigString1);
-    m_ui.Text(std::string("O2: ") + m_registry.settings().hdmiOutputConfigString2);
-    m_ui.Text(std::string("I1: ") + m_registry.settings().hdmiInputConfigString1);
-    m_ui.Text(std::string("I2: ") + m_registry.settings().hdmiInputConfigString2);
+    
+    auto& hdmiOutputs = m_registry.settings().hdmiOutputs;
+    for (size_t i = 0; i < hdmiOutputs.size(); ++i) {
+        std::string displayConfig = !(hdmiOutputs[i].empty()) ? hdmiOutputs[i] : "Not connected";
+        m_ui.Text(std::string("O") + std::to_string(i+1) + ": " + displayConfig);
+    }
+
+    auto& hdmiInputs = m_registry.settings().hdmiInputs;
+    for (size_t i = 0; i < hdmiInputs.size(); ++i) {
+        std::string inputConfig = !(hdmiInputs[i].empty()) ? hdmiInputs[i] : "Not connected";
+        m_ui.Text(std::string("I") + std::to_string(i+1) + ": " + inputConfig);
+    }
+
     m_ui.EndList();
 }
