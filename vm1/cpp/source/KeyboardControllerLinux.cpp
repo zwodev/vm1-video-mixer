@@ -18,13 +18,11 @@ KeyboardControllerLinux::~KeyboardControllerLinux()
 
 void KeyboardControllerLinux::update(input_event& event)
 {   
-    bool isShiftPressed = false;
-
     if (event.value == 0) {
         switch (event.code)
         {
             case KEY_LEFTSHIFT:
-                isShiftPressed = false;
+                m_isShiftPressed = false;
                 return;
                 break;
             default:
@@ -35,12 +33,16 @@ void KeyboardControllerLinux::update(input_event& event)
     {
         switch (event.code)
         {
+            case KEY_ESC:
+                m_eventBus.publish(SystemEvent(SystemEvent::Type::Exit));
+                return;
+                break;
             case KEY_LEFTSHIFT:
-                isShiftPressed = true;
+                m_isShiftPressed = true;
                 return;
                 break;
             case KEY_UP:
-                if (isShiftPressed)
+                if (m_isShiftPressed)
                 {
                     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::IncreaseValue));
                 }
@@ -51,7 +53,7 @@ void KeyboardControllerLinux::update(input_event& event)
                 return;
                 break;
             case KEY_DOWN:
-                if (isShiftPressed)
+                if (m_isShiftPressed)
                 {
                     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::DecreaseValue));
                 }
@@ -62,7 +64,7 @@ void KeyboardControllerLinux::update(input_event& event)
                 return;
                 break;
             case KEY_LEFT:
-                if (isShiftPressed)
+                if (m_isShiftPressed)
                 {
                     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::BankUp));
                 }
@@ -73,7 +75,7 @@ void KeyboardControllerLinux::update(input_event& event)
                 return;
                 break;
             case KEY_RIGHT:
-                if (isShiftPressed)
+                if (m_isShiftPressed)
                 {
                     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::BankDown));
                 }
@@ -100,7 +102,7 @@ void KeyboardControllerLinux::update(input_event& event)
         {
             int mediaSlotId = (m_registry.inputMappings().bank * MEDIA_BUTTON_COUNT) + i;
             if (event.code == m_mediaKeys[i]) {
-                if(isShiftPressed){
+                if(m_isShiftPressed){
                     m_eventBus.publish(MediaSlotEvent(mediaSlotId, false)); // do not trigger playback
                 }
                 else {

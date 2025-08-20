@@ -21,8 +21,6 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#define KEYBOARD_DEVICE "/dev/input/event5"
-
 VM1Application::VM1Application() :
     m_keyboardControllerSdl(m_registry, m_eventBus),
     m_keyboardControllerLinux(m_registry, m_eventBus),
@@ -48,6 +46,9 @@ void VM1Application::subscribeToEvents()
         if (event.type == SystemEvent::Type::Restart) {
             finalize();
             initialize();
+        } 
+        else if (event.type == SystemEvent::Type::Exit) {
+            m_done = true;
         }
     });
 
@@ -89,11 +90,6 @@ bool VM1Application::initializeVideo()
     else {
         if (initSDL(false)) {
             m_isHeadless = true;
-            // m_fd = open(KEYBOARD_DEVICE, O_RDONLY | O_NONBLOCK);
-            // if (m_fd < 0) {
-            //    SDL_Log("Failed initialize linux keyboard device!");
-            // }
-
             SDL_Log("Running in headless mode!");          
         }
         else {
@@ -384,17 +380,17 @@ bool VM1Application::processSDLInput()
     while (SDL_PollEvent(&event)) {
         ImGui_ImplSDL3_ProcessEvent(&event);
         m_keyboardControllerSdl.update(event);
-        if (event.type == SDL_EVENT_KEY_DOWN)
-        {
-            if (event.key.key == SDLK_ESCAPE) {
-                return false;
-            }
-            else if (event.key.key == SDLK_SPACE) {
-                finalize();
-                initializeVideo();
-                SDL_Log("Reinitialize video!"); 
-            }
-        }
+        // if (event.type == SDL_EVENT_KEY_DOWN)
+        // {
+        //     if (event.key.key == SDLK_ESCAPE) {
+        //         return false;
+        //     }
+        //     else if (event.key.key == SDLK_SPACE) {
+        //         finalize();
+        //         initializeVideo();
+        //         SDL_Log("Reinitialize video!"); 
+        //     }
+        // }
     }
 
     return true;
@@ -402,39 +398,20 @@ bool VM1Application::processSDLInput()
 
 bool VM1Application::processLinuxInput()
 {
-    // if (m_fd < 0) return false;
-
-    // input_event ev;
-    // ssize_t n = read(m_fd, &ev, sizeof(ev));
-    // if (n == (ssize_t)sizeof(ev)) {
-    //     if (ev.type == EV_KEY && ev.value == 1) {
-    //         m_keyboardControllerLinux.update(ev);
-    //         if (ev.code == KEY_ESC) {
-    //             return false;
-    //         }
-    //         else if (ev.code == KEY_SPACE) {
-    //             finalize();
-    //             initializeVideo();
-    //             SDL_Log("Reinitialize video!"); 
-    //         }
-    //     }
-    // } else if (n == -1 && errno != EAGAIN) {
-    //     return false;
-    // }
-
     std::vector<input_event> events = m_keyboardHotplug.getAllEvents();
     for (auto& ev : events) {
-        if (ev.type == EV_KEY && ev.value == 1) {
-            m_keyboardControllerLinux.update(ev);
-            if (ev.code == KEY_ESC) {
-                return false;
-            }
-            else if (ev.code == KEY_SPACE) {
-                finalize();
-                initializeVideo();
-                SDL_Log("Reinitialize video!"); 
-            }
-        }
+        m_keyboardControllerLinux.update(ev);
+        // if (ev.type == EV_KEY && ev.value == 1) {
+            
+        //     if (ev.code == KEY_ESC) {
+        //         return false;
+        //     }
+        //     else if (ev.code == KEY_SPACE) {
+        //         finalize();
+        //         initializeVideo();
+        //         SDL_Log("Reinitialize video!"); 
+        //     }
+        // }
     }
 
     return true;
@@ -442,22 +419,14 @@ bool VM1Application::processLinuxInput()
 
 bool VM1Application::exec()
 {
-    // initSDL(true);
-    // SDL_Delay(1000);
-    // renderWindow(0);
-    // renderWindow(1);
-    // SDL_Delay(1000);
-    // finalizeSDL();
-
     if (!initialize()) return false;
 
     m_oledController.setStbRenderer(&m_stbRenderer);
     m_oledController.start();
 
     Uint64 lastTime = SDL_GetTicks();
-    bool done = false;
     
-    while (!done)
+    while (!m_done)
     {
         Uint64 currentTime = SDL_GetTicks();
         double deltaTime = (currentTime - lastTime) / 1000.0;
@@ -472,14 +441,10 @@ bool VM1Application::exec()
 
         m_eventBus.processEvents();
 
-        if (m_isHeadless) {
-            if (!processLinuxInput()) done = true;
-        }
-        else {
-            if (!processSDLInput()) done = true;
-        }
+        if (m_isHeadless) processLinuxInput();
+        else processSDLInput();
 
-        if (!done) {
+        if (!m_done) {
             m_deviceController.requestVM1DeviceBuffer();
             m_registry.update(deltaTime);
             m_playbackOperator.update(deltaTime);

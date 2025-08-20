@@ -12,7 +12,8 @@
 // This way it can have several properties.
 struct SystemEvent {
     enum Type {
-        Restart
+        Restart,
+        Exit
     };
 
     SystemEvent() = delete;

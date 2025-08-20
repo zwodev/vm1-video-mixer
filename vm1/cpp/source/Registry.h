@@ -174,7 +174,7 @@ struct Settings
     bool defaultLooping = true;
     int fadeTime = 2;
     int volume = 10;
-    int rotarySensitivity = 1;
+    int rotarySensitivity = 5;
     std::string videoFilePath = "../videos/";
     std::string serialDevice = "/dev/ttyACM0";
 

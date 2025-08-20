@@ -24,8 +24,8 @@ enum ButtonState : uint8_t
 #pragma pack(1)
 struct VM1DeviceState
 {
-    uint8_t rotarySensitivity;
-    uint8_t bank;
+    uint8_t rotarySensitivity = 5;
+    uint8_t bank = 0;
     ButtonState forward = ButtonState::NONE;
     ButtonState backward = ButtonState::NONE;
     ButtonState fn = ButtonState::NONE;
@@ -41,6 +41,7 @@ struct VM1DeviceState
     size_t hash() const
     {
         size_t seed = 0;
+        hashCombine(seed, rotarySensitivity);
         hashCombine(seed, bank);
         hashCombine(seed, forward);
         hashCombine(seed, backward);

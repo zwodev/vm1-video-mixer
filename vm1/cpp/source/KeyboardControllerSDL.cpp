@@ -18,6 +18,10 @@ void KeyboardControllerSDL::update(SDL_Event& event)
         bool isShiftPressed = event.key.mod & SDL_KMOD_SHIFT;
         switch (event.key.key)
         {
+        case SDLK_ESCAPE:
+            m_eventBus.publish(SystemEvent(SystemEvent::Type::Exit));
+            return;
+            break;
         case SDLK_UP:
             if (isShiftPressed)
             {

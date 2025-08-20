@@ -64,6 +64,7 @@ private:
     void renderWindow(int windowIndex);
 
 private:
+    bool m_done = false;
     int m_fd = -1;
     bool m_isHeadless = true;
     SDL_GLContext m_glContext = nullptr;

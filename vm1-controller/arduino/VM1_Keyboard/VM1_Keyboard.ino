@@ -88,8 +88,8 @@ enum ButtonState : uint8_t
 #pragma pack(1)
 struct DeviceState
 {
-  uint8_t rotarySensitivity;
-  uint8_t bank;
+  uint8_t rotarySensitivity = 5;
+  uint8_t bank = 0;
   ButtonState forward = ButtonState::NONE;
   ButtonState backward = ButtonState::NONE;
   ButtonState fn = ButtonState::NONE;
