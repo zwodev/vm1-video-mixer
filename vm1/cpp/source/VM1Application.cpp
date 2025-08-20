@@ -369,8 +369,6 @@ void VM1Application::finalizeSDL()
     m_windows.clear();
     m_displayConfigs.clear();
 
-    //SDL_QuitSubSystem(SDL_INIT_VIDEO);
-    //SDL_QuitSubSystem(SDL_INIT_AUDIO);
     SDL_Quit();
 }
 
@@ -380,17 +378,6 @@ bool VM1Application::processSDLInput()
     while (SDL_PollEvent(&event)) {
         ImGui_ImplSDL3_ProcessEvent(&event);
         m_keyboardControllerSdl.update(event);
-        // if (event.type == SDL_EVENT_KEY_DOWN)
-        // {
-        //     if (event.key.key == SDLK_ESCAPE) {
-        //         return false;
-        //     }
-        //     else if (event.key.key == SDLK_SPACE) {
-        //         finalize();
-        //         initializeVideo();
-        //         SDL_Log("Reinitialize video!"); 
-        //     }
-        // }
     }
 
     return true;
@@ -401,17 +388,6 @@ bool VM1Application::processLinuxInput()
     std::vector<input_event> events = m_keyboardHotplug.getAllEvents();
     for (auto& ev : events) {
         m_keyboardControllerLinux.update(ev);
-        // if (ev.type == EV_KEY && ev.value == 1) {
-            
-        //     if (ev.code == KEY_ESC) {
-        //         return false;
-        //     }
-        //     else if (ev.code == KEY_SPACE) {
-        //         finalize();
-        //         initializeVideo();
-        //         SDL_Log("Reinitialize video!"); 
-        //     }
-        // }
     }
 
     return true;
