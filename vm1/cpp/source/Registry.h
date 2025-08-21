@@ -70,6 +70,11 @@ public:
     InputMappings() {}
     ~InputMappings() {}
 
+    void removeConfig(int id)
+    {
+        m_idsToValue.erase(id);
+    }
+
     void addInputConfig(int id, std::unique_ptr<InputConfig> inputConfig)
     {
         m_idsToValue[id] = std::move(inputConfig);
@@ -179,6 +184,7 @@ struct Settings
     std::string serialDevice = "/dev/ttyACM0";
 
     // Volatile
+    bool isProVersion = false;
     bool isHdmiOutputReady = false;
     bool isHdmiInputReady = false;
     std::vector<std::string> hdmiOutputs = std::vector<std::string>(2, std::string());

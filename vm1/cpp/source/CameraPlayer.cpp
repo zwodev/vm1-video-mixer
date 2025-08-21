@@ -49,7 +49,6 @@ CameraPlayer::CameraPlayer()
 
 CameraPlayer::~CameraPlayer()
 {
-    MediaPlayer::close();
     close();  
 }
 
@@ -60,6 +59,47 @@ bool CameraPlayer::openFile(const std::string& fileName, AudioStream* audioStrea
 
 void CameraPlayer::close()
 {
+    finalize();
+    MediaPlayer::close();
+}
+
+void CameraPlayer::finalize()
+{
+    if (m_fd < 0) return;
+
+    // 1. Stop streaming if started
+    enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    if (ioctl(m_fd, VIDIOC_STREAMOFF, &type) == -1) {
+        printf("Error stopping stream.\n");
+        // Not returning false here, try to cleanup anyway
+    }
+
+    // 2. Release each exported buffer (close fd)
+    for (auto& buffer : m_buffers) {
+        dequeueBuffer(m_fd);
+    }
+    for (auto& buffer : m_buffers) {
+        if (buffer.fd >= 0) {
+            ::close(buffer.fd);
+        }
+    }
+    m_buffers.clear();
+
+    // 3. Release buffer allocation in driver
+    struct v4l2_requestbuffers req = {0};
+    req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    req.memory = V4L2_MEMORY_MMAP;
+    req.count = 0; // Tell kernel to release buffers
+    if (ioctl(m_fd, VIDIOC_REQBUFS, &req) == -1) {
+        printf("Error releasing buffers.\n");
+        // Not returning false here, try to cleanup device anyway
+    }
+
+    // 4. Close the device
+    if (m_fd >= 0) {
+        ::close(m_fd);
+        m_fd = -1;
+    }
 }
 
 void CameraPlayer::lockBuffer()
@@ -244,7 +284,7 @@ void CameraPlayer::run()
     if(ioctl(m_fd, VIDIOC_STREAMON, &buf_type))
     {
         perror("VIDIOC_STREAMON");
-        ::close(fd);
+        finalize();
         return;
     }
 
@@ -266,40 +306,7 @@ void CameraPlayer::run()
 
     printf("Camera streaming turned OFF\n");
 
-    // 1. Stop streaming if started
-    enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    if (ioctl(fd, VIDIOC_STREAMOFF, &type) == -1) {
-        printf("Error stopping stream.\n");
-        // Not returning false here, try to cleanup anyway
-    }
-
-    // 2. Release each exported buffer (close fd)
-    for (auto& buffer : m_buffers) {
-        dequeueBuffer(fd);
-    }
-    for (auto& buffer : m_buffers) {
-        if (buffer.fd >= 0) {
-            ::close(buffer.fd);
-        }
-    }
-    m_buffers.clear();
-
-    // 3. Release buffer allocation in driver
-    struct v4l2_requestbuffers req = {0};
-    req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    req.memory = V4L2_MEMORY_MMAP;
-    req.count = 0; // Tell kernel to release buffers
-    if (ioctl(fd, VIDIOC_REQBUFS, &req) == -1) {
-        printf("Error releasing buffers.\n");
-        // Not returning false here, try to cleanup device anyway
-    }
-
-    // 4. Close the device
-    if (fd >= 0) {
-        ::close(fd);
-        fd = -1;
-        m_fd = -1;
-    }
+    finalize();
 
     return;
 }

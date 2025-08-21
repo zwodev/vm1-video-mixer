@@ -156,7 +156,7 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     m_planeMixers[planeId].setFadeTime(fadeTime);
 
     if (m_registry.settings().hdmiOutputs[planeId].empty()) {
-        std::string message = "No display #" + std::to_string(planeId);
+        std::string message = "No HDMI-OUT" + std::to_string(planeId+1);
         m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::NoDisplay, message));
         return;
     }
@@ -192,7 +192,7 @@ void PlaybackOperator::showMedia(int mediaSlotId)
         }
 
         if (m_registry.settings().hdmiInputs[hdmiInputConfig->hdmiPort] != "1920x1080/30Hz") {
-            std::string message = "No input #" + std::to_string(hdmiInputConfig->hdmiPort);
+            std::string message = "No HDMI-IN" + std::to_string(hdmiInputConfig->hdmiPort+1);
             m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::NoDisplay, message));
             return;
         }

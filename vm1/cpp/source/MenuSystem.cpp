@@ -30,8 +30,7 @@ MenuSystem::MenuSystem(UI& ui, Registry& registry, EventBus& eventBus) :
 void MenuSystem::subscribeToEvents()
 {
     m_eventBus.subscribe<PlaybackEvent>([this](const PlaybackEvent& event) {
-        m_lastPopupMessage = event.message;
-        m_launchPopup = true;
+        launchPopup(event.message);
     });
 }
 
@@ -58,6 +57,12 @@ void MenuSystem::setMenu(MenuType menuType)
         m_currentMenuType = menuType;
         m_focusedIdx = 0;
     }
+}
+
+void MenuSystem::launchPopup(const std::string& message) 
+{
+    m_lastPopupMessage = message;
+    m_launchPopup = true;
 }
 
 void MenuSystem::handlePopupMessage()
@@ -92,26 +97,28 @@ void MenuSystem::handleMediaAndEditButtons()
         switch (editButtonId)
         {
         case 0:
-            setMenu(MT_InfoSelection);
+            setMenu(MT_PlaybackSelection);
             break;
         case 1:
             setMenu(MT_InputSelection);
             break;
         case 2:
-            setMenu(MT_PlaybackSelection);
-            break;
-        case 3:
-            break;
-        case 4:
-            break;
-        case 5:
             setMenu(MT_DeviceSettings);
             break;
-        case 6:
+        case 3:
+            setMenu(MT_SettingsSelection);
+            break;
+        case 4:
             setMenu(MT_NetworkInfo);
             break;
+        case 5:
+            launchPopup("Not implemented");
+            break;
+        case 6:
+            launchPopup("Not implemented");
+            break;
         case 7:
-            setMenu(MT_SettingsSelection);
+            launchPopup("Not implemented");
             break;
         default:
             break;
@@ -299,27 +306,29 @@ void MenuSystem::PlaybackSettings(int id, int* focusedIdx)
         return;
     }
     
+    int i = 0;
+    m_ui.BeginList(focusedIdx);
     if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(currentConfig)) {
-        int i = 0;
-
-        m_ui.BeginList(focusedIdx);
         if (m_ui.CheckBox("loop", videoInputConfig->looping)) { 
             videoInputConfig->looping = !videoInputConfig->looping; 
         }
-        if (m_ui.CheckBox("backwards", videoInputConfig->backwards)) {
-            videoInputConfig->backwards = !videoInputConfig->backwards;
-        }
-        m_ui.Text("start-time");
-        m_ui.Text("end-time");
-        m_ui.EndList();
+        std::string fileName = "Source: FILE ";
+        m_ui.Text(fileName);
+        // Not implemented yet
+        // if (m_ui.CheckBox("backwards", videoInputConfig->backwards)) {
+        //     videoInputConfig->backwards = !videoInputConfig->backwards;
+        // }
+        // m_ui.Text("start-time");
+        // m_ui.Text("end-time");
     }
     else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(currentConfig)) {
-        std::string label = "Source: HDMI " + hdmiInputConfig->hdmiPort;
-
-        m_ui.BeginList(focusedIdx);
-        m_ui.Text(label);
-        m_ui.EndList();
+        std::string inputName = "Source: HDMI" + std::to_string(hdmiInputConfig->hdmiPort+1);
+        m_ui.Text(inputName);
     }
+    if (m_ui.Action("Clear slot")) {
+        m_registry.inputMappings().removeConfig(id);
+    }
+    m_ui.EndList();
 }
 
 void MenuSystem::NetworkInfo(int id, int* focusedIdx) 
@@ -343,7 +352,7 @@ void MenuSystem::GlobalSettings(int id, int* focusedIdx)
     m_ui.BeginList(focusedIdx);
     m_ui.SpinBoxInt("Fade Time", settings.fadeTime, 0, 10);
     m_ui.SpinBoxInt("Volume", settings.volume, 0, 10);
-    m_ui.SpinBoxInt("Rot. Sensit.", settings.rotarySensitivity, 1, 20);
+    if (m_registry.settings().isProVersion) m_ui.SpinBoxInt("Rot. Sensit.", settings.rotarySensitivity, 1, 20);
     if (m_ui.CheckBox("Show UI", settings.showUI)) { settings.showUI = !settings.showUI; };
     if (m_ui.CheckBox("Default Looping", settings.defaultLooping)) { settings.defaultLooping = !settings.defaultLooping; };
     m_ui.EndList();

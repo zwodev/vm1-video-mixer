@@ -35,6 +35,7 @@ public:
 public:
     bool openFile(const std::string& fileName, AudioStream* audioStream = nullptr);
     void close() override;
+    void finalize();
     void lockBuffer();
     Buffer* getBuffer();
     void unlockBuffer();

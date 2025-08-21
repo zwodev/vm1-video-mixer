@@ -43,6 +43,7 @@ private:
     void subscribeToEvents();
     void createMenus();
     void setMenu(MenuType menuType);
+    void launchPopup(const std::string& message);
     void handlePopupMessage();
     void handleMediaAndEditButtons();
     void handleUpAndDownKeys();
