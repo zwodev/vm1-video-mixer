@@ -30,7 +30,7 @@ MenuSystem::MenuSystem(UI& ui, Registry& registry, EventBus& eventBus) :
 void MenuSystem::subscribeToEvents()
 {
     m_eventBus.subscribe<PlaybackEvent>([this](const PlaybackEvent& event) {
-        launchPopup(event.message);
+        showPopupMessage(event.message);
     });
 }
 
@@ -47,6 +47,7 @@ void MenuSystem::createMenus()
     m_menus[MT_NetworkInfo]         = {"Network", {}, [this](int id, int* fIdx){NetworkInfo(id, fIdx);}};
     m_menus[MT_SettingsSelection]   = {"Settings", {}, [this](int id, int* fIdx){GlobalSettings(id, fIdx);}};
     m_menus[MT_DeviceSettings]      = {"Devices", {}, [this](int id, int* fIdx){DeviceSettings(id, fIdx);}};
+    m_menus[MT_ButtonMatrix]        = {"Matrix", {}, [this](int id, int* fIdx){ButtonMatrix(id, fIdx);}};
     
 }
 
@@ -59,7 +60,7 @@ void MenuSystem::setMenu(MenuType menuType)
     }
 }
 
-void MenuSystem::launchPopup(const std::string& message) 
+void MenuSystem::showPopupMessage(const std::string& message) 
 {
     m_lastPopupMessage = message;
     m_launchPopup = true;
@@ -112,13 +113,14 @@ void MenuSystem::handleMediaAndEditButtons()
             setMenu(MT_NetworkInfo);
             break;
         case 5:
-            launchPopup("Not implemented");
+            //showPopupMessage("Not implemented");
+            setMenu(MT_ButtonMatrix);
             break;
         case 6:
-            launchPopup("Not implemented");
+            showPopupMessage("Not implemented");
             break;
         case 7:
-            launchPopup("Not implemented");
+            showPopupMessage("Not implemented");
             break;
         default:
             break;
@@ -199,7 +201,8 @@ void MenuSystem::render()
     // Render bank information
     if (m_currentMenuType == MT_InfoSelection  || 
         m_currentMenuType == MT_InputSelection || 
-        m_currentMenuType == MT_PlaybackSelection) 
+        m_currentMenuType == MT_PlaybackSelection ||
+        m_currentMenuType == MT_ButtonMatrix) 
     {
         int id16 = (m_id % MEDIA_BUTTON_COUNT) + 1;
         char bank = m_id / MEDIA_BUTTON_COUNT + 65; // "+65" to get ASCII code
@@ -387,4 +390,24 @@ void MenuSystem::DeviceSettings(int id, int* focusedIdx)
     }
 
     m_ui.EndList();
+}
+
+void MenuSystem::ButtonMatrix(int id, int* focusedIdx) 
+{
+    int bank = m_registry.inputMappings().bank;
+    for (int i = 0; i < m_buttonTexts.size(); ++i) {
+        int mediaSlot = bank * 16 + i;
+        InputConfig* currentConfig = m_registry.inputMappings().getInputConfig(mediaSlot);
+        if (!currentConfig) {
+            m_buttonTexts[i].second = COLOR::BLACK;
+        }
+
+        if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(currentConfig)) {
+            m_buttonTexts[i].second = COLOR::RED;
+        }
+        else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(currentConfig)) {
+            m_buttonTexts[i].second = COLOR::BLUE;
+        }
+    }
+    m_ui.ShowButtonMatrix(m_buttonTexts);
 }

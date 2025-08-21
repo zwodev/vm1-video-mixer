@@ -31,7 +31,8 @@ public:
         MT_PlaybackSelection,
         MT_DeviceSettings,
         MT_NetworkInfo,
-        MT_SettingsSelection
+        MT_SettingsSelection,
+        MT_ButtonMatrix
     };
 
 public:
@@ -43,7 +44,7 @@ private:
     void subscribeToEvents();
     void createMenus();
     void setMenu(MenuType menuType);
-    void launchPopup(const std::string& message);
+    void showPopupMessage(const std::string& message);
     void handlePopupMessage();
     void handleMediaAndEditButtons();
     void handleUpAndDownKeys();
@@ -58,6 +59,7 @@ private:
     void NetworkInfo(int id, int* selectedIdx);
     void GlobalSettings(int id, int* selectedIdx);
     void DeviceSettings(int id, int* focusedIdx);
+    void ButtonMatrix(int id, int* focusedIdx);
 
 private:
     Registry &m_registry;
@@ -70,4 +72,7 @@ private:
     MenuType m_currentMenuType = MT_InputSelection;
     bool m_launchPopup = false;
     std::string m_lastPopupMessage;
+
+    std::vector<std::pair<char, Color>> m_buttonTexts = {{'Q', Color()}, {'W', Color()}, {'E', Color()}, {'R', Color()}, {'T', Color()}, {'Y', Color()}, {'U', Color()}, {'I',Color()},
+                                                         {'A', Color()}, {'S', Color()}, {'D', Color()}, {'F', Color()}, {'G', Color()}, {'H', Color()}, {'J', Color()}, {'K',Color()}};
 };

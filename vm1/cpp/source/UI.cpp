@@ -295,6 +295,32 @@ void UI::ShowPopupMessage(std::string message)
     m_stbRenderer.drawText(message, x, y, fontSize, COLOR::WHITE);
 }
 
+void UI::ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts)
+{
+    int width = m_stbRenderer.width();
+    int height = m_stbRenderer.height();
+    //m_stbRenderer.clear();
+    
+    int quadPadding = 2;
+    int quadSize = (width / (buttonTexts.size() / 2)) - quadPadding;
+    int fontSize = 16;
+    for(int i = 0; i < buttonTexts.size(); i++)
+    {
+        int x = (quadPadding / 2) + (i % 8) * (quadSize + quadPadding);
+        int y = (height/2 - quadSize / 2) + (i / 8) * (quadSize + quadPadding + 2);
+
+        if (buttonTexts[i].second == COLOR::BLACK) {
+            m_stbRenderer.drawRect(x, y, quadSize, quadSize, Color(30, 30, 30));
+            m_stbRenderer.drawText(std::string(1, static_cast<char>(buttonTexts[i].first)), x + 4, y + 3, fontSize, Color(120, 120, 120));
+        }
+        else {
+            m_stbRenderer.drawRect(x, y, quadSize, quadSize, buttonTexts[i].second);
+            m_stbRenderer.drawText(std::string(1, static_cast<char>(buttonTexts[i].first)), x + 4, y + 3, fontSize, COLOR::WHITE);
+            m_stbRenderer.drawEmptyRect(x, y, quadSize, quadSize, Color(30, 30, 30));
+        }
+    }
+}
+
 void UI::ShowBankInfo(int bank)
 {
     int width = m_stbRenderer.width();

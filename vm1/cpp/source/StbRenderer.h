@@ -26,21 +26,29 @@ struct Image
 
 struct Color
 {
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
+    Color(uint8_t r = 0, uint8_t g = 0, uint8_t b = 0)
+    {
+        this->r = r;
+        this->g = g;
+        this->b = b;
+    }
+    uint8_t r = 0;
+    uint8_t g = 0;
+    uint8_t b = 0;
+
+    bool operator==(const Color&) const = default;
 };
 
 namespace COLOR
 {
-    static constexpr Color WHITE = {255, 255, 255};
-    static constexpr Color GREY= {127, 127, 127};
-    static constexpr Color BLACK = {0, 0, 0};
-    static constexpr Color RED = {255, 0, 0};
-    static constexpr Color GREEN = {0, 255, 0};
-    static constexpr Color BLUE = {0, 0, 255};
-    static constexpr Color FOREGROUND = COLOR::WHITE;
-    static constexpr Color INVERTED = COLOR::BLACK;
+    static Color WHITE = {255, 255, 255};
+    static Color GREY= {127, 127, 127};
+    static Color BLACK = {0, 0, 0};
+    static Color RED = {255, 0, 0};
+    static Color GREEN = {0, 255, 0};
+    static Color BLUE = {0, 0, 255};
+    static Color FOREGROUND = COLOR::WHITE;
+    static Color INVERTED = COLOR::BLACK;
 };
 
 /**
