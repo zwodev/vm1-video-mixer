@@ -4,8 +4,11 @@ set -eu
 
 # Create folders
 chroot $1 mkdir /home/$IGconf_device_user1/vm1
-chroot $1 mkdir /home/$IGconf_device_user1/videos
+#chroot $1 mkdir /home/$IGconf_device_user1/videos
 chroot $1 mkdir -p /home/$IGconf_device_user1/.local/share/localsend_app
+
+# Copy demo videos
+rsync -av ../data/videos /home/$IGconf_device_user1/
 
 # Copy Network Manager config
 rsync -av ../data/NetworkManager.conf $1/etc/NetworkManager/
