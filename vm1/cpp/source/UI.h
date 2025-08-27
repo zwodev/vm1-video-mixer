@@ -5,6 +5,7 @@
 #include "Registry.h"
 #include "StbRenderer.h"
 #include "EventBus.h"
+#include "ImageBuffer.h"
 
 #include <string>
 #include <algorithm>
@@ -38,6 +39,7 @@ public:
     void EndListElement();
     void CenteredText(const std::string &label);
     void startUpLogo();
+    void Image(const ImageBuffer& imageBuffer);
     void Text(const std::string &label);
     void MenuTitle(std::string menuTitle);
     void MenuInfo(std::string menuInfo);

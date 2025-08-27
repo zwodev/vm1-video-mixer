@@ -26,3 +26,4 @@ mmdebstrap:
     - dnsmasq
     - xauth
     - libkms++0
+    - plymouth

@@ -15,11 +15,16 @@
 #include <cereal/types/memory.hpp>
 #include <fstream>
 
+#include "ImageBuffer.h"
+#include "stb/stb_image.h"
+
 class InputConfig
 {
 public:
     InputConfig() = default;
     virtual ~InputConfig() = 0;
+
+    bool isActive = false;
 
     template <class Archive>
     void serialize(Archive& ar) {}
@@ -133,6 +138,7 @@ class MediaPool
 public:
     MediaPool()
     {
+        loadQrCodeImageBuffer();
         updateVideoFiles(); // TODO: Should be updated on filesystem change
     }
 
@@ -167,15 +173,48 @@ public:
         std::sort(m_videoFiles.begin(), m_videoFiles.end());
     }
 
+    void loadQrCodeImageBuffer()
+    {
+        int width, height, channels;
+        std::string filename("data/wifi_qr.png");
+        unsigned char *data = stbi_load(
+            filename.c_str(),
+            &width,
+            &height,
+            &channels,
+            0);
+
+        if (data == nullptr)
+        {
+            std::cerr << "Failed to load PNG: " << filename << std::endl;
+            return;
+        }
+
+        std::cout << "Loaded PNG: " << filename << std::endl;
+        std::cout << "Size: " << width << " x " << height << std::endl;
+        std::cout << "Channels: " << channels << std::endl;
+
+        // if (channels != 3)
+        //     return;
+
+        m_qrCodeImageBuffer = ImageBuffer(width, height, channels, data);
+    }
+
+    const ImageBuffer& getQrCodeImageBuffer()
+    {
+        return m_qrCodeImageBuffer;
+    }
+
 private:
     std::string m_videoFilePath = "../videos/";
     std::vector<std::string> m_videoFiles;
+    ImageBuffer m_qrCodeImageBuffer;
 };
 
 struct Settings
 {
     // Saved
-    bool showUI = true;
+    bool showUI = false;
     bool defaultLooping = true;
     int fadeTime = 2;
     int volume = 10;

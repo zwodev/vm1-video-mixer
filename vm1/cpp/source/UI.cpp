@@ -215,6 +215,11 @@ void UI::startUpLogo() {
     CenteredText("VM-1");
 }
 
+void UI::Image(const ImageBuffer& imageBuffer)
+{
+    m_stbRenderer.drawImage(imageBuffer, m_x, m_y);
+}
+
 void UI::CenteredText(const std::string &label)
 {
     float fontSize = 16.0f;

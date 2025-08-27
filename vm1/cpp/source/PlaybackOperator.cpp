@@ -234,6 +234,7 @@ void PlaybackOperator::update(float deltaTime)
         int mediaSlotId = key;
         int playerId = value;
         MediaPlayer* mediaPlayer = m_mediaPlayers[playerId];
+
         if (!isPlayerIdActive(playerId)) {
             if(m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
                 idsToDelete.push_back(mediaSlotId);
@@ -246,6 +247,7 @@ void PlaybackOperator::update(float deltaTime)
         InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
         if (!inputConfig) continue;
 
+        if (inputConfig) inputConfig->isActive = isPlayerIdActive(playerId);
         if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(inputConfig))
         {
             bool looping = videoInputConfig->looping;
@@ -284,6 +286,8 @@ void PlaybackOperator::update(float deltaTime)
     }
 
     for (auto id : idsToDelete) {
+        InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(id);
+        if (inputConfig) inputConfig->isActive = false;
         m_mediaSlotIdToPlayerId.erase(id);    
     }
 

@@ -47,7 +47,7 @@ void MenuSystem::createMenus()
     m_menus[MT_NetworkInfo]         = {"Network", {}, [this](int id, int* fIdx){NetworkInfo(id, fIdx);}};
     m_menus[MT_SettingsSelection]   = {"Settings", {}, [this](int id, int* fIdx){GlobalSettings(id, fIdx);}};
     m_menus[MT_DeviceSettings]      = {"Devices", {}, [this](int id, int* fIdx){DeviceSettings(id, fIdx);}};
-    m_menus[MT_ButtonMatrix]        = {"Matrix", {}, [this](int id, int* fIdx){ButtonMatrix(id, fIdx);}};
+    m_menus[MT_ButtonMatrix]        = {"Keys", {}, [this](int id, int* fIdx){ButtonMatrix(id, fIdx);}};
     
 }
 
@@ -101,20 +101,19 @@ void MenuSystem::handleMediaAndEditButtons()
             setMenu(MT_PlaybackSelection);
             break;
         case 1:
-            setMenu(MT_InputSelection);
+            setMenu(MT_ButtonMatrix);
             break;
         case 2:
-            setMenu(MT_DeviceSettings);
+            setMenu(MT_InputSelection);
             break;
         case 3:
-            setMenu(MT_SettingsSelection);
+            setMenu(MT_DeviceSettings);
             break;
         case 4:
-            setMenu(MT_NetworkInfo);
+            setMenu(MT_SettingsSelection);
             break;
         case 5:
-            //showPopupMessage("Not implemented");
-            setMenu(MT_ButtonMatrix);
+            setMenu(MT_NetworkInfo);
             break;
         case 6:
             showPopupMessage("Not implemented");
@@ -345,7 +344,14 @@ void MenuSystem::NetworkInfo(int id, int* focusedIdx)
     m_ui.BeginList(focusedIdx);
     if (!eth0.empty()) m_ui.Text("e: " + eth0);
     if (!wlan0.empty()) m_ui.Text("w: " + wlan0);
+    m_ui.Text("SSID: VM-1");
+    m_ui.Text("Pass: vmone12345");
     m_ui.EndList();
+    
+    // const ImageBuffer& imageBuffer = m_registry.mediaPool().getQrCodeImageBuffer();
+    // if (imageBuffer.isValid) {
+    //     m_ui.Image(imageBuffer);
+    // }
 }
 
 void MenuSystem::GlobalSettings(int id, int* focusedIdx) 
@@ -353,9 +359,10 @@ void MenuSystem::GlobalSettings(int id, int* focusedIdx)
     Settings& settings = m_registry.settings();
 
     m_ui.BeginList(focusedIdx);
+    m_ui.Text("Version: " + VERSION);
     m_ui.SpinBoxInt("Fade Time", settings.fadeTime, 0, 10);
     m_ui.SpinBoxInt("Volume", settings.volume, 0, 10);
-    if (m_registry.settings().isProVersion) m_ui.SpinBoxInt("Rot. Sensit.", settings.rotarySensitivity, 1, 20);
+    //if (m_registry.settings().isProVersion) { m_ui.SpinBoxInt("Rot. Sensit.", settings.rotarySensitivity, 1, 20) };
     if (m_ui.CheckBox("Show UI", settings.showUI)) { settings.showUI = !settings.showUI; };
     if (m_ui.CheckBox("Default Looping", settings.defaultLooping)) { settings.defaultLooping = !settings.defaultLooping; };
     m_ui.EndList();
@@ -403,10 +410,12 @@ void MenuSystem::ButtonMatrix(int id, int* focusedIdx)
         }
 
         if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(currentConfig)) {
-            m_buttonTexts[i].second = COLOR::RED;
+            if (videoInputConfig->isActive) m_buttonTexts[i].second = COLOR::RED;
+            else m_buttonTexts[i].second = COLOR::DARK_RED;
         }
         else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(currentConfig)) {
-            m_buttonTexts[i].second = COLOR::BLUE;
+            if (hdmiInputConfig->isActive) m_buttonTexts[i].second = COLOR::BLUE;
+            else m_buttonTexts[i].second = COLOR::DARK_BLUE;
         }
     }
     m_ui.ShowButtonMatrix(m_buttonTexts);

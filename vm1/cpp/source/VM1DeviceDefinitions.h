@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+
+const std::string VERSION = "1.0.0";
 const int DISPLAY_WIDTH = 128;
 const int DISPLAY_HEIGHT = 128;
 const int EDIT_BUTTON_COUNT = 8;

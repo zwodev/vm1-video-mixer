@@ -84,10 +84,10 @@ void KeyboardControllerSDL::update(SDL_Event& event)
             int mediaSlotId = (m_registry.inputMappings().bank * MEDIA_BUTTON_COUNT) + i;
             if (event.key.key == m_mediaKeys[i]) {
                 if(isShiftPressed){
-                    m_eventBus.publish(MediaSlotEvent(mediaSlotId)); 
+                    m_eventBus.publish(MediaSlotEvent(mediaSlotId, false)); // do not trigger playback
                 }
                 else {
-                    m_eventBus.publish(MediaSlotEvent(mediaSlotId, false)); // do not trigger playback
+                    m_eventBus.publish(MediaSlotEvent(mediaSlotId)); 
                 }
                 return;
             }

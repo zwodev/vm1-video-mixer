@@ -125,39 +125,18 @@ void StbRenderer::drawEmptyRect(int x0, int y0, int w, int h, Color color)
     }
 }
 
-void StbRenderer::drawPng(const std::string& filename, int posX, int posY)
+void StbRenderer::drawImage(const ImageBuffer& imageBuffer, int posX, int posY)
 {
     if (!m_isEnabled) return;
 
-    int width, height, channels;
-    unsigned char *data = stbi_load(
-        filename.c_str(),
-        &width,
-        &height,
-        &channels,
-        0);
-
-    if (data == nullptr)
+    for (int y = 0; y < imageBuffer.height; ++y)
     {
-        std::cerr << "Failed to load PNG: " << filename << std::endl;
-        return;
-    }
-
-    std::cout << "Loaded PNG: " << filename << std::endl;
-    std::cout << "Size: " << width << " x " << height << std::endl;
-    std::cout << "Channels: " << channels << std::endl;
-
-    if (channels != 3)
-        return;
-
-    for (int x = 0; x < width; ++x)
-    {
-        for (int y = 0; y < height; ++y)
+        for (int x = 0; x < imageBuffer.width; ++x)
         {
-            int pixel_index = (y * width + x) * channels;
-            unsigned char r = data[pixel_index + 0];
-            unsigned char g = data[pixel_index + 1];
-            unsigned char b = data[pixel_index + 2];
+            int pixel_index = (y * imageBuffer.width + x) * imageBuffer.channels;
+            unsigned char r = imageBuffer.data[pixel_index + 0];
+            unsigned char g = imageBuffer.data[pixel_index + 1];
+            unsigned char b = imageBuffer.data[pixel_index + 2];
             m_img.setPixel(x, y, r, g, b);
         }
     }
