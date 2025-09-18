@@ -68,6 +68,8 @@ private:
     bool m_done = false;
     int m_fd = -1;
     bool m_isHeadless = true;
+    double m_timeSinceLastKeyDown = 0;
+    bool m_keyDown = false;
     SDL_GLContext m_glContext = nullptr;
     std::vector<SDL_Window *> m_windows;
     std::vector<DisplayConf> m_displayConfigs;

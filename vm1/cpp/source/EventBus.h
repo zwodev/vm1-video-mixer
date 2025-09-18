@@ -13,7 +13,8 @@
 struct SystemEvent {
     enum Type {
         Restart,
-        Exit
+        Exit,
+        KeyDown
     };
 
     SystemEvent() = delete;

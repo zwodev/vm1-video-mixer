@@ -94,10 +94,13 @@ void MenuSystem::handleMediaAndEditButtons()
     for (int editButtonId : m_ui.getTriggeredEditButtons())
     {
         std::cout << "editButtonId: " << editButtonId << std::endl;
+        // showPopupMessage("not allowed :)");
+        // return;
 
         switch (editButtonId)
         {
         case 0:
+            
             setMenu(MT_PlaybackSelection);
             break;
         case 1:

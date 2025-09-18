@@ -50,6 +50,9 @@ void VM1Application::subscribeToEvents()
         else if (event.type == SystemEvent::Type::Exit) {
             m_done = true;
         }
+        else if (event.type == SystemEvent::Type::KeyDown) {
+            m_keyDown = true;
+        }
     });
 
     m_eventBus.subscribe<HdmiCaptureInitEvent>([this](const HdmiCaptureInitEvent& event) {
@@ -425,6 +428,9 @@ bool VM1Application::exec()
         if (m_isHeadless) processLinuxInput();
         else processSDLInput();
 
+        // check timeout to reset VM-1 in kiosk mode
+        checkTimeoutAndResest(deltaTime);
+
         if (!m_done) {
             m_deviceController.requestVM1DeviceBuffer();
             m_registry.update(deltaTime);
@@ -447,6 +453,19 @@ bool VM1Application::exec()
     SDL_Delay(10);
 
     return true;
+}
+
+void VM1Application::checkTimeoutAndReset(float deltaTime) 
+{
+    if (m_keyDown) {
+        m_timeSinceLastKeyDown = 0;
+        return;
+    }
+    m_timeSinceLastKeyDown += deltaTime;
+
+    if (m_timeSinceLastKeyDown >= ) {
+         m_eventBus.publish(SystemEvent(SystemEvent::Type::Restart));
+    }
 }
 
 void VM1Application::renderImGui()

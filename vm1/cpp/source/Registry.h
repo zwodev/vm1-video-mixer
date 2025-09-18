@@ -257,7 +257,7 @@ public:
             size_t currentHash = hash();
             if (currentHash != m_lastHash) {
                 m_lastHash = currentHash;
-                save();
+                // save();
             }
         }
     }

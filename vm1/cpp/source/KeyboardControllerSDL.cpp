@@ -15,6 +15,9 @@ void KeyboardControllerSDL::update(SDL_Event& event)
 {
     if (event.type == SDL_EVENT_KEY_DOWN)
     {
+        m_eventBus.publish(SystemEvent(SystemEvent::Type::KeyDown));
+
+
         bool isShiftPressed = event.key.mod & SDL_KMOD_SHIFT;
         switch (event.key.key)
         {
