@@ -27,6 +27,11 @@ MenuSystem::MenuSystem(UI& ui, Registry& registry, EventBus& eventBus) :
     setMenu(MT_StartupScreen);
 }
 
+void MenuSystem::reset()
+{
+    setMenu(MT_StartupScreen);
+}
+
 void MenuSystem::subscribeToEvents()
 {
     m_eventBus.subscribe<PlaybackEvent>([this](const PlaybackEvent& event) {
@@ -83,9 +88,9 @@ void MenuSystem::handleMediaAndEditButtons()
 
         
         if (m_currentMenuType == MT_StartupScreen) {
-            m_eventBus.publish(EditModeEvent(1)); // event needs to be published to update DeviceController
-            setMenu(MT_InputSelection); // todo: calling setMenu() here shouldn't be necessary. 
-                                        // It should automatically be called in the for-loop below.
+            //m_eventBus.publish(EditModeEvent(1)); // event needs to be published to update DeviceController
+            //setMenu(MT_InputSelection); // todo: calling setMenu() here shouldn't be necessary. 
+                                          // It should automatically be called in the for-loop below.
         }
         return;
     }
@@ -94,13 +99,10 @@ void MenuSystem::handleMediaAndEditButtons()
     for (int editButtonId : m_ui.getTriggeredEditButtons())
     {
         std::cout << "editButtonId: " << editButtonId << std::endl;
-        // showPopupMessage("not allowed :)");
-        // return;
 
         switch (editButtonId)
         {
         case 0:
-            
             setMenu(MT_PlaybackSelection);
             break;
         case 1:
@@ -116,7 +118,11 @@ void MenuSystem::handleMediaAndEditButtons()
             setMenu(MT_SettingsSelection);
             break;
         case 5:
-            setMenu(MT_NetworkInfo);
+            if(!m_registry.settings().kiosk.enabled) {
+                setMenu(MT_NetworkInfo);
+            } else {
+                showPopupMessage("Not implemented");
+            }
             break;
         case 6:
             showPopupMessage("Not implemented");
@@ -124,6 +130,9 @@ void MenuSystem::handleMediaAndEditButtons()
         case 7:
             showPopupMessage("Not implemented");
             break;
+        // case 8:
+        //     setMenu(MT_StartupScreen);
+        //     break;
         default:
             break;
         }

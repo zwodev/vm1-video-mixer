@@ -63,8 +63,10 @@ private:
     bool processLinuxInput();
     void renderImGui();
     void renderWindow(int windowIndex);
+    void checkTimeoutAndReset(float deltaTime);
 
 private:
+    bool m_hadKeyDown = false;
     bool m_done = false;
     int m_fd = -1;
     bool m_isHeadless = true;

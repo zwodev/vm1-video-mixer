@@ -230,6 +230,21 @@ struct Settings
     int rotarySensitivity = 5;
     std::string videoFilePath = "../videos/";
     std::string serialDevice = "/dev/ttyACM0";
+    int autoPlayOnHDMI0 = -1;
+    int autoPlayOnHDMI1 = -1;
+
+    struct KioskSettings {
+        bool enabled = true;
+        int resetTime = 60; // seconds
+
+        template <class Archive>
+        void serialize(Archive& ar) {
+            ar(
+                CEREAL_NVP(enabled),
+                CEREAL_NVP(resetTime)
+            );
+        }
+    } kiosk;
 
     // Volatile
     bool isProVersion = false;
@@ -251,7 +266,10 @@ struct Settings
             CEREAL_NVP(volume), 
             CEREAL_NVP(rotarySensitivity), 
             CEREAL_NVP(videoFilePath), 
-            CEREAL_NVP(serialDevice)
+            CEREAL_NVP(serialDevice),
+            CEREAL_NVP(autoPlayOnHDMI0),
+            CEREAL_NVP(autoPlayOnHDMI1),
+            CEREAL_NVP(kiosk)
         );
     }
 };
@@ -274,8 +292,11 @@ public:
             size_t currentHash = hash();
             if (currentHash != m_lastHash) {
                 m_lastHash = currentHash;
-                // ToDo: Disable save() if Kiosk mode is implemented
-                save();
+                if(!settings().kiosk.enabled) {
+                    save();
+                } else {
+                    printf("Kiosk mode enabled, skipped saving the registry.\n");
+                }
             }
         }
     }

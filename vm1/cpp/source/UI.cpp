@@ -18,7 +18,7 @@ void UI::subscribeToEvents()
 
     // Edit Mode Event
     m_eventBus.subscribe<EditModeEvent>([this](const EditModeEvent& event) {
-        //printf("Edit Mode Event - (Mode Idx: %d)\n", event.modeId);
+        printf("Edit Mode Event - (Mode Idx: %d)\n", event.modeId);
         editModeEvents.push_back(event);
 
     });

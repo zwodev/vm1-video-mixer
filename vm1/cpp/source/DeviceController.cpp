@@ -188,6 +188,7 @@ void DeviceController::requestVM1DeviceBuffer()
                     if (isShiftPressed)
                     {
                         m_eventBus.publish(NavigationEvent(NavigationEvent::Type::BankUp));
+                        m_eventBus.publish(SystemEvent(SystemEvent::KeyDown));
                     }
                     else 
                     {
@@ -199,6 +200,7 @@ void DeviceController::requestVM1DeviceBuffer()
                     if (isShiftPressed)
                     {
                         m_eventBus.publish(NavigationEvent(NavigationEvent::Type::BankDown));
+                        m_eventBus.publish(SystemEvent(SystemEvent::KeyDown));
                     }
                     else
                     {
@@ -215,6 +217,7 @@ void DeviceController::requestVM1DeviceBuffer()
             {
                 if (currentChar == m_editKeys[j]) {
                     m_eventBus.publish(EditModeEvent(j));
+                    m_eventBus.publish(SystemEvent(SystemEvent::KeyDown));
                     return;
                 }
             }
@@ -229,6 +232,7 @@ void DeviceController::requestVM1DeviceBuffer()
                     else {
                         m_eventBus.publish(MediaSlotEvent(mediaSlotId));
                     }
+                    m_eventBus.publish(SystemEvent(SystemEvent::KeyDown));
                     return;
                 }
             }

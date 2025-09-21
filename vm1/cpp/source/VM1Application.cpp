@@ -44,20 +44,25 @@ void VM1Application::subscribeToEvents()
 {
     m_eventBus.subscribe<SystemEvent>([this](const SystemEvent& event) {
         if (event.type == SystemEvent::Type::Restart) {
+            m_hadKeyDown = false;
             finalize();
             initialize();
         } 
         else if (event.type == SystemEvent::Type::Exit) {
             m_done = true;
         }
-        else if (event.type == SystemEvent::Type::KeyDown) {
-            m_keyDown = true;
-        }
     });
 
     m_eventBus.subscribe<HdmiCaptureInitEvent>([this](const HdmiCaptureInitEvent& event) {
         m_registry.settings().hdmiInputs[0] = event.configString;
         m_registry.settings().isHdmiInputReady = true;
+    });
+
+    m_eventBus.subscribe<SystemEvent>([this](const SystemEvent& event) {
+        if (event.type == SystemEvent::KeyDown) {
+            m_keyDown = true;
+            m_hadKeyDown = true;
+        }
     });
 }
 
@@ -75,6 +80,18 @@ bool VM1Application::initialize()
     {
         printf("Could not connect to VM1-Device on Serial or I2C.\n");
     }
+
+    if(m_registry.settings().autoPlayOnHDMI0 > -1) {
+        m_eventBus.enqueue(MediaSlotEvent(m_registry.settings().autoPlayOnHDMI0));
+    }
+    if(m_registry.settings().autoPlayOnHDMI1 > -1) {
+        m_eventBus.enqueue(MediaSlotEvent(m_registry.settings().autoPlayOnHDMI1));
+    }
+    m_menuSystem.reset();
+    m_registry.inputMappings().bank = 0;
+    // m_eventBus.enqueue(EditModeEvent(0));
+    // m_playbackOperator.showMedia(0);
+    // m_playbackOperator.showMedia(8);
 
     return true;
 }
@@ -423,13 +440,17 @@ bool VM1Application::exec()
 
         lastTime = currentTime;
 
+        // check timeout to reset VM-1 in kiosk mode
+        if(m_registry.settings().kiosk.enabled) {
+            checkTimeoutAndReset(deltaTime);
+        }
+
         m_eventBus.processEvents();
 
         if (m_isHeadless) processLinuxInput();
         else processSDLInput();
 
-        // check timeout to reset VM-1 in kiosk mode
-        checkTimeoutAndResest(deltaTime);
+        
 
         if (!m_done) {
             m_deviceController.requestVM1DeviceBuffer();
@@ -458,13 +479,16 @@ bool VM1Application::exec()
 void VM1Application::checkTimeoutAndReset(float deltaTime) 
 {
     if (m_keyDown) {
+        m_keyDown = false;
         m_timeSinceLastKeyDown = 0;
         return;
     }
+
     m_timeSinceLastKeyDown += deltaTime;
 
-    if (m_timeSinceLastKeyDown >= ) {
-         m_eventBus.publish(SystemEvent(SystemEvent::Type::Restart));
+    if (m_hadKeyDown && m_timeSinceLastKeyDown >= m_registry.settings().kiosk.resetTime) {
+        m_timeSinceLastKeyDown = 0;
+        m_eventBus.publish(SystemEvent(SystemEvent::Type::Restart));
     }
 }
 

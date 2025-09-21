@@ -38,6 +38,7 @@ public:
 public:
     MenuSystem() = delete;
     explicit MenuSystem(UI&  ui, Registry& registry, EventBus& eventBus);
+    void reset();
     void render();
 
 private:
