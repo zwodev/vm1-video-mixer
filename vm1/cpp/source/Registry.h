@@ -44,7 +44,13 @@ public:
     template <class Archive>
     void serialize(Archive& ar)
     {
-        ar(cereal::base_class<InputConfig>(this), fileName, looping, backwards);
+        // ar(cereal::base_class<InputConfig>(this), fileName, looping, backwards);
+        ar(
+            cereal::base_class<InputConfig>(this),
+            CEREAL_NVP(fileName),
+            CEREAL_NVP(looping),
+            CEREAL_NVP(backwards)
+        );
     }
 };
 
@@ -123,7 +129,10 @@ public:
     template <class Archive>
     void serialize(Archive& ar)
     {
-        ar(bank, m_idsToValue);
+        ar(
+            CEREAL_NVP(bank),
+            cereal::make_nvp("media_slots", m_idsToValue)
+        );
     }
 
 public:
@@ -235,7 +244,15 @@ struct Settings
     template <class Archive>
     void serialize(Archive &ar)
     {
-        ar(showUI, defaultLooping, fadeTime, volume, rotarySensitivity, videoFilePath, serialDevice);
+        ar(
+            CEREAL_NVP(showUI), 
+            CEREAL_NVP(defaultLooping), 
+            CEREAL_NVP(fadeTime),
+            CEREAL_NVP(volume), 
+            CEREAL_NVP(rotarySensitivity), 
+            CEREAL_NVP(videoFilePath), 
+            CEREAL_NVP(serialDevice)
+        );
     }
 };
 
@@ -257,7 +274,8 @@ public:
             size_t currentHash = hash();
             if (currentHash != m_lastHash) {
                 m_lastHash = currentHash;
-                // save();
+                // ToDo: Disable save() if Kiosk mode is implemented
+                save();
             }
         }
     }
