@@ -260,16 +260,16 @@ static std::vector<CameraMode> listCameraModes(int fd)
     for (fmtdesc.index = 0;; ++fmtdesc.index) {
         if (ioctl(fd, VIDIOC_ENUM_FMT, &fmtdesc) < 0) {
             if (errno == EINVAL) break;
-            //throw std::runtime_error("VIDIOC_ENUM_FMT failed");
+            printf("VIDIOC_ENUM_FMT failed\n");
         }
-
+q
         // Enumerate frame sizes for this pixel format
         struct v4l2_frmsizeenum frmsize{};
         frmsize.pixel_format = fmtdesc.pixelformat;
         for (frmsize.index = 0;; ++frmsize.index) {
             if (ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &frmsize) < 0) {
                 if (errno == EINVAL) break;
-                //throw std::runtime_error("VIDIOC_ENUM_FRAMESIZES failed");
+                printf("VIDIOC_ENUM_FRAMESIZES failed\n");
             }
 
             if (frmsize.type != V4L2_FRMSIZE_TYPE_DISCRETE)
@@ -284,7 +284,7 @@ static std::vector<CameraMode> listCameraModes(int fd)
             for (frmival.index = 0;; ++frmival.index) {
                 if (ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &frmival) < 0) {
                     if (errno == EINVAL) break;
-                    //throw std::runtime_error("VIDIOC_ENUM_FRAMEINTERVALS failed");
+                    printf("VIDIOC_ENUM_FRAMEINTERVALS failed\n");
                 }
 
                 if (frmival.type != V4L2_FRMIVAL_TYPE_DISCRETE)
@@ -355,8 +355,7 @@ static bool setCameraMode(int fd, const CameraMode &mode)
     fmt.fmt.pix.field = V4L2_FIELD_ANY;
 
     if (ioctl(fd, VIDIOC_S_FMT, &fmt) < 0) {
-        //perror("VIDIOC_S_FMT");
-        //throw std::runtime_error("Failed to set pixel format and resolution");
+        printf("Failed to set pixel format and resolution.\n");
         return false
     }
 
@@ -371,8 +370,7 @@ static bool setCameraMode(int fd, const CameraMode &mode)
     parm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
     if (ioctl(fd, VIDIOC_G_PARM, &parm) < 0) {
-        //perror("VIDIOC_G_PARM");
-        //throw std::runtime_error("Failed to get stream parameters");
+        printf("Failed to get stream parameters.\n");
         return false;
     }
 
@@ -380,8 +378,7 @@ static bool setCameraMode(int fd, const CameraMode &mode)
     parm.parm.capture.timeperframe.denominator = mode.interval_den;
 
     if (ioctl(fd, VIDIOC_S_PARM, &parm) < 0) {
-        //perror("VIDIOC_S_PARM");
-        //throw std::runtime_error("Failed to set framerate");
+        printf("Failed to set framerate.\n");
         return false;
     }
 
@@ -404,8 +401,13 @@ void WebcamPlayer::run()
     m_fd = fd;
 
     auto availableFormats = listCameraModes(int fd);
-    auto filteredFormats = filterModes(availableFormats);
-    if(filteredFormats.size() <= 0) return;
+    auto filteredFormats = filterModes(availableFormats, 1920, 1080, V4L2_PIX_FMT_YUYV, 30);
+    if(filteredFormats.size() <= 0) {
+        printf("Could not find suitable capture mode.\n");
+        ::close(fd);
+        return;
+    }
+
     if (!setCameraMode(fd, filteredFormat[0])) {
         ::close(fd);
         return;
