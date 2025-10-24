@@ -15,7 +15,7 @@
 // Media Controller configuration script 
 // https://github.com/FearL0rd/RPi5_hdmi_in_card/tree/main
 
-#include "CameraPlayer.h"
+#include "WebcamPlayer.h"
 #include "GLHelper.h"
 
 #include <stdio.h>
@@ -262,7 +262,7 @@ static std::vector<CameraMode> listCameraModes(int fd)
             if (errno == EINVAL) break;
             printf("VIDIOC_ENUM_FMT failed\n");
         }
-q
+
         // Enumerate frame sizes for this pixel format
         struct v4l2_frmsizeenum frmsize{};
         frmsize.pixel_format = fmtdesc.pixelformat;
@@ -303,6 +303,179 @@ q
     return modes;
 }
 
+// static std::vector<CameraMode> listCameraModes(int fd) 
+// {
+//     std::vector<CameraMode> modes;
+
+//     // Enumerate pixel formats
+//     struct v4l2_fmtdesc fmtdesc{};
+//     fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+//     for (fmtdesc.index = 0;; ++fmtdesc.index) {
+//         if (ioctl(fd, VIDIOC_ENUM_FMT, &fmtdesc) < 0) {
+//             if (errno == EINVAL) break;
+//             printf("VIDIOC_ENUM_FMT failed\n");
+//         }
+
+//         // Enumerate frame sizes for this pixel format
+//         struct v4l2_frmsizeenum frmsize{};
+//         frmsize.pixel_format = fmtdesc.pixelformat;
+//         for (frmsize.index = 0;; ++frmsize.index) {
+//             if (ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &frmsize) < 0) {
+//                 if (errno == EINVAL) break;
+//                 printf("VIDIOC_ENUM_FRAMESIZES failed\n");
+//             }
+
+//             if (frmsize.type == V4L2_FRMSIZE_TYPE_DISCRETE) {
+//                 // Discrete frame size
+//                 int width = frmsize.discrete.width;
+//                 int height = frmsize.discrete.height;
+
+//                 // Enumerate frame intervals for discrete size
+//                 struct v4l2_frmivalenum frmival{};
+//                 frmival.pixel_format = fmtdesc.pixelformat;
+//                 frmival.width = width;
+//                 frmival.height = height;
+
+//                 for (frmival.index = 0;; ++frmival.index) {
+//                     if (ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &frmival) < 0) {
+//                         if (errno == EINVAL) break;
+//                         printf("VIDIOC_ENUM_FRAMEINTERVALS failed\n");
+//                     }
+
+//                     if (frmival.type != V4L2_FRMIVAL_TYPE_DISCRETE)
+//                         continue;
+
+//                     modes.push_back(CameraMode{
+//                         fmtdesc.pixelformat,
+//                         width,
+//                         height,
+//                         frmival.discrete.numerator,
+//                         frmival.discrete.denominator
+//                     });
+//                 }
+//             } else if (frmsize.type == V4L2_FRMSIZE_TYPE_STEPWISE || frmsize.type == V4L2_FRMSIZE_TYPE_CONTINUOUS) {
+//                 // Enumerate sizes in the range for stepwise/continuous
+//                 for (int w = frmsize.stepwise.min_width; w <= frmsize.stepwise.max_width; w += frmsize.stepwise.step_width) {
+//                     for (int h = frmsize.stepwise.min_height; h <= frmsize.stepwise.max_height; h += frmsize.stepwise.step_height) {
+
+//                         struct v4l2_frmivalenum frmival{};
+//                         frmival.pixel_format = fmtdesc.pixelformat;
+//                         frmival.width = w;
+//                         frmival.height = h;
+
+//                         for (frmival.index = 0;; ++frmival.index) {
+//                             if (ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &frmival) < 0) {
+//                                 if (errno == EINVAL) break;
+//                                 printf("VIDIOC_ENUM_FRAMEINTERVALS failed\n");
+//                             }
+
+//                             if (frmival.type != V4L2_FRMIVAL_TYPE_DISCRETE)
+//                                 continue;
+
+//                             modes.push_back(CameraMode{
+//                                 fmtdesc.pixelformat,
+//                                 w,
+//                                 h,
+//                                 frmival.discrete.numerator,
+//                                 frmival.discrete.denominator
+//                             });
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//     }
+//     return modes;
+// }
+
+// static std::vector<CameraMode> listCameraModes(int fd) 
+// {
+//     std::vector<CameraMode> modes;
+
+//     // Enumerate for both single-planar and multi-planar buffer types
+//     for (int buf_type : {V4L2_BUF_TYPE_VIDEO_CAPTURE, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE}) {
+//         struct v4l2_fmtdesc fmtdesc{};
+//         fmtdesc.type = buf_type;
+//         for (fmtdesc.index = 0;; ++fmtdesc.index) {
+//             if (ioctl(fd, VIDIOC_ENUM_FMT, &fmtdesc) < 0) {
+//                 if (errno == EINVAL) break;
+//                 printf("VIDIOC_ENUM_FMT failed\n");
+//                 continue;
+//             }
+
+//             struct v4l2_frmsizeenum frmsize{};
+//             frmsize.pixel_format = fmtdesc.pixelformat;
+//             for (frmsize.index = 0;; ++frmsize.index) {
+//                 if (ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &frmsize) < 0) {
+//                     if (errno == EINVAL) break;
+//                     printf("VIDIOC_ENUM_FRAMESIZES failed\n");
+//                     continue;
+//                 }
+
+//                 if (frmsize.type == V4L2_FRMSIZE_TYPE_DISCRETE) {
+//                     int width = frmsize.discrete.width;
+//                     int height = frmsize.discrete.height;
+
+//                     struct v4l2_frmivalenum frmival{};
+//                     frmival.pixel_format = fmtdesc.pixelformat;
+//                     frmival.width = width;
+//                     frmival.height = height;
+
+//                     for (frmival.index = 0;; ++frmival.index) {
+//                         if (ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &frmival) < 0) {
+//                             if (errno == EINVAL) break;
+//                             printf("VIDIOC_ENUM_FRAMEINTERVALS failed\n");
+//                             continue;
+//                         }
+
+//                         if (frmival.type != V4L2_FRMIVAL_TYPE_DISCRETE)
+//                             continue;
+
+//                         modes.push_back(CameraMode{
+//                             fmtdesc.pixelformat,
+//                             width,
+//                             height,
+//                             frmival.discrete.numerator,
+//                             frmival.discrete.denominator
+//                         });
+//                     }
+//                 } else if (frmsize.type == V4L2_FRMSIZE_TYPE_STEPWISE || frmsize.type == V4L2_FRMSIZE_TYPE_CONTINUOUS) {
+//                     for (int w = frmsize.stepwise.min_width; w <= frmsize.stepwise.max_width; w += frmsize.stepwise.step_width) {
+//                         for (int h = frmsize.stepwise.min_height; h <= frmsize.stepwise.max_height; h += frmsize.stepwise.step_height) {
+
+//                             struct v4l2_frmivalenum frmival{};
+//                             frmival.pixel_format = fmtdesc.pixelformat;
+//                             frmival.width = w;
+//                             frmival.height = h;
+
+//                             for (frmival.index = 0;; ++frmival.index) {
+//                                 if (ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &frmival) < 0) {
+//                                     if (errno == EINVAL) break;
+//                                     printf("VIDIOC_ENUM_FRAMEINTERVALS failed\n");
+//                                     continue;
+//                                 }
+
+//                                 if (frmival.type != V4L2_FRMIVAL_TYPE_DISCRETE)
+//                                     continue;
+
+//                                 modes.push_back(CameraMode{
+//                                     fmtdesc.pixelformat,
+//                                     w,
+//                                     h,
+//                                     frmival.discrete.numerator,
+//                                     frmival.discrete.denominator
+//                                 });
+//                             }
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//     }
+//     return modes;
+// }
+
+
 static std::vector<CameraMode> filterModes(
     const std::vector<CameraMode> &modes,
     __u32 req_width,
@@ -312,7 +485,10 @@ static std::vector<CameraMode> filterModes(
 {
     // Filter only modes with exact resolution and pixel format match
     std::vector<CameraMode> candidates;
+    printf("Requested: %dx%d, %d, %f\n", req_width, req_height, req_pixfmt, req_fps);
     for (const auto &m : modes) {
+        float fps = static_cast<float>(m.interval_den) / m.interval_num;
+        printf("Found: %dx%d, %d, %f\n", m.width, m.height, m.pixelformat, fps);
         if (m.width == req_width && m.height == req_height && m.pixelformat == req_pixfmt) {
             candidates.push_back(m);
         }
@@ -332,12 +508,15 @@ static std::vector<CameraMode> filterModes(
             min_diff = diff;
         }
     }
+    printf("Min diff: %f\n", min_diff);
 
     // Return all modes whose fps difference to requested fps equals minimal diff (closest match)
     std::vector<CameraMode> filtered;
     for (const auto &m : candidates) {
         float fps = static_cast<float>(m.interval_den) / m.interval_num;
-        if (std::fabs(fps - req_fps) == min_diff) {
+        float diff = std::fabs(fps - req_fps);
+        printf("Diff: %f\n", diff);
+        if (diff <= min_diff) {
             filtered.push_back(m);
         }
     }
@@ -356,7 +535,7 @@ static bool setCameraMode(int fd, const CameraMode &mode)
 
     if (ioctl(fd, VIDIOC_S_FMT, &fmt) < 0) {
         printf("Failed to set pixel format and resolution.\n");
-        return false
+        return false;
     }
 
     printf("Set format to %ux%u 4cc %c%c%c%c\n",
@@ -400,15 +579,17 @@ void WebcamPlayer::run()
     }
     m_fd = fd;
 
-    auto availableFormats = listCameraModes(int fd);
+    auto availableFormats = listCameraModes(fd);
+    printf("Number of formats: %d\n", availableFormats.size());
     auto filteredFormats = filterModes(availableFormats, 1920, 1080, V4L2_PIX_FMT_YUYV, 30);
+    printf("Number of filtered formats: %d\n", filteredFormats.size());
     if(filteredFormats.size() <= 0) {
         printf("Could not find suitable capture mode.\n");
         ::close(fd);
         return;
     }
 
-    if (!setCameraMode(fd, filteredFormat[0])) {
+    if (!setCameraMode(fd, filteredFormats[0])) {
         ::close(fd);
         return;
     }

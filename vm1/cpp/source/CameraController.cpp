@@ -25,6 +25,8 @@ CameraController::~CameraController()
 
 void CameraController::setupDetached()
 {
+    return;
+
     if (m_thread.joinable()) {
         m_thread.join();
     }
@@ -33,6 +35,8 @@ void CameraController::setupDetached()
 
 bool CameraController::setup() 
 {
+    return true;
+
     v4l2_dv_timings timings;
     std::string subdevPath;
     const std::string captureDeviceName = "rp1-cfe";

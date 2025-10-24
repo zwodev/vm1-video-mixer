@@ -10,6 +10,7 @@
 #pragma once
 
 #include "MediaPlayer.h"
+#include "Buffer.h"
 #include "Shader.h"
 
 #include <SDL3/SDL_render.h> 
@@ -29,11 +30,7 @@ struct CameraMode {
     __u32 interval_den;   // Frame interval denominator
 };
 
-struct Buffer {
-    size_t length;
-    int fd;
-    EGLImage image;
-};
+
 
 class WebcamPlayer : public MediaPlayer {
 public: 
