@@ -54,6 +54,7 @@ private:
     void run() override;
     void render();
     
+    bool setCameraMode(int fd, const CameraMode &mode);
     bool setFormat(int fd);
     bool initBuffers(int fd);
     bool queueBuffer(int fd, int index);
