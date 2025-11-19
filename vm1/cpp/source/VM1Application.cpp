@@ -9,6 +9,7 @@
 
 #include "VM1Application.h"
 #include "VM1DeviceDefinitions.h"
+#include "CaptureType.h"
 
 #include <kms++/card.h>
 #include <kms++/connector.h>
@@ -33,6 +34,11 @@ VM1Application::VM1Application() :
     m_cameraController(m_eventBus)
 {
     subscribeToEvents();
+    //auto captureDevices = m_cameraController.getCaptureDevices("uvcvideo");
+    // auto captureDevices = m_cameraController.getCaptureDevices("rp1-cfe");
+    // for (auto captureDevice: captureDevices) {
+    //     std::cout << "Device: " << captureDevice.name << " Path: " << captureDevice.devicePath << std::endl;
+    // }
 }
 
 VM1Application::~VM1Application()
@@ -55,6 +61,7 @@ void VM1Application::subscribeToEvents()
     m_eventBus.subscribe<HdmiCaptureInitEvent>([this](const HdmiCaptureInitEvent& event) {
         m_registry.settings().hdmiInputs[0] = event.configString;
         m_registry.settings().isHdmiInputReady = true;
+        m_registry.settings().captureDevicePath = event.devicePath;
     });
 }
 
@@ -64,7 +71,7 @@ bool VM1Application::initialize()
     
     if (m_isHeadless) m_keyboardHotplug.start();
 
-    m_cameraController.setupDetached();
+    m_cameraController.setupDetached(m_registry.settings().useUvcCaptureDevice);
 
     // Open VM-1Device
     std::string serialDevice = m_registry.settings().serialDevice;

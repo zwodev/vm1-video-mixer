@@ -3,6 +3,7 @@
 #include "Shader.h"
 #include "ThreadableQueue.h"
 #include "AudioDevice.h"
+#include "Buffer.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_render.h>
@@ -22,8 +23,10 @@ struct VideoFrame {
 
     bool isFirstFrame = false;
     double pts = 0.0;
+
+    int index = -1;
+    Buffer* buffer = nullptr;
     
-    // Add these fields for DRM frame info
     std::vector<uint32_t> formats;
     std::vector<int> widths;
     std::vector<int> heights;
@@ -49,6 +52,7 @@ public:
     virtual bool openFile(const std::string& fileName = std::string(), AudioStream* audioStream = nullptr) = 0;
     void play();
     virtual void close();
+    void setDevicePath(const std::string& devicePath);
     bool isPlaying() const { return m_isRunning; }
     virtual void update() = 0;
     bool isFrameReady();

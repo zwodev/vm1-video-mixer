@@ -25,6 +25,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
+#include <sys/mman.h>
 
 #include <drm/drm_fourcc.h>
 
@@ -45,6 +46,7 @@ WebcamPlayer::WebcamPlayer()
     loadShaders();
     createVertexBuffers();
     initializeFramebufferAndTextures();
+    glGenTextures(1, &m_nonZeroCopyTextureId);
 }
 
 WebcamPlayer::~WebcamPlayer()
@@ -54,7 +56,8 @@ WebcamPlayer::~WebcamPlayer()
 
 bool WebcamPlayer::openFile(const std::string& fileName, AudioStream* audioStream)
 {
-
+    m_devicePath = fileName;
+    return true;
 }
 
 void WebcamPlayer::close()
@@ -138,14 +141,14 @@ bool WebcamPlayer::setFormat(int fd)
 	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	fmt.fmt.pix.width       = IMAGE_WIDTH;
 	fmt.fmt.pix.height      = IMAGE_HEIGHT;
-	fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+	fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_UYVY;
 	fmt.fmt.pix.field       = V4L2_FIELD_NONE;
 	
     // Try setting this format
 	ioctl(fd, VIDIOC_S_FMT, &fmt);
 
 	// Check what was actually set
-	if(fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_YUYV)
+	if(fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_UYVY)
 	{
 		printf("Libv4l2 didn't accept the suggested pixel format. Can't proceed!\n");
         printf("Current format fourcc:  %c%c%c%c\n",
@@ -177,7 +180,7 @@ bool WebcamPlayer::initBuffers(int fd)
 {
     m_buffers.clear();
     struct v4l2_requestbuffers req = {0};
-    req.count = 3;
+    req.count = 1;
     req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     req.memory = V4L2_MEMORY_MMAP;
 
@@ -199,6 +202,10 @@ bool WebcamPlayer::initBuffers(int fd)
 
         Buffer buffer;
         buffer.length = buf.length;
+        void* cpu_ptr = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, buf.m.offset);
+        if (cpu_ptr == MAP_FAILED) {
+            perror("mmap dmabuf");
+        }
 
         struct v4l2_exportbuffer expbuf = {0};
         expbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -209,7 +216,9 @@ bool WebcamPlayer::initBuffers(int fd)
             return false;
         }
 
+
         buffer.fd = expbuf.fd;
+        buffer.data = cpu_ptr;
         m_buffers.push_back(buffer);
     }
 
@@ -247,7 +256,9 @@ int WebcamPlayer::dequeueBuffer(int fd)
 
 void WebcamPlayer::loadShaders()
 {
-    m_shader.load("shaders/pass.vert", "shaders/webcam.frag");
+    m_shader.load("shaders/pass.vert", "shaders/camera.frag");
+    m_webcamShader.load("shaders/pass.vert", "shaders/webcam.frag");
+    m_nonZeroCopyWebcamShader.load("shaders/pass.vert", "shaders/webcam_non_zero_copy.frag");
 }
 
 static std::vector<CameraMode> listCameraModes(int fd) 
@@ -358,7 +369,7 @@ bool WebcamPlayer::setCameraMode(int fd, const CameraMode &mode)
     fmt.fmt.pix.pixelformat = mode.pixelformat;
     fmt.fmt.pix.width = mode.width;
     fmt.fmt.pix.height = mode.height;
-    fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
+    fmt.fmt.pix.field = V4L2_FIELD_ANY;
 
     if (ioctl(fd, VIDIOC_S_FMT, &fmt) < 0) {
         printf("Failed to set pixel format and resolution.\n");
@@ -403,33 +414,37 @@ bool WebcamPlayer::setCameraMode(int fd, const CameraMode &mode)
 
 void WebcamPlayer::run()
 {   
-    int fd = open("/dev/video0", O_RDWR);
+    printf("Device: %s\n", m_devicePath.c_str());
+    int fd = open(m_devicePath.c_str(), O_RDWR);
     if (fd == -1) {
         printf("Error opening video device.\n");
         return;
     }
     m_fd = fd;
 
-    auto availableFormats = listCameraModes(fd);
-    printf("Number of formats: %d\n", availableFormats.size());
-    auto filteredFormats = filterModes(availableFormats, 1920, 1080, V4L2_PIX_FMT_YUYV, 60);
-    printf("Number of filtered formats: %d\n", filteredFormats.size());
-    if(filteredFormats.size() <= 0) {
-        printf("Could not find suitable capture mode.\n");
-        ::close(fd);
-        return;
+    if (m_captureType == CaptureType::CT_CSI) {
+        if (!setFormat(fd)) {
+            ::close(fd);
+            return;
+        } 
+    }
+    else {
+        auto availableFormats = listCameraModes(fd);
+        printf("Number of formats: %d\n", availableFormats.size());
+        auto filteredFormats = filterModes(availableFormats, 1920, 1080, V4L2_PIX_FMT_YUYV, 60);
+        printf("Number of filtered formats: %d\n", filteredFormats.size());
+        if(filteredFormats.size() <= 0) {
+            printf("Could not find suitable capture mode.\n");
+            ::close(fd);
+            return;
+        }
+
+        if (!setCameraMode(fd, filteredFormats[0])) {
+            ::close(fd);
+            return;
+        }
     }
 
-    if (!setCameraMode(fd, filteredFormats[0])) {
-        ::close(fd);
-        return;
-    }
-
-    // // Set the pixel format for V4L2
-    // if (!setFormat(fd)) {[0];
-    //     ::close(fd);
-    //     return;
-    // } 
 
     // Intialize and export the buffers
     if (!initBuffers(fd)) {
@@ -456,16 +471,14 @@ void WebcamPlayer::run()
 
 	printf("Camera streaming turned ON\n");
 
-    m_isRunning = true;
     while (m_isRunning) {
         VideoFrame frame;
         lockBuffer();
         Buffer* buffer = getBuffer();
         if (buffer) {
-            int fd = getBuffer()->fd;
-            frame.fds.push_back(fd);
-            unlockBuffer();
+            VideoFrame frame = createFrameFromBuffer(buffer);
             m_videoQueue.pushFrame(frame);
+            unlockBuffer();
         }
         SDL_Delay(1);
     }
@@ -477,6 +490,57 @@ void WebcamPlayer::run()
     return;
 }
 
+VideoFrame WebcamPlayer::createFrameFromBuffer(Buffer* buffer) 
+{
+    VideoFrame frame;
+    size_t bufSize = buffer->length;
+
+    frame.buffer = buffer;
+    
+    // Add condition to only do this when using non-zero-copy mode
+    if (m_captureType == CaptureType::CT_WEBCAM_NON_ZERO) {
+        if (buffer->pixels.size() < bufSize) {
+            buffer->pixels.resize(bufSize);
+        }
+        memcpy(buffer->pixels.data(), buffer->data, bufSize);
+    }
+    return frame;
+}
+
+void WebcamPlayer::activateShader()
+{
+    switch (m_captureType) {
+        case CaptureType::CT_CSI:
+            m_shader.activate();
+            break;
+        case CaptureType::CT_WEBCAM:
+            m_webcamShader.activate();
+            break;
+        case CaptureType::CT_WEBCAM_NON_ZERO:
+            m_nonZeroCopyWebcamShader.activate();
+            break;
+        default:
+            break;
+    }
+}
+
+void WebcamPlayer::deactivateShader()
+{
+    switch (m_captureType) {
+        case CaptureType::CT_CSI:
+            m_shader.deactivate();
+            break;
+        case CaptureType::CT_WEBCAM:
+            m_webcamShader.deactivate();
+            break;
+        case CaptureType::CT_WEBCAM_NON_ZERO:
+            m_nonZeroCopyWebcamShader.deactivate();
+            break;
+        default:
+            break;
+    }
+}
+
 void WebcamPlayer::render()
 {
     glViewport(0, 0, 1920, 1080);
@@ -484,25 +548,32 @@ void WebcamPlayer::render()
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    m_shader.activate();
+    activateShader();    
 
     glBindVertexArray(m_vao);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_yuvTextures[0]);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    // Bind the texture to unit
-    GLHelper::glEGLImageTargetTexture2DOESFunc(GL_TEXTURE_2D, m_yuvImages[0]);
+    if (m_captureType == CaptureType::CT_CSI || m_captureType == CaptureType::CT_WEBCAM) {
+        glBindTexture(GL_TEXTURE_2D, m_yuvTextures[0]);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        GLHelper::glEGLImageTargetTexture2DOESFunc(GL_TEXTURE_2D, m_yuvImages[0]);
+    }
+    else {
+        glBindTexture(GL_TEXTURE_2D, m_nonZeroCopyTextureId);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    }
     m_shader.bindUniformLocation("inputTexture", 0);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glBindVertexArray(0);
-    m_shader.deactivate();
+    deactivateShader();
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -519,38 +590,39 @@ void WebcamPlayer::update()
 
     VideoFrame frame;
     if (m_videoQueue.popFrame(frame)) {
-        if (m_yuvImages.size() > 0 && frame.fds.size() > 0) {
-            
-            // printf("width: %d\n", m_fmt.fmt.pix.width);
-            // printf("height: %d\n", m_fmt.fmt.pix.height);
-            // printf("fd: %d\n", frame.fds[0]);
-            // printf("pitch: %d\n", m_fmt.fmt.pix.bytesperline);
+        if (m_captureType == CaptureType::CT_CSI || m_captureType == CaptureType::CT_WEBCAM) {
+            if (m_yuvImages.size() > 0) {  
+                EGLAttrib img_attr[] = {
+                    EGL_WIDTH, m_fmt.fmt.pix.width / 2,
+                    EGL_HEIGHT, m_fmt.fmt.pix.height,
+                    EGL_LINUX_DRM_FOURCC_EXT, DRM_FORMAT_ARGB8888,
+                    EGL_DMA_BUF_PLANE0_FD_EXT, frame.buffer->fd,
+                    EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
+                    EGL_DMA_BUF_PLANE0_PITCH_EXT, m_fmt.fmt.pix.bytesperline,
+                    EGL_NONE
+                };
+                
+                EGLImageKHR image = eglCreateImage(	  
+                                        eglGetCurrentDisplay(),
+                                        EGL_NO_CONTEXT,
+                                        EGL_LINUX_DMA_BUF_EXT,
+                                        NULL,
+                                        img_attr
+                                    );
 
-            // Create image
-            EGLAttrib img_attr[] = {
-                EGL_WIDTH, m_fmt.fmt.pix.width / 2,
-                EGL_HEIGHT, m_fmt.fmt.pix.height,
-                EGL_LINUX_DRM_FOURCC_EXT, DRM_FORMAT_ARGB8888,
-                EGL_DMA_BUF_PLANE0_FD_EXT, frame.fds[0],
-                EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
-                EGL_DMA_BUF_PLANE0_PITCH_EXT, m_fmt.fmt.pix.bytesperline,
-                EGL_NONE
-            };
-            
-            EGLImageKHR image = eglCreateImage(	  
-                                    eglGetCurrentDisplay(),
-                                    EGL_NO_CONTEXT,
-                                    EGL_LINUX_DMA_BUF_EXT,
-                                    NULL,
-                                    img_attr
-                                );
-
-            if(image == EGL_NO_IMAGE_KHR)
-            {
-                printf("error: eglCreateImageKHR failed: %d\n", eglGetError());
-                return false;
+                if(image == EGL_NO_IMAGE_KHR)
+                {
+                    printf("error: eglCreateImageKHR failed: %d\n", eglGetError());
+                    return false;
+                }
+                m_yuvImages[0] = image;
             }
-            m_yuvImages[0] = image;
+        }
+        else {
+            glBindTexture(GL_TEXTURE_2D, m_nonZeroCopyTextureId);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_fmt.fmt.pix.width / 2, m_fmt.fmt.pix.height, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, frame.buffer->pixels.data());
+            glBindTexture(GL_TEXTURE_2D, 0);
         }
     }
 

@@ -26,7 +26,7 @@ void main() {
     // Sample YUYV texel (contains Y0,U,Y1,V)
     vec4 yuyv = texture(inputTexture, coord);
 
-	float y = (mod(pixelX, 2.0) < 1.0) ? yuyv.b : yuyv.r;
+	float y = (mod(pixelX, 2.0) < 1.0) ? yuyv.r : yuyv.b;
 	//float y = mix(yuyv.r, yuyv.b, floor(mod(pixelX, 2.0)));
 	//float y = yuyv.r;
     float u = yuyv.g - 0.5f;
@@ -39,7 +39,5 @@ void main() {
 	vec4 col = vec4(r, g, b, 1.0f);
 
 	// Mix images
-	//fragColor = vec4(y, y, y, 1.0f);
 	fragColor = col;
-	//fragColor = vec4(yuyv.r, yuyv.g, yuyv.b, 1.0f);
 }

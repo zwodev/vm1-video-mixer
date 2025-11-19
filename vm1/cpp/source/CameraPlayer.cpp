@@ -298,8 +298,8 @@ void CameraPlayer::run()
         if (buffer) {
             int fd = getBuffer()->fd;
             frame.fds.push_back(fd);
-            unlockBuffer();
             m_videoQueue.pushFrame(frame);
+            unlockBuffer();
         }
         SDL_Delay(10);
     }

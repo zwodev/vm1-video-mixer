@@ -12,6 +12,7 @@
 #include "MediaPlayer.h"
 #include "Buffer.h"
 #include "Shader.h"
+#include "CaptureType.h"
 
 #include <SDL3/SDL_render.h> 
 #include <SDL3/SDL_opengl.h>
@@ -30,8 +31,6 @@ struct CameraMode {
     __u32 interval_den;   // Frame interval denominator
 };
 
-
-
 class WebcamPlayer : public MediaPlayer {
 public: 
     WebcamPlayer();
@@ -41,28 +40,42 @@ public:
     bool openFile(const std::string& fileName, AudioStream* audioStream = nullptr);
     void close() override;
     void finalize();
-    void lockBuffer();
-    Buffer* getBuffer();
-    void unlockBuffer();
     void update() override;
 
     // TODO: Needs to be determined by HDMI port oder dev (/dev/video0)
     int getPort() { return 0; } 
+    void setCaptureType(CaptureType captureType) { m_captureType = captureType; };
 
 private:
     void loadShaders() override;
     void run() override;
     void render();
+
+    void lockBuffer();
+    Buffer* getBuffer();
+    void unlockBuffer();
     
     bool setCameraMode(int fd, const CameraMode &mode);
     bool setFormat(int fd);
     bool initBuffers(int fd);
     bool queueBuffer(int fd, int index);
     int dequeueBuffer(int fd);
+    VideoFrame createFrameFromBuffer(Buffer* buffer);
+
+    void activateShader();
+    void deactivateShader();
 
 private:
+    CaptureType m_captureType = CaptureType::CT_WEBCAM_NON_ZERO;
+    std::string m_devicePath;
+
+    Shader m_webcamShader;
+    Shader m_nonZeroCopyWebcamShader;
+    GLuint m_nonZeroCopyTextureId;
+
     int m_fd = -1;
     int m_bufferIndex = -1;
+
     v4l2_format m_fmt;
     std::vector<Buffer> m_buffers;
 };

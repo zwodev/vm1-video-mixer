@@ -218,6 +218,7 @@ struct Settings
     bool defaultLooping = true;
     int fadeTime = 2;
     int volume = 10;
+    bool useUvcCaptureDevice = false;
     int rotarySensitivity = 5;
     std::string videoFilePath = "../videos/";
     std::string serialDevice = "/dev/ttyACM0";
@@ -226,6 +227,7 @@ struct Settings
     bool isProVersion = false;
     bool isHdmiOutputReady = false;
     bool isHdmiInputReady = false;
+    std::string captureDevicePath = "";
     std::vector<std::string> hdmiOutputs = std::vector<std::string>(2, std::string());
     std::vector<std::string> hdmiInputs = std::vector<std::string>(2, std::string());
 
@@ -235,7 +237,7 @@ struct Settings
     template <class Archive>
     void serialize(Archive &ar)
     {
-        ar(showUI, defaultLooping, fadeTime, volume, rotarySensitivity, videoFilePath, serialDevice);
+        ar(showUI, defaultLooping, fadeTime, volume, useUvcCaptureDevice, rotarySensitivity, videoFilePath, serialDevice);
     }
 };
 

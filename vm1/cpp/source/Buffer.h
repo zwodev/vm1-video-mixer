@@ -12,6 +12,8 @@
 
 struct Buffer {
     size_t length;
-    int fd;
-    EGLImage image;
+    void* data = nullptr;
+    std::vector<uint8_t> pixels;
+    int fd = -1;
+    EGLImageKHR image = EGL_NO_IMAGE_KHR;
 };
