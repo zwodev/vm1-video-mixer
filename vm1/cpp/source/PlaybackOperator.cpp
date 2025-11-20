@@ -53,6 +53,12 @@ void PlaybackOperator::initialize()
         m_mediaPlayers.push_back(mediaPlayer);
     }
 
+    for (int i = 0; i < 1; ++i) {
+        m_webcamPlayers.push_back(new WebcamPlayer());
+        MediaPlayer* mediaPlayer = m_webcamPlayers[i];
+        m_mediaPlayers.push_back(mediaPlayer);
+    }
+
     m_audioSystem.initialize();
     for (int i = 0; i < m_mediaPlayers.size(); ++i) {
         AudioDevice* audioDevice = m_audioSystem.audioDevice(0);
@@ -79,6 +85,11 @@ void PlaybackOperator::finalize()
         delete cameraPlayer;
     } 
     m_cameraPlayers.clear();
+
+    for (auto webcamPlayer : m_webcamPlayers) {
+        delete webcamPlayer;
+    } 
+    m_webcamPlayers.clear();
 
     for (auto planeRenderer : m_planeRenderers) {
         delete planeRenderer;
@@ -110,6 +121,20 @@ bool PlaybackOperator::getCameraPlayerIdFromPort(int port, int& id)
     for (int i = 0; i < m_mediaPlayers.size(); ++i) {     
         if(CameraPlayer* cameraPlayer = dynamic_cast<CameraPlayer *>(m_mediaPlayers[i])) {
             if (cameraPlayer->getPort() == port) {
+                id = i;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool PlaybackOperator::getWebcamPlayerIdFromPort(int port, int& id)
+{
+    for (int i = 0; i < m_mediaPlayers.size(); ++i) {     
+        if(WebcamPlayer* webcamPlayer = dynamic_cast<WebcamPlayer *>(m_mediaPlayers[i])) {
+            if (webcamPlayer->getPort() == port) {
                 id = i;
                 return true;
             }
@@ -184,24 +209,61 @@ void PlaybackOperator::showMedia(int mediaSlotId)
             m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
         } 
     }
-    else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
+    // else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
+    // {
+    //     if (!m_registry.settings().isHdmiInputReady) {
+    //         m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::InputNotReady, "Still scanning"));
+    //         return;
+    //     }
+
+    //     if (m_registry.settings().hdmiInputs[hdmiInputConfig->hdmiPort] != "1920x1080/30Hz") {
+    //         std::string message = "No HDMI-IN" + std::to_string(hdmiInputConfig->hdmiPort+1);
+    //         m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::NoDisplay, message));
+    //         return;
+    //     }
+
+    //     if (hdmiInputConfig->hdmiPort == 0)
+    //     {
+    //         if (!getCameraPlayerIdFromPort(hdmiInputConfig->hdmiPort, playerId)) return;
+
+    //         if (!m_mediaPlayers[playerId]->isPlaying()) {
+    //             m_mediaPlayers[playerId]->play(); 
+    //         }
+            
+    //         if (m_planeMixers[planeId].startFade(playerId))  {
+    //             m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
+    //         }
+    //     }
+    // }
+     else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
     {
         if (!m_registry.settings().isHdmiInputReady) {
             m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::InputNotReady, "Still scanning"));
             return;
         }
 
-        if (m_registry.settings().hdmiInputs[hdmiInputConfig->hdmiPort] != "1920x1080/30Hz") {
-            std::string message = "No HDMI-IN" + std::to_string(hdmiInputConfig->hdmiPort+1);
-            m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::NoDisplay, message));
-            return;
+        if (!m_registry.settings().useUvcCaptureDevice) {
+            if (m_registry.settings().hdmiInputs[hdmiInputConfig->hdmiPort] != "1920x1080/30Hz") {
+                std::string message = "No HDMI-IN" + std::to_string(hdmiInputConfig->hdmiPort+1);
+                m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::NoDisplay, message));
+                return;
+            }
         }
 
         if (hdmiInputConfig->hdmiPort == 0)
         {
-            if (!getCameraPlayerIdFromPort(hdmiInputConfig->hdmiPort, playerId)) return;
+            if (!getWebcamPlayerIdFromPort(hdmiInputConfig->hdmiPort, playerId)) return;
 
             if (!m_mediaPlayers[playerId]->isPlaying()) {
+                if(WebcamPlayer* webcamPlayer = dynamic_cast<WebcamPlayer *>(m_mediaPlayers[playerId])) {
+                    CaptureType captureType = CaptureType::CT_CSI;
+                    if (m_registry.settings().useUvcCaptureDevice) {
+                        captureType = CaptureType::CT_WEBCAM_NON_ZERO;
+                    }
+                    webcamPlayer->setCaptureType(captureType);
+                }
+                m_mediaPlayers[playerId]->openFile(m_registry.settings().captureDevicePath);
+                printf("Device Path: %s\n", m_registry.settings().captureDevicePath.c_str());
                 m_mediaPlayers[playerId]->play(); 
             }
             
@@ -210,6 +272,21 @@ void PlaybackOperator::showMedia(int mediaSlotId)
             }
         }
     }
+    // else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
+    // {
+    //     if (hdmiInputConfig->hdmiPort == 0)
+    //     {
+    //         if (!getWebcamPlayerIdFromPort(hdmiInputConfig->hdmiPort, playerId)) return;
+
+    //         if (!m_mediaPlayers[playerId]->isPlaying()) {
+    //             m_mediaPlayers[playerId]->play(); 
+    //         }
+            
+    //         if (m_planeMixers[planeId].startFade(playerId))  {
+    //             m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
+    //         }
+    //     }
+    // }
 }
 
 void PlaybackOperator::update(float deltaTime)

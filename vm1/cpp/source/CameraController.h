@@ -11,23 +11,24 @@
 #include "V4L2Controller.h"
 #include "MediaController.h"
 #include "EventBus.h"
+#include "CaptureType.h"
 
 #include <thread>
 
 class CameraController 
 {
-private:
-    V4L2Controller m_v4l2Controller;
-    MediaController m_mediaController;
-
 public:
     CameraController(EventBus& eventBus);
     ~CameraController();
-    
-    void setupDetached();
-    bool setup();
+     
+    std::vector<CaptureDevice> getCaptureDevices(const std::string& driverName);
+    void setupDetached(bool useUvcCaptureDevice);
+    bool setupCSI();
+    bool setupUVC();
 
 private:
+    V4L2Controller m_v4l2Controller;
+    MediaController m_mediaController;
     std::thread m_thread;
     EventBus& m_eventBus;
 };

@@ -24,8 +24,9 @@ struct SystemEvent {
 
 struct HdmiCaptureInitEvent {
     HdmiCaptureInitEvent() = delete;
-    HdmiCaptureInitEvent(std::string configString) { this->configString = configString; }
+    HdmiCaptureInitEvent(std::string configString, std::string devicePath = "") { this->configString = configString; this->devicePath = devicePath;}
     std::string configString;
+    std::string devicePath;
 };
 
 struct PlaybackEvent {

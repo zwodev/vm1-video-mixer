@@ -61,6 +61,9 @@ chroot $1 systemctl enable ssh
 # Disable output on tty1 (prevent showing login after splash is disabled)
 chroot $1 systemctl disable getty@tty1.service
 
+# Disable EEPROM auto-update 
+chroot $1 systemctl mask rpi-eeprom-update.service 
+
 # Copy data (TODO: use relative paths later)
 rsync -av ../../../cpp/builddir/vm1 $1/home/$IGconf_device_user1/vm1/
 rsync -av ../../../cpp/shaders $1/home/$IGconf_device_user1/vm1/
