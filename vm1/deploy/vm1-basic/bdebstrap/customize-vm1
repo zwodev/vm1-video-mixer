@@ -25,6 +25,14 @@ cat ../data/localsend/localsend.service.tpl | sed \
    -e "s|<VM1_USER>|$IGconf_device_user1|g" \
    > $1/etc/systemd/system/localsend.service
 
+# Install tinyfilemanager
+rsync -av ../data/tinyfilemanager/tinyfilemanager/ $1/home/$IGconf_device_user1/tinyfilemanager/
+rsync -av ../data/tinyfilemanager/*.php $1/home/$IGconf_device_user1/
+
+cat ../data/tinyfilemanager/tinyfilemanager.service.tpl | sed \
+   -e "s|<VM1_USER>|$IGconf_device_user1|g" \
+   > $1/etc/systemd/system/tinyfilemanager.service
+
 # Configure plymouth (splash screen)
 rsync -av ../data/vm1 $1/usr/share/plymouth/themes/
 chroot $1 plymouth-set-default-theme -R vm1
@@ -54,6 +62,9 @@ chroot $1 systemctl disable dnsmasq
 
 # Autorun localsend
 chroot $1 systemctl enable localsend
+
+# Autorun tinyfilemanager
+chroot $1 systemctl enable tinyfilemanager
 
 # Enable sshd
 chroot $1 systemctl enable ssh

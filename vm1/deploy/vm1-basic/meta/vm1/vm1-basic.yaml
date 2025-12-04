@@ -27,3 +27,4 @@ mmdebstrap:
     - xauth
     - libkms++0
     - plymouth
+    - php8.2-cli

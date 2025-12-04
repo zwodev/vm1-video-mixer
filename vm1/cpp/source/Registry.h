@@ -222,6 +222,19 @@ private:
 
 struct Settings
 {
+    struct KioskSettings {
+        bool enabled = false;
+        int resetTime = 60; // seconds
+
+        template <class Archive>
+        void serialize(Archive& ar) {
+            ar(
+                CEREAL_NVP(enabled),
+                CEREAL_NVP(resetTime)
+            );
+        }
+    };
+
     // Saved
     bool showUI = false;
     bool defaultLooping = true;
@@ -233,19 +246,7 @@ struct Settings
     std::string serialDevice = "/dev/ttyACM0";
     int autoPlayOnHDMI0 = -1;
     int autoPlayOnHDMI1 = -1;
-
-    struct KioskSettings {
-        bool enabled = true;
-        int resetTime = 60; // seconds
-
-        template <class Archive>
-        void serialize(Archive& ar) {
-            ar(
-                CEREAL_NVP(enabled),
-                CEREAL_NVP(resetTime)
-            );
-        }
-    } kiosk;
+    KioskSettings kiosk;
 
     // Volatile
     bool isProVersion = false;
@@ -255,9 +256,6 @@ struct Settings
     std::vector<std::string> hdmiOutputs = std::vector<std::string>(2, std::string());
     std::vector<std::string> hdmiInputs = std::vector<std::string>(2, std::string());
 
-    //std::string hdmiInputConfigString1 = "Not connected";
-    //std::string hdmiInputConfigString2 = "Not connected";
-
     template <class Archive>
     void serialize(Archive &ar)
     {
@@ -266,7 +264,8 @@ struct Settings
             CEREAL_NVP(defaultLooping), 
             CEREAL_NVP(fadeTime),
             CEREAL_NVP(volume), 
-            CEREAL_NVP(rotarySensitivity), 
+            CEREAL_NVP(rotarySensitivity),
+            CEREAL_NVP(useUvcCaptureDevice),
             CEREAL_NVP(videoFilePath), 
             CEREAL_NVP(serialDevice),
             CEREAL_NVP(autoPlayOnHDMI0),
@@ -288,7 +287,6 @@ public:
 
     void update(float deltaTime) {
         m_timeSinceLastHash += deltaTime;
-        //printf("Time Since Last Hash: %f\n", m_timeSinceLastHash); 
         if (m_timeSinceLastHash >= m_autosaveInterval) {
             m_timeSinceLastHash -= m_autosaveInterval;
             size_t currentHash = hash();

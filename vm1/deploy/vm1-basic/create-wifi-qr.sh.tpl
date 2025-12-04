@@ -32,7 +32,7 @@ else
 fi
 
 # Output PNG
-outfile="/home/<VM1_USER>/vm1/data/wifi_qr.png"
+outfile="/home/vm1/vm1/data/wifi_qr.png"
 qrencode -o "$outfile" -l H -m 2 -t PNG "$qr"
 chown vm1:vm1 "$outfile"
 
