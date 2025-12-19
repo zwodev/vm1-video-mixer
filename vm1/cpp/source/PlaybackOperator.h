@@ -44,6 +44,10 @@ public:
         m_fadeTime = fadeTime;
     }
 
+    void setMixValue(float value) {
+        m_mixValue = value;
+    }
+
     float mixValue() const
     {
         return m_mixValue;
@@ -70,7 +74,9 @@ public:
     {
         if (!m_isFading || !m_isActive) return;
 
+        // todo: find a way to switch between manual and automatic fading
         m_mixValue = m_mixValue + ((deltaTime / m_fadeTime) * m_fadeDir);
+        
         // if (m_mixValue <= 0.0f) {
         //     m_mixValue = 0.0f;
         //     m_isFading = false;

@@ -238,7 +238,7 @@ void DeviceController::requestVM1DeviceBuffer()
             }
         }
 
-        
+        m_registry.settings().analog0 = deviceBuffer.analog_0;
         
     }
 }

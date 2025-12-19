@@ -43,6 +43,9 @@ int32_t encoder1_position;
 int press_up = 0;
 int press_down = 0;
 
+// analog inputs
+uint16_t analog0 = 0;
+uint16_t analog0_old = 0;
 
 // NeoPixels
 Adafruit_NeoPixel strip(NEOPIXEL_COUNT, NEOPIXELS_PIN, NEO_GRB + NEO_KHZ800);
@@ -107,6 +110,7 @@ struct DeviceBuffer
   bool shiftPressed;
   int32_t encoder0;
   int32_t encoder1;
+  uint16_t analog0;
 };
 #pragma pack()
 
@@ -350,6 +354,14 @@ void loop()
       res += ", up";
     }
     Serial.println(res);
+  }
+
+  analog0 = analogRead(A0_PIN);
+  deviceBuffer.analog0 = analog0;
+  if (abs(analog0 - analog0_old) > 10) {
+    Serial.print("A0: ");
+    Serial.println(analog0);
+    analog0_old = analog0;
   }
 
   // Read Serial and set NeoPixels

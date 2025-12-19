@@ -69,6 +69,7 @@ struct DeviceBuffer
   bool shiftPressed;
   int32_t rotary_0;
   int32_t rotary_1;
+  uint16_t analog_0;
 };
 #pragma pack()
 

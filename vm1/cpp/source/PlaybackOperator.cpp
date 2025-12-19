@@ -298,6 +298,16 @@ void PlaybackOperator::update(float deltaTime)
         if (playerId >= 0 && m_mediaPlayers[playerId]->isFrameReady()) {
             planeMixer.activate();
         }
+        
+        // todo: enable analog input
+        float fadeValue = float(m_registry.settings().analog0) / 1024.0;
+        if (fadeValue < 0.01) 
+        fadeValue = 0.0;
+        else if (fadeValue > 0.99)
+        fadeValue = 1.0;
+        // printf("fadeValue: %d, %f\n", m_registry.settings().analog0, fadeValue);
+        // planeMixer.setMixValue(fadeValue);
+        
         planeMixer.update(deltaTime);
     }
 

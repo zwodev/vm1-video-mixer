@@ -255,6 +255,7 @@ struct Settings
     std::string captureDevicePath = "";
     std::vector<std::string> hdmiOutputs = std::vector<std::string>(2, std::string());
     std::vector<std::string> hdmiInputs = std::vector<std::string>(2, std::string());
+    uint16_t analog0 = 0;
 
     template <class Archive>
     void serialize(Archive &ar)
