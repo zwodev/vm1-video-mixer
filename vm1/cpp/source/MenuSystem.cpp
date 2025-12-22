@@ -372,6 +372,10 @@ void MenuSystem::GlobalSettings(int id, int* focusedIdx)
 
     m_ui.BeginList(focusedIdx);
     m_ui.Text("Version: " + VERSION);
+    std::string useFader = "Use Fader (" + std::to_string(settings.analog0).substr(0, 4) + ")";
+    if(m_ui.CheckBox(useFader, settings.useFader)) { settings.useFader = !settings.useFader; }
+    std::string useRotaryAsFader = "Use Rotary (" + std::to_string(settings.rotary) + ")" ;
+    if(m_ui.CheckBox(useRotaryAsFader, settings.useRotaryAsFader)) { settings.useRotaryAsFader = !settings.useRotaryAsFader; }
     m_ui.SpinBoxInt("Fade Time", settings.fadeTime, 0, 10);
     m_ui.SpinBoxInt("Volume", settings.volume, 0, 10);
     //if (m_registry.settings().isProVersion) { m_ui.SpinBoxInt("Rot. Sensit.", settings.rotarySensitivity, 1, 20) };

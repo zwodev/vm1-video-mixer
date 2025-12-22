@@ -104,15 +104,44 @@ void PlaybackOperator::finalize()
     m_audioSystem.finalize();
 }
 
-bool PlaybackOperator::getFreeVideoPlayerId(int& id)
+
+bool PlaybackOperator::getFreeVideoPlayerId(int& id, int planeId)
 {
-    for (int i = 0; i < m_videoPlayers.size(); ++i) {
-        if(!isPlayerIdActive(i) && dynamic_cast<VideoPlayer *>(m_mediaPlayers[i])) {
-            id = i;
+    if(m_registry.settings().useFader) {
+        auto activeIds = m_planeMixers[planeId].activeIds();
+        printf("activeIds size: %d\n", activeIds.size());
+        for (auto i : activeIds) {
+            printf("%d\n", i);
+        }
+        if(activeIds.size() > 1) {
+            if(m_planeMixers[planeId].mixValue() > 0.5) {
+                id = activeIds[0];
+            } else {
+                id = activeIds[1];
+            }
             return true;
         }
+        else {
+            printf("looking for empty videoplayerId...\n");
+            for (int i = 0; i < m_videoPlayers.size(); ++i) {
+                printf("videoplayerId: %d isPlayerIdActive: %d \n", i, isPlayerIdActive(i));
+                if(!isPlayerIdActive(i) && dynamic_cast<VideoPlayer *>(m_mediaPlayers[i])) {
+                    printf("id = %d\n", i);
+                    id = i;
+                    return true;
+                }
+            }
+        }
+        return false;
     }
-
+    else {        
+        for (int i = 0; i < m_videoPlayers.size(); ++i) {
+            if(!isPlayerIdActive(i) && dynamic_cast<VideoPlayer *>(m_mediaPlayers[i])) {
+                id = i;
+                return true;
+            }
+        }
+    }
     return false;
 }
 
@@ -193,13 +222,15 @@ void PlaybackOperator::showMedia(int mediaSlotId)
         looping = videoInputConfig->looping;
         filePath = m_registry.mediaPool().getVideoFilePath(fileName);
 
-        if (!getFreeVideoPlayerId(playerId)) return;
+        if (!getFreeVideoPlayerId(playerId, planeId)) return;
         AudioStream* audioStream = m_audioStreams[playerId];
         if (!m_mediaPlayers[playerId]->openFile(filePath, audioStream)) {
             printf("Could not play!!\n");
             m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::FileNotSupported, "File not supported"));
             return;
         }
+
+        printf("start fade..");
         if (m_planeMixers[planeId].startFade(playerId)) {
             m_mediaPlayers[playerId]->play(); 
             if (m_mediaSlotIdToPlayerId.find(mediaSlotId) != m_mediaSlotIdToPlayerId.end()) {
@@ -208,6 +239,7 @@ void PlaybackOperator::showMedia(int mediaSlotId)
             }
             m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
         } 
+    
     }
     // else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
     // {
@@ -300,15 +332,13 @@ void PlaybackOperator::update(float deltaTime)
         }
         
         // todo: enable analog input
-        float fadeValue = float(m_registry.settings().analog0) / 1024.0;
-        if (fadeValue < 0.01) 
-        fadeValue = 0.0;
-        else if (fadeValue > 0.99)
-        fadeValue = 1.0;
-        // printf("fadeValue: %d, %f\n", m_registry.settings().analog0, fadeValue);
-        // planeMixer.setMixValue(fadeValue);
+        if(m_registry.settings().useFader) {
+            planeMixer.setMixValue(m_registry.settings().analog0);
+        }
+        else {
+            planeMixer.updateAutoFade(deltaTime);
+        }
         
-        planeMixer.update(deltaTime);
     }
 
     for (auto mediaPlayer : m_mediaPlayers) {

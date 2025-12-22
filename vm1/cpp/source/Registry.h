@@ -247,6 +247,8 @@ struct Settings
     int autoPlayOnHDMI0 = -1;
     int autoPlayOnHDMI1 = -1;
     KioskSettings kiosk;
+    bool useFader = false;
+    bool useRotaryAsFader = false;
 
     // Volatile
     bool isProVersion = false;
@@ -255,7 +257,8 @@ struct Settings
     std::string captureDevicePath = "";
     std::vector<std::string> hdmiOutputs = std::vector<std::string>(2, std::string());
     std::vector<std::string> hdmiInputs = std::vector<std::string>(2, std::string());
-    uint16_t analog0 = 0;
+    float analog0 = 0;
+    int32_t rotary = 0;
 
     template <class Archive>
     void serialize(Archive &ar)
@@ -264,6 +267,8 @@ struct Settings
             CEREAL_NVP(showUI), 
             CEREAL_NVP(defaultLooping), 
             CEREAL_NVP(fadeTime),
+            CEREAL_NVP(useFader),
+            CEREAL_NVP(useRotaryAsFader),
             CEREAL_NVP(volume), 
             CEREAL_NVP(rotarySensitivity),
             CEREAL_NVP(useUvcCaptureDevice),

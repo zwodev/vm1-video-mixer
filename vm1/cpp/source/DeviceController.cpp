@@ -238,7 +238,16 @@ void DeviceController::requestVM1DeviceBuffer()
             }
         }
 
-        m_registry.settings().analog0 = deviceBuffer.analog_0;
-        
+        float a0 = float(deviceBuffer.analog_0) / 1024.0;
+        if (a0 < 0.01) a0 = 0.0;
+        else if (a0 > 0.99) a0 = 1.0;
+        m_registry.settings().analog0 = a0;
+        m_registry.settings().rotary = deviceBuffer.rotary_1;
+        // printf("fadeValue: %d, %f\n", deviceBuffer.analog_0, a0);
+
+        // todo: this is a hacky solution to use the rotary encoder if there is no potentiometer attached:
+        if(m_registry.settings().useRotaryAsFader) {
+            m_registry.settings().analog0 = float(deviceBuffer.rotary_1 % 100) / 100.0f;
+        }        
     }
 }
