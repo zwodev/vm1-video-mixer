@@ -10,6 +10,7 @@
 #include "UI.h"
 #include "NetworkTools.h"
 #include "VM1DeviceDefinitions.h"
+#include "ImageBuffer.h"
 
 #include <imgui.h>
 #include <vector>
@@ -42,7 +43,7 @@ void MenuSystem::subscribeToEvents()
 void MenuSystem::createMenus()
 {
     m_menus[MT_StartupScreen]       =  {"", {}, [this](int id, int* fIdx){StartupScreen(id, fIdx);}};
-    m_menus[MT_InfoSelection]       =  {"Info", {}};
+    m_menus[MT_InfoSelection]       =  {"Info", {}, [this](int id, int* fIdx){InfoScreen(id, fIdx);}};
     m_menus[MT_InputSelection]      =  {"Source", {
                                             {"File", {}, [this](int id, int* fIdx){FileSelection(id, fIdx);}},
                                             {"Live", {}, [this](int id, int* fIdx){LiveInputSelection(id, fIdx);}},
@@ -103,7 +104,12 @@ void MenuSystem::handleMediaAndEditButtons()
         switch (editButtonId)
         {
         case 0:
-            setMenu(MT_PlaybackSelection);
+            if(m_registry.settings().displayType == DisplayType::SSD1351_OLED) { 
+                setMenu(MT_PlaybackSelection);
+            } else if(m_registry.settings().displayType == DisplayType::ILI9341_IPS_LCD) {
+                setMenu(MT_InfoSelection);
+            }
+    
             break;
         case 1:
             setMenu(MT_ButtonMatrix);
@@ -256,7 +262,20 @@ void MenuSystem::render()
 // TODO: Could be put in different namespaces
 void MenuSystem::StartupScreen(int id, int* focusedIdx)
 {
-    m_ui.startUpLogo();
+    if(m_registry.settings().displayType == DisplayType::SSD1351_OLED) { 
+        m_ui.startUpLogo();
+    } else if(m_registry.settings().displayType == DisplayType::ILI9341_IPS_LCD) {
+        m_ui.Image(ImageBuffer("media/splash-screen.png"));
+    }
+}
+
+void MenuSystem::InfoScreen(int id, int* focusedIdx)
+{
+    if(m_registry.settings().displayType == DisplayType::SSD1351_OLED) { 
+      
+    } else if(m_registry.settings().displayType == DisplayType::ILI9341_IPS_LCD) {
+        m_ui.Image(ImageBuffer("media/01-info.png"));
+    }
 }
 
 void MenuSystem::FileSelection(int id, int* focusedIdx)

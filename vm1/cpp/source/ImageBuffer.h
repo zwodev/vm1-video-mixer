@@ -2,6 +2,8 @@
 
 #include <cstdlib>  // for free()
 #include <utility>  // for std::move
+#include <string>
+#include "stb/stb_image.h"  // For stbi_load function declaration
 
 struct ImageBuffer
 {
@@ -13,6 +15,26 @@ struct ImageBuffer
         this->channels = channels;
         this->data = data;
         this->isValid = true;
+    }
+
+    ImageBuffer(const std::string& filename) {
+        int w, h, ch;
+        unsigned char* imgData = stbi_load(filename.c_str(), &w, &h, &ch, 0);
+        
+        if (imgData == nullptr) {
+            isValid = false;
+            width = 0;
+            height = 0;
+            channels = 0;
+            data = nullptr;
+            return;
+        }
+        
+        width = w;
+        height = h;
+        channels = ch;
+        data = reinterpret_cast<char*>(imgData);
+        isValid = true;
     }
 
     // Delete copy constructor and copy assignment to prevent double-free bugs.

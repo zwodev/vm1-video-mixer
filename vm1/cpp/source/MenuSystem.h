@@ -54,6 +54,7 @@ private:
 
 private:
     void StartupScreen(int id, int* selectedIdx);
+    void InfoScreen(int id, int* selectedIdx);
     void FileSelection(int id, int* selectedIdx);
     void LiveInputSelection(int id, int* selectedIdx);
     void PlaybackSettings(int id, int* selectedIdx);
