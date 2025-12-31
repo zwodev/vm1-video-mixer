@@ -10,6 +10,8 @@
 #include "VM1Application.h"
 #include "VM1DeviceDefinitions.h"
 #include "CaptureType.h"
+#include "ili9341/ILI9341.h"
+#include "oled/OLED_1in5_rgb.h"
 
 #include <kms++/card.h>
 #include <kms++/connector.h>
@@ -22,12 +24,13 @@
 #include <stdlib.h>
 #include <errno.h>
 
+
 VM1Application::VM1Application() :
     m_keyboardControllerSdl(m_registry, m_eventBus),
     m_keyboardControllerLinux(m_registry, m_eventBus),
     m_playbackOperator(m_registry, m_eventBus, m_deviceController),
     m_fileAssignmentWidget(m_registry, m_eventBus),
-    m_stbRenderer(DISPLAY_WIDTH, DISPLAY_HEIGHT),
+    m_stbRenderer(),  // Default constructor - width/height will be initialized in constructor body
     m_ui(m_stbRenderer, m_eventBus),
     m_menuSystem(m_ui, m_registry, m_eventBus),
     m_deviceController(m_eventBus, m_registry),
@@ -429,8 +432,24 @@ bool VM1Application::exec()
 {
     if (!initialize()) return false;
 
-    m_oledController.setStbRenderer(&m_stbRenderer);
-    m_oledController.start();
+
+    if (m_registry.settings().displayType == DisplayType::SSD1351_OLED) {
+        SDL_Log("Using SSD1351 OLED display!");
+        m_stbRenderer.init(OLED_1in5_RGB_WIDTH, OLED_1in5_RGB_HEIGHT);
+        m_oledController.setStbRenderer(&m_stbRenderer);
+        m_oledController.start();
+    }
+    else if (m_registry.settings().displayType == DisplayType::ILI9341_IPS_LCD) {
+        SDL_Log("Using ILI9341 IPS LCD display!");
+        m_stbRenderer.init(ILI9341Controller::DISPLAY_WIDTH, ILI9341Controller::DISPLAY_HEIGHT);
+        m_ili9341Controller.setStbRenderer(&m_stbRenderer);
+        m_ili9341Controller.start();
+        m_ili9341Controller.waitForReady();
+    }
+    else {
+        SDL_Log("Unknown display type!");
+        return false;
+    }
 
     Uint64 lastTime = SDL_GetTicks();
     

@@ -14,6 +14,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <cstdint>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/ioctl.h>

@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <functional>
 #include <sstream>
+#include <algorithm> 
 
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/archives/json.hpp>
@@ -17,6 +18,11 @@
 
 #include "ImageBuffer.h"
 #include "stb/stb_image.h"
+
+enum class DisplayType {
+    SSD1351_OLED = 0,      // Original 1.5" OLED display
+    ILI9341_IPS_LCD = 1    // New 2.8" IPS LCD display
+};
 
 class InputConfig
 {
@@ -206,7 +212,7 @@ public:
         // if (channels != 3)
         //     return;
 
-        m_qrCodeImageBuffer = ImageBuffer(width, height, channels, data);
+        m_qrCodeImageBuffer = ImageBuffer(width, height, channels, reinterpret_cast<char*>(data));
     }
 
     const ImageBuffer& getQrCodeImageBuffer()
@@ -249,6 +255,8 @@ struct Settings
     KioskSettings kiosk;
     bool useFader = false;
     bool useRotaryAsFader = false;
+    // DisplayType displayType = DisplayType::SSD1351_OLED;
+    DisplayType displayType = DisplayType::ILI9341_IPS_LCD;
 
     // Volatile
     bool isProVersion = false;
@@ -276,7 +284,8 @@ struct Settings
             CEREAL_NVP(serialDevice),
             CEREAL_NVP(autoPlayOnHDMI0),
             CEREAL_NVP(autoPlayOnHDMI1),
-            CEREAL_NVP(kiosk)
+            CEREAL_NVP(kiosk),
+            CEREAL_NVP(displayType)
         );
     }
 };

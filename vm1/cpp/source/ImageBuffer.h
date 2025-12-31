@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdlib>  // for free()
+#include <utility>  // for std::move
+
 struct ImageBuffer
 {
     ImageBuffer() {}
@@ -12,9 +15,45 @@ struct ImageBuffer
         this->isValid = true;
     }
 
+    // Delete copy constructor and copy assignment to prevent double-free bugs.
+    // If ImageBuffer were copyable, two objects could point to the same data pointer.
+    // When both destructors run, they would both try to free() the same memory,
+    // causing a crash. Instead, we use move semantics (below) to transfer ownership.
+    ImageBuffer(const ImageBuffer&) = delete;
+    ImageBuffer& operator=(const ImageBuffer&) = delete;
+
+    // Move constructor
+    ImageBuffer(ImageBuffer&& other) noexcept 
+        : isValid(other.isValid), width(other.width), height(other.height), 
+          channels(other.channels), data(other.data) {
+        other.data = nullptr;  // Prevent other from freeing
+        other.isValid = false;
+    }
+
+    // Move assignment
+    ImageBuffer& operator=(ImageBuffer&& other) noexcept {
+        if (this != &other) {
+            // Free our current data
+            if (data) {
+                free(data);
+            }
+            // Take ownership of other's data
+            isValid = other.isValid;
+            width = other.width;
+            height = other.height;
+            channels = other.channels;
+            data = other.data;
+            // Prevent other from freeing
+            other.data = nullptr;
+            other.isValid = false;
+        }
+        return *this;
+    }
+
     ~ImageBuffer() {
         if (data) {
-            delete data;
+            // Data comes from stbi_load which uses malloc, so use free()
+            free(data);
         }
     }
 

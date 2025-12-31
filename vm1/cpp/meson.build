@@ -57,6 +57,7 @@ sources = [ 'main.cpp',
             'source/CameraController.cpp',
             'source/MenuSystem.cpp',
             'source/OledController.cpp',
+            'source/ILI9341Controller.cpp',
             'source/StbRenderer.cpp',
             'source/DeviceController.cpp',
             'source/KeyboardController.cpp',
@@ -65,7 +66,9 @@ sources = [ 'main.cpp',
             'source/oled/DEV_Config.c',  
             'source/oled/GUI_BMPfile.c',  
             'source/oled/GUI_Paint.c',  
-            'source/oled/OLED_1in5_rgb.c'
+            'source/oled/OLED_1in5_rgb.c',
+            'source/ili9341/DEV_Config.c',
+            'source/ili9341/ILI9341.c'
           ]
 
 incdir = include_directories('source')

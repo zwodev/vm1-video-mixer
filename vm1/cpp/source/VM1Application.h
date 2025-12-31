@@ -23,6 +23,7 @@
 #include "FileAssignmentWidget.h"
 #include "CameraController.h"
 #include "OledController.h"
+#include "ILI9341Controller.h"
 #include "StbRenderer.h"
 #include "MenuSystem.h"
 #include "UI.h"
@@ -88,6 +89,7 @@ private:
     StbRenderer m_stbRenderer;
     UI m_ui;
     OledController m_oledController;
+    ILI9341Controller m_ili9341Controller;
     MenuSystem m_menuSystem;
     DeviceController m_deviceController;
 };

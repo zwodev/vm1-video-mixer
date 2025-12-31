@@ -38,6 +38,11 @@ void Image::clear(uint8_t r, uint8_t g, uint8_t b)
             setPixel(x, y, r, g, b);
 }
 
+StbRenderer::StbRenderer() : m_img(1, 1)  // Default: 1x1 placeholder
+{
+    // Font loading will happen in init()
+}
+
 StbRenderer::StbRenderer(int width, int height) : m_img(width, height)
 {
     clear();
@@ -46,7 +51,22 @@ StbRenderer::StbRenderer(int width, int height) : m_img(width, height)
     {
         std::cerr << "Font load failed" << std::endl;
     }
-    std::cout << "Renderer initialized" << std::endl;
+    std::cout << "Renderer initialized with " << width << "x" << height << std::endl;
+}
+
+void StbRenderer::init(int width, int height)
+{
+    // Recreate the image with new dimensions using placement new
+    m_img.~Image();
+    new (&m_img) Image(width, height);
+    
+    clear();
+
+    if (!loadFont("fonts/ProggyClean.ttf"))
+    {
+        std::cerr << "Font load failed" << std::endl;
+    }
+    std::cout << "Renderer initialized with " << width << "x" << height << std::endl;
 }
 
 StbRenderer::~StbRenderer()
@@ -87,6 +107,11 @@ void StbRenderer::update()
 void StbRenderer::queueCurrentImage()
 {
     std::lock_guard<std::mutex> lock(m_mutex);
+    // Clear old frames - always show the latest frame
+    // This prevents queue backup when main loop is faster than display
+    while (!m_imageQueue.empty()) {
+        m_imageQueue.pop();
+    }
     m_imageQueue.push(m_img);
     m_cv.notify_one();
 }

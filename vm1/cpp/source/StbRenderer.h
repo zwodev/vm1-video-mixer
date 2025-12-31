@@ -84,8 +84,11 @@ private:
     void queueCurrentImage();
 
 public:
+    StbRenderer();  // Default constructor - call init() before use
     StbRenderer(int width, int height);
     ~StbRenderer();
+    
+    void init(int width, int height);  // Initialize with dimensions
     
     int width() const;
     int height() const;
