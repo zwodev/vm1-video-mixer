@@ -57,6 +57,7 @@ private:
     void InfoScreen(int id, int* selectedIdx);
     void FileSelection(int id, int* selectedIdx);
     void LiveInputSelection(int id, int* selectedIdx);
+    void ShaderSelection(int id, int* selectedIdx);
     void PlaybackSettings(int id, int* selectedIdx);
     void NetworkInfo(int id, int* selectedIdx);
     void GlobalSettings(int id, int* selectedIdx);

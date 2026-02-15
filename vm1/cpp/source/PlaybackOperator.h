@@ -5,6 +5,7 @@
 #include "CameraPlayer.h"
 #include "WebcamPlayer.h"
 #include "VideoPlayer.h"
+#include "ShaderPlayer.h"
 #include "AudioSystem.h"
 #include "DeviceController.h"
 #include "Registry.h"
@@ -118,6 +119,7 @@ private:
     bool getCameraPlayerIdFromPort(int port, int& id);
     bool getWebcamPlayerIdFromPort(int port, int& id);
     bool getFreeVideoPlayerId(int& id, int planeId);
+    bool getFreeShaderPlayerId(int& id, int planeId);
     bool isPlayerIdActive(int playerId);
     void updateDeviceController();
 
@@ -134,6 +136,7 @@ private:
     std::vector<VideoPlayer*> m_videoPlayers;
     std::vector<CameraPlayer*> m_cameraPlayers;
     std::vector<WebcamPlayer*> m_webcamPlayers;
+    std::vector<ShaderPlayer*> m_shaderPlayers;
     std::vector<MediaPlayer*> m_mediaPlayers;
     std::map<int, int> m_mediaSlotIdToPlayerId;
     std::vector<int> m_recentlyUsedPlayerIds;

@@ -59,6 +59,12 @@ void PlaybackOperator::initialize()
         m_mediaPlayers.push_back(mediaPlayer);
     }
 
+    for (int i = 0; i < 1; ++i) {
+        m_shaderPlayers.push_back(new ShaderPlayer());
+        MediaPlayer* mediaPlayer = m_shaderPlayers[i];
+        m_mediaPlayers.push_back(mediaPlayer);
+    }
+
     m_audioSystem.initialize();
     for (int i = 0; i < m_mediaPlayers.size(); ++i) {
         AudioDevice* audioDevice = m_audioSystem.audioDevice(0);
@@ -90,6 +96,11 @@ void PlaybackOperator::finalize()
         delete webcamPlayer;
     } 
     m_webcamPlayers.clear();
+
+    for (auto shaderPlayer : m_shaderPlayers) {
+        delete shaderPlayer;
+    } 
+    m_shaderPlayers.clear();
 
     for (auto planeRenderer : m_planeRenderers) {
         delete planeRenderer;
@@ -167,6 +178,18 @@ bool PlaybackOperator::getWebcamPlayerIdFromPort(int port, int& id)
                 id = i;
                 return true;
             }
+        }
+    }
+
+    return false;
+}
+
+bool PlaybackOperator::getFreeShaderPlayerId(int& id, int planeId)
+{
+    for (int i = 0; i < m_mediaPlayers.size(); ++i) {     
+        if(ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer *>(m_mediaPlayers[i])) {
+            id = i;
+            return true;
         }
     }
 
@@ -267,7 +290,7 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     //         }
     //     }
     // }
-     else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
+    else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
     {
         if (!m_registry.settings().isHdmiInputReady) {
             m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::InputNotReady, "Still scanning"));
@@ -302,6 +325,17 @@ void PlaybackOperator::showMedia(int mediaSlotId)
             if (m_planeMixers[planeId].startFade(playerId))  {
                 m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
             }
+        }
+    }
+    else if (ShaderInputConfig *shaderInputConfig = dynamic_cast<ShaderInputConfig *>(inputConfig))
+    {
+        printf("Check 1!\n");
+        if (!getFreeShaderPlayerId(playerId, planeId)) return;
+        printf("Check 2!\n");
+        if (m_planeMixers[planeId].startFade(playerId))  {
+            m_planeMixers[planeId].activate();
+            printf("Check 3!\n");
+            m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
         }
     }
     // else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
@@ -389,6 +423,16 @@ void PlaybackOperator::update(float deltaTime)
             //     cameraPlayer->update();
             // }
         }
+        else if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(inputConfig))
+        {
+            ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(mediaPlayer);
+            shaderPlayer->setCurrentTime(m_registry.settings().currentTime);
+            //CameraPlayer* cameraPlayer = dynamic_cast<CameraPlayer*>(mediaPlayer);
+            // if (cameraPlayer && cameraPlayer->isPlaying())
+            // {
+            //     cameraPlayer->update();
+            // }
+        }
     }
 
     std::vector<int> recentlyUsedPlayerIds = m_recentlyUsedPlayerIds;
@@ -438,6 +482,7 @@ void PlaybackOperator::renderPlane(int planeId)
     }
 
     planeRenderer->update(texture0, texture1, planeMixer.mixValue());
+    //printf("Mix Value: %f\n", planeMixer.mixValue());
 }
 
 void PlaybackOperator::updateDeviceController()

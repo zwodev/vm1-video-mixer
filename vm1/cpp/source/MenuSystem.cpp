@@ -47,7 +47,7 @@ void MenuSystem::createMenus()
     m_menus[MT_InputSelection]      =  {"Source", {
                                             {"File", {}, [this](int id, int* fIdx){FileSelection(id, fIdx);}},
                                             {"Live", {}, [this](int id, int* fIdx){LiveInputSelection(id, fIdx);}},
-                                            {"Shader", {}}
+                                            {"Shader", {}, [this](int id, int* fIdx){ShaderSelection(id, fIdx);}}
                                         }};
     m_menus[MT_PlaybackSelection]   = {"Play", {}, [this](int id, int* fIdx){PlaybackSettings(id, fIdx);}};
     m_menus[MT_NetworkInfo]         = {"Network", {}, [this](int id, int* fIdx){NetworkInfo(id, fIdx);}};
@@ -329,6 +329,37 @@ void MenuSystem::LiveInputSelection(int id, int* focusedIdx)
     }
 }
 
+void MenuSystem::ShaderSelection(int id, int* focusedIdx)
+{
+    auto config = std::make_unique<ShaderInputConfig>();
+    // config->looping = m_registry.settings().defaultLooping;
+
+    ShaderInputConfig* currentConfig = m_registry.inputMappings().getShaderInputConfig(id);
+    if (currentConfig) {
+        *config = *currentConfig;
+    } 
+
+    std::vector<std::string>& files = m_registry.mediaPool().getVideoFiles();
+    bool changed = false;
+    m_ui.BeginList(focusedIdx);
+    if (m_ui.RadioButton("customShader", (config->fileName == "customShader"))) {
+        config->fileName = "customShader";
+        changed = true;
+    }
+
+    // for (int i = 0; i < files.size(); ++i) {
+    //     std::string fileName = files[i];
+    //     if (m_ui.RadioButton(fileName.c_str(), (config->fileName == fileName))) {
+    //         config->fileName = fileName;
+    //         changed = true;
+    //     }
+    // }
+    m_ui.EndList(); 
+
+    if (changed)
+        m_registry.inputMappings().addInputConfig(id, std::move(config));
+}
+
 void MenuSystem::PlaybackSettings(int id, int* focusedIdx) 
 {
     InputConfig* currentConfig = m_registry.inputMappings().getInputConfig(id);
@@ -451,6 +482,10 @@ void MenuSystem::ButtonMatrix(int id, int* focusedIdx)
         }
         else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(currentConfig)) {
             if (hdmiInputConfig->isActive) m_buttonTexts[i].second = COLOR::BLUE;
+            else m_buttonTexts[i].second = COLOR::DARK_BLUE;
+        }
+        else if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(currentConfig)) {
+            if (shaderInputConfig->isActive) m_buttonTexts[i].second = COLOR::GREEN;
             else m_buttonTexts[i].second = COLOR::DARK_BLUE;
         }
     }

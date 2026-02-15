@@ -458,6 +458,8 @@ bool VM1Application::exec()
         Uint64 currentTime = SDL_GetTicks();
         double deltaTime = (currentTime - lastTime) / 1000.0;
 
+        m_registry.settings().currentTime = currentTime / 1000.0;
+
         // Force to < 60 fps even when in headless mode
         if (deltaTime < 0.016) {
             SDL_Delay(1);

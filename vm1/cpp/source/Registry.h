@@ -75,10 +75,28 @@ public:
     }
 };
 
+class ShaderInputConfig : public InputConfig
+{
+public:
+    ShaderInputConfig() = default;
+    ~ShaderInputConfig() = default;
+
+    std::string fileName;
+
+    template <class Archive>
+    void serialize(Archive& ar)
+    {
+        ar(cereal::base_class<InputConfig>(this));
+    }
+};
+
+
 CEREAL_REGISTER_TYPE(VideoInputConfig);
 CEREAL_REGISTER_TYPE(HdmiInputConfig);
+CEREAL_REGISTER_TYPE(ShaderInputConfig);
 CEREAL_REGISTER_POLYMORPHIC_RELATION(InputConfig, VideoInputConfig)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(InputConfig, HdmiInputConfig)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(InputConfig, ShaderInputConfig)
 
 // TODO: Could be simplified with templates
 class InputMappings
@@ -127,6 +145,17 @@ public:
         if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
         {
             return hdmiInputConfig;
+        }
+
+        return nullptr;
+    }
+
+    ShaderInputConfig* getShaderInputConfig(int id)
+    {
+        InputConfig *inputConfig = getInputConfig(id);
+        if (ShaderInputConfig *shaderInputConfig = dynamic_cast<ShaderInputConfig *>(inputConfig))
+        {
+            return shaderInputConfig;
         }
 
         return nullptr;
@@ -265,6 +294,8 @@ struct Settings
     std::string captureDevicePath = "";
     std::vector<std::string> hdmiOutputs = std::vector<std::string>(2, std::string());
     std::vector<std::string> hdmiInputs = std::vector<std::string>(2, std::string());
+    
+    float currentTime = 0.0f;
     float analog0 = 0;
     int32_t rotary = 0;
 
