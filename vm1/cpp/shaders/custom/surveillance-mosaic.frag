@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2023-2025 Nils Zweiling
  *
@@ -6,8 +7,8 @@
  * for full license details.
  */
 
- /*
-	https://www.shadertoy.com/view/7tjSWy
+/*
+    https://www.shadertoy.com/view/7tjSWy
     Author: Felipe Tovar-Henao [www.felipe-tovar-henao.com]
     Description: Animated eye mosaic using value noise, and shaping functions.
 */
