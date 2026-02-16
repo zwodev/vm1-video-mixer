@@ -39,10 +39,10 @@ extern "C"
 #define UDOUBLE uint32_t
 
 // ILI9341 GPIO Pin Definitions
-#define ILI9341_CS 5      // Chip Select
-#define ILI9341_RST 17   // Reset
-#define ILI9341_RS 22    // Register Select / Data/Command
-#define ILI9341_LED 18   // Backlight control
+#define ILI9341_CS 8      // Chip Select
+#define ILI9341_RST 27   // Reset
+#define ILI9341_RS 25    // Register Select / Data/Command
+// #define ILI9341_LED 18   // Backlight control
 
 // ILI9341-specific functions (prefixed to avoid conflicts with OLED driver)
 UBYTE ILI9341_DEV_ModuleInit(void);
@@ -64,8 +64,8 @@ int ILI9341_DEV_SPI_Write_nByte(uint8_t *pData, uint32_t Len);
 #define ILI9341_RS_0 ILI9341_DEV_Digital_Write(ILI9341_RS, 0)  // Command
 #define ILI9341_RS_1 ILI9341_DEV_Digital_Write(ILI9341_RS, 1)  // Data
 
-#define ILI9341_LED_0 ILI9341_DEV_Digital_Write(ILI9341_LED, 0)
-#define ILI9341_LED_1 ILI9341_DEV_Digital_Write(ILI9341_LED, 1)
+// #define ILI9341_LED_0 ILI9341_DEV_Digital_Write(ILI9341_LED, 0)
+// #define ILI9341_LED_1 ILI9341_DEV_Digital_Write(ILI9341_LED, 1)
 
 // Compatibility aliases for ILI9341.c (these call the ILI9341-specific versions)
 #define DEV_Delay_ms ILI9341_DEV_Delay_ms

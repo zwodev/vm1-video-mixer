@@ -97,13 +97,13 @@ static void ILI9341_DEV_GPIO_Init(void)
     ILI9341_DEV_GPIO_Mode(ILI9341_CS, 1);
     ILI9341_DEV_GPIO_Mode(ILI9341_RST, 1);
     ILI9341_DEV_GPIO_Mode(ILI9341_RS, 1);
-    ILI9341_DEV_GPIO_Mode(ILI9341_LED, 1);
+    // ILI9341_DEV_GPIO_Mode(ILI9341_LED, 1);
     
     // Set initial states
     ILI9341_CS_1;  // CS high (inactive)
     ILI9341_RST_1; // Reset high
     ILI9341_RS_0;  // Command mode
-    ILI9341_LED_1; // Backlight on
+    // ILI9341_LED_1; // Backlight on
 }
 
 /******************************************************************************
@@ -246,7 +246,7 @@ void ILI9341_DEV_ModuleExit(void)
     ILI9341_CS_1;
     ILI9341_RST_1;
     ILI9341_RS_0;
-    ILI9341_LED_0;
+    // ILI9341_LED_0;
 
 #elif USE_DEV_LIB
     if (ILI9341_SPI_Handle >= 0) {
