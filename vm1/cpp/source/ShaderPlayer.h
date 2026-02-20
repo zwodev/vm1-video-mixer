@@ -36,9 +36,11 @@ public:
 
 public:
     bool openFile(const std::string& fileName, AudioStream* audioStream = nullptr);
+    void close() override;
     void finalize();
     void update() override;
     void setCurrentTime(float time);
+    void setAnalogValue(float value);
 
 private:
     void loadShaders() override;
@@ -51,6 +53,8 @@ private:
 private:
     Shader m_customShader;
     float m_currentTime = 0.0f;
+    float m_analogValue = 0.0f;
+    bool m_isShaderReady = false;
 
     int m_fd = -1;
     int m_bufferIndex = -1;

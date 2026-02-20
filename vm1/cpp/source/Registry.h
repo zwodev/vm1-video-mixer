@@ -71,7 +71,10 @@ public:
     template <class Archive>
     void serialize(Archive& ar)
     {
-        ar(cereal::base_class<InputConfig>(this), hdmiPort);
+        ar(
+            cereal::base_class<InputConfig>(this), 
+            hdmiPort
+        );
     }
 };
 
@@ -86,7 +89,10 @@ public:
     template <class Archive>
     void serialize(Archive& ar)
     {
-        ar(cereal::base_class<InputConfig>(this));
+        ar(
+            cereal::base_class<InputConfig>(this),
+            CEREAL_NVP(fileName)
+        );
     }
 };
 
@@ -217,6 +223,35 @@ public:
         std::sort(m_videoFiles.begin(), m_videoFiles.end());
     }
 
+    std::vector<std::string>& getShaderFiles()
+    {
+        // TODO: Update only when new files are present.
+        updateShaderFiles();
+        return m_shaderFiles;
+    }
+
+    std::string getShaderFilePath(const std::string& fileName)
+    {
+        return m_shaderFilePath + fileName;
+    }
+
+    void updateShaderFiles()
+    {
+        m_shaderFiles.clear();
+        for (const auto &entry : std::filesystem::directory_iterator(m_shaderFilePath))
+        {
+            if (entry.is_regular_file())
+            {
+                std::string filename = entry.path().filename().string();
+                std::string filePath = filename;
+                m_shaderFiles.push_back(filePath);
+            }
+        }
+
+        // sort the files by name
+        std::sort(m_shaderFiles.begin(), m_shaderFiles.end());
+    }
+
     void loadQrCodeImageBuffer()
     {
         int width, height, channels;
@@ -251,7 +286,9 @@ public:
 
 private:
     std::string m_videoFilePath = "../videos/";
+    std::string m_shaderFilePath = "../shaders/";
     std::vector<std::string> m_videoFiles;
+    std::vector<std::string> m_shaderFiles;
     ImageBuffer m_qrCodeImageBuffer;
 };
 
@@ -277,7 +314,6 @@ struct Settings
     int volume = 10;
     bool useUvcCaptureDevice = false;
     int rotarySensitivity = 5;
-    std::string videoFilePath = "../videos/";
     std::string serialDevice = "/dev/ttyACM0";
     int autoPlayOnHDMI0 = -1;
     int autoPlayOnHDMI1 = -1;
@@ -296,7 +332,7 @@ struct Settings
     std::vector<std::string> hdmiInputs = std::vector<std::string>(2, std::string());
     
     float currentTime = 0.0f;
-    float analog0 = 0;
+    float analog0 = 0.5f;
     int32_t rotary = 0;
 
     template <class Archive>
@@ -311,7 +347,6 @@ struct Settings
             CEREAL_NVP(volume), 
             CEREAL_NVP(rotarySensitivity),
             CEREAL_NVP(useUvcCaptureDevice),
-            CEREAL_NVP(videoFilePath), 
             CEREAL_NVP(serialDevice),
             CEREAL_NVP(autoPlayOnHDMI0),
             CEREAL_NVP(autoPlayOnHDMI1),

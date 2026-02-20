@@ -332,32 +332,47 @@ void MenuSystem::LiveInputSelection(int id, int* focusedIdx)
 void MenuSystem::ShaderSelection(int id, int* focusedIdx)
 {
     auto config = std::make_unique<ShaderInputConfig>();
-    // config->looping = m_registry.settings().defaultLooping;
 
     ShaderInputConfig* currentConfig = m_registry.inputMappings().getShaderInputConfig(id);
     if (currentConfig) {
         *config = *currentConfig;
     } 
 
-    std::vector<std::string>& files = m_registry.mediaPool().getVideoFiles();
+    std::vector<std::string>& files = m_registry.mediaPool().getShaderFiles();
     bool changed = false;
     m_ui.BeginList(focusedIdx);
-    if (m_ui.RadioButton("customShader", (config->fileName == "customShader"))) {
-        config->fileName = "customShader";
-        changed = true;
+    for (int i = 0; i < files.size(); ++i) {
+        std::string fileName = files[i];
+        if (m_ui.RadioButton(fileName.c_str(), (config->fileName == fileName))) {
+            config->fileName = fileName;
+            changed = true;
+        }
     }
-
-    // for (int i = 0; i < files.size(); ++i) {
-    //     std::string fileName = files[i];
-    //     if (m_ui.RadioButton(fileName.c_str(), (config->fileName == fileName))) {
-    //         config->fileName = fileName;
-    //         changed = true;
-    //     }
-    // }
     m_ui.EndList(); 
 
     if (changed)
         m_registry.inputMappings().addInputConfig(id, std::move(config));
+    
+    // auto config = std::make_unique<ShaderInputConfig>();
+    // // config->looping = m_registry.settings().defaultLooping;
+
+    // ShaderInputConfig* currentConfig = m_registry.inputMappings().getShaderInputConfig(id);
+    // if (currentConfig) {
+    //     *config = *currentConfig;
+    // } 
+
+    // std::vector<std::string>& files = m_registry.mediaPool().getVideoFiles();
+    // bool changed = false;
+    // m_ui.BeginList(focusedIdx);
+    // if (m_ui.RadioButton("customShader", (config->fileName == "customShader"))) {
+    //     config->fileName = "customShader";
+    //     changed = true;
+    // }
+
+    // m_ui.EndList(); 
+
+    // if (changed)
+    //     m_registry.inputMappings().addInputConfig(id, std::move(config));
 }
 
 void MenuSystem::PlaybackSettings(int id, int* focusedIdx) 

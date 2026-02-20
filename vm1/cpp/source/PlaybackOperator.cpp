@@ -59,7 +59,7 @@ void PlaybackOperator::initialize()
         m_mediaPlayers.push_back(mediaPlayer);
     }
 
-    for (int i = 0; i < 1; ++i) {
+    for (int i = 0; i < 4; ++i) {
         m_shaderPlayers.push_back(new ShaderPlayer());
         MediaPlayer* mediaPlayer = m_shaderPlayers[i];
         m_mediaPlayers.push_back(mediaPlayer);
@@ -187,7 +187,7 @@ bool PlaybackOperator::getWebcamPlayerIdFromPort(int port, int& id)
 bool PlaybackOperator::getFreeShaderPlayerId(int& id, int planeId)
 {
     for (int i = 0; i < m_mediaPlayers.size(); ++i) {     
-        if(ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer *>(m_mediaPlayers[i])) {
+        if(!isPlayerIdActive(i) && dynamic_cast<ShaderPlayer *>(m_mediaPlayers[i])) {
             id = i;
             return true;
         }
@@ -331,6 +331,14 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     {
         printf("Check 1!\n");
         if (!getFreeShaderPlayerId(playerId, planeId)) return;
+        fileName = shaderInputConfig->fileName;
+        filePath = m_registry.mediaPool().getShaderFilePath(fileName);
+        if (!m_mediaPlayers[playerId]->openFile(filePath)) {
+            printf("Could not open custom shader!!\n");
+            m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::FileNotSupported, "File not supported"));
+            return;
+        }
+
         printf("Check 2!\n");
         if (m_planeMixers[planeId].startFade(playerId))  {
             m_planeMixers[planeId].activate();
@@ -393,6 +401,10 @@ void PlaybackOperator::update(float deltaTime)
             if (VideoPlayer* videoPlayer = dynamic_cast<VideoPlayer*>(mediaPlayer)) {
                 videoPlayer->close();
             }
+            else if (ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(mediaPlayer)) {
+                printf("Close shader (first)!\n");
+                shaderPlayer->close();
+            }
         }
 
         InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
@@ -427,6 +439,7 @@ void PlaybackOperator::update(float deltaTime)
         {
             ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(mediaPlayer);
             shaderPlayer->setCurrentTime(m_registry.settings().currentTime);
+            shaderPlayer->setAnalogValue(m_registry.settings().analog0);
             //CameraPlayer* cameraPlayer = dynamic_cast<CameraPlayer*>(mediaPlayer);
             // if (cameraPlayer && cameraPlayer->isPlaying())
             // {
@@ -439,8 +452,14 @@ void PlaybackOperator::update(float deltaTime)
     for (int playerId : recentlyUsedPlayerIds) {
         MediaPlayer* mediaPlayer = m_mediaPlayers[playerId];
         if (!isPlayerIdActive(playerId)) {
+            // TODO: Can we just close() on MediaPlayer for all types. What about WebcamPlayer. Do we want to close it?
             if (VideoPlayer* videoPlayer = dynamic_cast<VideoPlayer*>(mediaPlayer)) {
                 videoPlayer->close();
+                m_recentlyUsedPlayerIds.erase(std::find(m_recentlyUsedPlayerIds.begin(), m_recentlyUsedPlayerIds.end(), playerId));
+            }
+            else if (ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(mediaPlayer)) {
+                printf("Close shader (second)!\n");
+                shaderPlayer->close();
                 m_recentlyUsedPlayerIds.erase(std::find(m_recentlyUsedPlayerIds.begin(), m_recentlyUsedPlayerIds.end(), playerId));
             }
         } 

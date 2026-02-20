@@ -46,7 +46,19 @@ ShaderPlayer::~ShaderPlayer()
 
 bool ShaderPlayer::openFile(const std::string& fileName, AudioStream* audioStream)
 {
+    printf("Load Custom Shader: %s\n", fileName.c_str());
+    m_isShaderReady = m_customShader.load("shaders/pass.vert", fileName.c_str());
     return true;
+}
+
+void ShaderPlayer::close()
+{
+    MediaPlayer::close();
+
+    if (m_isShaderReady) {
+        m_customShader = Shader();
+        m_isShaderReady = false;
+    }
 }
 
 void ShaderPlayer::finalize()
@@ -55,8 +67,8 @@ void ShaderPlayer::finalize()
 
 void ShaderPlayer::loadShaders()
 {
-    printf("Load Shaders!\n");
-    m_customShader.load("shaders/pass.vert", "shaders/custom.frag");
+    //printf("Load Shaders!\n");
+    //m_customShader.load("shaders/pass.vert", "shaders/custom.frag");
 }
 
 void ShaderPlayer::run()
@@ -78,6 +90,11 @@ void ShaderPlayer::setCurrentTime(float time)
 {
     m_currentTime = time;
     //m_shader.setValue("iTime", time);
+}
+
+void ShaderPlayer::setAnalogValue(float value) 
+{
+    m_analogValue = value;
 }
 
 void ShaderPlayer::render()
@@ -109,6 +126,7 @@ void ShaderPlayer::render()
     // }
     //m_shader.bindUniformLocation("inputTexture", 0);
     m_customShader.setValue("iTime", m_currentTime);
+    m_customShader.setValue("iAnalog0", m_analogValue);
     
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -122,5 +140,5 @@ void ShaderPlayer::render()
 
 void ShaderPlayer::update()
 {
-    render();
+    if (m_isShaderReady) render();
 }

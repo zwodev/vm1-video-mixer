@@ -17,6 +17,7 @@ out vec4 fragColor;
 
 const vec2 OUT_TEX_SIZE = vec2(1920.0f, 1080.0f);
 uniform float iTime;
+uniform float iAnalog0;
 
 
 
@@ -29,7 +30,7 @@ void main() {
     // Cosine palette
     vec3 c = cos(6.2831853*((p.x+p.y)*.12 - vec3(.0,.33,.66)))*.5 + .5;
     // Scaling
-    p *= 10.;
+    p *= 10. * iAnalog0 + 0.2;
     // Truchet tile ("Smith" variation)
     float h = fract(sin(dot(floor(p), vec2(12.9898, 78.233)))*43758.5453123);
     p = fract(vec2(h < .5 ? p.x : -p.x, p.y));
