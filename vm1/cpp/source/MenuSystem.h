@@ -28,7 +28,20 @@ public:
         MT_StartupScreen,
         MT_InfoSelection,
         MT_InputSelection,
+            MT_MediaFiles,
+            MT_LiveInputs,
+            MT_Shaders,
         MT_PlaybackSelection,
+        MT_Effects,
+            MT_CustomFx,
+            MT_ChromaKey,
+            MT_ColorCorrection,
+            MT_BlendMode,
+        MT_Outputs,
+            MT_PlaneSettings,
+                MT_HdmiSelection,
+                MT_Mask,
+                MT_Mapping,
         MT_DeviceSettings,
         MT_NetworkInfo,
         MT_SettingsSelection,
@@ -55,10 +68,26 @@ private:
 private:
     void StartupScreen(int id, int* selectedIdx);
     void InfoScreen(int id, int* selectedIdx);
+
+    void InputSelection(int id, int* selectedIdx);
     void FileSelection(int id, int* selectedIdx);
     void LiveInputSelection(int id, int* selectedIdx);
     void ShaderSelection(int id, int* selectedIdx);
+
     void PlaybackSettings(int id, int* selectedIdx);
+    
+    void Effects(int id, int* selectedIdx);
+    void CustomFx(int id, int* selectedIdx);
+    void ChromaKey(int id, int* selectedIdx);
+    void ColorCorrection(int id, int* selectedIdx);
+    void BlendMode(int id, int* selectedIdx);
+
+    void OutputPlanes(int id, int* selectedIdx);
+    void PlaneSettings(int id, int* selectedIdx);
+    void HdmiSelection(int id, int* selectedIdx);
+    void Mask(int id, int* selectedIdx);
+    void Mapping(int id, int* selectedIdx);
+    
     void NetworkInfo(int id, int* selectedIdx);
     void GlobalSettings(int id, int* selectedIdx);
     void DeviceSettings(int id, int* focusedIdx);

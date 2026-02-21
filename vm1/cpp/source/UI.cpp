@@ -251,6 +251,25 @@ void UI::Text(const std::string &label)
     UI::EndListElement();
 }
 
+void UI::PlainText(const std::string &label)
+{
+    UI::BeginListElement();
+    float fontSize = 16.0f;
+    Color color = COLOR::WHITE;
+    // if (m_focusedIdxPtr) {
+    //     if ((*m_focusedIdxPtr) == m_listSize){            
+    //         m_stbRenderer.drawRect(m_x, m_y - 1, m_stbRenderer.width() - m_x, fontSize - 2, COLOR::WHITE);
+    //         color = COLOR::BLACK;
+    //     } 
+    // }
+    m_stbRenderer.drawText(label, m_x, m_y, fontSize, color);
+    UI::EndListElement();
+}
+
+void UI::Break() {
+    m_y += 15.0f;
+}
+
 void UI::MenuTitle(std::string menuTitle)
 {
     float fontSize = 32.0f;
