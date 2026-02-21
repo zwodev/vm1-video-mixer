@@ -216,7 +216,12 @@ void DeviceController::requestVM1DeviceBuffer()
             for(int j = 0; j < m_editKeys.size(); ++j) 
             {
                 if (currentChar == m_editKeys[j]) {
-                    m_eventBus.publish(EditModeEvent(j));
+                    if(isShiftPressed){
+                        m_eventBus.publish(EditModeEvent(j + 8));
+                    }
+                    else {
+                        m_eventBus.publish(EditModeEvent(j));
+                    }
                     m_eventBus.publish(SystemEvent(SystemEvent::KeyDown));
                     return;
                 }

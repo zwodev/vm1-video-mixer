@@ -93,7 +93,12 @@ void KeyboardControllerLinux::update(input_event& event)
         for(int i = 0; i < m_editKeys.size(); ++i) 
         {
             if (event.code == m_editKeys[i]) {
-                m_eventBus.publish(EditModeEvent(i));
+                if(m_isShiftPressed){
+                    m_eventBus.publish(EditModeEvent(i+8));
+                }
+                else {
+                    m_eventBus.publish(EditModeEvent(i));
+                }                
                 return;
             }
         }

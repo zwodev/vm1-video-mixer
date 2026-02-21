@@ -74,7 +74,12 @@ void KeyboardControllerSDL::update(SDL_Event& event)
         for(int i = 0; i < m_editKeys.size(); ++i) 
         {
             if (event.key.key == m_editKeys[i]) {
-                m_eventBus.publish(EditModeEvent(i));
+                if(isShiftPressed){
+                    m_eventBus.publish(EditModeEvent(i+8));
+                }
+                else {
+                    m_eventBus.publish(EditModeEvent(i));
+                }                
                 return;
             }
         }
