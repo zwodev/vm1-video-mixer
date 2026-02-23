@@ -51,6 +51,7 @@ namespace COLOR
     static Color DARK_GREEN = {0, 100, 0};
     static Color BLUE = {0, 0, 255};
     static Color DARK_BLUE = {0, 0, 100};
+    static Color YELLOW = {255, 255, 0};
     static Color FOREGROUND = COLOR::WHITE;
     static Color INVERTED = COLOR::BLACK;
 };
@@ -104,7 +105,9 @@ public:
     void savePNG(const std::string& filename);
     bool loadFont(const std::string& fontPath);
     void drawImage(const ImageBuffer& imageBuffer, int posX = 0, int posY = 0);
+    void drawLine(int x0, int y0, int x1, int y1, Color color = COLOR::WHITE);
     void drawRect(int x0, int y0, int w, int h, Color color = COLOR::WHITE);
+    void drawArrow(int x0, int y0, int size, int direction, Color color = COLOR::WHITE);
     void drawEmptyRect(int x0, int y0, int w, int h, Color color = COLOR::WHITE);
     void drawText(const std::string& text, int posX, int posY, float fontSize, Color color = COLOR::WHITE);
     int getFontLineHeight(float fontSize);

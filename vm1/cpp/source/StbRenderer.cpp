@@ -125,6 +125,38 @@ Image StbRenderer::popImage()
     return imageBuffer;
 }
 
+void StbRenderer::drawLine(int x0, int y0, int x1, int y1, Color color) 
+{
+    // Clamp endpoints first
+    x0 = std::max(0, std::min(x0, m_img.width-1));
+    y0 = std::max(0, std::min(y0, m_img.height-1));
+    x1 = std::max(0, std::min(x1, m_img.width-1));
+    y1 = std::max(0, std::min(y1, m_img.height-1));
+    
+    int dx = abs(x1 - x0);
+    int dy = abs(y1 - y0);
+    int sx = x0 < x1 ? 1 : -1;
+    int sy = y0 < y1 ? 1 : -1;
+    int err = dx - dy;
+    
+    while (true) {
+        m_img.setPixel(x0, y0, color.r, color.g, color.b);
+        if (x0 == x1 && y0 == y1) break;
+        
+        int e2 = 2 * err;
+        if (e2 > -dy) {
+            err -= dy;
+            x0 += sx;
+        }
+        if (e2 < dx) {
+            err += dx;
+            y0 += sy;
+        }
+    }
+}
+
+
+
 void StbRenderer::drawRect(int x0, int y0, int w, int h, Color color)
 {
     if (!m_isEnabled) return;
@@ -132,6 +164,35 @@ void StbRenderer::drawRect(int x0, int y0, int w, int h, Color color)
     for (int y = y0; y <= y0 + h; ++y)
         for (int x = x0; x <= x0 + w; ++x)
             m_img.setPixel(x, y, color.r, color.g, color.b);
+}
+
+void StbRenderer::drawArrow(int x0, int y0, int s, int direction, Color color)
+{
+    if (!m_isEnabled) return;
+    switch (direction){
+        case 0: // up
+            drawLine(x0, y0 - s/2, x0, y0 + s/2);
+            drawLine(x0, y0 - s/2, x0 + s/2/3, y0 - s/2/3);
+            drawLine(x0, y0 - s/2, x0 - s/2/3, y0 - s/2/3);
+        break;
+        case 1: // right
+            drawLine(x0 - s/2, y0, x0 + s/2, y0);
+            drawLine(x0 + s/2, y0, x0 + s/2/3, y0 + s/2/3);
+            drawLine(x0 + s/2, y0, x0 + s/2/3, y0 - s/2/3);
+        break;
+        case 2: // down
+            drawLine(x0, y0 - s/2, x0, y0 + s/2);
+            drawLine(x0, y0 + s/2, x0 + s/2/3, y0 + s/2/3);
+            drawLine(x0, y0 + s/2, x0 - s/2/3, y0 + s/2/3);
+        break;
+        case 3: // left
+            drawLine(x0 - s/2, y0, x0 + s/2, y0);
+            drawLine(x0 - s/2, y0, x0 - s/2/3, y0 + s/2/3);
+            drawLine(x0 - s/2, y0, x0 - s/2/3, y0 - s/2/3);
+        break;
+        default:
+        break;
+    }
 }
 
 void StbRenderer::drawEmptyRect(int x0, int y0, int w, int h, Color color)

@@ -233,9 +233,14 @@ void MenuSystem::handleMenuHierachyNavigation(const MenuItem *menuItem)
         }
         else if (
             m_currentMenuType == MT_HdmiSelection ||
-            m_currentMenuType == MT_Mask ||
+            m_currentMenuType == MT_Mask
+        ){
+            setMenu(MT_PlaneSettings);
+        }
+        else if (
             m_currentMenuType == MT_Mapping
         ){
+            m_registry.settings().mappingMode = false;
             setMenu(MT_PlaneSettings);
         }
         else if (
@@ -630,9 +635,10 @@ void MenuSystem::PlaneSettings(int id, int* selectedIdx)
 {
     m_ui.MenuTitle("OUT -> Plane #");
     m_ui.BeginList(selectedIdx);
-    if (m_ui.Action("Mask")){
+    if (m_ui.Action("Mrs. Mask")){
         setMenu(MT_Mask);
-    } else if (m_ui.Action("Mapping")) {
+    } else if (m_ui.Action("Mr. Mapping")) {
+        m_registry.settings().mappingMode = true;
         setMenu(MT_Mapping);
     }
     m_ui.Break();
@@ -664,8 +670,34 @@ void MenuSystem::Mapping(int id, int* selectedIdx)
 {
     m_ui.MenuTitle("Out -> Plane # -> Mapping");
     m_ui.BeginList(selectedIdx);
-    m_ui.Text("Amazing Mapping Mode...");
+    m_ui.Text("use keyboard to move vertices...");
+    if(m_ui.Action("Exit Mapping Mode")) {
+        m_registry.settings().mappingMode = false;
+        setMenu(MT_PlaneSettings);
+    }
     m_ui.EndList();
+
+    m_buttonTexts[0].second = COLOR::YELLOW;
+    m_buttonTexts[1].second = COLOR::YELLOW;
+    m_buttonTexts[8].second = COLOR::YELLOW;
+    m_buttonTexts[9].second = COLOR::YELLOW;
+
+    m_buttonTexts[2].second = COLOR::GREEN;
+    m_buttonTexts[3].second = COLOR::GREEN;
+    m_buttonTexts[10].second = COLOR::GREEN;
+    m_buttonTexts[11].second = COLOR::GREEN;
+    
+    m_buttonTexts[4].second = COLOR::BLUE;
+    m_buttonTexts[5].second = COLOR::BLUE;
+    m_buttonTexts[12].second = COLOR::BLUE;
+    m_buttonTexts[13].second = COLOR::BLUE;
+    
+    m_buttonTexts[6].second = COLOR::RED;
+    m_buttonTexts[7].second = COLOR::RED;
+    m_buttonTexts[14].second = COLOR::RED;
+    m_buttonTexts[15].second = COLOR::RED;
+
+    m_ui.ShowMappingKeyboard(m_buttonTexts);
 }
 
 

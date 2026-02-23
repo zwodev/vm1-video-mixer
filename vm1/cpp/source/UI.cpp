@@ -345,6 +345,31 @@ void UI::ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts)
     }
 }
 
+void UI::ShowMappingKeyboard(std::vector<std::pair<char, Color>> buttonTexts)
+{
+    int width = m_stbRenderer.width();
+    int height = m_stbRenderer.height();
+    //m_stbRenderer.clear();
+    
+    int quadPadding = 2;
+    int quadSize = (width / (buttonTexts.size() / 2)) - quadPadding;
+    int fontSize = 16;
+    for(int i = 0; i < buttonTexts.size(); i++)
+    {
+        int x = (quadPadding / 2) + (i % 8) * (quadSize + quadPadding);
+        int y = (height/2 - quadSize / 2) + (i / 8) * (quadSize + quadPadding + 2);
+        m_stbRenderer.drawRect(x, y, quadSize, quadSize, buttonTexts[i].second);
+        m_stbRenderer.drawText(std::string(1, static_cast<char>(buttonTexts[i].first)), x + 4, y + 3, fontSize, COLOR::WHITE);
+        m_stbRenderer.drawEmptyRect(x, y, quadSize, quadSize, Color(30, 30, 30));
+        
+        if(i < 8){
+            m_stbRenderer.drawArrow(x + quadSize/2,y + quadSize/2, quadSize/2, i%2, COLOR::WHITE);
+        } else {
+            m_stbRenderer.drawArrow(x + quadSize/2,y + quadSize/2, quadSize/2, i%2+2, COLOR::WHITE);
+        }
+    }
+}
+
 void UI::ShowBankInfo(int bank)
 {
     int width = m_stbRenderer.width();
