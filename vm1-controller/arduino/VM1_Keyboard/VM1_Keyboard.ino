@@ -69,23 +69,27 @@ int orange[] = {255, 137, 79};
 int orange_dimmed[] = {orange[0] / dimmed_divider,
                        orange[1] / dimmed_divider,
                        orange[2] / dimmed_divider};
+int green[] = {0, 255, 0};
+int green_dimmed[] = {green[0] / dimmed_divider,
+                      green[1] / dimmed_divider,
+                      green[2] / dimmed_divider};
 
 
 enum ButtonState : uint8_t
 {
   NONE,
-
   EMPTY,
-
   FILE_ASSET,
   LIVECAM,
   SHADER,
-  
   FILE_ASSET_ACTIVE,
   LIVECAM_ACTIVE,
-  SHADER_ACTIVE,
-  
+  SHADER_ACTIVE,  
   MEDIABUTTON_SELECTED,
+  YELLOW,
+  GREEN,
+  BLUE,
+  RED
 };
 
 #pragma pack(1)
@@ -161,6 +165,15 @@ int *colorForButtonState(ButtonState state)
 
   case MEDIABUTTON_SELECTED:
     return blue_dimmed;
+  
+  case YELLOW:
+    return yellow;
+  case GREEN:
+    return green;
+  case BLUE:
+    return blue;
+  case RED:
+    return red;
 
   default:
     return black;
