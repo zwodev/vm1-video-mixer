@@ -48,6 +48,7 @@ namespace COLOR
     static Color RED = {255, 0, 0};
     static Color DARK_RED = {100, 0, 0};
     static Color GREEN = {0, 255, 0};
+    static Color DARK_GREEN = {0, 100, 0};
     static Color BLUE = {0, 0, 255};
     static Color DARK_BLUE = {0, 0, 100};
     static Color FOREGROUND = COLOR::WHITE;

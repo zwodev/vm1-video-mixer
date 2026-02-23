@@ -760,7 +760,7 @@ void MenuSystem::ButtonMatrix(int id, int* focusedIdx)
         }
         else if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(currentConfig)) {
             if (shaderInputConfig->isActive) m_buttonTexts[i].second = COLOR::GREEN;
-            else m_buttonTexts[i].second = COLOR::DARK_BLUE;
+            else m_buttonTexts[i].second = COLOR::DARK_GREEN;
         }
     }
     m_ui.ShowButtonMatrix(m_buttonTexts);

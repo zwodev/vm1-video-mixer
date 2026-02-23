@@ -546,6 +546,15 @@ void PlaybackOperator::updateDeviceController()
             else
                 vm1DeviceState.mediaButtons[i] = ButtonState::LIVECAM;
         }
+        else if (ShaderInputConfig *shaderInputConfig = dynamic_cast<ShaderInputConfig *>(inputConfig))
+        {
+            // TODO: How to handle active HDMI or IMAGE, etc.
+            if (m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
+                vm1DeviceState.mediaButtons[i] = ButtonState::SHADER_ACTIVE;
+            }
+            else
+                vm1DeviceState.mediaButtons[i] = ButtonState::SHADER;
+        }
     }
 
     if(m_selectedMediaButton > -1) {
