@@ -63,13 +63,15 @@ private:
     void handleMediaAndEditButtons();
     void handleUpAndDownKeys();
     void handleBankSwitching();
+    void goUpHierachy();
     void handleMenuHierachyNavigation(const MenuItem *menuItem);
 
 private:
     void StartupScreen(int id, int* selectedIdx);
     void InfoScreen(int id, int* selectedIdx);
 
-    void InputSelection(int id, int* selectedIdx);
+    void ClearSlot(int id, int* focusedIdx);
+    //void InputSelection(int id, int* selectedIdx);
     void FileSelection(int id, int* selectedIdx);
     void LiveInputSelection(int id, int* selectedIdx);
     void ShaderSelection(int id, int* selectedIdx);

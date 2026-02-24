@@ -16,8 +16,6 @@
 #include <vector>
 #include <string>
 
-// const int NUM_BANKS = 4;
-
 MenuSystem::MenuSystem(UI& ui, Registry& registry, EventBus& eventBus) : 
     m_ui(ui), 
     m_registry(registry), 
@@ -44,34 +42,52 @@ void MenuSystem::createMenus()
 {
     m_menus[MT_StartupScreen]       =  {"", {}, [this](int id, int* fIdx){StartupScreen(id, fIdx);}};
     m_menus[MT_InfoSelection]       =  {"Info", {}, [this](int id, int* fIdx){InfoScreen(id, fIdx);}};
-    // m_menus[MT_InputSelection]      =  {"Source", {
-    //                                         {"File", {}, [this](int id, int* fIdx){FileSelection(id, fIdx);}},
-    //                                         {"Live", {}, [this](int id, int* fIdx){LiveInputSelection(id, fIdx);}},
-    //                                         {"Shader", {}, [this](int id, int* fIdx){ShaderSelection(id, fIdx);}}
-    //                                     }};
-    m_menus[MT_InputSelection]      = {"Source", {}, [this](int id, int* fIdx){InputSelection(id, fIdx);}};
-    m_menus[MT_MediaFiles]          = {"Media Files", {}, [this](int id, int* fIdx){FileSelection(id, fIdx);}};
-    m_menus[MT_LiveInputs]          = {"HDMI Inputs", {}, [this](int id, int* fIdx){LiveInputSelection(id, fIdx);}};
-    m_menus[MT_Shaders]             = {"Shaders", {}, [this](int id, int* fIdx){ShaderSelection(id, fIdx);}};
+    m_menus[MT_InputSelection]      =  {"SRC", {
+                                            {"Media Files", {}, [this](int id, int* fIdx){FileSelection(id, fIdx);}},
+                                            {"HDMI Inputs", {}, [this](int id, int* fIdx){LiveInputSelection(id, fIdx);}},
+                                            {"Shaders", {}, [this](int id, int* fIdx){ShaderSelection(id, fIdx);}},
+                                            {"Clear Slot", {}, [this](int id, int* fIdx){ClearSlot(id, fIdx);}}
+                                        }};
+    
+    m_menus[MT_PlaybackSelection]   = {"CTRL", {}, [this](int id, int* fIdx){PlaybackSettings(id, fIdx);}};
 
-    m_menus[MT_Effects]             = {"Effects", {}, [this](int id, int* fIdx){Effects(id, fIdx);}};
-    m_menus[MT_CustomFx]            = {"CustomFx", {}, [this](int id, int* fIdx){CustomFx(id, fIdx);}};
-    m_menus[MT_ChromaKey]           = {"ChromaKey", {}, [this](int id, int* fIdx){ChromaKey(id, fIdx);}};
-    m_menus[MT_ColorCorrection]     = {"ColorCorrection", {}, [this](int id, int* fIdx){ColorCorrection(id, fIdx);}};
-    m_menus[MT_BlendMode]           = {"BlendMode", {}, [this](int id, int* fIdx){BlendMode(id, fIdx);}};
+    m_menus[MT_Effects]             = {"FX", {
+                                            {"CustomFx", {}, [this](int id, int* fIdx){CustomFx(id, fIdx);}},
+                                            {"ChromaKey", {}, [this](int id, int* fIdx){ChromaKey(id, fIdx);}},
+                                            {"ColorCorrection", {}, [this](int id, int* fIdx){ColorCorrection(id, fIdx);}},
+                                            {"BlendMode", {}, [this](int id, int* fIdx){BlendMode(id, fIdx);}}
+                                        }};
 
-    m_menus[MT_Outputs]             = {"Outputs", {}, [this](int id, int* fIdx){OutputPlanes(id, fIdx);}};
-    m_menus[MT_PlaneSettings]       = {"Plane Settings", {}, [this](int id, int* fIdx){PlaneSettings(id, fIdx);}};
-    m_menus[MT_HdmiSelection]       = {"Hdmi Selection", {}, [this](int id, int* fIdx){HdmiSelection(id, fIdx);}};
-    m_menus[MT_Mask]                = {"Mask", {}, [this](int id, int* fIdx){Mask(id, fIdx);}};
-    m_menus[MT_Mapping]             = {"Mapping", {}, [this](int id, int* fIdx){Mapping(id, fIdx);}};
+    m_menus[MT_Outputs]             = {"OUT", {
+                                            {"Plane Settings", {}, [this](int id, int* fIdx){PlaneSettings(id, fIdx);}},
+                                            {"Hdmi Selection", {}, [this](int id, int* fIdx){HdmiSelection(id, fIdx);}},
+                                            {"Mask", {}, [this](int id, int* fIdx){Mask(id, fIdx);}},
+                                            {"Mapping", {}, [this](int id, int* fIdx){Mapping(id, fIdx);}}
+                                        }};
 
-    m_menus[MT_PlaybackSelection]   = {"Playback/Control", {}, [this](int id, int* fIdx){PlaybackSettings(id, fIdx);}};
     m_menus[MT_NetworkInfo]         = {"Network", {}, [this](int id, int* fIdx){NetworkInfo(id, fIdx);}};
     m_menus[MT_SettingsSelection]   = {"Settings", {}, [this](int id, int* fIdx){GlobalSettings(id, fIdx);}};
     m_menus[MT_DeviceSettings]      = {"Devices", {}, [this](int id, int* fIdx){DeviceSettings(id, fIdx);}};
     m_menus[MT_ButtonMatrix]        = {"Keys", {}, [this](int id, int* fIdx){ButtonMatrix(id, fIdx);}};
     
+    // m_menus[MT_MediaFiles] = m_menus[MT_InputSelection].children[0];
+    // m_menus[MT_LiveInputs] = m_menus[MT_InputSelection].children[1];
+    // m_menus[MT_Shaders] = m_menus[MT_InputSelection].children[2];
+
+    // m_menus[MT_CustomFx]            =
+    // m_menus[MT_ChromaKey]           =
+    // m_menus[MT_ColorCorrection]     =
+    // m_menus[MT_BlendMode]           =
+
+    // m_menus[MT_PlaneSettings]       = 
+    // m_menus[MT_HdmiSelection]       = 
+    // m_menus[MT_Mask]                = 
+    // m_menus[MT_Mapping]             = 
+
+    //  
+    //  
+    //  
+    //  
 }
 
 void MenuSystem::setMenu(MenuType menuType)
@@ -190,6 +206,13 @@ void MenuSystem::handleBankSwitching()
     }
 }
 
+void MenuSystem::goUpHierachy() {
+    if (!m_currentMenuPath.empty()) {
+        m_focusedIdx = m_currentMenuPath.back();
+        m_currentMenuPath.pop_back();
+    }
+}
+
 void MenuSystem::handleMenuHierachyNavigation(const MenuItem *menuItem)
 {
     // Handle navigation
@@ -205,49 +228,7 @@ void MenuSystem::handleMenuHierachyNavigation(const MenuItem *menuItem)
     }
     else if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::HierarchyUp)) 
     {
-        // Go up one level
-        if (!m_currentMenuPath.empty()) {
-            m_focusedIdx = m_currentMenuPath.back();
-            m_currentMenuPath.pop_back();
-        }
-        else {
-            //m_focusedIdx = 0;
-            //setMenu(MT_InputSelection);
-        }
-
-        // manually traverse backwards through UI hierachy:
-        if(
-            m_currentMenuType == MT_MediaFiles ||
-            m_currentMenuType == MT_LiveInputs ||
-            m_currentMenuType == MT_Shaders
-        ){
-            setMenu(MT_InputSelection);
-        } 
-        else if (
-            m_currentMenuType == MT_CustomFx ||
-            m_currentMenuType == MT_ChromaKey ||
-            m_currentMenuType == MT_ColorCorrection ||
-            m_currentMenuType == MT_BlendMode
-        ){
-            setMenu(MT_Effects);
-        }
-        else if (
-            m_currentMenuType == MT_HdmiSelection ||
-            m_currentMenuType == MT_Mask
-        ){
-            setMenu(MT_PlaneSettings);
-        }
-        else if (
-            m_currentMenuType == MT_Mapping
-        ){
-            m_registry.settings().mappingMode = false;
-            setMenu(MT_PlaneSettings);
-        }
-        else if (
-            m_currentMenuType == MT_PlaneSettings
-        ){
-            setMenu(MT_Outputs);
-        }
+        goUpHierachy();
     }
 }
 
@@ -256,19 +237,25 @@ void MenuSystem::render()
     m_ui.NewFrame();
 
     // Traverse to current menu
+    std::string menuTitle = "";
     const MenuItem* menuItem = &(m_menus[m_currentMenuType]);
+    menuTitle = menuItem->label;
     for (int idx : m_currentMenuPath) {
-        if (idx >= 0 && idx < (int)menuItem->children.size())
-        menuItem = &menuItem->children[idx];
-        else
-        break;
+        if (idx >= 0 && idx < (int)menuItem->children.size()){
+            menuItem = &menuItem->children[idx];
+            menuTitle += "/" + menuItem->label;
+        }
+        else{
+            break;
+        }
     }
     
     // Render title
     // update: render menu title in the menu-specific functions
-    // if (!menuItem->label.empty()) {
-    //     m_ui.MenuTitle(menuItem->label);
-    // }
+    if (!menuItem->label.empty()) {
+        // m_ui.MenuTitle(menuItem->label);
+        m_ui.MenuTitle(menuTitle);
+    }
 
     // Render bank information
     if (m_currentMenuType == MT_InfoSelection  || 
@@ -337,7 +324,6 @@ void MenuSystem::StartupScreen(int id, int* focusedIdx)
 
 void MenuSystem::InfoScreen(int id, int* focusedIdx)
 {
-    m_ui.MenuTitle("INFO");
     if(m_registry.settings().displayType == DisplayType::SSD1351_OLED) { 
       
     } else if(m_registry.settings().displayType == DisplayType::ILI9341_IPS_LCD) {
@@ -371,28 +357,33 @@ void MenuSystem::InfoScreen(int id, int* focusedIdx)
     }
 }
 
-void MenuSystem::InputSelection(int id, int* focusedIdx)
-{
-    m_ui.MenuTitle("SRC");
+// void MenuSystem::InputSelection(int id, int* focusedIdx)
+// {
+//     m_ui.MenuTitle("SRC");
 
-    m_ui.BeginList(focusedIdx);
-    if(m_ui.Action("Files")){
-        setMenu(MT_MediaFiles);
-    } else if (m_ui.Action("HDMI Input")){
-        setMenu(MT_LiveInputs);
-    } else if (m_ui.Action("Shaders")) {
-        setMenu(MT_Shaders);
-    }
-    m_ui.Break();
-    if (m_ui.Action("Clear slot")) {
-        m_registry.inputMappings().removeConfig(id);
-    }
-    m_ui.EndList();
+//     m_ui.BeginList(focusedIdx);
+//     if(m_ui.Action("Files")){
+//         setMenu(MT_MediaFiles);
+//     } else if (m_ui.Action("HDMI Input")){
+//         // 
+//         setMenu(MT_LiveInputs);
+//     } else if (m_ui.Action("Shaders")) {
+//         setMenu(MT_Shaders);
+//     }
+//     m_ui.Break();
+//     if (m_ui.Action("Clear slot")) {
+//         m_registry.inputMappings().removeConfig(id);
+//     }
+//     m_ui.EndList();
+// }
+
+void MenuSystem::ClearSlot(int id, int* focusedIdx) {
+    m_registry.inputMappings().removeConfig(id);
+    goUpHierachy();
 }
 
 void MenuSystem::FileSelection(int id, int* focusedIdx)
 {
-    m_ui.MenuTitle("SRC -> Media Files");
     auto config = std::make_unique<VideoInputConfig>();
     config->looping = m_registry.settings().defaultLooping;
 
@@ -419,7 +410,6 @@ void MenuSystem::FileSelection(int id, int* focusedIdx)
 
 void MenuSystem::LiveInputSelection(int id, int* focusedIdx) 
 {
-    m_ui.MenuTitle("SRC -> HDMI Inputs");
     auto config = std::make_unique<HdmiInputConfig>();
     HdmiInputConfig* currentConfig = m_registry.inputMappings().getHdmiInputConfig(id);
     if (currentConfig) { *config = *currentConfig; }
@@ -445,8 +435,6 @@ void MenuSystem::LiveInputSelection(int id, int* focusedIdx)
 
 void MenuSystem::ShaderSelection(int id, int* focusedIdx)
 {
-    m_ui.MenuTitle("SRC -> Shader");
-
     auto config = std::make_unique<ShaderInputConfig>();
 
     ShaderInputConfig* currentConfig = m_registry.inputMappings().getShaderInputConfig(id);
@@ -542,7 +530,6 @@ void MenuSystem::PlaybackSettings(int id, int* focusedIdx)
 
 void MenuSystem::Effects(int id, int* selectedIdx)
 {
-    m_ui.MenuTitle("FX");
     m_ui.BeginList(selectedIdx);
     if(m_ui.Action("[ ] Chroma Key")){
         setMenu(MT_ChromaKey);
@@ -559,7 +546,6 @@ void MenuSystem::Effects(int id, int* selectedIdx)
 
 void MenuSystem::CustomFx(int id, int* selectedIdx)
 {
-    m_ui.MenuTitle("FX -> Custom FX");
     m_ui.BeginList(selectedIdx);
     m_ui.Text("If no fx is selected, file-list is visible.");
     m_ui.Text("If fx is selected, parameters are visible,");
@@ -577,7 +563,6 @@ void MenuSystem::CustomFx(int id, int* selectedIdx)
 
 void MenuSystem::ChromaKey(int id, int* selectedIdx)
 {
-    m_ui.MenuTitle("FX -> ChromaKey");
     m_ui.BeginList(selectedIdx);
     m_ui.Text("Color");
     int tolerance = 50, smoothness = 50, spill = 50;
@@ -593,7 +578,6 @@ void MenuSystem::ChromaKey(int id, int* selectedIdx)
 
 void MenuSystem::ColorCorrection(int id, int* selectedIdx)
 {
-    m_ui.MenuTitle("FX -> Color");
     m_ui.BeginList(selectedIdx);
     int black = 0, white = 100, gamma = 50, temperature = 50, tint = 50, sat = 50;
     m_ui.SpinBoxInt("Black-Point", black, 0, 100);
@@ -610,14 +594,12 @@ void MenuSystem::ColorCorrection(int id, int* selectedIdx)
 
 void MenuSystem::BlendMode(int id, int* selectedIdx)
 {
-    m_ui.MenuTitle("FX -> BlendMode");
 
 }
 
 
 void MenuSystem::OutputPlanes(int id, int* selectedIdx)
 {
-    m_ui.MenuTitle("OUT");
     m_ui.BeginList(selectedIdx);
     if(m_ui.Action("Plane 1")){
         setMenu(MT_PlaneSettings);
@@ -633,7 +615,6 @@ void MenuSystem::OutputPlanes(int id, int* selectedIdx)
 
 void MenuSystem::PlaneSettings(int id, int* selectedIdx)
 {
-    m_ui.MenuTitle("OUT -> Plane #");
     m_ui.BeginList(selectedIdx);
     if (m_ui.Action("Mrs. Mask")){
         setMenu(MT_Mask);
@@ -651,7 +632,6 @@ void MenuSystem::PlaneSettings(int id, int* selectedIdx)
 
 void MenuSystem::HdmiSelection(int id, int* selectedIdx)
 {
-    m_ui.MenuTitle("Out -> Plane # -> HDMI Channel");
     m_ui.BeginList(selectedIdx);
     m_ui.RadioButton("HDMI Output 1", true);
     m_ui.RadioButton("HDMI Output 2", false);
@@ -660,7 +640,6 @@ void MenuSystem::HdmiSelection(int id, int* selectedIdx)
 
 void MenuSystem::Mask(int id, int* selectedIdx)
 {
-    m_ui.MenuTitle("Out -> Plane # -> Mask");
     m_ui.BeginList(selectedIdx);
     m_ui.Text("some way to load image or create a mask...");
     m_ui.EndList();
@@ -668,12 +647,12 @@ void MenuSystem::Mask(int id, int* selectedIdx)
 
 void MenuSystem::Mapping(int id, int* selectedIdx)
 {
-    m_ui.MenuTitle("Out -> Plane # -> Mapping");
+    m_registry.settings().mappingMode = true;
     m_ui.BeginList(selectedIdx);
     m_ui.Text("use keyboard to move vertices...");
     if(m_ui.Action("Exit Mapping Mode")) {
         m_registry.settings().mappingMode = false;
-        setMenu(MT_PlaneSettings);
+        goUpHierachy();
     }
     m_ui.EndList();
 
