@@ -22,9 +22,9 @@ uniform sampler2D inputTexture1;
 uniform float mixValue;
 
 // effects
-uniform float adjust_brightness;
-uniform float adjust_contrast;
-uniform float adjust_saturation;
+uniform float ColorCorrection_Brightness;
+uniform float ColorCorrection_Contrast;
+uniform float ColorCorrection_Saturation;
 
 vec3 adjustBrightness(vec3 color, float value) {
   return color + value;
@@ -48,9 +48,9 @@ void main() {
 	vec3 col0 = texture(inputTexture0, coord).rgb;
 	vec3 col1 = texture(inputTexture1, coord).rgb;
 	vec3 color = mix(col0, col1, mixValue);
-	color = adjustSaturation(color, adjust_saturation);
-	color = adjustContrast(color, adjust_contrast);
-	color = adjustBrightness(color, adjust_brightness);
+	color = adjustSaturation(color, ColorCorrection_Saturation);
+	color = adjustContrast(color, ColorCorrection_Contrast);
+	color = adjustBrightness(color, ColorCorrection_Brightness);
 
 	fragColor = vec4(color, 1.0f);
 }

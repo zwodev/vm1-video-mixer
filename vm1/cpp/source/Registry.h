@@ -298,11 +298,11 @@ private:
 struct PlaneSettings
 {
     PlaneSettings() {
-        ShaderConfig adjustShaderConfig("adjust");
-        adjustShaderConfig.params.push_back(FloatParameter("brightness", 0.0f, -1.0f, 1.0f));
-        adjustShaderConfig.params.push_back(FloatParameter("contrast", 0.0f, -1.0f, 1.0f));
-        adjustShaderConfig.params.push_back(FloatParameter("saturation", 0.0f, -1.0f, 1.0f));
-        effects.push_back(adjustShaderConfig);
+        ShaderConfig colorCorrectionShaderConfig("ColorCorrection");
+        colorCorrectionShaderConfig.params.push_back(FloatParameter("Brightness", 0.0f, -1.0f, 1.0f));
+        colorCorrectionShaderConfig.params.push_back(FloatParameter("Contrast", 0.0f, -1.0f, 1.0f));
+        colorCorrectionShaderConfig.params.push_back(FloatParameter("Saturation", 0.0f, -1.0f, 1.0f));
+        effects.push_back(colorCorrectionShaderConfig);
 
         // ShaderConfig testShaderConfig("test");
         // testShaderConfig.params.push_back(FloatParameter("brightness", 0.0f, -1.0f, 1.0f));

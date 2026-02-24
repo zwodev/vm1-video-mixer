@@ -41,6 +41,7 @@ void MenuSystem::subscribeToEvents()
 void MenuSystem::createEffectMenu()
 {
     MenuItem effectsMenu;
+    effectsMenu.label = "FX";
     auto& effects = m_registry.planeSettings().effects;
 
     for (auto& effect : effects) {
@@ -50,7 +51,7 @@ void MenuSystem::createEffectMenu()
         effectsMenu.children.push_back(childMenu);
     }
 
-    m_menus[MT_EffectSelection] = effectsMenu;
+    m_menus[MT_Effects] = effectsMenu;
 }
 
 void MenuSystem::createMenus()
@@ -66,12 +67,12 @@ void MenuSystem::createMenus()
     
     m_menus[MT_PlaybackSelection]   = {"CTRL", {}, [this](int id, int* fIdx){PlaybackSettings(id, fIdx);}};
 
-    m_menus[MT_Effects]             = {"FX", {
-                                            {"CustomFx", {}, [this](int id, int* fIdx){CustomFx(id, fIdx);}},
-                                            {"ChromaKey", {}, [this](int id, int* fIdx){ChromaKey(id, fIdx);}},
-                                            {"ColorCorrection", {}, [this](int id, int* fIdx){ColorCorrection(id, fIdx);}},
-                                            {"BlendMode", {}, [this](int id, int* fIdx){BlendMode(id, fIdx);}}
-                                        }};
+    // m_menus[MT_Effects]             = {"FX", {
+    //                                         {"ChromaKey", {}, [this](int id, int* fIdx){ChromaKey(id, fIdx);}},
+    //                                         {"CustomFx", {}, [this](int id, int* fIdx){CustomFx(id, fIdx);}},
+    //                                         {"ColorCorrection", {}, [this](int id, int* fIdx){ColorCorrection(id, fIdx);}},
+    //                                         {"BlendMode", {}, [this](int id, int* fIdx){BlendMode(id, fIdx);}}
+    //                                     }};
 
     m_menus[MT_Outputs]             = {"OUT", {
                                             {"Plane Settings", {}, [this](int id, int* fIdx){PlaneSettings(id, fIdx);}},
@@ -86,24 +87,6 @@ void MenuSystem::createMenus()
     m_menus[MT_ButtonMatrix]        = {"Keys", {}, [this](int id, int* fIdx){ButtonMatrix(id, fIdx);}};
     //m_menus[MT_EffectSelection]     = {"Effects", {}, [this](int id, int* fIdx){EffectSelection(id, fIdx);}};
 
-    // m_menus[MT_MediaFiles] = m_menus[MT_InputSelection].children[0];
-    // m_menus[MT_LiveInputs] = m_menus[MT_InputSelection].children[1];
-    // m_menus[MT_Shaders] = m_menus[MT_InputSelection].children[2];
-
-    // m_menus[MT_CustomFx]            =
-    // m_menus[MT_ChromaKey]           =
-    // m_menus[MT_ColorCorrection]     =
-    // m_menus[MT_BlendMode]           =
-
-    // m_menus[MT_PlaneSettings]       = 
-    // m_menus[MT_HdmiSelection]       = 
-    // m_menus[MT_Mask]                = 
-    // m_menus[MT_Mapping]             = 
-
-    //  
-    //  
-    //  
-    //  
     createEffectMenu();
 }
 
