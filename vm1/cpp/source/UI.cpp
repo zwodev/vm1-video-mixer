@@ -251,6 +251,25 @@ void UI::Text(const std::string &label)
     UI::EndListElement();
 }
 
+void UI::PlainText(const std::string &label)
+{
+    UI::BeginListElement();
+    float fontSize = 16.0f;
+    Color color = COLOR::WHITE;
+    // if (m_focusedIdxPtr) {
+    //     if ((*m_focusedIdxPtr) == m_listSize){            
+    //         m_stbRenderer.drawRect(m_x, m_y - 1, m_stbRenderer.width() - m_x, fontSize - 2, COLOR::WHITE);
+    //         color = COLOR::BLACK;
+    //     } 
+    // }
+    m_stbRenderer.drawText(label, m_x, m_y, fontSize, color);
+    UI::EndListElement();
+}
+
+void UI::Break() {
+    m_y += 15.0f;
+}
+
 void UI::MenuTitle(std::string menuTitle)
 {
     float fontSize = 32.0f;
@@ -322,6 +341,31 @@ void UI::ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts)
             m_stbRenderer.drawRect(x, y, quadSize, quadSize, buttonTexts[i].second);
             m_stbRenderer.drawText(std::string(1, static_cast<char>(buttonTexts[i].first)), x + 4, y + 3, fontSize, COLOR::WHITE);
             m_stbRenderer.drawEmptyRect(x, y, quadSize, quadSize, Color(30, 30, 30));
+        }
+    }
+}
+
+void UI::ShowMappingKeyboard(std::vector<std::pair<char, Color>> buttonTexts)
+{
+    int width = m_stbRenderer.width();
+    int height = m_stbRenderer.height();
+    //m_stbRenderer.clear();
+    
+    int quadPadding = 2;
+    int quadSize = (width / (buttonTexts.size() / 2)) - quadPadding;
+    int fontSize = 16;
+    for(int i = 0; i < buttonTexts.size(); i++)
+    {
+        int x = (quadPadding / 2) + (i % 8) * (quadSize + quadPadding);
+        int y = (height/2 - quadSize / 2) + (i / 8) * (quadSize + quadPadding + 2);
+        m_stbRenderer.drawRect(x, y, quadSize, quadSize, buttonTexts[i].second);
+        m_stbRenderer.drawText(std::string(1, static_cast<char>(buttonTexts[i].first)), x + 4, y + 3, fontSize, COLOR::WHITE);
+        m_stbRenderer.drawEmptyRect(x, y, quadSize, quadSize, Color(30, 30, 30));
+        
+        if(i < 8){
+            m_stbRenderer.drawArrow(x + quadSize/2,y + quadSize/2, quadSize/2, i%2, COLOR::WHITE);
+        } else {
+            m_stbRenderer.drawArrow(x + quadSize/2,y + quadSize/2, quadSize/2, i%2+2, COLOR::WHITE);
         }
     }
 }

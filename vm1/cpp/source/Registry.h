@@ -365,6 +365,8 @@ struct Settings
     float analog0 = 0.5f;
     int32_t rotary = 0;
 
+    bool mappingMode = false;
+
     template <class Archive>
     void serialize(Archive &ar)
     {

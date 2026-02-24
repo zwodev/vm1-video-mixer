@@ -19,6 +19,10 @@ enum ButtonState : uint8_t
     LIVECAM_ACTIVE,
     SHADER_ACTIVE,
     MEDIABUTTON_SELECTED,
+    YELLOW,
+    GREEN,
+    BLUE,
+    RED
 };
 
 #pragma pack(1)

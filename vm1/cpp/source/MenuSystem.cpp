@@ -16,8 +16,6 @@
 #include <vector>
 #include <string>
 
-const int NUM_BANKS = 4;
-
 MenuSystem::MenuSystem(UI& ui, Registry& registry, EventBus& eventBus) : 
     m_ui(ui), 
     m_registry(registry), 
@@ -59,18 +57,53 @@ void MenuSystem::createMenus()
 {
     m_menus[MT_StartupScreen]       =  {"", {}, [this](int id, int* fIdx){StartupScreen(id, fIdx);}};
     m_menus[MT_InfoSelection]       =  {"Info", {}, [this](int id, int* fIdx){InfoScreen(id, fIdx);}};
-    m_menus[MT_InputSelection]      =  {"Source", {
-                                            {"File", {}, [this](int id, int* fIdx){FileSelection(id, fIdx);}},
-                                            {"Live", {}, [this](int id, int* fIdx){LiveInputSelection(id, fIdx);}},
-                                            {"Shader", {}, [this](int id, int* fIdx){ShaderSelection(id, fIdx);}}
+    m_menus[MT_InputSelection]      =  {"SRC", {
+                                            {"Media Files", {}, [this](int id, int* fIdx){FileSelection(id, fIdx);}},
+                                            {"HDMI Inputs", {}, [this](int id, int* fIdx){LiveInputSelection(id, fIdx);}},
+                                            {"Shaders", {}, [this](int id, int* fIdx){ShaderSelection(id, fIdx);}},
+                                            {"Clear Slot", {}, [this](int id, int* fIdx){ClearSlot(id, fIdx);}}
                                         }};
-    m_menus[MT_PlaybackSelection]   = {"Play", {}, [this](int id, int* fIdx){PlaybackSettings(id, fIdx);}};
+    
+    m_menus[MT_PlaybackSelection]   = {"CTRL", {}, [this](int id, int* fIdx){PlaybackSettings(id, fIdx);}};
+
+    m_menus[MT_Effects]             = {"FX", {
+                                            {"CustomFx", {}, [this](int id, int* fIdx){CustomFx(id, fIdx);}},
+                                            {"ChromaKey", {}, [this](int id, int* fIdx){ChromaKey(id, fIdx);}},
+                                            {"ColorCorrection", {}, [this](int id, int* fIdx){ColorCorrection(id, fIdx);}},
+                                            {"BlendMode", {}, [this](int id, int* fIdx){BlendMode(id, fIdx);}}
+                                        }};
+
+    m_menus[MT_Outputs]             = {"OUT", {
+                                            {"Plane Settings", {}, [this](int id, int* fIdx){PlaneSettings(id, fIdx);}},
+                                            {"Hdmi Selection", {}, [this](int id, int* fIdx){HdmiSelection(id, fIdx);}},
+                                            {"Mask", {}, [this](int id, int* fIdx){Mask(id, fIdx);}},
+                                            {"Mapping", {}, [this](int id, int* fIdx){Mapping(id, fIdx);}}
+                                        }};
+
     m_menus[MT_NetworkInfo]         = {"Network", {}, [this](int id, int* fIdx){NetworkInfo(id, fIdx);}};
     m_menus[MT_SettingsSelection]   = {"Settings", {}, [this](int id, int* fIdx){GlobalSettings(id, fIdx);}};
     m_menus[MT_DeviceSettings]      = {"Devices", {}, [this](int id, int* fIdx){DeviceSettings(id, fIdx);}};
     m_menus[MT_ButtonMatrix]        = {"Keys", {}, [this](int id, int* fIdx){ButtonMatrix(id, fIdx);}};
     //m_menus[MT_EffectSelection]     = {"Effects", {}, [this](int id, int* fIdx){EffectSelection(id, fIdx);}};
 
+    // m_menus[MT_MediaFiles] = m_menus[MT_InputSelection].children[0];
+    // m_menus[MT_LiveInputs] = m_menus[MT_InputSelection].children[1];
+    // m_menus[MT_Shaders] = m_menus[MT_InputSelection].children[2];
+
+    // m_menus[MT_CustomFx]            =
+    // m_menus[MT_ChromaKey]           =
+    // m_menus[MT_ColorCorrection]     =
+    // m_menus[MT_BlendMode]           =
+
+    // m_menus[MT_PlaneSettings]       = 
+    // m_menus[MT_HdmiSelection]       = 
+    // m_menus[MT_Mask]                = 
+    // m_menus[MT_Mapping]             = 
+
+    //  
+    //  
+    //  
+    //  
     createEffectMenu();
 }
 
@@ -121,42 +154,44 @@ void MenuSystem::handleMediaAndEditButtons()
         switch (editButtonId)
         {
         case 0:
-            if(m_registry.settings().displayType == DisplayType::SSD1351_OLED) { 
-                setMenu(MT_PlaybackSelection);
-            } else if(m_registry.settings().displayType == DisplayType::ILI9341_IPS_LCD) {
-                setMenu(MT_InfoSelection);
-            }
-    
+            // if(m_registry.settings().displayType == DisplayType::SSD1351_OLED) { 
+            //     setMenu(MT_PlaybackSelection);
+            // } else if(m_registry.settings().displayType == DisplayType::ILI9341_IPS_LCD) {
+            //     setMenu(MT_InfoSelection);
+            // }
+            setMenu(MT_InfoSelection);
             break;
         case 1:
-            setMenu(MT_ButtonMatrix);
-            break;
-        case 2:
             setMenu(MT_InputSelection);
             break;
+        case 2:
+            setMenu(MT_PlaybackSelection);
+            break;
         case 3:
-            setMenu(MT_DeviceSettings);
+            setMenu(MT_Effects);
             break;
         case 4:
-            setMenu(MT_SettingsSelection);
+            setMenu(MT_Outputs);
             break;
         case 5:
+            setMenu(MT_DeviceSettings);
+            break;
+        case 6:
+            setMenu(MT_SettingsSelection);
+            break;
+        case 7:
             if(!m_registry.settings().kiosk.enabled) {
                 setMenu(MT_NetworkInfo);
             } else {
                 showPopupMessage("Not implemented");
             }
             break;
-        case 6:
-            //showPopupMessage("Not implemented");
-            setMenu(MT_EffectSelection);
+        case 8:     // 8-15: Edit Keys with Fn-Button pressed
+            setMenu(MT_ButtonMatrix);
             break;
-        case 7:
-            showPopupMessage("Not implemented");
+        case 15:
+            setMenu(MT_StartupScreen);
             break;
-        // case 8:
-        //     setMenu(MT_StartupScreen);
-        //     break;
         default:
             break;
         }
@@ -188,6 +223,13 @@ void MenuSystem::handleBankSwitching()
     }
 }
 
+void MenuSystem::goUpHierachy() {
+    if (!m_currentMenuPath.empty()) {
+        m_focusedIdx = m_currentMenuPath.back();
+        m_currentMenuPath.pop_back();
+    }
+}
+
 void MenuSystem::handleMenuHierachyNavigation(const MenuItem *menuItem)
 {
     // Handle navigation
@@ -203,15 +245,7 @@ void MenuSystem::handleMenuHierachyNavigation(const MenuItem *menuItem)
     }
     else if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::HierarchyUp)) 
     {
-        // Go up one level
-        if (!m_currentMenuPath.empty()) {
-            m_focusedIdx = m_currentMenuPath.back();
-            m_currentMenuPath.pop_back();
-        }
-        else {
-            //m_focusedIdx = 0;
-            //setMenu(MT_InputSelection);
-        }
+        goUpHierachy();
     }
 }
 
@@ -220,22 +254,40 @@ void MenuSystem::render()
     m_ui.NewFrame();
 
     // Traverse to current menu
+    std::string menuTitle = "";
     const MenuItem* menuItem = &(m_menus[m_currentMenuType]);
+    menuTitle = menuItem->label;
     for (int idx : m_currentMenuPath) {
-        if (idx >= 0 && idx < (int)menuItem->children.size())
-        menuItem = &menuItem->children[idx];
-        else
-        break;
+        if (idx >= 0 && idx < (int)menuItem->children.size()){
+            menuItem = &menuItem->children[idx];
+            menuTitle += "/" + menuItem->label;
+        }
+        else{
+            break;
+        }
     }
     
     // Render title
+    // update: render menu title in the menu-specific functions
     if (!menuItem->label.empty()) {
-        m_ui.MenuTitle(menuItem->label);
+        // m_ui.MenuTitle(menuItem->label);
+        m_ui.MenuTitle(menuTitle);
     }
 
     // Render bank information
     if (m_currentMenuType == MT_InfoSelection  || 
+
         m_currentMenuType == MT_InputSelection || 
+        m_currentMenuType == MT_MediaFiles || 
+        m_currentMenuType == MT_LiveInputs || 
+        m_currentMenuType == MT_Shaders || 
+
+        m_currentMenuType == MT_Effects ||
+        m_currentMenuType == MT_CustomFx ||
+        m_currentMenuType == MT_ChromaKey ||
+        m_currentMenuType == MT_ColorCorrection ||
+        m_currentMenuType == MT_BlendMode ||
+
         m_currentMenuType == MT_PlaybackSelection ||
         m_currentMenuType == MT_ButtonMatrix) 
     {
@@ -292,8 +344,59 @@ void MenuSystem::InfoScreen(int id, int* focusedIdx)
     if(m_registry.settings().displayType == DisplayType::SSD1351_OLED) { 
       
     } else if(m_registry.settings().displayType == DisplayType::ILI9341_IPS_LCD) {
-        m_ui.Image(ImageBuffer("media/01-info.png"));
+        // m_ui.Image(ImageBuffer("media/01-info.png"));
+        
+        m_ui.BeginList(focusedIdx);
+        InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(id);
+        if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
+        {
+            m_ui.PlainText("Source:    Media File");
+            m_ui.PlainText("Filename:  " + videoInputConfig->fileName);
+            m_ui.PlainText("Duration:  ");
+            m_ui.PlainText("In-Point:  ");
+            m_ui.PlainText("Out-Point: ");
+            m_ui.PlainText("Current Position:");
+        }
+        else if (HdmiInputConfig*hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
+        {
+            m_ui.PlainText("Source:     HDMI");
+            m_ui.PlainText("Input Port: " + std::to_string(hdmiInputConfig->hdmiPort));
+            m_ui.PlainText("Resolution: ");
+        }
+        else if (ShaderInputConfig*shaderInputConfig = dynamic_cast<ShaderInputConfig *>(inputConfig))
+        {
+            m_ui.PlainText("Source:     Shader");
+            m_ui.PlainText("Filename:   " + shaderInputConfig->fileName);
+            m_ui.PlainText("Parameters: ");
+        }
+        
+        m_ui.EndList(); 
     }
+}
+
+// void MenuSystem::InputSelection(int id, int* focusedIdx)
+// {
+//     m_ui.MenuTitle("SRC");
+
+//     m_ui.BeginList(focusedIdx);
+//     if(m_ui.Action("Files")){
+//         setMenu(MT_MediaFiles);
+//     } else if (m_ui.Action("HDMI Input")){
+//         // 
+//         setMenu(MT_LiveInputs);
+//     } else if (m_ui.Action("Shaders")) {
+//         setMenu(MT_Shaders);
+//     }
+//     m_ui.Break();
+//     if (m_ui.Action("Clear slot")) {
+//         m_registry.inputMappings().removeConfig(id);
+//     }
+//     m_ui.EndList();
+// }
+
+void MenuSystem::ClearSlot(int id, int* focusedIdx) {
+    m_registry.inputMappings().removeConfig(id);
+    goUpHierachy();
 }
 
 void MenuSystem::FileSelection(int id, int* focusedIdx)
@@ -426,30 +529,196 @@ void MenuSystem::PlaybackSettings(int id, int* focusedIdx)
         return;
     }
     
-    int i = 0;
-    m_ui.BeginList(focusedIdx);
     if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(currentConfig)) {
+        m_ui.MenuTitle("CTRL Mediafile");
+        m_ui.BeginList(focusedIdx);
         if (m_ui.CheckBox("loop", videoInputConfig->looping)) { 
             videoInputConfig->looping = !videoInputConfig->looping; 
         }
-        std::string fileName = "Source: FILE ";
-        m_ui.Text(fileName);
-        // Not implemented yet
-        // if (m_ui.CheckBox("backwards", videoInputConfig->backwards)) {
-        //     videoInputConfig->backwards = !videoInputConfig->backwards;
-        // }
-        // m_ui.Text("start-time");
-        // m_ui.Text("end-time");
+        if (m_ui.CheckBox("backwards", videoInputConfig->backwards)) {
+            videoInputConfig->backwards = !videoInputConfig->backwards;
+        }
+        m_ui.Text("start-time");
+        m_ui.Text("end-time");
+        m_ui.Text("speed");
     }
     else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(currentConfig)) {
+        m_ui.MenuTitle("CTRL Camera");        
+        m_ui.BeginList(focusedIdx);
         std::string inputName = "Source: HDMI" + std::to_string(hdmiInputConfig->hdmiPort+1);
         m_ui.Text(inputName);
     }
-    if (m_ui.Action("Clear slot")) {
-        m_registry.inputMappings().removeConfig(id);
+    else if (dynamic_cast<ShaderInputConfig*>(currentConfig)) {
+        m_ui.MenuTitle("CTRL Shader");        
+        m_ui.BeginList(focusedIdx);
+        m_ui.Text("Parameter 1");
+        m_ui.Text("Parameter 2");
+        m_ui.Text("Parameter 3");
+    }
+    m_ui.Break();
+    int p = 1;
+    m_ui.SpinBoxInt("Out Plane", p, 1, 4);
+    m_ui.EndList();
+
+    // int i = 0;
+    // if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(currentConfig)) {
+    //     // Not implemented yet
+    // }
+    // else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(currentConfig)) {
+    // }
+}
+
+void MenuSystem::Effects(int id, int* selectedIdx)
+{
+    m_ui.BeginList(selectedIdx);
+    if(m_ui.Action("[ ] Chroma Key")){
+        setMenu(MT_ChromaKey);
+    } else if (m_ui.Action("[ ] Custom Effect")){
+        setMenu(MT_CustomFx);
+    } else if (m_ui.Action("[x] Color Correction")) {
+        setMenu(MT_ColorCorrection);
+    } else if (m_ui.Action("[x] Blend Mode")) {
+        setMenu(MT_BlendMode);
+    }
+    m_ui.EndList();
+
+}
+
+void MenuSystem::CustomFx(int id, int* selectedIdx)
+{
+    m_ui.BeginList(selectedIdx);
+    m_ui.Text("If no fx is selected, file-list is visible.");
+    m_ui.Text("If fx is selected, parameters are visible,");
+    m_ui.Break();
+    m_ui.RadioButton("file-1.frag", false);
+    m_ui.RadioButton("file-2.frag", false);
+    m_ui.RadioButton("file-3.frag", false);
+    m_ui.RadioButton("file-4.frag", false);
+    m_ui.Break();
+    m_ui.Action("Reset");
+    m_ui.Action("Remove (only visible when fx-shader active)");
+    m_ui.CheckBox("Enabled", true);
+    m_ui.EndList();
+}
+
+void MenuSystem::ChromaKey(int id, int* selectedIdx)
+{
+    m_ui.BeginList(selectedIdx);
+    m_ui.Text("Color");
+    int tolerance = 50, smoothness = 50, spill = 50;
+    m_ui.SpinBoxInt("Tolerance", tolerance, 0, 100);
+    m_ui.SpinBoxInt("Smoothness", smoothness, 0, 100);
+    m_ui.SpinBoxInt("Spill", spill, 0, 100);
+    m_ui.Text("Pre-Mask");
+    m_ui.Break();
+    m_ui.Action("Reset");
+    m_ui.CheckBox("Enabled", true);
+    m_ui.EndList();
+}
+
+void MenuSystem::ColorCorrection(int id, int* selectedIdx)
+{
+    m_ui.BeginList(selectedIdx);
+    int black = 0, white = 100, gamma = 50, temperature = 50, tint = 50, sat = 50;
+    m_ui.SpinBoxInt("Black-Point", black, 0, 100);
+    m_ui.SpinBoxInt("White-Point", white, 0, 100);
+    m_ui.SpinBoxInt("Gamma", gamma, 0, 100);
+    m_ui.SpinBoxInt("Temperature", temperature, 0, 100);
+    m_ui.SpinBoxInt("Tint", tint, 0, 100);
+    m_ui.SpinBoxInt("Saturation", sat, 0, 100);
+    m_ui.Break();
+    m_ui.Action("Reset");
+    m_ui.CheckBox("Enabled", true);
+    m_ui.EndList();
+}
+
+void MenuSystem::BlendMode(int id, int* selectedIdx)
+{
+
+}
+
+
+void MenuSystem::OutputPlanes(int id, int* selectedIdx)
+{
+    m_ui.BeginList(selectedIdx);
+    if(m_ui.Action("Plane 1")){
+        setMenu(MT_PlaneSettings);
+    } else if (m_ui.Action("Plane 2")){
+        setMenu(MT_PlaneSettings);
+    } else if (m_ui.Action("Plane 3")) {
+        setMenu(MT_PlaneSettings);
+    } else if (m_ui.Action("Plane 4")) {
+        setMenu(MT_PlaneSettings);
     }
     m_ui.EndList();
 }
+
+void MenuSystem::PlaneSettings(int id, int* selectedIdx)
+{
+    m_ui.BeginList(selectedIdx);
+    if (m_ui.Action("Mrs. Mask")){
+        setMenu(MT_Mask);
+    } else if (m_ui.Action("Mr. Mapping")) {
+        m_registry.settings().mappingMode = true;
+        setMenu(MT_Mapping);
+    }
+    m_ui.Break();
+    if(m_ui.Action("HDMI Channel")){
+        setMenu(MT_HdmiSelection);
+    }
+    m_ui.EndList();
+
+}
+
+void MenuSystem::HdmiSelection(int id, int* selectedIdx)
+{
+    m_ui.BeginList(selectedIdx);
+    m_ui.RadioButton("HDMI Output 1", true);
+    m_ui.RadioButton("HDMI Output 2", false);
+    m_ui.EndList();
+}
+
+void MenuSystem::Mask(int id, int* selectedIdx)
+{
+    m_ui.BeginList(selectedIdx);
+    m_ui.Text("some way to load image or create a mask...");
+    m_ui.EndList();
+}
+
+void MenuSystem::Mapping(int id, int* selectedIdx)
+{
+    m_registry.settings().mappingMode = true;
+    m_ui.BeginList(selectedIdx);
+    m_ui.Text("use keyboard to move vertices...");
+    if(m_ui.Action("Exit Mapping Mode")) {
+        m_registry.settings().mappingMode = false;
+        goUpHierachy();
+    }
+    m_ui.EndList();
+
+    m_buttonTexts[0].second = COLOR::YELLOW;
+    m_buttonTexts[1].second = COLOR::YELLOW;
+    m_buttonTexts[8].second = COLOR::YELLOW;
+    m_buttonTexts[9].second = COLOR::YELLOW;
+
+    m_buttonTexts[2].second = COLOR::GREEN;
+    m_buttonTexts[3].second = COLOR::GREEN;
+    m_buttonTexts[10].second = COLOR::GREEN;
+    m_buttonTexts[11].second = COLOR::GREEN;
+    
+    m_buttonTexts[4].second = COLOR::BLUE;
+    m_buttonTexts[5].second = COLOR::BLUE;
+    m_buttonTexts[12].second = COLOR::BLUE;
+    m_buttonTexts[13].second = COLOR::BLUE;
+    
+    m_buttonTexts[6].second = COLOR::RED;
+    m_buttonTexts[7].second = COLOR::RED;
+    m_buttonTexts[14].second = COLOR::RED;
+    m_buttonTexts[15].second = COLOR::RED;
+
+    m_ui.ShowMappingKeyboard(m_buttonTexts);
+}
+
 
 void MenuSystem::NetworkInfo(int id, int* focusedIdx) 
 {
@@ -542,7 +811,7 @@ void MenuSystem::ButtonMatrix(int id, int* focusedIdx)
         }
         else if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(currentConfig)) {
             if (shaderInputConfig->isActive) m_buttonTexts[i].second = COLOR::GREEN;
-            else m_buttonTexts[i].second = COLOR::DARK_BLUE;
+            else m_buttonTexts[i].second = COLOR::DARK_GREEN;
         }
     }
     m_ui.ShowButtonMatrix(m_buttonTexts);

@@ -41,12 +41,15 @@ public:
     void startUpLogo();
     void Image(const ImageBuffer& imageBuffer);
     void Text(const std::string &label);
+    void PlainText(const std::string &label);
+    void Break();
     void MenuTitle(std::string menuTitle);
     void MenuInfo(std::string menuInfo);
     void InfoScreen(int bank, int id, std::string filename);
     void ShowPopupMessage(std::string message);
     void ShowBankInfo(int bank);
     void ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts);
+    void ShowMappingKeyboard(std::vector<std::pair<char, Color>> buttonTexts);
     bool Action(const std::string& label);
     bool CheckBox(const std::string& label, bool checked);
     bool RadioButton(const std::string& label, bool active);
