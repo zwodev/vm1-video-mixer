@@ -40,6 +40,21 @@ void MenuSystem::subscribeToEvents()
     });
 }
 
+void MenuSystem::createEffectMenu()
+{
+    MenuItem effectsMenu;
+    auto& effects = m_registry.planeSettings().effects;
+
+    for (auto& effect : effects) {
+        MenuItem childMenu;
+        childMenu.label = effect.name;
+        childMenu.func = [this](int id, int* fIdx){EffectSelection(id, fIdx);};
+        effectsMenu.children.push_back(childMenu);
+    }
+
+    m_menus[MT_EffectSelection] = effectsMenu;
+}
+
 void MenuSystem::createMenus()
 {
     m_menus[MT_StartupScreen]       =  {"", {}, [this](int id, int* fIdx){StartupScreen(id, fIdx);}};
@@ -54,7 +69,9 @@ void MenuSystem::createMenus()
     m_menus[MT_SettingsSelection]   = {"Settings", {}, [this](int id, int* fIdx){GlobalSettings(id, fIdx);}};
     m_menus[MT_DeviceSettings]      = {"Devices", {}, [this](int id, int* fIdx){DeviceSettings(id, fIdx);}};
     m_menus[MT_ButtonMatrix]        = {"Keys", {}, [this](int id, int* fIdx){ButtonMatrix(id, fIdx);}};
-    
+    //m_menus[MT_EffectSelection]     = {"Effects", {}, [this](int id, int* fIdx){EffectSelection(id, fIdx);}};
+
+    createEffectMenu();
 }
 
 void MenuSystem::setMenu(MenuType menuType)
@@ -131,7 +148,8 @@ void MenuSystem::handleMediaAndEditButtons()
             }
             break;
         case 6:
-            showPopupMessage("Not implemented");
+            //showPopupMessage("Not implemented");
+            setMenu(MT_EffectSelection);
             break;
         case 7:
             showPopupMessage("Not implemented");
@@ -373,6 +391,29 @@ void MenuSystem::ShaderSelection(int id, int* focusedIdx)
 
     // if (changed)
     //     m_registry.inputMappings().addInputConfig(id, std::move(config));
+}
+
+void MenuSystem::EffectSelection(int id, int* focusedIdx)
+{
+    auto& effects = m_registry.planeSettings().effects;
+    int effectIndex = m_currentMenuPath.back();
+    auto& effect = m_registry.planeSettings().effects[effectIndex];
+
+    m_ui.BeginList(focusedIdx);
+    for (int i = 0; i < effect.params.size(); ++i) {
+        auto& param = effect.params[i];
+        if (std::holds_alternative<IntParameter>(param)) {
+            auto& intParam = std::get<IntParameter>(param);  
+            m_ui.SpinBoxInt(intParam.name, intParam.value, intParam.min, intParam.max, intParam.step);
+        } else if (std::holds_alternative<FloatParameter>(param)) {
+            auto& floatParam = std::get<FloatParameter>(param); 
+            m_ui.SpinBoxFloat(floatParam.name, floatParam.value, floatParam.min, floatParam.max, floatParam.step);
+        } else if (std::holds_alternative<ColorParameter>(param)) {
+            // add ColorParam
+        }
+        
+    }
+    m_ui.EndList(); 
 }
 
 void MenuSystem::PlaybackSettings(int id, int* focusedIdx) 

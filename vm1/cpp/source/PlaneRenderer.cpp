@@ -61,15 +61,18 @@ void PlaneRenderer::createVertexBuffers()
 
 bool PlaneRenderer::initialize()
 {
-    if (!m_shader.load("shaders/pass.vert", "shaders/screen.frag"))
+    if (!m_shader.load("shaders/pass.vert", "shaders/plane_with_effects.frag"))
         return false;
+    
+    //if (!m_shader.load("shaders/pass.vert", "shaders/plane.frag"))
+    //   return false;
 
     createVertexBuffers();
 
     return true;
 }
 
-void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue)
+void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, std::vector<ShaderConfig>& effects)
 {   
     m_shader.activate();
     glBindVertexArray(m_vao);
@@ -84,6 +87,22 @@ void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue)
 
     // Set mix value
     m_shader.setValue("mixValue", mixValue); 
+    for (auto& effect : effects) {
+        for (auto& param : effect.params) {
+            if (std::holds_alternative<IntParameter>(param)) {
+                auto& intParam = std::get<IntParameter>(param);
+                std::string uniformName = effect.name + "_" + intParam.name;
+                m_shader.setValue(uniformName.c_str(), intParam.value);
+            } else if (std::holds_alternative<FloatParameter>(param)) {
+                auto& floatParam = std::get<FloatParameter>(param);
+                std::string uniformName = effect.name + "_" + floatParam.name;
+                m_shader.setValue(uniformName.c_str(), floatParam.value);
+            } else if (std::holds_alternative<ColorParameter>(param)) {
+                // add ColorParam
+            }
+        }
+    }
+
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
     m_shader.deactivate();

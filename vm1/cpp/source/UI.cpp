@@ -404,17 +404,41 @@ bool UI::RadioButton(const std::string& label, bool active)
     return focused && active;
 }
 
-void UI::SpinBoxInt(const std::string& label, int& value, int minValue, int maxValue)
+void UI::SpinBoxInt(const std::string& label, int& value, int minValue, int maxValue, int step)
 {
     if (!m_focusedIdxPtr) return;
     int diff = 0;
     if(isNavigationEventTriggered(NavigationEvent::Type::IncreaseValue))
     {
-        diff = 1;    
+        diff = step;    
     }
     else if(isNavigationEventTriggered(NavigationEvent::Type::DecreaseValue))
     {
-        diff = -1;
+        diff = -step;
+    }
+
+    bool focused = ((*m_focusedIdxPtr) == m_listSize);
+    if (focused && diff != 0) {
+        value += diff;
+        if (value < minValue) value = minValue;
+        else if (value > maxValue) value = maxValue;
+    }
+
+    std::string newLabel = label + ": " + std::to_string(value);
+    Text(newLabel);
+}
+
+void UI::SpinBoxFloat(const std::string& label, float& value, float minValue, float maxValue, float step)
+{
+    if (!m_focusedIdxPtr) return;
+    float diff = 0;
+    if(isNavigationEventTriggered(NavigationEvent::Type::IncreaseValue))
+    {
+        diff = step;    
+    }
+    else if(isNavigationEventTriggered(NavigationEvent::Type::DecreaseValue))
+    {
+        diff = -step;
     }
 
     bool focused = ((*m_focusedIdxPtr) == m_listSize);

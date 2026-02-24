@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <map>
+#include <variant>
 #include <string>
 #include <memory>
 #include <filesystem>
@@ -18,6 +19,7 @@
 
 #include "ImageBuffer.h"
 #include "stb/stb_image.h"
+#include "ShaderConfig.h"
 
 enum class DisplayType {
     SSD1351_OLED = 0,      // Original 1.5" OLED display
@@ -96,13 +98,13 @@ public:
     }
 };
 
-
 CEREAL_REGISTER_TYPE(VideoInputConfig);
 CEREAL_REGISTER_TYPE(HdmiInputConfig);
 CEREAL_REGISTER_TYPE(ShaderInputConfig);
 CEREAL_REGISTER_POLYMORPHIC_RELATION(InputConfig, VideoInputConfig)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(InputConfig, HdmiInputConfig)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(InputConfig, ShaderInputConfig)
+
 
 // TODO: Could be simplified with templates
 class InputMappings
@@ -292,6 +294,34 @@ private:
     ImageBuffer m_qrCodeImageBuffer;
 };
 
+
+struct PlaneSettings
+{
+    PlaneSettings() {
+        ShaderConfig adjustShaderConfig("adjust");
+        adjustShaderConfig.params.push_back(FloatParameter("brightness", 0.0f, -1.0f, 1.0f));
+        adjustShaderConfig.params.push_back(FloatParameter("contrast", 0.0f, -1.0f, 1.0f));
+        adjustShaderConfig.params.push_back(FloatParameter("saturation", 0.0f, -1.0f, 1.0f));
+        effects.push_back(adjustShaderConfig);
+
+        // ShaderConfig testShaderConfig("test");
+        // testShaderConfig.params.push_back(FloatParameter("brightness", 0.0f, -1.0f, 1.0f));
+        // testShaderConfig.params.push_back(FloatParameter("contrast", 0.0f, -1.0f, 1.0f));
+        // testShaderConfig.params.push_back(FloatParameter("saturation", 0.0f, -1.0f, 1.0f));
+        // effects.push_back(testShaderConfig);
+    }
+
+    std::vector<ShaderConfig> effects;
+
+    // template <class Archive>
+    // void serialize(Archive &ar)
+    // {
+    //     ar(
+    //         cereal::make_nvp("effects", m_effects)
+    //     );
+    // }
+};
+
 struct Settings
 {
     struct KioskSettings {
@@ -365,6 +395,7 @@ public:
     Settings& settings() { return m_settings; }
     InputMappings& inputMappings() { return m_inputMappings; }
     MediaPool& mediaPool() { return m_mediaPool; }
+    PlaneSettings& planeSettings() { return m_planeSettings; }
 
     void update(float deltaTime) {
         m_timeSinceLastHash += deltaTime;
@@ -435,4 +466,5 @@ private:
     Settings m_settings;
     InputMappings m_inputMappings;
     MediaPool m_mediaPool;
+    PlaneSettings m_planeSettings;
 };

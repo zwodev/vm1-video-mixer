@@ -32,7 +32,8 @@ public:
         MT_DeviceSettings,
         MT_NetworkInfo,
         MT_SettingsSelection,
-        MT_ButtonMatrix
+        MT_ButtonMatrix,
+        MT_EffectSelection
     };
 
 public:
@@ -43,6 +44,7 @@ public:
 
 private:
     void subscribeToEvents();
+    void createEffectMenu();
     void createMenus();
     void setMenu(MenuType menuType);
     void showPopupMessage(const std::string& message);
@@ -63,6 +65,7 @@ private:
     void GlobalSettings(int id, int* selectedIdx);
     void DeviceSettings(int id, int* focusedIdx);
     void ButtonMatrix(int id, int* focusedIdx);
+    void EffectSelection(int id, int* focusedIdx);
 
 private:
     Registry &m_registry;

@@ -10,6 +10,7 @@
 #pragma once
 
 #include "Shader.h"
+#include "ShaderConfig.h"
 
 #include <SDL3/SDL_opengl.h>
 #include <SDL3/SDL_opengles2.h>
@@ -25,7 +26,7 @@ public:
 
 public:
     bool initialize();
-    void update(GLuint texture0, GLuint texture1, float mixValue);
+    void update(GLuint texture0, GLuint texture1, float mixValue, std::vector<ShaderConfig>& effects);
 
 private:
     void createVertexBuffers();
