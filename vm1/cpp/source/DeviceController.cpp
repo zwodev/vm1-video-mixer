@@ -209,6 +209,32 @@ void DeviceController::requestVM1DeviceBuffer()
                     }
                     return;
                     break;
+                case 43: // + (plus)
+                    if (isShiftPressed)
+                    {
+                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::DecreaseAuxValue));
+                        m_eventBus.publish(SystemEvent(SystemEvent::KeyDown));
+                    }
+                    // else
+                    // {
+                    //     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::HierarchyDown));
+                    //     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::SelectItem));
+                    // }
+                    return;
+                    break;
+                case 45: // - (minus)
+                    if (isShiftPressed)
+                    {
+                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::IncreaseAuxValue));
+                        m_eventBus.publish(SystemEvent(SystemEvent::KeyDown));
+                    }
+                    // else
+                    // {
+                    //     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::HierarchyDown));
+                    //     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::SelectItem));
+                    // }
+                    return;
+                    break;
                 default:
                     break;
             }

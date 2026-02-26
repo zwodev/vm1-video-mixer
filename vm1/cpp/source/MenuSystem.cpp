@@ -639,9 +639,17 @@ void MenuSystem::Mask(int id, int* selectedIdx)
 
 void MenuSystem::Mapping(int id, int* selectedIdx)
 {
+    struct vec2 {float x, y;};
+
     m_registry.settings().mappingMode = true;
+    
     m_ui.BeginList(selectedIdx);
-    m_ui.Text("use keyboard to move vertices...");
+
+    m_ui.SpinBoxVec2("TopLeft", m_registry.planeSettings().coords.at(0)); 
+    m_ui.SpinBoxVec2("TopRight", m_registry.planeSettings().coords.at(3)); 
+    m_ui.SpinBoxVec2("BottomRight", m_registry.planeSettings().coords.at(2)); 
+    m_ui.SpinBoxVec2("BottomLeft", m_registry.planeSettings().coords.at(1)); 
+
     if(m_ui.Action("Exit Mapping Mode")) {
         m_registry.settings().mappingMode = false;
         goUpHierachy();

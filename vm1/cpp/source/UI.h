@@ -55,6 +55,7 @@ public:
     bool RadioButton(const std::string& label, bool active);
     void SpinBoxInt(const std::string& label, int& value, int minValue, int maxValue, int step = 1);
     void SpinBoxFloat(const std::string& label, float& value, float minValue, float maxValue, float step = 0.01f);
+    void SpinBoxVec2(const std::string& label, PlaneSettings::vec2& vec, float step = 0.1f);
     bool isNavigationEventTriggered(NavigationEvent::Type eventType);
     bool isMediaSlotEventTriggered(int mediaSlotId);
     bool isEditModeEventTriggered(int modeId);

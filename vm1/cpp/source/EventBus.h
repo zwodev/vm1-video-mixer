@@ -82,6 +82,8 @@ struct NavigationEvent {
         SelectItem,
         DecreaseValue,
         IncreaseValue,
+        DecreaseAuxValue,
+        IncreaseAuxValue,
         HierarchyUp,
         HierarchyDown,
         BankUp,

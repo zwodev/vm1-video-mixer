@@ -40,8 +40,10 @@ rotary_encoder_t encoder1 = {.pin_a = ROTARY_1_PIN_A, .pin_b = ROTARY_1_PIN_B};
 int32_t encoder0_position;
 int32_t encoder1_position;
 
-int press_up = 0;
-int press_down = 0;
+int encoder0_press_up = 0;
+int encoder0_press_down = 0;
+int encoder1_press_up = 0;
+int encoder1_press_down = 0;
 
 // analog inputs
 uint16_t analog0 = 0;
@@ -322,9 +324,9 @@ void loop()
     res += encoder0_position;
     if (enc0 < 0)
     {
-      press_down = 0;
-      press_up++;
-      if(press_up % deviceState.rotarySensitivity == 0) { 
+      encoder0_press_down = 0;
+      encoder0_press_up++;
+      if(encoder0_press_up % deviceState.rotarySensitivity == 0) { 
         res += ", down";
         add_to_keyboard_buffer(KEY_UP_ARROW);
         Keyboard.press(KEY_UP_ARROW);
@@ -335,9 +337,9 @@ void loop()
     }
     else if (enc0 > 0)
     {
-      press_up = 0;
-      press_down++;
-      if(press_down % deviceState.rotarySensitivity == 0) {
+      encoder0_press_up = 0;
+      encoder0_press_down++;
+      if(encoder0_press_down % deviceState.rotarySensitivity == 0) {
         res += ", up";
         add_to_keyboard_buffer(KEY_DOWN_ARROW);
         Keyboard.press(KEY_DOWN_ARROW);
@@ -358,13 +360,29 @@ void loop()
     res += encoder1_position;
     if (enc1 < 0)
     {
-      // todo: add keycode to keyboard buffer ('+')
+      encoder1_press_down = 0;
+      encoder1_press_up++;
+      if(encoder1_press_up % deviceState.rotarySensitivity == 0) { 
+        res += ", down";
+        add_to_keyboard_buffer('+');
+        Keyboard.press('+');
+        delay(1);
+        Keyboard.release('+');
+      }
       res += ", down";
     }
     else if (enc1 > 0)
     {
-      // todo: add keycode to keyboard buffer ('-')
-      res += ", up";
+      encoder1_press_up = 0;
+      encoder1_press_down++;
+      if(encoder1_press_down % deviceState.rotarySensitivity == 0) {
+        res += ", up";
+        add_to_keyboard_buffer('-');
+        Keyboard.press('-');
+        // todo: add keycode to keyboard buffer ('KEY_DOWN_ARROW')
+        delay(1);
+        Keyboard.release('-');
+      }
     }
     Serial.println(res);
   }

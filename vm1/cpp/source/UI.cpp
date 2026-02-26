@@ -495,3 +495,41 @@ void UI::SpinBoxFloat(const std::string& label, float& value, float minValue, fl
     std::string newLabel = label + ": " + std::to_string(value);
     Text(newLabel);
 }
+
+void UI::SpinBoxVec2(const std::string& label, PlaneSettings::vec2& vec, float step)
+{
+    if (!m_focusedIdxPtr) return;
+    float diffX = 0;
+    float diffY = 0;
+    if(isNavigationEventTriggered(NavigationEvent::Type::IncreaseValue))
+    {
+        diffX = step;    
+    }
+    else if(isNavigationEventTriggered(NavigationEvent::Type::DecreaseValue))
+    {
+        diffX = -step;
+    }
+    else if(isNavigationEventTriggered(NavigationEvent::Type::IncreaseAuxValue))
+    {
+        diffY = step;    
+    }
+    else if(isNavigationEventTriggered(NavigationEvent::Type::DecreaseAuxValue))
+    {
+        diffY = -step;
+    }
+
+    bool focused = ((*m_focusedIdxPtr) == m_listSize);
+    if (focused && diffX != 0) {
+        vec.x += diffX;
+        // if (value < minValue) value = minValue;
+        // else if (value > maxValue) value = maxValue;
+    }
+    else if (focused && diffY != 0) {
+        vec.y += diffY;
+        // if (value < minValue) value = minValue;
+        // else if (value > maxValue) value = maxValue;
+    }
+
+    std::string newLabel = label + ": " + std::to_string(vec.x) + "/" + std::to_string(vec.y);
+    Text(newLabel);
+}
