@@ -740,6 +740,7 @@ void MenuSystem::GlobalSettings(int id, int* focusedIdx)
     if (m_ui.CheckBox("Use UVC", settings.useUvcCaptureDevice)) { settings.useUvcCaptureDevice = !settings.useUvcCaptureDevice; };
     if (m_ui.CheckBox("Show UI", settings.showUI)) { settings.showUI = !settings.showUI; };
     if (m_ui.CheckBox("Default Looping", settings.defaultLooping)) { settings.defaultLooping = !settings.defaultLooping; };
+    m_ui.SpinBoxInt("ScreenRotation", (int&)settings.hdmiRotation0, 0, 1);
     m_ui.EndList();
 }
 

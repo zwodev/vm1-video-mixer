@@ -560,7 +560,12 @@ void VM1Application::renderWindow(int windowIndex)
     SDL_DisplayMode defaultMode = m_displayConfigs[windowIndex].defaultMode;    
     float contentAspect = 16.0f/9.0f;
     float displayAspect = (float)bestMode.w / (float)bestMode.h;
-    
+    if(m_registry.settings().hdmiRotation0 == ScreenRotation::SR_Rotate_90 ||
+       m_registry.settings().hdmiRotation0 == ScreenRotation::SR_Rotate_270 ) {
+        contentAspect = 1.0f / contentAspect;
+    }
+    // printf("bestMode x: %d y: %d displayAspect: %f\n", bestMode.w, bestMode.h, displayAspect);
+
     // This is du to a strange situation. The default resolution seems to count here!
     float xScale = (float)defaultMode.h * contentAspect / (float)defaultMode.w;
     float yScale = (float)defaultMode.w * (1.0f/contentAspect) / (float)defaultMode.h;
@@ -580,7 +585,7 @@ void VM1Application::renderWindow(int windowIndex)
         xOffset = (bestMode.w - width) / 2;
     }
 
-    //printf("W: %d, H: %d, S:%f\n", width, height, yScale);
+    // printf("W: %d, H: %d, S:%f\n", width, height, yScale);
 
     SDL_GL_MakeCurrent(m_windows[windowIndex], m_glContext);    
     glViewport(xOffset, yOffset, width, height);

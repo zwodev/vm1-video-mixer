@@ -45,7 +45,7 @@ void PlaneRenderer::createVertexBuffers()
 
     glBindVertexArray(m_vao);
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_DYNAMIC_DRAW);
 
     // Position
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
@@ -57,6 +57,36 @@ void PlaneRenderer::createVertexBuffers()
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+}
+
+void PlaneRenderer::updateVertexBuffers(ScreenRotation rotation) {
+    float quadVertices_0[] = {
+        //  x,    y,    u,   v
+        -1.0f, -1.0f,  0.0f, 0.0f, // bottom left
+        1.0f, -1.0f,  1.0f, 0.0f, // bottom right
+        1.0f,  1.0f,  1.0f, 1.0f, // top right
+
+        -1.0f, -1.0f,  0.0f, 0.0f, // bottom left
+        1.0f,  1.0f,  1.0f, 1.0f, // top right
+        -1.0f,  1.0f,  0.0f, 1.0f  // top left
+    };
+    float quadVertices_90[] = {
+        //  x,    y,    u,   v
+        -1.0f, -1.0f,  0.0f, 1.0f, // bottom left
+        1.0f, -1.0f,  0.0f, 0.0f, // bottom right
+        1.0f,  1.0f,  1.0f, 0.0f, // top right
+
+        -1.0f, -1.0f,  0.0f, 1.0f, // bottom left
+        1.0f,  1.0f,  1.0f, 0.0f, // top right
+        -1.0f,  1.0f,  1.0f, 1.0f  // top left
+    };
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);  // Bind VBO directly (VAO bind optional but recommended for state)
+    if(rotation == ScreenRotation::SR_Rotate_0) {
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(quadVertices_0), quadVertices_0);
+    } else {
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(quadVertices_90), quadVertices_90);
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 bool PlaneRenderer::initialize()
@@ -72,8 +102,10 @@ bool PlaneRenderer::initialize()
     return true;
 }
 
-void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, std::vector<ShaderConfig>& effects)
+void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, std::vector<ShaderConfig>& effects, ScreenRotation rotation)
 {   
+    updateVertexBuffers(rotation);
+
     m_shader.activate();
     glBindVertexArray(m_vao);
 

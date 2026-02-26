@@ -11,6 +11,7 @@
 
 #include "Shader.h"
 #include "ShaderConfig.h"
+#include "ScreenOptions.h"
 
 #include <SDL3/SDL_opengl.h>
 #include <SDL3/SDL_opengles2.h>
@@ -26,10 +27,11 @@ public:
 
 public:
     bool initialize();
-    void update(GLuint texture0, GLuint texture1, float mixValue, std::vector<ShaderConfig>& effects);
+    void update(GLuint texture0, GLuint texture1, float mixValue, std::vector<ShaderConfig>& effects, ScreenRotation rotation);
 
 private:
     void createVertexBuffers();
+    void updateVertexBuffers(ScreenRotation rotation);
 
 private:
     GLuint m_vao; 
