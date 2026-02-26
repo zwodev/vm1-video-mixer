@@ -33,6 +33,7 @@
 #include "EventBus.h"
 #include "DeviceController.h"
 #include "AudioSystem.h"
+#include "ProjectionMappingController.h"
 
 struct DisplayConf {
     std::string name;
@@ -92,4 +93,5 @@ private:
     ILI9341Controller m_ili9341Controller;
     MenuSystem m_menuSystem;
     DeviceController m_deviceController;
+    ProjectionMappingController m_projectionMappingController;
 };

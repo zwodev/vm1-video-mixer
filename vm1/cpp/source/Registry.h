@@ -311,9 +311,14 @@ struct PlaneSettings
         // testShaderConfig.params.push_back(FloatParameter("saturation", 0.0f, -1.0f, 1.0f));
         // effects.push_back(testShaderConfig);
     }
-
+    
     std::vector<ShaderConfig> effects;
-
+    
+    struct vec2 {float x, y;};
+    std::vector<vec2> coords = {{-1.0f, -1.0f},   // bottom left
+                                { 1.0f, -1.0f},   // bottom right
+                                { 1.0f,  1.0f},   // top right
+                                {-1.0f,  1.0f}};  // top left
     // template <class Archive>
     // void serialize(Archive &ar)
     // {

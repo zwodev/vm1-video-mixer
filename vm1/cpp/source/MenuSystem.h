@@ -57,7 +57,7 @@ public:
 
 private:
     void subscribeToEvents();
-    void createEffectMenu();
+    MenuItem createPlaneEffectsMenu();
     void createMenus();
     void setMenu(MenuType menuType);
     void showPopupMessage(const std::string& message);

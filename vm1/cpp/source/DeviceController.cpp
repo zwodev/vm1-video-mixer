@@ -227,18 +227,58 @@ void DeviceController::requestVM1DeviceBuffer()
                 }
             }
             
-            for(int j = 0; j < m_mediaKeys.size(); ++j) 
+            if(m_registry.settings().mappingMode)
             {
-                int mediaSlotId = (m_registry.inputMappings().bank * MEDIA_BUTTON_COUNT) + j;
-                if (currentChar == m_mediaKeys[j]) {
-                    if(isShiftPressed){
-                        m_eventBus.publish(MediaSlotEvent(mediaSlotId, false)); // do not trigger playback
+                int vertexIds[] = {0, 0, 1, 1, 2, 2, 3, 3, 
+                                   0, 0, 1, 1, 2, 2, 3, 3};
+                std::unordered_set<int> up    = {0, 2, 4, 6};
+                std::unordered_set<int> right  = {1, 3, 5, 7};
+                std::unordered_set<int> left = {9, 11, 13, 15};
+                std::unordered_set<int> down  = {8, 10, 12, 14};
+
+                float stepSize = 0.1f;
+                for(int j = 0; j < m_mediaKeys.size(); ++j) 
+                {
+                    int mediaButtonId = j;
+                    if (currentChar == m_mediaKeys[j]) {
+                        int vertex = vertexIds[j];
+                        float x = 0.0f;
+                        float y = 0.0f;
+
+                        if(up.contains(j)) {
+                            y -= stepSize;
+                        } 
+                        else if (down.contains(j)) {
+                            y += stepSize;
+                        } 
+                        else if (left.contains(j)) {
+                            x -= stepSize;
+                        } 
+                        else if (right.contains(j)) {
+                            x += stepSize;
+                        }
+
+                        m_eventBus.publish(MappingButtonEvent(vertex, x, y));
+                        m_eventBus.publish(SystemEvent(SystemEvent::KeyDown));
+                        return;
                     }
-                    else {
-                        m_eventBus.publish(MediaSlotEvent(mediaSlotId));
+                }
+            }
+            else 
+            {
+                for(int j = 0; j < m_mediaKeys.size(); ++j) 
+                {
+                    int mediaSlotId = (m_registry.inputMappings().bank * MEDIA_BUTTON_COUNT) + j;
+                    if (currentChar == m_mediaKeys[j]) {
+                        if(isShiftPressed){
+                            m_eventBus.publish(MediaSlotEvent(mediaSlotId, false)); // do not trigger playback
+                        }
+                        else {
+                            m_eventBus.publish(MediaSlotEvent(mediaSlotId));
+                        }
+                        m_eventBus.publish(SystemEvent(SystemEvent::KeyDown));
+                        return;
                     }
-                    m_eventBus.publish(SystemEvent(SystemEvent::KeyDown));
-                    return;
                 }
             }
         }

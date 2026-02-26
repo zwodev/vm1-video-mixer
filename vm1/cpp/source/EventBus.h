@@ -61,6 +61,20 @@ struct EditModeEvent
     int modeId;
 };
 
+struct MappingButtonEvent
+{
+    MappingButtonEvent() = delete;
+    MappingButtonEvent(int vertexId, float x, float y) {
+        this->vertexId = vertexId;
+        this->x = x;
+        this->y = y;
+    }
+    int vertexId;
+    float x;
+    float y;
+};
+
+
 struct NavigationEvent {
     enum Type {
         FocusPrevious,

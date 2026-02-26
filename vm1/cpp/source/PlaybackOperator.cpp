@@ -500,7 +500,7 @@ void PlaybackOperator::renderPlane(int planeId)
         if (audioStream) audioStream->setVolume(planeMixer.mixValue() * volume);
     }
 
-    planeRenderer->update(texture0, texture1, planeMixer.mixValue(), m_registry.planeSettings().effects, m_registry.settings().hdmiRotation0);
+    planeRenderer->update(texture0, texture1, planeMixer.mixValue(), m_registry.planeSettings(), m_registry.settings().hdmiRotation0);
     //printf("Mix Value: %f\n", planeMixer.mixValue());
 }
 

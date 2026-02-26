@@ -38,20 +38,20 @@ void MenuSystem::subscribeToEvents()
     });
 }
 
-void MenuSystem::createEffectMenu()
+MenuItem MenuSystem::createPlaneEffectsMenu()
 {
-    MenuItem effectsMenu;
-    effectsMenu.label = "FX";
+    MenuItem planeEffectsMenu;
+    planeEffectsMenu.label = "Plane Effects";
     auto& effects = m_registry.planeSettings().effects;
 
     for (auto& effect : effects) {
         MenuItem childMenu;
         childMenu.label = effect.name;
         childMenu.func = [this](int id, int* fIdx){EffectSelection(id, fIdx);};
-        effectsMenu.children.push_back(childMenu);
+        planeEffectsMenu.children.push_back(childMenu);
     }
 
-    m_menus[MT_Effects] = effectsMenu;
+    return planeEffectsMenu;
 }
 
 void MenuSystem::createMenus()
@@ -75,10 +75,10 @@ void MenuSystem::createMenus()
     //                                     }};
 
     m_menus[MT_Outputs]             = {"OUT", {
-                                            {"Plane Settings", {}, [this](int id, int* fIdx){PlaneSettings(id, fIdx);}},
-                                            {"Hdmi Selection", {}, [this](int id, int* fIdx){HdmiSelection(id, fIdx);}},
-                                            {"Mask", {}, [this](int id, int* fIdx){Mask(id, fIdx);}},
-                                            {"Mapping", {}, [this](int id, int* fIdx){Mapping(id, fIdx);}}
+                                            {"Mrs. Mask", {}, [this](int id, int* fIdx){Mask(id, fIdx);}},
+                                            {"Mr. Mapping", {}, [this](int id, int* fIdx){Mapping(id, fIdx);}},
+                                            createPlaneEffectsMenu(),
+                                            {"Hdmi Selection", {}, [this](int id, int* fIdx){HdmiSelection(id, fIdx);}}
                                         }};
 
     m_menus[MT_NetworkInfo]         = {"Network", {}, [this](int id, int* fIdx){NetworkInfo(id, fIdx);}};
@@ -86,8 +86,8 @@ void MenuSystem::createMenus()
     m_menus[MT_DeviceSettings]      = {"Devices", {}, [this](int id, int* fIdx){DeviceSettings(id, fIdx);}};
     m_menus[MT_ButtonMatrix]        = {"Keys", {}, [this](int id, int* fIdx){ButtonMatrix(id, fIdx);}};
     //m_menus[MT_EffectSelection]     = {"Effects", {}, [this](int id, int* fIdx){EffectSelection(id, fIdx);}};
-
-    createEffectMenu();
+    
+    createPlaneEffectsMenu();
 }
 
 void MenuSystem::setMenu(MenuType menuType)
@@ -621,37 +621,6 @@ void MenuSystem::BlendMode(int id, int* selectedIdx)
 }
 
 
-void MenuSystem::OutputPlanes(int id, int* selectedIdx)
-{
-    m_ui.BeginList(selectedIdx);
-    if(m_ui.Action("Plane 1")){
-        setMenu(MT_PlaneSettings);
-    } else if (m_ui.Action("Plane 2")){
-        setMenu(MT_PlaneSettings);
-    } else if (m_ui.Action("Plane 3")) {
-        setMenu(MT_PlaneSettings);
-    } else if (m_ui.Action("Plane 4")) {
-        setMenu(MT_PlaneSettings);
-    }
-    m_ui.EndList();
-}
-
-void MenuSystem::PlaneSettings(int id, int* selectedIdx)
-{
-    m_ui.BeginList(selectedIdx);
-    if (m_ui.Action("Mrs. Mask")){
-        setMenu(MT_Mask);
-    } else if (m_ui.Action("Mr. Mapping")) {
-        m_registry.settings().mappingMode = true;
-        setMenu(MT_Mapping);
-    }
-    m_ui.Break();
-    if(m_ui.Action("HDMI Channel")){
-        setMenu(MT_HdmiSelection);
-    }
-    m_ui.EndList();
-
-}
 
 void MenuSystem::HdmiSelection(int id, int* selectedIdx)
 {
