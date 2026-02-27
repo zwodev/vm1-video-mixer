@@ -49,7 +49,6 @@ public:
     void ShowPopupMessage(std::string message);
     void ShowBankInfo(int bank);
     void ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts);
-    void ShowMappingKeyboard(std::vector<std::pair<char, Color>> buttonTexts);
     bool Action(const std::string& label);
     bool CheckBox(const std::string& label, bool checked);
     bool RadioButton(const std::string& label, bool active);

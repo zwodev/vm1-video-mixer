@@ -45,8 +45,7 @@ public:
         MT_DeviceSettings,
         MT_NetworkInfo,
         MT_SettingsSelection,
-        MT_ButtonMatrix,
-        MT_EffectSelection
+        MT_ButtonMatrix
     };
 
 public:
@@ -73,7 +72,6 @@ private:
     void InfoScreen(int id, int* selectedIdx);
 
     void ClearSlot(int id, int* focusedIdx);
-    //void InputSelection(int id, int* selectedIdx);
     void FileSelection(int id, int* selectedIdx);
     void LiveInputSelection(int id, int* selectedIdx);
     void ShaderSelection(int id, int* selectedIdx);

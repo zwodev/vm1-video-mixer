@@ -639,10 +639,6 @@ void MenuSystem::Mask(int id, int* selectedIdx)
 
 void MenuSystem::Mapping(int id, int* selectedIdx)
 {
-    struct vec2 {float x, y;};
-
-    m_registry.settings().mappingMode = true;
-    
     m_ui.BeginList(selectedIdx);
 
     m_ui.SpinBoxVec2("TopLeft", m_registry.planeSettings().coords.at(0)); 
@@ -651,32 +647,9 @@ void MenuSystem::Mapping(int id, int* selectedIdx)
     m_ui.SpinBoxVec2("BottomLeft", m_registry.planeSettings().coords.at(1)); 
 
     if(m_ui.Action("Exit Mapping Mode")) {
-        m_registry.settings().mappingMode = false;
         goUpHierachy();
     }
     m_ui.EndList();
-
-    m_buttonTexts[0].second = COLOR::YELLOW;
-    m_buttonTexts[1].second = COLOR::YELLOW;
-    m_buttonTexts[8].second = COLOR::YELLOW;
-    m_buttonTexts[9].second = COLOR::YELLOW;
-
-    m_buttonTexts[2].second = COLOR::GREEN;
-    m_buttonTexts[3].second = COLOR::GREEN;
-    m_buttonTexts[10].second = COLOR::GREEN;
-    m_buttonTexts[11].second = COLOR::GREEN;
-    
-    m_buttonTexts[4].second = COLOR::BLUE;
-    m_buttonTexts[5].second = COLOR::BLUE;
-    m_buttonTexts[12].second = COLOR::BLUE;
-    m_buttonTexts[13].second = COLOR::BLUE;
-    
-    m_buttonTexts[6].second = COLOR::RED;
-    m_buttonTexts[7].second = COLOR::RED;
-    m_buttonTexts[14].second = COLOR::RED;
-    m_buttonTexts[15].second = COLOR::RED;
-
-    m_ui.ShowMappingKeyboard(m_buttonTexts);
 }
 
 

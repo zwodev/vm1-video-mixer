@@ -521,64 +521,39 @@ void PlaybackOperator::updateDeviceController()
         }
     }
     
-    if(m_registry.settings().mappingMode) 
+    for (int i = 0; i < MEDIA_BUTTON_COUNT; ++i)
     {
-        vm1DeviceState.mediaButtons[0] = ButtonState::YELLOW;
-        vm1DeviceState.mediaButtons[1] = ButtonState::YELLOW;
-        vm1DeviceState.mediaButtons[8] = ButtonState::YELLOW;
-        vm1DeviceState.mediaButtons[9] = ButtonState::YELLOW;
-
-        vm1DeviceState.mediaButtons[2] = ButtonState::GREEN;
-        vm1DeviceState.mediaButtons[3] = ButtonState::GREEN;
-        vm1DeviceState.mediaButtons[10] = ButtonState::GREEN;
-        vm1DeviceState.mediaButtons[11] = ButtonState::GREEN;
-
-        vm1DeviceState.mediaButtons[4] = ButtonState::BLUE;
-        vm1DeviceState.mediaButtons[5] = ButtonState::BLUE;
-        vm1DeviceState.mediaButtons[12] = ButtonState::BLUE;
-        vm1DeviceState.mediaButtons[13] = ButtonState::BLUE;
-
-        vm1DeviceState.mediaButtons[6] = ButtonState::RED;
-        vm1DeviceState.mediaButtons[7] = ButtonState::RED;
-        vm1DeviceState.mediaButtons[14] = ButtonState::RED;
-        vm1DeviceState.mediaButtons[15] = ButtonState::RED;
-    }
-    else    // normal mode
-    {
-        for (int i = 0; i < MEDIA_BUTTON_COUNT; ++i)
+        int mediaSlotId = (inputMappings.bank * MEDIA_BUTTON_COUNT) + i;
+        InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
+        if (!inputConfig)
         {
-            int mediaSlotId = (inputMappings.bank * MEDIA_BUTTON_COUNT) + i;
-            InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
-            if (!inputConfig)
-            {
-                vm1DeviceState.mediaButtons[i] = ButtonState::NONE;
+            vm1DeviceState.mediaButtons[i] = ButtonState::NONE;
+        }
+        else if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
+        {
+            if (m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
+                vm1DeviceState.mediaButtons[i] = ButtonState::FILE_ASSET_ACTIVE;
             }
-            else if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
-            {
-                if (m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
-                    vm1DeviceState.mediaButtons[i] = ButtonState::FILE_ASSET_ACTIVE;
-                }
-                else
-                    vm1DeviceState.mediaButtons[i] = ButtonState::FILE_ASSET;
+            else
+                vm1DeviceState.mediaButtons[i] = ButtonState::FILE_ASSET;
+        }
+        else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
+        {
+            // TODO: How to handle active HDMI or IMAGE, etc.
+            if (m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
+                vm1DeviceState.mediaButtons[i] = ButtonState::LIVECAM_ACTIVE;
             }
-            else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
-            {
-                // TODO: How to handle active HDMI or IMAGE, etc.
-                if (m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
-                    vm1DeviceState.mediaButtons[i] = ButtonState::LIVECAM_ACTIVE;
-                }
-                else
-                    vm1DeviceState.mediaButtons[i] = ButtonState::LIVECAM;
+            else
+                vm1DeviceState.mediaButtons[i] = ButtonState::LIVECAM;
+        }
+        else if (ShaderInputConfig *shaderInputConfig = dynamic_cast<ShaderInputConfig *>(inputConfig))
+        {
+            // TODO: How to handle active HDMI or IMAGE, etc.
+            if (m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
+                vm1DeviceState.mediaButtons[i] = ButtonState::SHADER_ACTIVE;
             }
-            else if (ShaderInputConfig *shaderInputConfig = dynamic_cast<ShaderInputConfig *>(inputConfig))
-            {
-                // TODO: How to handle active HDMI or IMAGE, etc.
-                if (m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
-                    vm1DeviceState.mediaButtons[i] = ButtonState::SHADER_ACTIVE;
-                }
-                else
-                    vm1DeviceState.mediaButtons[i] = ButtonState::SHADER;
-            }
+            else
+                vm1DeviceState.mediaButtons[i] = ButtonState::SHADER;
         }
 
         if(m_selectedMediaButton > -1) {
