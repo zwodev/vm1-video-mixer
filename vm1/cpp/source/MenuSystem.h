@@ -61,6 +61,7 @@ private:
     void setMenu(MenuType menuType);
     void showPopupMessage(const std::string& message);
     void handlePopupMessage();
+    void handleStringInputDialog();
     void handleMediaAndEditButtons();
     void handleUpAndDownKeys();
     void handleBankSwitching();
@@ -107,6 +108,10 @@ private:
     MenuType m_currentMenuType = MT_InputSelection;
     bool m_launchPopup = false;
     std::string m_lastPopupMessage;
+
+    bool m_showStringInputDialog = false;
+    int m_stringInputDialogCursorIdx = 0;
+    std::string m_stringInputDialogString = "";
 
     std::vector<std::pair<char, Color>> m_buttonTexts = {{'Q', Color()}, {'W', Color()}, {'E', Color()}, {'R', Color()}, {'T', Color()}, {'Y', Color()}, {'U', Color()}, {'I',Color()},
                                                          {'A', Color()}, {'S', Color()}, {'D', Color()}, {'F', Color()}, {'G', Color()}, {'H', Color()}, {'J', Color()}, {'K',Color()}};

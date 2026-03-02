@@ -319,6 +319,38 @@ void UI::ShowPopupMessage(std::string message)
     m_stbRenderer.drawText(message, x, y, fontSize, COLOR::WHITE);
 }
 
+void UI::ShowStringInputDialog(std::string title, int& cursorIdx, std::string& input)
+{
+    if (cursorIdx >= input.size()) return;
+
+    int width = m_stbRenderer.width();
+    int height = m_stbRenderer.height();
+
+    char currentChar = input.at(cursorIdx);
+    // printf("%c\n", currentChar);
+    if(isNavigationEventTriggered(NavigationEvent::Type::IncreaseValue)) {
+        currentChar++;
+    }
+    else if(isNavigationEventTriggered(NavigationEvent::Type::DecreaseValue)) {
+        currentChar--;
+    }
+    else if(isNavigationEventTriggered(NavigationEvent::Type::HierarchyDown)) {
+        cursorIdx++;
+        if (cursorIdx >= input.size()) {
+            input.push_back('a');
+            currentChar = input.at(cursorIdx);
+        } 
+    }
+    else if(isNavigationEventTriggered(NavigationEvent::Type::HierarchyUp)) {
+        cursorIdx--;
+    }
+    input.at(cursorIdx) = currentChar;
+    m_stbRenderer.drawRect(width/10, height/10, width - (width/10*2), height - (height/10*2), COLOR::BLACK);
+    m_stbRenderer.drawEmptyRect(width/10, height/10, width - (width/10*2), height - (height/10*2), COLOR::WHITE);
+    m_stbRenderer.drawText(title, width/10+10, height/10+10, 26, COLOR::WHITE);
+    m_stbRenderer.drawText(input, width/10+10, height/10+70, 22, COLOR::WHITE);
+}
+
 void UI::ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts)
 {
     int width = m_stbRenderer.width();

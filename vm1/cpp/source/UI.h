@@ -47,6 +47,7 @@ public:
     void MenuInfo(std::string menuInfo);
     void InfoScreen(int bank, int id, std::string filename);
     void ShowPopupMessage(std::string message);
+    void ShowStringInputDialog(std::string title, int& cursorIdx, std::string& input);
     void ShowBankInfo(int bank);
     void ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts);
     bool Action(const std::string& label);

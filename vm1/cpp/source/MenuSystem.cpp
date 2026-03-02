@@ -87,7 +87,7 @@ void MenuSystem::createMenus()
     m_menus[MT_ButtonMatrix]        = {"Keys", {}, [this](int id, int* fIdx){ButtonMatrix(id, fIdx);}};
     //m_menus[MT_EffectSelection]     = {"Effects", {}, [this](int id, int* fIdx){EffectSelection(id, fIdx);}};
     
-    createPlaneEffectsMenu();
+    // createPlaneEffectsMenu();
 }
 
 void MenuSystem::setMenu(MenuType menuType)
@@ -110,6 +110,13 @@ void MenuSystem::handlePopupMessage()
     if (m_launchPopup && !m_lastPopupMessage.empty()) {
         m_ui.StartOverlay([this]() { m_ui.ShowPopupMessage(m_lastPopupMessage); });
         m_launchPopup = false;
+    }
+}
+
+void MenuSystem::handleStringInputDialog()
+{
+    if(m_showStringInputDialog){
+        m_ui.ShowStringInputDialog("Create Folder", m_stringInputDialogCursorIdx, m_stringInputDialogString);
     }
 }
 
@@ -302,6 +309,7 @@ void MenuSystem::render()
     m_ui.ShowOverlay();
 
     handlePopupMessage();
+    handleStringInputDialog();
     handleMediaAndEditButtons();
     handleUpAndDownKeys();    
     handleBankSwitching();
@@ -395,6 +403,15 @@ void MenuSystem::FileSelection(int id, int* focusedIdx)
     std::vector<std::string>& files = m_registry.mediaPool().getVideoFiles();
     bool changed = false;
     m_ui.BeginList(focusedIdx);
+    if(m_ui.Action("New Folder") && !m_showStringInputDialog) {
+        printf("Create New Folder\n");
+        m_stringInputDialogString = "neu";
+        m_showStringInputDialog = true;
+    }
+    else if(m_ui.Action("USB-Drive")) {
+        printf("Enter USB-Drive\n");
+    }
+    m_ui.Break();
     for (int i = 0; i < files.size(); ++i) {
         std::string fileName = files[i];
         if (m_ui.RadioButton(fileName.c_str(), (config->fileName == fileName))) {
@@ -619,8 +636,6 @@ void MenuSystem::BlendMode(int id, int* selectedIdx)
 {
 
 }
-
-
 
 void MenuSystem::HdmiSelection(int id, int* selectedIdx)
 {
