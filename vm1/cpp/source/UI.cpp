@@ -69,6 +69,27 @@ bool UI::isEditModeEventTriggered(int modeId)
     return false;
 }
 
+bool UI::isBankChangeEventTriggered(int& bankId)
+{
+    for (auto iter = bankChangeEvents.rbegin(); iter != bankChangeEvents.rend(); ++iter) 
+    {
+       bankId = iter->bankId;
+       return true;
+    }
+    return false;
+}
+
+bool UI::isValueChangeEventTriggered(ValueChangeEvent::Type eventType, int id)
+{
+    for (auto iter = valueChangeEvents.rbegin(); iter != valueChangeEvents.rend(); ++iter) 
+    {
+        if (iter->type == eventType && iter->id == id) {
+            return true;
+        }
+    }
+    return false;
+}
+
 std::vector<int> UI::getTriggeredMediaSlotIds() 
 {
     std::vector<int> ids;
@@ -85,26 +106,6 @@ std::vector<int> UI::getTriggeredEditButtons()
     for(auto e : editModeEvents) 
     {
         ids.push_back(e.modeId);
-    }
-    return ids;
-}
-
-std::vector<int> UI::getTriggeredBankChanges() 
-{
-    std::vector<int> ids;
-    for(auto e : bankChangeEvents) 
-    {
-        ids.push_back(e.bankId);
-    }
-    return ids;
-}
-
-std::vector<int> UI::getTriggeredValueChanges() 
-{
-    std::vector<int> ids;
-    for(auto e : valueChangeEvents) 
-    {
-        ids.push_back(e.id);
     }
     return ids;
 }
@@ -355,20 +356,20 @@ void UI::ShowStringInputDialog(std::string title, int& cursorIdx, std::string& i
 
     char currentChar = input.at(cursorIdx);
     // printf("%c\n", currentChar);
-    if(isNavigationEventTriggered(NavigationEvent::Type::IncreaseValue)) {
+    if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0)) {
         currentChar++;
     }
-    else if(isNavigationEventTriggered(NavigationEvent::Type::DecreaseValue)) {
+    else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0)) {
         currentChar--;
     }
-    else if(isNavigationEventTriggered(NavigationEvent::Type::HierarchyDown)) {
+    else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationRight)) {
         cursorIdx++;
         if (cursorIdx >= input.size()) {
             input.push_back('a');
             currentChar = input.at(cursorIdx);
         } 
     }
-    else if(isNavigationEventTriggered(NavigationEvent::Type::HierarchyUp)) {
+    else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationLeft)) {
         cursorIdx--;
     }
     input.at(cursorIdx) = currentChar;
@@ -430,7 +431,7 @@ void UI::ShowBankInfo(int bank)
 bool UI::Action(const std::string& label)
 {
     if (!m_focusedIdxPtr) return false;
-    bool keyPressed = (isNavigationEventTriggered(NavigationEvent::Type::SelectItem));
+    bool keyPressed = (isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0));
     bool focused = ((*m_focusedIdxPtr) == m_listSize);
 
     Text(label + " ->");
@@ -441,7 +442,7 @@ bool UI::CheckBox(const std::string& label, bool checked)
 {
     if (!m_focusedIdxPtr) return false;
     bool oldChecked = checked;
-    bool keyPressed = (isNavigationEventTriggered(NavigationEvent::Type::SelectItem));
+    bool keyPressed = (isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0));
     bool focused = ((*m_focusedIdxPtr) == m_listSize);
     if (focused && keyPressed) {
         checked = !checked;
@@ -462,7 +463,17 @@ bool UI::CheckBox(const std::string& label, bool checked)
 bool UI::RadioButton(const std::string& label, bool active)
 {
     if (!m_focusedIdxPtr) return false;
-    bool keyPressed = (isNavigationEventTriggered(NavigationEvent::Type::SelectItem));
+    bool keyPressed = false;
+    if (isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0)) {
+        printf("Value Change!!!!!\n");
+        active = false;
+        keyPressed = true;
+    }
+    else if (isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0)) {
+        active = true;
+        keyPressed = true;
+    }
+    
     bool focused = ((*m_focusedIdxPtr) == m_listSize);
     if (focused && !active && keyPressed) {
         active = true;
@@ -481,11 +492,11 @@ void UI::SpinBoxInt(const std::string& label, int& value, int minValue, int maxV
 {
     if (!m_focusedIdxPtr) return;
     int diff = 0;
-    if(isNavigationEventTriggered(NavigationEvent::Type::IncreaseValue))
+    if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0))
     {
         diff = step;    
     }
-    else if(isNavigationEventTriggered(NavigationEvent::Type::DecreaseValue))
+    else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0))
     {
         diff = -step;
     }
@@ -505,11 +516,11 @@ void UI::SpinBoxFloat(const std::string& label, float& value, float minValue, fl
 {
     if (!m_focusedIdxPtr) return;
     float diff = 0;
-    if(isNavigationEventTriggered(NavigationEvent::Type::IncreaseValue))
+    if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0))
     {
         diff = step;    
     }
-    else if(isNavigationEventTriggered(NavigationEvent::Type::DecreaseValue))
+    else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0))
     {
         diff = -step;
     }
@@ -531,19 +542,19 @@ void UI::SpinBoxVec2(const std::string& label, PlaneSettings::vec2& vec, float s
     if (!m_focusedIdxPtr) return;
     float diffX = 0;
     float diffY = 0;
-    if(isNavigationEventTriggered(NavigationEvent::Type::IncreaseValue))
+    if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0))
     {
         diffX = step;    
     }
-    else if(isNavigationEventTriggered(NavigationEvent::Type::DecreaseValue))
+    else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0))
     {
         diffX = -step;
     }
-    else if(isNavigationEventTriggered(NavigationEvent::Type::IncreaseAuxValue))
+    else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 1))
     {
         diffY = step;    
     }
-    else if(isNavigationEventTriggered(NavigationEvent::Type::DecreaseAuxValue))
+    else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 1))
     {
         diffY = -step;
     }

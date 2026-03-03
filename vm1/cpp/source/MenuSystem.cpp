@@ -190,11 +190,11 @@ void MenuSystem::handleMediaAndEditButtons()
 
 void MenuSystem::handleUpAndDownKeys()
 {
-    if(m_ui.isNavigationEventTriggered(NavigationEvent::Type::FocusNext))
+    if(m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationDown))
     {
         m_ui.FocusNextElement();
     }
-    else if(m_ui.isNavigationEventTriggered(NavigationEvent::Type::FocusPrevious))
+    else if(m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationUp))
     {
         m_ui.FocusPreviousElement();
     }
@@ -202,15 +202,20 @@ void MenuSystem::handleUpAndDownKeys()
 
 void MenuSystem::handleBankSwitching()
 {
-    if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::BankDown)) {
-        m_registry.inputMappings().bank = (m_registry.inputMappings().bank + 1) % BANK_COUNT; 
+    int bank = 0;
+    if (m_ui.isBankChangeEventTriggered(bank)) {
+        m_registry.inputMappings().bank = bank;
         m_ui.StartOverlay([this](){m_ui.ShowBankInfo(m_registry.inputMappings().bank);});
     }
-    else if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::BankUp)) {
-        m_registry.inputMappings().bank = (m_registry.inputMappings().bank - 1) % BANK_COUNT;
-        if (m_registry.inputMappings().bank < 0) m_registry.inputMappings().bank = BANK_COUNT - 1;
-        m_ui.StartOverlay([this](){m_ui.ShowBankInfo(m_registry.inputMappings().bank);});
-    }
+    // if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::BankDown)) {
+    //     m_registry.inputMappings().bank = (m_registry.inputMappings().bank + 1) % BANK_COUNT; 
+    //     m_ui.StartOverlay([this](){m_ui.ShowBankInfo(m_registry.inputMappings().bank);});
+    // }
+    // else if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::BankUp)) {
+    //     m_registry.inputMappings().bank = (m_registry.inputMappings().bank - 1) % BANK_COUNT;
+    //     if (m_registry.inputMappings().bank < 0) m_registry.inputMappings().bank = BANK_COUNT - 1;
+    //     m_ui.StartOverlay([this](){m_ui.ShowBankInfo(m_registry.inputMappings().bank);});
+    // }
 }
 
 void MenuSystem::goUpHierachy() {
@@ -223,7 +228,7 @@ void MenuSystem::goUpHierachy() {
 void MenuSystem::handleMenuHierachyNavigation(const MenuItem *menuItem)
 {
     // Handle navigation
-    if  (m_ui.isNavigationEventTriggered(NavigationEvent::Type::HierarchyDown)) {
+    if  (m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationRight)) {
         // Go deeper if selected item has children or a render_func (treat as a page)
         if (m_focusedIdx >= 0 && m_focusedIdx < (int)menuItem->children.size()) {
             auto& sel = menuItem->children[m_focusedIdx];
@@ -233,7 +238,7 @@ void MenuSystem::handleMenuHierachyNavigation(const MenuItem *menuItem)
             }
         }
     }
-    else if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::HierarchyUp)) 
+    else if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationLeft)) 
     {
         goUpHierachy();
     }
@@ -473,27 +478,6 @@ void MenuSystem::ShaderSelection(int id, int* focusedIdx)
 
     if (changed)
         m_registry.inputMappings().addInputConfig(id, std::move(config));
-    
-    // auto config = std::make_unique<ShaderInputConfig>();
-    // // config->looping = m_registry.settings().defaultLooping;
-
-    // ShaderInputConfig* currentConfig = m_registry.inputMappings().getShaderInputConfig(id);
-    // if (currentConfig) {
-    //     *config = *currentConfig;
-    // } 
-
-    // std::vector<std::string>& files = m_registry.mediaPool().getVideoFiles();
-    // bool changed = false;
-    // m_ui.BeginList(focusedIdx);
-    // if (m_ui.RadioButton("customShader", (config->fileName == "customShader"))) {
-    //     config->fileName = "customShader";
-    //     changed = true;
-    // }
-
-    // m_ui.EndList(); 
-
-    // if (changed)
-    //     m_registry.inputMappings().addInputConfig(id, std::move(config));
 }
 
 void MenuSystem::EffectSelection(int id, int* focusedIdx)
@@ -559,13 +543,6 @@ void MenuSystem::PlaybackSettings(int id, int* focusedIdx)
     int p = 1;
     m_ui.SpinBoxInt("Out Plane", p, 1, 4);
     m_ui.EndList();
-
-    // int i = 0;
-    // if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(currentConfig)) {
-    //     // Not implemented yet
-    // }
-    // else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(currentConfig)) {
-    // }
 }
 
 void MenuSystem::Effects(int id, int* selectedIdx)

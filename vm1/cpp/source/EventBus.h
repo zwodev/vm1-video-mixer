@@ -75,7 +75,7 @@ struct ValueChangeEvent
         Down
     };
     ValueChangeEvent() = delete;
-    ValueChangeEvent(int id, Type type) { this->id = id; this->type = type; }
+    ValueChangeEvent(Type type, int id) { this->type = type; this->id = id; }
     int id;
     Type type;
 };

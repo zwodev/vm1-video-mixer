@@ -139,13 +139,11 @@ void DeviceController::requestVM1DeviceBuffer()
                 case NAVIGATION_BUTTON_EVENT:
                     if(buttonId == NAVIGATION_BUTTON_LEFT)
                     {
-                        isFnPressed ? m_eventBus.publish(NavigationEvent(NavigationEvent::Type::BankUp))
-                                    : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::HierarchyUp));
+                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationLeft));
                     }
                     else if (buttonId == NAVIGATION_BUTTON_RIGHT)
                     {
-                        isFnPressed ? m_eventBus.publish(NavigationEvent(NavigationEvent::Type::BankDown))
-                                    : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::HierarchyDown));
+                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationRight));
                     }
                     else 
                     {
@@ -155,22 +153,22 @@ void DeviceController::requestVM1DeviceBuffer()
                 case ROTARY_EVENT:
                     if (buttonId == PRIMARY_ENCODER_DOWN)
                     {
-                        isFnPressed ? m_eventBus.publish(NavigationEvent(NavigationEvent::Type::DecreaseValue)) 
-                                    : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::FocusPrevious));
+                        isFnPressed ? m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 0)) 
+                                    : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationDown));
                     }
                     else if (buttonId == PRIMARY_ENCODER_UP)
                     {
-                        isFnPressed ? m_eventBus.publish(NavigationEvent(NavigationEvent::Type::IncreaseValue)) 
-                                    : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::FocusNext));
+                        isFnPressed ? m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 0)) 
+                                    : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationUp));
                     }
                     else if (buttonId == SECONDARY_ENCODER_DOWN)
                     {
-                        isFnPressed ? m_eventBus.publish(NavigationEvent(NavigationEvent::Type::DecreaseAuxValue))
+                        isFnPressed ? m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 1)) 
                                     : (void)printf("secondary rotary down, not implemented\n");
                     }
                     else if (buttonId == SECONDARY_ENCODER_UP)
                     {
-                        isFnPressed ? m_eventBus.publish(NavigationEvent(NavigationEvent::Type::IncreaseAuxValue))
+                        isFnPressed ? m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 1)) 
                                     : (void)printf("secondary rotary up, not implemented\n");
                     }
                     else

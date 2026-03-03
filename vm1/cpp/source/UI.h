@@ -57,16 +57,14 @@ public:
     void SpinBoxFloat(const std::string& label, float& value, float minValue, float maxValue, float step = 0.01f);
     void SpinBoxVec2(const std::string& label, PlaneSettings::vec2& vec, float step = 0.1f);
 
-    bool isValueChangeEventTriggered(ValueChangeEvent::Type eventType, int& id);
+    bool isValueChangeEventTriggered(ValueChangeEvent::Type eventType, int id);
     bool isNavigationEventTriggered(NavigationEvent::Type eventType);
-    bool isBankChangeEventTriggered(int bankId);
+    bool isBankChangeEventTriggered(int& bankId);
     bool isMediaSlotEventTriggered(int mediaSlotId);
     bool isEditModeEventTriggered(int modeId);
 
     std::vector<int> getTriggeredMediaSlotIds();
     std::vector<int> getTriggeredEditButtons();
-    std::vector<int> getTriggeredBankChanges();
-    std::vector<int> getTriggeredValueChanges();
 
     
 private:

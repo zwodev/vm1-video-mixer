@@ -25,45 +25,44 @@ void KeyboardControllerSDL::update(SDL_Event& event)
         case SDLK_UP:
             if (isShiftPressed)
             {
-                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::IncreaseValue));
+                m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 0));
             }
             else
             {
-                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::FocusPrevious));
+                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationUp));
             }
             return;
             break;
         case SDLK_DOWN:
             if (isShiftPressed)
             {
-                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::DecreaseValue));
+                m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 0));
             }
             else
             {
-                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::FocusNext));
+                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationDown));
             }
             return;
             break;
         case SDLK_LEFT:
             if (isShiftPressed)
             {
-                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::BankUp));
+                m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 1));
             }
-            else 
+            else
             {
-                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::HierarchyUp));
+                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationLeft));
             }
             return;
             break;
         case SDLK_RIGHT:
             if (isShiftPressed)
             {
-                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::BankDown));
+                m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 1));
             }
             else
             {
-                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::HierarchyDown));
-                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::SelectItem));
+                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationRight));
             }
             return;
             break;
@@ -75,7 +74,7 @@ void KeyboardControllerSDL::update(SDL_Event& event)
         {
             if (event.key.key == m_editKeys[i]) {
                 if(isShiftPressed){
-                    m_eventBus.publish(EditModeEvent(i+8));
+                    m_eventBus.publish(BankChangeEvent(i));
                 }
                 else {
                     m_eventBus.publish(EditModeEvent(i));
