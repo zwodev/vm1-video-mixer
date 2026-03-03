@@ -3,10 +3,23 @@
 #include "pico/time.h"
 
 #include "RotaryEncoder.h"
+#include "DeviceBufferController.h"
+#include "StateController.h"
 
 #define DEBOUNCE_US 1000  // 1 ms debounce
 
 static rotary_encoder_t* enc_a[32] = { 0 };
+
+rotary_encoder_t encoder0;
+rotary_encoder_t encoder1;
+int32_t encoder0_position;
+int32_t encoder1_position;
+
+int encoder0_press_up = 0;
+int encoder0_press_down = 0;
+int encoder1_press_up = 0;
+int encoder1_press_down = 0;
+
 
 const int8_t transition_table[4][4] = {
   { 0, +1, -1, 0 },
@@ -14,6 +27,59 @@ const int8_t transition_table[4][4] = {
   { +1, 0, 0, -1 },
   { 0, -1, +1, 0 },
 };
+
+void initRotaryEncoders(){
+  encoder0 = {.pin_a = ROTARY_0_PIN_A, .pin_b = ROTARY_0_PIN_B};
+  encoder1 = {.pin_a = ROTARY_1_PIN_A, .pin_b = ROTARY_1_PIN_B};
+  rotary_encoder_init(&encoder0);
+  rotary_encoder_init(&encoder1);
+
+}
+
+void updateRotaryEncoders() {
+  int8_t enc0 = 0;
+  if (enc0 = rotary_encoder_process(&encoder0, encoder0_position))
+  {
+    if (enc0 < 0)
+    {
+      encoder0_press_down = 0;
+      encoder0_press_up++;
+      if(encoder0_press_up % deviceState.rotarySensitivity == 0) { 
+        addButtonEventToBuffer({EventType::ROTARY_EVENT, 0});
+      }
+    }
+    else if (enc0 > 0)
+    {
+      encoder0_press_up = 0;
+      encoder0_press_down++;
+      if(encoder0_press_down % deviceState.rotarySensitivity == 0) {
+        addButtonEventToBuffer({EventType::ROTARY_EVENT, 1});
+      }
+    }
+  }
+  
+  int8_t enc1 = 0;
+  if (enc1 = rotary_encoder_process(&encoder1, encoder1_position))
+  {    
+    if (enc1 < 0)
+    {
+      encoder1_press_down = 0;
+      encoder1_press_up++;
+      if(encoder1_press_up % deviceState.rotarySensitivity == 0) { 
+        addButtonEventToBuffer({EventType::ROTARY_EVENT, 2});
+      }
+    }
+    else if (enc1 > 0)
+    {
+      encoder1_press_up = 0;
+      encoder1_press_down++;
+      if(encoder1_press_down % deviceState.rotarySensitivity == 0) {
+        addButtonEventToBuffer({EventType::ROTARY_EVENT, 3});
+      }
+    }
+  }
+
+}
 
 void rotary_encoder_init(rotary_encoder_t* enc) {
   gpio_init(enc->pin_a);
@@ -28,7 +94,7 @@ void rotary_encoder_init(rotary_encoder_t* enc) {
   enc->last_change_us = time_us_32();
 
   enc_a[enc->pin_a] = enc;  // register this encoder by pin A
-  enc_a[enc->pin_b] = enc;  // register this encoder by pin A
+  enc_a[enc->pin_b] = enc;  // register this encoder by pin B
 
   enc->last_stable_state = (gpio_get(enc->pin_a) << 1) | gpio_get(enc->pin_b);
 

@@ -66,14 +66,28 @@ struct VM1DeviceState
 };
 #pragma pack()
 
+enum EventType : uint8_t {
+  EDIT_BUTTON_EVENT,
+  MEDIA_BUTTON_EVENT,
+  NAVIGATION_BUTTON_EVENT,
+  ROTARY_EVENT,
+  NO_EVENT
+};
+
+
+#pragma pack(1)
+struct ButtonEvent {
+  EventType eventType;
+  int8_t buttonId;
+};
+#pragma pack()
+
 #pragma pack(1)
 struct DeviceBuffer
 {
-  char buttons[8];
-  bool shiftPressed;
-  int32_t rotary_0;
-  int32_t rotary_1;
-  uint16_t analog_0;
+  ButtonEvent buttonEvents[8];
+  bool fnPressed;
+  uint16_t analogInput[4];
 };
 #pragma pack()
 
@@ -90,11 +104,9 @@ public:
     void requestVM1DeviceBuffer();
 
 private:
-    bool connectSerial(const std::string& port);
     bool connectI2C();
     int m_i2c_handle = -1;
     int m_gpioHandler = -1;
-    int m_fd = -1;
     size_t m_lastHash = 0;
     EventBus& m_eventBus;
     Registry& m_registry;

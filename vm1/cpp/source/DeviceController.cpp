@@ -21,55 +21,23 @@ DeviceController::~DeviceController(){
 bool DeviceController::connect(const std::string& port)
 {
     bool isProVersion = false;
-    if(connectSerial(port)) 
+
+    std::cout << "Failed to open Serial Connection, trying I2C..." << std::endl;
+    if(connectI2C()) 
     {
-        std::cout << "Connected to VM1-Device via Serial Connection." << std::endl;
+        std::cout << "Connected to VM1-Device via I2C." << std::endl;
         isProVersion = true;
-    }
-    else 
+    } 
+    else
     {
-        std::cout << "Failed to open Serial Connection, trying I2C..." << std::endl;
-        if(connectI2C()) 
-        {
-            std::cout << "Connected to VM1-Device via I2C." << std::endl;
-            isProVersion = true;
-        } 
-        else
-        {
-            std::cout << "Failed to open I2C, using standard keyboard mode." << std::endl;
-            return false;
-        }    
-    }
+        std::cout << "Failed to open I2C, using standard keyboard mode." << std::endl;
+        return false;
+    }    
 
     m_registry.settings().isProVersion = isProVersion;
     return true;
 }
 
-bool DeviceController::connectSerial(const std::string& port)
-{
-    m_fd = open(port.c_str(), O_RDWR);
-    if (m_fd < 0) {
-        return false;
-    }
-    termios tty;
-    memset(&tty, 0, sizeof tty);
-    tcgetattr(m_fd, &tty);
-
-    cfsetispeed(&tty, B115200);
-    cfsetospeed(&tty, B115200);
-    tty.c_cflag |= (CLOCAL | CREAD);
-    tty.c_cflag &= ~CSIZE;
-    tty.c_cflag |= CS8;
-    tty.c_cflag &= ~PARENB;
-    tty.c_cflag &= ~CSTOPB;
-    tty.c_cflag &= ~CRTSCTS;
-    tty.c_lflag = 0;
-    tty.c_iflag = 0;
-    tty.c_oflag = 0;
-
-    tcsetattr(m_fd, TCSANOW, &tty);
-    return true;
-}
 
 bool DeviceController::connectI2C()
 {
@@ -91,11 +59,7 @@ bool DeviceController::connectI2C()
 
 void DeviceController::disconnect()
 {
-    if (m_fd >= 0)
-    {
-        close(m_fd);
-        m_fd = -1;
-    }
+
 
     if(m_i2c_handle >= 0)
     {
@@ -120,11 +84,7 @@ void DeviceController::send(const VM1DeviceState& vm1DeviceState)
 
     m_lastHash = hash;
 
-    if (m_fd >= 0)
-    {
-        write(m_fd, (char *)&vm1DeviceState, sizeof(VM1DeviceState));
-    } 
-    else if (m_i2c_handle >= 0) 
+    if (m_i2c_handle >= 0) 
     {
         lgI2cWriteDevice(m_i2c_handle, reinterpret_cast<const char*>(&vm1DeviceState), sizeof(VM1DeviceState));
     }
@@ -137,21 +97,37 @@ void DeviceController::requestVM1DeviceBuffer()
     
     DeviceBuffer deviceBuffer;
     int count = lgI2cReadDevice(m_i2c_handle, reinterpret_cast<char*>(&deviceBuffer), sizeof(DeviceBuffer));
-    if (count < 0)
+    if (count != sizeof(DeviceBuffer))
     {
         std::cerr << "Failed to read from I2C device\n";
     }
     else
     {
-        // std::cout << "Received " << count << " bytes: " << std::endl;
+        if (deviceBuffer.buttonEvents->eventType != NO_EVENT && deviceBuffer.fnPressed) {
+            printf("FN + ");
+        }
+        if (deviceBuffer.buttonEvents->eventType == EDIT_BUTTON_EVENT) {
+            printf("EDIT BUTTON #%d\n", deviceBuffer.buttonEvents[0].buttonId);
+        }
+        else if (deviceBuffer.buttonEvents->eventType == MEDIA_BUTTON_EVENT) {
+            printf("MEDIA BUTTON #%d\n", deviceBuffer.buttonEvents[0].buttonId);
+        }
+        else if (deviceBuffer.buttonEvents->eventType == NAVIGATION_BUTTON_EVENT) {
+            printf("NAVIGATION #%d\n", deviceBuffer.buttonEvents[0].buttonId);
+        }
+        else if (deviceBuffer.buttonEvents->eventType == ROTARY_EVENT) {
+            printf("ROTARY #%d\n", deviceBuffer.buttonEvents[0].buttonId);
+        }
+
         // std::cout << "Rotary 0: " <<  deviceBuffer.rotary_0 << std::endl;
         // std::cout << "Rotary 1: " <<  deviceBuffer.rotary_1 << std::endl;
         // std::cout << "Shift pressed: " <<  deviceBuffer.shiftPressed << std::endl;
         // for(uint8_t i = 0; i < sizeof(deviceBuffer.buttons); ++i) {
-        //     std::cout << deviceBuffer.buttons[i] << "(" << static_cast<int>(deviceBuffer.buttons[i]) << ")\t";
-        // }
-        // std::cout << std::endl;
-        
+            //     std::cout << deviceBuffer.buttons[i] << "(" << static_cast<int>(deviceBuffer.buttons[i]) << ")\t";
+            // }
+            // std::cout << std::endl;
+            
+        /*
         for(uint8_t i = 0; i < sizeof(deviceBuffer.buttons); ++i) 
         {
             char currentChar = deviceBuffer.buttons[i];
@@ -281,5 +257,6 @@ void DeviceController::requestVM1DeviceBuffer()
         if(m_registry.settings().useRotaryAsFader) {
             m_registry.settings().analog0 = float(deviceBuffer.rotary_1 % 100) / 100.0f;
         }        
+        */
     }
 }

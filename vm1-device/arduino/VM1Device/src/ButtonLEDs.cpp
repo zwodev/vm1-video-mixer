@@ -1,0 +1,147 @@
+#include <Arduino.h>
+#include "ButtonLEDs.h"
+
+Adafruit_NeoPixel strip(NEOPIXEL_COUNT, NEOPIXELS_PIN, NEO_GRB + NEO_KHZ800);
+
+int dimmed_divider = 20;
+int black[] = {0, 0, 0};
+int grey[] = {10, 10, 10};
+int white[] = {255, 255, 255};
+int red[] = {255, 0, 0};
+int red_dimmed[] = {red[0] / dimmed_divider,
+                    red[1] / dimmed_divider,
+                    red[2] / dimmed_divider};
+int blue[] = {0, 0, 255};
+int blue_dimmed[] = {blue[0] / dimmed_divider, 
+                   blue[1] / dimmed_divider, 
+                   blue[2] / dimmed_divider};
+int yellow[] = {255, 150, 0};
+int yellow_dimmed[] = {yellow[0] / dimmed_divider,
+                       yellow[1] / dimmed_divider,
+                       yellow[2] / dimmed_divider};
+int orange[] = {255, 137, 79};
+int orange_dimmed[] = {orange[0] / dimmed_divider,
+                       orange[1] / dimmed_divider,
+                       orange[2] / dimmed_divider};
+int green[] = {0, 255, 0};
+int green_dimmed[] = {green[0] / dimmed_divider,
+                      green[1] / dimmed_divider,
+                      green[2] / dimmed_divider};
+
+void initNeoPixels() {
+  strip.begin();
+  strip.setBrightness(255);
+  strip.show();
+}
+
+int *colorForButtonState(ButtonState state)
+{
+  switch (state)
+  {
+  case NONE:
+    return black;
+  case EMPTY:
+    return grey;
+  case FILE_ASSET_ACTIVE:
+      return red;
+  case FILE_ASSET:
+    return red_dimmed;
+  case LIVECAM_ACTIVE:
+    return orange;
+  case LIVECAM:
+    return orange_dimmed;
+  case SHADER_ACTIVE:
+    return yellow;
+  case SHADER:
+    return yellow_dimmed;
+  case MEDIABUTTON_SELECTED:
+    return blue_dimmed;
+  case YELLOW:
+    return yellow;
+  case GREEN:
+    return green;
+  case BLUE:
+    return blue;
+  case RED:
+    return red;
+  default:
+    return black;
+  }
+}
+
+uint32_t colorFromArray(int color[3])
+{
+  return strip.Color(color[0], color[1], color[2]);
+}
+
+void animateAllNeoPixels()
+{
+  for (int i = 0; i < NEOPIXEL_COUNT; ++i)
+  {
+    strip.setPixelColor(i, colorFromArray(black));
+  }
+  strip.show();
+
+  for (int i = 0; i < NEOPIXEL_COUNT; ++i)
+  {
+    strip.setPixelColor(i, colorFromArray(red_dimmed));
+    delay(25);
+    strip.show();
+  }
+
+  delay(250);
+
+  for (int i = 0; i < NEOPIXEL_COUNT; ++i)
+  {
+    strip.setPixelColor(i, colorFromArray(black));
+  }
+  strip.show();
+}
+
+
+void updateNeoPixels()
+{
+  // forward-key [0]
+  int *color = colorForButtonState(deviceState.forward);
+  strip.setPixelColor(0, colorFromArray(color));
+  
+  // backward-key [1]
+  color = colorForButtonState(deviceState.backward);
+  strip.setPixelColor(1, colorFromArray(color));
+
+  // 8 edit-keys [2-9]
+  for (uint8_t i = 0; i < 8; ++i)
+  {
+    color = colorForButtonState(deviceState.editButtons[i]);
+    strip.setPixelColor(2 + i, colorFromArray(color));
+  }
+
+  // upper row media-keys [10-17]
+  for (uint8_t i = 0; i < 8; ++i)
+  {
+    color = colorForButtonState(deviceState.mediaButtons[7 - i]);
+    strip.setPixelColor(10 + i, colorFromArray(color));
+  }
+
+  // fn-key [18]
+  color = colorForButtonState(deviceState.fn);
+  strip.setPixelColor(18, colorFromArray(color));
+
+  // lower row media-keys [19-26]
+  for (uint8_t i = 0; i < 8; ++i)
+  {
+    color = colorForButtonState(deviceState.mediaButtons[8 + i]);
+    strip.setPixelColor(19 + i, colorFromArray(color));
+  }
+
+  // 6 bank-pixels [27-32]
+  for (uint8_t i = 0; i < 6; ++i)
+  {
+    color = red_dimmed;
+    if (i == deviceState.bank)
+      color = orange_dimmed;
+    strip.setPixelColor(32 - i, colorFromArray(color));
+  }
+
+  strip.show();
+}
