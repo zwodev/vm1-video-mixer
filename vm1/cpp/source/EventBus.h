@@ -61,39 +61,65 @@ struct EditModeEvent
     int modeId;
 };
 
-struct MappingButtonEvent
+struct BankChangeEvent
 {
-    MappingButtonEvent() = delete;
-    MappingButtonEvent(int vertexId, float x, float y) {
-        this->vertexId = vertexId;
-        this->x = x;
-        this->y = y;
-    }
-    int vertexId;
-    float x;
-    float y;
+    BankChangeEvent() = delete;
+    BankChangeEvent(int bankId) { this->bankId = bankId; }
+    int bankId;
 };
+
+struct ValueChangeEvent
+{
+    enum Type {
+        Up,
+        Down
+    };
+    ValueChangeEvent() = delete;
+    ValueChangeEvent(int id, Type type) { this->id = id; this->type = type; }
+    int id;
+    Type type;
+};
+
+
+// struct MappingButtonEvent
+// {
+//     MappingButtonEvent() = delete;
+//     MappingButtonEvent(int vertexId, float x, float y) {
+//         this->vertexId = vertexId;
+//         this->x = x;
+//         this->y = y;
+//     }
+//     int vertexId;
+//     float x;
+//     float y;
+// };
 
 
 struct NavigationEvent {
     enum Type {
-        FocusPrevious,
-        FocusNext,
-        SelectItem,
-        DecreaseValue,
-        IncreaseValue,
-        DecreaseAuxValue,
-        IncreaseAuxValue,
-        HierarchyUp,
-        HierarchyDown,
-        BankUp,
-        BankDown
+        // FocusPrevious,
+        // FocusNext,
+        // SelectItem,
+        // DecreaseValue,
+        // IncreaseValue,
+        // DecreaseAuxValue,
+        // IncreaseAuxValue,
+        // HierarchyUp,
+        // HierarchyDown,
+        // BankUp,
+        // BankDown,
+        NavigationUp,
+        NavigationDown,
+        NavigationRight,
+        NavigationLeft      
     };
 
     NavigationEvent() = delete;
     NavigationEvent(Type type) { this->type = type; }
     Type type;
 };
+
+
 
 // Base struct for a subcriber list
 struct ISubscriberList {

@@ -103,30 +103,89 @@ void DeviceController::requestVM1DeviceBuffer()
     }
     else
     {
-        if (deviceBuffer.buttonEvents->eventType != NO_EVENT && deviceBuffer.fnPressed) {
-            printf("FN + ");
-        }
-        if (deviceBuffer.buttonEvents->eventType == EDIT_BUTTON_EVENT) {
-            printf("EDIT BUTTON #%d\n", deviceBuffer.buttonEvents[0].buttonId);
-        }
-        else if (deviceBuffer.buttonEvents->eventType == MEDIA_BUTTON_EVENT) {
-            printf("MEDIA BUTTON #%d\n", deviceBuffer.buttonEvents[0].buttonId);
-        }
-        else if (deviceBuffer.buttonEvents->eventType == NAVIGATION_BUTTON_EVENT) {
-            printf("NAVIGATION #%d\n", deviceBuffer.buttonEvents[0].buttonId);
-        }
-        else if (deviceBuffer.buttonEvents->eventType == ROTARY_EVENT) {
-            printf("ROTARY #%d\n", deviceBuffer.buttonEvents[0].buttonId);
-        }
+        // if (deviceBuffer.buttonEvents->eventType != NO_EVENT && deviceBuffer.fnPressed) {
+        //     printf("FN + ");
+        // }
+        // if (deviceBuffer.buttonEvents->eventType == EDIT_BUTTON_EVENT) {
+        //     printf("EDIT BUTTON #%d\n", deviceBuffer.buttonEvents[0].buttonId);
+        // }
+        // else if (deviceBuffer.buttonEvents->eventType == MEDIA_BUTTON_EVENT) {
+        //     printf("MEDIA BUTTON #%d\n", deviceBuffer.buttonEvents[0].buttonId);
+        // }
+        // else if (deviceBuffer.buttonEvents->eventType == NAVIGATION_BUTTON_EVENT) {
+        //     printf("NAVIGATION #%d\n", deviceBuffer.buttonEvents[0].buttonId);
+        // }
+        // else if (deviceBuffer.buttonEvents->eventType == ROTARY_EVENT) {
+        //     printf("ROTARY #%d\n", deviceBuffer.buttonEvents[0].buttonId);
+        // }
 
-        // std::cout << "Rotary 0: " <<  deviceBuffer.rotary_0 << std::endl;
-        // std::cout << "Rotary 1: " <<  deviceBuffer.rotary_1 << std::endl;
-        // std::cout << "Shift pressed: " <<  deviceBuffer.shiftPressed << std::endl;
-        // for(uint8_t i = 0; i < sizeof(deviceBuffer.buttons); ++i) {
-            //     std::cout << deviceBuffer.buttons[i] << "(" << static_cast<int>(deviceBuffer.buttons[i]) << ")\t";
-            // }
-            // std::cout << std::endl;
-            
+        bool isFnPressed = deviceBuffer.fnPressed;
+        int buttonId = -1;
+
+        for(uint8_t i = 0; i < sizeof(deviceBuffer.buttonEvents)/sizeof(ButtonEvent); i++)
+        {
+            buttonId = deviceBuffer.buttonEvents[i].buttonId;
+
+            switch(deviceBuffer.buttonEvents[i].eventType) 
+            {
+                case EDIT_BUTTON_EVENT:
+                    isFnPressed ? m_eventBus.publish(BankChangeEvent(buttonId))
+                                : m_eventBus.publish(EditModeEvent(buttonId));
+                    break;
+                case MEDIA_BUTTON_EVENT: {
+                    int mediaSlotId = (m_registry.inputMappings().bank * MEDIA_BUTTON_COUNT) + buttonId;
+                    m_eventBus.publish(MediaSlotEvent(mediaSlotId, !isFnPressed));
+                    break; }
+                case NAVIGATION_BUTTON_EVENT:
+                    if(buttonId == NAVIGATION_BUTTON_LEFT)
+                    {
+                        isFnPressed ? m_eventBus.publish(NavigationEvent(NavigationEvent::Type::BankUp))
+                                    : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::HierarchyUp));
+                    }
+                    else if (buttonId == NAVIGATION_BUTTON_RIGHT)
+                    {
+                        isFnPressed ? m_eventBus.publish(NavigationEvent(NavigationEvent::Type::BankDown))
+                                    : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::HierarchyDown));
+                    }
+                    else 
+                    {
+                        printf("Unknown Navigation Button Id #%d\n", buttonId);
+                    }
+                    break;
+                case ROTARY_EVENT:
+                    if (buttonId == PRIMARY_ENCODER_DOWN)
+                    {
+                        isFnPressed ? m_eventBus.publish(NavigationEvent(NavigationEvent::Type::DecreaseValue)) 
+                                    : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::FocusPrevious));
+                    }
+                    else if (buttonId == PRIMARY_ENCODER_UP)
+                    {
+                        isFnPressed ? m_eventBus.publish(NavigationEvent(NavigationEvent::Type::IncreaseValue)) 
+                                    : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::FocusNext));
+                    }
+                    else if (buttonId == SECONDARY_ENCODER_DOWN)
+                    {
+                        isFnPressed ? m_eventBus.publish(NavigationEvent(NavigationEvent::Type::DecreaseAuxValue))
+                                    : (void)printf("secondary rotary down, not implemented\n");
+                    }
+                    else if (buttonId == SECONDARY_ENCODER_UP)
+                    {
+                        isFnPressed ? m_eventBus.publish(NavigationEvent(NavigationEvent::Type::IncreaseAuxValue))
+                                    : (void)printf("secondary rotary up, not implemented\n");
+                    }
+                    else
+                    {
+                        printf("Unknown Rotary Button Id #%d\n", buttonId);
+                    }
+                    break;
+                default:
+                
+                    break;
+            }
+        }
+        if (deviceBuffer.buttonEvents->eventType != NO_EVENT)
+            m_eventBus.publish(SystemEvent(SystemEvent::KeyDown)); // used for time-out in kiosk mode
+
         /*
         for(uint8_t i = 0; i < sizeof(deviceBuffer.buttons); ++i) 
         {
@@ -245,18 +304,12 @@ void DeviceController::requestVM1DeviceBuffer()
                 }
             }
         }
+        */
 
-        float a0 = float(deviceBuffer.analog_0) / 1024.0;
+        // quick solution to get analogInput[0]
+        float a0 = float(deviceBuffer.analogInput[0]) / 1024.0;
         if (a0 < 0.01) a0 = 0.0;
         else if (a0 > 0.99) a0 = 1.0;
         m_registry.settings().analog0 = a0;
-        m_registry.settings().rotary = deviceBuffer.rotary_1;
-        // printf("fadeValue: %d, %f\n", deviceBuffer.analog_0, a0);
-
-        // todo: this is a hacky solution to use the rotary encoder if there is no potentiometer attached:
-        if(m_registry.settings().useRotaryAsFader) {
-            m_registry.settings().analog0 = float(deviceBuffer.rotary_1 % 100) / 100.0f;
-        }        
-        */
     }
 }

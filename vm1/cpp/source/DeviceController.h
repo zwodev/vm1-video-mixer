@@ -25,6 +25,21 @@ enum ButtonState : uint8_t
     RED
 };
 
+enum RotaryButtonIds
+{
+    PRIMARY_ENCODER_DOWN,
+    PRIMARY_ENCODER_UP,
+    SECONDARY_ENCODER_DOWN,
+    SECONDARY_ENCODER_UP
+};
+enum NavigationButtonIds
+{
+    NAVIGATION_BUTTON_LEFT,
+    NAVIGATION_BUTTON_RIGHT
+};
+
+
+
 #pragma pack(1)
 struct VM1DeviceState
 {

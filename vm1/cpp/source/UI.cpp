@@ -12,21 +12,27 @@ void UI::subscribeToEvents()
 {
     // Media Slot Event
     m_eventBus.subscribe<MediaSlotEvent>([this](const MediaSlotEvent& event) {
-        //printf("Media Slot Event - (Slot Idx: %d)\n", event.slotId);
         mediaSlotEvents.push_back(event);
     });
 
     // Edit Mode Event
     m_eventBus.subscribe<EditModeEvent>([this](const EditModeEvent& event) {
-        printf("Edit Mode Event - (Mode Idx: %d)\n", event.modeId);
         editModeEvents.push_back(event);
-
     });
 
     // Navigation Event
     m_eventBus.subscribe<NavigationEvent>([this](const NavigationEvent& event) {
-        //("Navigation Event - (Type: %d)\n", (int)event.type);
         navigationEvents.push_back(event);
+    });
+
+    // ValueChange Event
+    m_eventBus.subscribe<ValueChangeEvent>([this](const ValueChangeEvent& event) {
+        valueChangeEvents.push_back(event);
+    });
+
+    // BankChange Event
+    m_eventBus.subscribe<BankChangeEvent>([this](const BankChangeEvent& event) {
+        bankChangeEvents.push_back(event);
     });
 }
 
@@ -83,6 +89,25 @@ std::vector<int> UI::getTriggeredEditButtons()
     return ids;
 }
 
+std::vector<int> UI::getTriggeredBankChanges() 
+{
+    std::vector<int> ids;
+    for(auto e : bankChangeEvents) 
+    {
+        ids.push_back(e.bankId);
+    }
+    return ids;
+}
+
+std::vector<int> UI::getTriggeredValueChanges() 
+{
+    std::vector<int> ids;
+    for(auto e : valueChangeEvents) 
+    {
+        ids.push_back(e.id);
+    }
+    return ids;
+}
 
 void UI::NewFrame()
 {
@@ -97,6 +122,8 @@ void UI::EndFrame()
     navigationEvents.clear();
     mediaSlotEvents.clear();
     editModeEvents.clear();
+    bankChangeEvents.clear();
+    valueChangeEvents.clear();
 }
 
 void UI::StartOverlay(std::function<void()> overlay)
