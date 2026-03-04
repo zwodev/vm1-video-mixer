@@ -633,10 +633,10 @@ void MenuSystem::Mapping(int id, int* selectedIdx)
 {
     m_ui.BeginList(selectedIdx);
 
-    m_ui.SpinBoxVec2("TopLeft", m_registry.planeSettings().coords.at(3)); 
-    m_ui.SpinBoxVec2("TopRight", m_registry.planeSettings().coords.at(2)); 
-    m_ui.SpinBoxVec2("BottomRight", m_registry.planeSettings().coords.at(1)); 
-    m_ui.SpinBoxVec2("BottomLeft", m_registry.planeSettings().coords.at(0)); 
+    m_ui.SpinBoxVec2("TopLeft", m_registry.planeSettings().coords[3]); 
+    m_ui.SpinBoxVec2("TopRight", m_registry.planeSettings().coords[2]); 
+    m_ui.SpinBoxVec2("BottomRight", m_registry.planeSettings().coords[1]); 
+    m_ui.SpinBoxVec2("BottomLeft", m_registry.planeSettings().coords[0]); 
 
     if(m_ui.Action("Reset")) {
         m_registry.planeSettings().resetMapping();
@@ -682,7 +682,7 @@ void MenuSystem::GlobalSettings(int id, int* focusedIdx)
     if (m_ui.CheckBox("Use UVC", settings.useUvcCaptureDevice)) { settings.useUvcCaptureDevice = !settings.useUvcCaptureDevice; };
     if (m_ui.CheckBox("Show UI", settings.showUI)) { settings.showUI = !settings.showUI; };
     if (m_ui.CheckBox("Default Looping", settings.defaultLooping)) { settings.defaultLooping = !settings.defaultLooping; };
-    m_ui.SpinBoxInt("ScreenRotation", (int&)settings.hdmiRotation0, 0, 1);
+    m_ui.SpinBoxInt("ScreenRotation", (int&)settings.hdmiRotation0, 0, 3);
     m_ui.EndList();
 }
 

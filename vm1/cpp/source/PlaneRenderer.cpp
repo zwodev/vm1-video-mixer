@@ -12,8 +12,11 @@
 #include <math.h>
 #include <SDL3/SDL.h>
 #include <GLES3/gl31.h>
+#include <glm/glm.hpp>
 #include <glm/vec2.hpp>
 #include <glm/mat2x2.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/matrix_transform_2d.hpp>
 
 using namespace std;
 
@@ -31,11 +34,6 @@ PlaneRenderer::~PlaneRenderer()
 
 void PlaneRenderer::createVertexBuffers()
 {   
-    glm::mat2x2 screenRotationMatrix;
-    std::vector<glm::vec2> plane = {glm::vec2(-1.0f, -1.0f), 
-                                    glm::vec2(1.0f, -1.0f), 
-                                    glm::vec2(1.0f, 1.0f), 
-                                    glm::vec2(-1.0f, 1.0f)};
     
     std::vector<glm::vec2> uvs = {glm::vec2(0.0f, 0.0f), 
                                   glm::vec2(1.0f, 0.0f), 
@@ -44,12 +42,7 @@ void PlaneRenderer::createVertexBuffers()
 
     
     unsigned int indices[] = { 0, 1, 2, 0, 2, 3 };
-    
-    // for (auto v : plane) {
-    //     std::vector<glm::vec2> rotatedPlane;
-    //     glm::vec2 rotatedVertex = screenRotationMatrix * v;
-    //     rotatedPlane.push_back(rotatedVertex);
-    // }
+
 
     // Setup VAO, VBO, and attribute pointers for Position (vec2) and Texture coordinates (vec2)
     glGenVertexArrays(1, &m_vao);
@@ -61,7 +54,7 @@ void PlaneRenderer::createVertexBuffers()
     
     // Position
     glBindBuffer(GL_ARRAY_BUFFER, m_posVbo);
-    glBufferData(GL_ARRAY_BUFFER, plane.size() * sizeof(glm::vec2), plane.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, m_plane.size() * sizeof(glm::vec2), m_plane.data(), GL_DYNAMIC_DRAW);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
     glEnableVertexAttribArray(0);
    
@@ -78,49 +71,21 @@ void PlaneRenderer::createVertexBuffers()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    printf("Size: %d\n", sizeof(plane));
-    printf("Size New: %d\n", plane.size() * sizeof(glm::vec2));
+    //printf("Size: %d\n", sizeof(m_plane));
+    //printf("Size New: %d\n", m_plane.size() * sizeof(glm::vec2));
 }
 
 void PlaneRenderer::updateVertexBuffers(ScreenRotation rotation, PlaneSettings& planeSettings) {
-    // struct vec2 {float x, y;};
-    // vec2 bl, br, tr, tl;
-    // bl.x = planeSettings.coords.at(0).x;
-    // bl.y = planeSettings.coords.at(0).y;
-    // br.x = planeSettings.coords.at(1).x;
-    // br.y = planeSettings.coords.at(1).y;
-    // tr.x = planeSettings.coords.at(2).x;
-    // tr.y = planeSettings.coords.at(2).y;
-    // tl.x = planeSettings.coords.at(3).x;
-    // tl.y = planeSettings.coords.at(3).y;
+    float angle = glm::radians(float(int(rotation) * 90));
+    glm::mat2x2 screenRotationMatrix(cos(angle), -sin(angle), sin(angle),  cos(angle));
+    for (int i = 0; i < m_plane.size(); ++i) {
+        const glm::vec2& vertex = m_plane[i];
+        m_rotatedPlane[i] = screenRotationMatrix * (vertex + (planeSettings.coords[i] - m_plane[i]));
+    }
 
-    // float quadVertices_0[] = {
-    //     //  x,    y,    u,   v
-    //     bl.x, bl.y,  0.0f, 0.0f, // bottom left
-    //     br.x, br.y,  1.0f, 0.0f, // bottom right
-    //     tr.x, tr.y,  1.0f, 1.0f, // top right
-
-    //     bl.x, bl.y,  0.0f, 0.0f, // bottom left
-    //     tr.x, tr.y,  1.0f, 1.0f, // top right
-    //     tl.x, tl.y,  0.0f, 1.0f  // top left
-    // };
-    // float quadVertices_90[] = {
-    //     //  x,    y,    u,   v
-    //     bl.x, bl.y,  0.0f, 1.0f, // bottom left
-    //     br.x, br.y,  0.0f, 0.0f, // bottom right
-    //     tr.x, tr.y,  1.0f, 0.0f, // top right
-
-    //     bl.x, bl.y,  0.0f, 1.0f, // bottom left
-    //     tr.x, tr.y,  1.0f, 0.0f, // top right
-    //     tl.x, tl.y,  1.0f, 1.0f  // top left
-    // };
-    // glBindBuffer(GL_ARRAY_BUFFER, m_vbo);  // Bind VBO directly (VAO bind optional but recommended for state)
-    // if(rotation == ScreenRotation::SR_Rotate_0) {
-    //     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(quadVertices_0), quadVertices_0);
-    // } else {
-    //     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(quadVertices_90), quadVertices_90);
-    // }
-    // glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, m_posVbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, m_rotatedPlane.size() * sizeof(glm::vec2), m_rotatedPlane.data());
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 bool PlaneRenderer::initialize()

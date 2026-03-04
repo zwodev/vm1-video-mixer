@@ -41,4 +41,11 @@ private:
     GLuint m_uvVbo;
     GLuint m_ibo;
     Shader m_shader;
+
+    std::vector<glm::vec2> m_plane = { glm::vec2(-1.0f, -1.0f), 
+                                       glm::vec2(1.0f, -1.0f), 
+                                       glm::vec2(1.0f, 1.0f), 
+                                       glm::vec2(-1.0f, 1.0f) };
+
+    std::vector<glm::vec2> m_rotatedPlane = m_plane;
 };

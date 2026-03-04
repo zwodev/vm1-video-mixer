@@ -10,6 +10,8 @@
 #include <sstream>
 #include <algorithm> 
 
+#include <glm/vec2.hpp>
+
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/binary.hpp>
@@ -304,27 +306,20 @@ struct PlaneSettings
         colorCorrectionShaderConfig.params.push_back(FloatParameter("Contrast", 0.0f, -1.0f, 1.0f));
         colorCorrectionShaderConfig.params.push_back(FloatParameter("Saturation", 0.0f, -1.0f, 1.0f));
         effects.push_back(colorCorrectionShaderConfig);
-
-        // ShaderConfig testShaderConfig("test");
-        // testShaderConfig.params.push_back(FloatParameter("brightness", 0.0f, -1.0f, 1.0f));
-        // testShaderConfig.params.push_back(FloatParameter("contrast", 0.0f, -1.0f, 1.0f));
-        // testShaderConfig.params.push_back(FloatParameter("saturation", 0.0f, -1.0f, 1.0f));
-        // effects.push_back(testShaderConfig);
     }
     
     std::vector<ShaderConfig> effects;
-    
-    struct vec2 {float x, y;};
-    std::vector<vec2> coords = {{-1.0f, -1.0f},   // bottom left
-                                { 1.0f, -1.0f},   // bottom right
-                                { 1.0f,  1.0f},   // top right
-                                {-1.0f,  1.0f}};  // top left
+
+    std::vector<glm::vec2> coords = { glm::vec2(-1.0f, -1.0f),   // bottom left
+                                      glm::vec2(1.0f, -1.0f),    // bottom right
+                                      glm::vec2(1.0f,  1.0f),    // top right
+                                      glm::vec2(-1.0f,  1.0f) }; // top left
 
     void resetMapping() {
-        coords = {{-1.0f, -1.0f},   // bottom left
-                { 1.0f, -1.0f},   // bottom right
-                { 1.0f,  1.0f},   // top right
-                {-1.0f,  1.0f}};  // top left
+        coords = { glm::vec2(-1.0f, -1.0f),   // bottom left
+                   glm::vec2(1.0f, -1.0f),    // bottom right
+                   glm::vec2(1.0f,  1.0f),    // top right
+                   glm::vec2(-1.0f,  1.0f) }; // top left
     }
     
     // template <class Archive>

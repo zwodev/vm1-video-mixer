@@ -543,7 +543,7 @@ void UI::SpinBoxFloat(const std::string& label, float& value, float minValue, fl
 }
 
 // TODO: Get rid of PlaneSettings::vec2. Maybe use GLM lib in the future?
-void UI::SpinBoxVec2(const std::string& label, PlaneSettings::vec2& vec, float step)
+void UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
 {
     if (!m_focusedIdxPtr) return;
     float diffX = 0;
