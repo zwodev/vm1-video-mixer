@@ -44,7 +44,7 @@ void KeyboardControllerLinux::update(input_event& event)
             case KEY_UP:
                 if (m_isShiftPressed)
                 {
-                    m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 0));
+                    m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 1));
                 }
                 else
                 {
@@ -55,7 +55,7 @@ void KeyboardControllerLinux::update(input_event& event)
             case KEY_DOWN:
                 if (m_isShiftPressed)
                 {
-                    m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 0));
+                    m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 1));
                 }
                 else
                 {
@@ -66,7 +66,7 @@ void KeyboardControllerLinux::update(input_event& event)
             case KEY_LEFT:
                 if (m_isShiftPressed)
                 {
-                    m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 1));
+                    m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 0));
                 }
                 else 
                 {
@@ -77,7 +77,7 @@ void KeyboardControllerLinux::update(input_event& event)
             case KEY_RIGHT:
                 if (m_isShiftPressed)
                 {
-                    m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 1));
+                    m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 0));
                 }
                 else 
                 {

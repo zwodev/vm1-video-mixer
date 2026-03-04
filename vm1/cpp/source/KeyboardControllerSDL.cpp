@@ -25,7 +25,7 @@ void KeyboardControllerSDL::update(SDL_Event& event)
         case SDLK_UP:
             if (isShiftPressed)
             {
-                m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 0));
+                m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 1));
             }
             else
             {
@@ -36,7 +36,7 @@ void KeyboardControllerSDL::update(SDL_Event& event)
         case SDLK_DOWN:
             if (isShiftPressed)
             {
-                m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 0));
+                m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 1));
             }
             else
             {
@@ -47,7 +47,7 @@ void KeyboardControllerSDL::update(SDL_Event& event)
         case SDLK_LEFT:
             if (isShiftPressed)
             {
-                m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 1));
+                m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 0));
             }
             else
             {
@@ -58,7 +58,7 @@ void KeyboardControllerSDL::update(SDL_Event& event)
         case SDLK_RIGHT:
             if (isShiftPressed)
             {
-                m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 1));
+                m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 0));
             }
             else
             {

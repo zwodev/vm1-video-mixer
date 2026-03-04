@@ -514,8 +514,8 @@ void MenuSystem::PlaybackSettings(int id, int* focusedIdx)
     }
     
     if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(currentConfig)) {
-        m_ui.MenuTitle("CTRL Mediafile");
         m_ui.BeginList(focusedIdx);
+        m_ui.Text("Type: Mediafile");
         if (m_ui.CheckBox("loop", videoInputConfig->looping)) { 
             videoInputConfig->looping = !videoInputConfig->looping; 
         }
@@ -527,14 +527,14 @@ void MenuSystem::PlaybackSettings(int id, int* focusedIdx)
         m_ui.Text("speed");
     }
     else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(currentConfig)) {
-        m_ui.MenuTitle("CTRL Camera");        
         m_ui.BeginList(focusedIdx);
+        m_ui.Text("Type: HDMI");
         std::string inputName = "Source: HDMI" + std::to_string(hdmiInputConfig->hdmiPort+1);
         m_ui.Text(inputName);
     }
     else if (dynamic_cast<ShaderInputConfig*>(currentConfig)) {
-        m_ui.MenuTitle("CTRL Shader");        
         m_ui.BeginList(focusedIdx);
+        m_ui.Text("Type: Shader");
         m_ui.Text("Parameter 1");
         m_ui.Text("Parameter 2");
         m_ui.Text("Parameter 3");
