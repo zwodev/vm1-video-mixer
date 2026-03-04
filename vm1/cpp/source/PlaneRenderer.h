@@ -37,6 +37,8 @@ private:
 
 private:
     GLuint m_vao; 
-    GLuint m_vbo;
+    GLuint m_posVbo;
+    GLuint m_uvVbo;
+    GLuint m_ibo;
     Shader m_shader;
 };
