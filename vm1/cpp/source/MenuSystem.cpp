@@ -633,13 +633,13 @@ void MenuSystem::Mapping(int id, int* selectedIdx)
 {
     m_ui.BeginList(selectedIdx);
 
-    m_ui.SpinBoxVec2("TopLeft", m_registry.planeSettings().coords.at(0)); 
-    m_ui.SpinBoxVec2("TopRight", m_registry.planeSettings().coords.at(3)); 
-    m_ui.SpinBoxVec2("BottomRight", m_registry.planeSettings().coords.at(2)); 
-    m_ui.SpinBoxVec2("BottomLeft", m_registry.planeSettings().coords.at(1)); 
+    m_ui.SpinBoxVec2("TopLeft", m_registry.planeSettings().coords.at(3)); 
+    m_ui.SpinBoxVec2("TopRight", m_registry.planeSettings().coords.at(2)); 
+    m_ui.SpinBoxVec2("BottomRight", m_registry.planeSettings().coords.at(1)); 
+    m_ui.SpinBoxVec2("BottomLeft", m_registry.planeSettings().coords.at(0)); 
 
-    if(m_ui.Action("Exit Mapping Mode")) {
-        goUpHierachy();
+    if(m_ui.Action("Reset")) {
+        m_registry.planeSettings().resetMapping();
     }
     m_ui.EndList();
 }

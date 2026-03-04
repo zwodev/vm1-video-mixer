@@ -319,6 +319,14 @@ struct PlaneSettings
                                 { 1.0f, -1.0f},   // bottom right
                                 { 1.0f,  1.0f},   // top right
                                 {-1.0f,  1.0f}};  // top left
+
+    void resetMapping() {
+        coords = {{-1.0f, -1.0f},   // bottom left
+                { 1.0f, -1.0f},   // bottom right
+                { 1.0f,  1.0f},   // top right
+                {-1.0f,  1.0f}};  // top left
+    }
+    
     // template <class Archive>
     // void serialize(Archive &ar)
     // {

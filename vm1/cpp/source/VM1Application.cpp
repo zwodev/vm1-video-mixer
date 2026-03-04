@@ -35,7 +35,6 @@ VM1Application::VM1Application() :
     m_menuSystem(m_ui, m_registry, m_eventBus),
     m_deviceController(m_eventBus, m_registry),
     m_cameraController(m_eventBus)
-    //m_projectionMappingController(m_registry, m_eventBus)
 {
     subscribeToEvents();
     //auto captureDevices = m_cameraController.getCaptureDevices("uvcvideo");
