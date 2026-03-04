@@ -151,22 +151,22 @@ void DeviceController::requestVM1DeviceBuffer()
                     }
                     break;
                 case ROTARY_EVENT:
-                    if (buttonId == PRIMARY_ENCODER_DOWN)
+                    if (buttonId == PRIMARY_ENCODER_CCW)
                     {
                         isFnPressed ? m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 0)) 
-                                    : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationDown));
-                    }
-                    else if (buttonId == PRIMARY_ENCODER_UP)
-                    {
-                        isFnPressed ? m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 0)) 
                                     : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationUp));
                     }
-                    else if (buttonId == SECONDARY_ENCODER_DOWN)
+                    else if (buttonId == PRIMARY_ENCODER_CW)
+                    {
+                        isFnPressed ? m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 0)) 
+                                    : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationDown));
+                    }
+                    else if (buttonId == SECONDARY_ENCODER_CCW)
                     {
                         isFnPressed ? m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 1)) 
                                     : (void)printf("secondary rotary down, not implemented\n");
                     }
-                    else if (buttonId == SECONDARY_ENCODER_UP)
+                    else if (buttonId == SECONDARY_ENCODER_CW)
                     {
                         isFnPressed ? m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 1)) 
                                     : (void)printf("secondary rotary up, not implemented\n");

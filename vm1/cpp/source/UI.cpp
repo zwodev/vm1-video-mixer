@@ -431,7 +431,8 @@ void UI::ShowBankInfo(int bank)
 bool UI::Action(const std::string& label)
 {
     if (!m_focusedIdxPtr) return false;
-    bool keyPressed = (isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0));
+    bool keyPressed = isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0) ||
+                      isNavigationEventTriggered(NavigationEvent::Type::NavigationRight);
     bool focused = ((*m_focusedIdxPtr) == m_listSize);
 
     Text(label + " ->");
@@ -441,11 +442,21 @@ bool UI::Action(const std::string& label)
 bool UI::CheckBox(const std::string& label, bool checked)
 {
     if (!m_focusedIdxPtr) return false;
+
     bool oldChecked = checked;
-    bool keyPressed = (isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0));
     bool focused = ((*m_focusedIdxPtr) == m_listSize);
-    if (focused && keyPressed) {
-        checked = !checked;
+    if (focused) {
+        if (isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0))  // deselect
+        {
+            checked = false;
+        } 
+        else if (isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0))  // select
+        {
+            checked = true;
+        }
+        else if (isNavigationEventTriggered(NavigationEvent::Type::NavigationRight)) { // toggle
+            checked = !checked;
+        }
     }
 
     if(checked) {
@@ -464,13 +475,9 @@ bool UI::RadioButton(const std::string& label, bool active)
 {
     if (!m_focusedIdxPtr) return false;
     bool keyPressed = false;
-    if (isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0)) {
-        printf("Value Change!!!!!\n");
-        active = false;
-        keyPressed = true;
-    }
-    else if (isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0)) {
-        active = true;
+
+    if (isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0) ||
+        isNavigationEventTriggered(NavigationEvent::Type::NavigationRight)) {
         keyPressed = true;
     }
     
@@ -479,7 +486,6 @@ bool UI::RadioButton(const std::string& label, bool active)
         active = true;
     }
 
-    // Text(newLabel);
     if(active) m_stbRenderer.drawRect(m_x, m_y + 2, 7, 7, COLOR::WHITE);
     m_x = m_listPaddingLeft;
     Text(label);

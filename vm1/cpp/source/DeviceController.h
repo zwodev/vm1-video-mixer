@@ -27,10 +27,10 @@ enum ButtonState : uint8_t
 
 enum RotaryButtonIds
 {
-    PRIMARY_ENCODER_DOWN,
-    PRIMARY_ENCODER_UP,
-    SECONDARY_ENCODER_DOWN,
-    SECONDARY_ENCODER_UP
+    PRIMARY_ENCODER_CCW,
+    PRIMARY_ENCODER_CW,
+    SECONDARY_ENCODER_CCW,
+    SECONDARY_ENCODER_CW
 };
 enum NavigationButtonIds
 {
