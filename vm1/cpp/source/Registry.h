@@ -320,7 +320,16 @@ struct PlaneSettings
                    glm::vec2(1.0f, -1.0f),    // bottom right
                    glm::vec2(1.0f,  1.0f),    // top right
                    glm::vec2(-1.0f,  1.0f) }; // top left
+        rotation = 0.0f;
+        scale = 1.0f;
+        scaleXY = {1.0f, 1.0f};
+        translation = {0.0f, 0.0f};
     }
+
+    int rotation = 0;
+    float scale = 1.0f;
+    glm::vec2 scaleXY = {1.0f, 1.0f};
+    glm::vec2 translation = {0.0f, 0.0f};
     
     // template <class Archive>
     // void serialize(Archive &ar)

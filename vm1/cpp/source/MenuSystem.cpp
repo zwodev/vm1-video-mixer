@@ -637,7 +637,12 @@ void MenuSystem::Mapping(int id, int* selectedIdx)
     m_ui.SpinBoxVec2("TopRight", m_registry.planeSettings().coords[2]); 
     m_ui.SpinBoxVec2("BottomRight", m_registry.planeSettings().coords[1]); 
     m_ui.SpinBoxVec2("BottomLeft", m_registry.planeSettings().coords[0]); 
-
+    m_ui.Break();
+    m_ui.SpinBoxInt("Rotation", m_registry.planeSettings().rotation,0, 360, 1);
+    m_ui.SpinBoxFloat("Scale", m_registry.planeSettings().scale, 0.0f, 10.0f, 0.1f);
+    m_ui.SpinBoxVec2("ScaleXY", m_registry.planeSettings().scaleXY);
+    m_ui.SpinBoxVec2("Translation", m_registry.planeSettings().translation);
+    m_ui.Break();
     if(m_ui.Action("Reset")) {
         m_registry.planeSettings().resetMapping();
     }
