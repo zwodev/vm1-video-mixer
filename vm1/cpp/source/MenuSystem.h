@@ -114,7 +114,9 @@ private:
     UI &m_ui;
     
     int m_id = 0;
+    int m_plane = 0;
     int m_focusedIdx = 0;
+
     MenuType m_currentMenuType = MT_StartupScreen;
     std::function<void()> m_currentMenuFunc;
     std::vector<MenuState> m_currentMenuPath;

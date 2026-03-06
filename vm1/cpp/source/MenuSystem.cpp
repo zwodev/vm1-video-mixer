@@ -446,8 +446,9 @@ void MenuSystem::FxMenu()
 {
     m_ui.MenuTitle("FX");
     m_ui.BeginList(&m_focusedIdx);
+    m_ui.SpinBoxInt("Plane", m_plane, 0, 7);
+    m_ui.Break();
     auto& effects = m_registry.planeSettings().effects;
-
     for (int i = 0; i < effects.size(); ++i) {
         SubMenu(effects[i].name, [this](){ EffectControl(); });
     }
@@ -463,6 +464,8 @@ void MenuSystem::EffectControl()
     m_ui.MenuTitle("FX/" + effect.name);
 
     m_ui.BeginList(&m_focusedIdx);
+    m_ui.SpinBoxInt("Plane", m_plane, 0, 7);
+    m_ui.Break();
     for (int i = 0; i < effect.params.size(); ++i) {
         auto& param = effect.params[i];
         if (std::holds_alternative<IntParameter>(param)) {
@@ -484,6 +487,8 @@ void MenuSystem::OutputMenu()
 {
     m_ui.MenuTitle("OUT");
     m_ui.BeginList(&m_focusedIdx);
+    m_ui.SpinBoxInt("Plane", m_plane, 0, 7);
+    m_ui.Break();
     SubMenu("Mrs. Mask", [this](){ Mask(); });
     SubMenu("Mr. Mapping", [this](){ Mapping(); });
     SubMenu("HDMI Output", [this](){ HdmiSelection(); });
@@ -494,6 +499,8 @@ void MenuSystem::Mask()
 {
     m_ui.MenuTitle("OUT/Mask");
     m_ui.BeginList(&m_focusedIdx);
+    m_ui.SpinBoxInt("Plane", m_plane, 0, 7);
+    m_ui.Break();
     m_ui.Text("some way to load image or create a mask...");
     m_ui.EndList();
 }
@@ -502,7 +509,8 @@ void MenuSystem::Mapping()
 {
     m_ui.MenuTitle("OUT/Mapping");
     m_ui.BeginList(&m_focusedIdx);
-
+    m_ui.SpinBoxInt("Plane", m_plane, 0, 7);
+    m_ui.Break();
     m_ui.SpinBoxVec2("TopLeft", m_registry.planeSettings().coords[3]); 
     m_ui.SpinBoxVec2("TopRight", m_registry.planeSettings().coords[2]); 
     m_ui.SpinBoxVec2("BottomRight", m_registry.planeSettings().coords[1]); 
