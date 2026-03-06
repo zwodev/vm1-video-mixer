@@ -433,8 +433,8 @@ void MenuSystem::ControlMenu()
         m_ui.Text("Parameter 3");
     }
     m_ui.Break();
-    // m_ui.SpinBoxInt("Out Plane", currentConfig->planeId , 0, m_registry.planes().size()-1);
-    if(m_ui.SpinBoxPlaneSelect(currentConfig->planeId, 0, m_registry.planes().size()-1)){
+    
+    if(m_ui.SpinBoxInt("Out Plane", currentConfig->planeId , 0, m_registry.planes().size()-1)){
         m_planeIdx = currentConfig->planeId;
     }
 

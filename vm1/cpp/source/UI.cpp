@@ -495,16 +495,19 @@ bool UI::RadioButton(const std::string& label, bool active)
     return focused && active;
 }
 
-void UI::SpinBoxInt(const std::string& label, int& value, int minValue, int maxValue, int step)
+bool UI::SpinBoxInt(const std::string& label, int& value, int minValue, int maxValue, int step)
 {
+    bool hasChanged = false;
     if (!m_focusedIdxPtr) return;
     int diff = 0;
     if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0))
     {
+        hasChanged = true;
         diff = step;    
     }
     else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0))
     {
+        hasChanged = true;
         diff = -step;
     }
 
@@ -517,6 +520,7 @@ void UI::SpinBoxInt(const std::string& label, int& value, int minValue, int maxV
 
     std::string newLabel = label + ": " + std::to_string(value);
     Text(newLabel);
+    return hasChanged;
 }
 
 bool UI::SpinBoxPlaneSelect(int& value, int minValue, int maxValue)
@@ -558,16 +562,19 @@ bool UI::SpinBoxPlaneSelect(int& value, int minValue, int maxValue)
 }
 
 
-void UI::SpinBoxFloat(const std::string& label, float& value, float minValue, float maxValue, float step)
+bool UI::SpinBoxFloat(const std::string& label, float& value, float minValue, float maxValue, float step)
 {
+    bool hasChanged = false;
     if (!m_focusedIdxPtr) return;
     float diff = 0;
     if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0))
     {
+        hasChanged = true;
         diff = step;    
     }
     else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0))
     {
+        hasChanged = true;
         diff = -step;
     }
 
@@ -580,28 +587,34 @@ void UI::SpinBoxFloat(const std::string& label, float& value, float minValue, fl
 
     std::string newLabel = label + ": " + std::to_string(value);
     Text(newLabel);
+    return hasChanged;
 }
 
 // TODO: Get rid of PlaneSettings::vec2. Maybe use GLM lib in the future?
-void UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
+bool UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
 {
+    bool hasChanged = false;
     if (!m_focusedIdxPtr) return;
     float diffX = 0;
     float diffY = 0;
     if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0))
     {
+        hasChanged = true;
         diffX = step;    
     }
     else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0))
     {
+        hasChanged = true;
         diffX = -step;
     }
     else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 1))
     {
+        hasChanged = true;
         diffY = step;    
     }
     else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 1))
     {
+        hasChanged = true;
         diffY = -step;
     }
 
@@ -619,4 +632,5 @@ void UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
 
     std::string newLabel = label + ": " + std::to_string(vec.x)+ "/" + std::to_string(vec.y);;
     Text(newLabel);
+    return hasChanged;
 }
