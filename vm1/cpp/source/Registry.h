@@ -65,7 +65,8 @@ public:
             cereal::base_class<InputConfig>(this),
             CEREAL_NVP(fileName),
             CEREAL_NVP(looping),
-            CEREAL_NVP(backwards)
+            CEREAL_NVP(backwards),
+            CEREAL_NVP(planeId)
         );
     }
 };
@@ -302,6 +303,12 @@ private:
     ImageBuffer m_qrCodeImageBuffer;
 };
 
+namespace glm {
+    template <class Archive>
+    void serialize(Archive &ar, glm::vec2 &v) {
+        ar(v.x, v.y);
+    }
+}
 
 struct PlaneSettings
 {
@@ -343,11 +350,11 @@ struct PlaneSettings
     {
         ar(
             // CEREAL_NVP(effects),
-            // CEREAL_NVP(coords),
+            CEREAL_NVP(coords),
             // CEREAL_NVP(rotation),
             CEREAL_NVP(scale),
             // CEREAL_NVP(scaleXY),
-            // CEREAL_NVP(translation),
+            CEREAL_NVP(translation),
             CEREAL_NVP(hdmiId)
         );
     }
