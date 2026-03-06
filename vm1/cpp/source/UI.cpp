@@ -519,6 +519,45 @@ void UI::SpinBoxInt(const std::string& label, int& value, int minValue, int maxV
     Text(newLabel);
 }
 
+bool UI::SpinBoxPlaneSelect(int& value, int minValue, int maxValue)
+{
+    bool hasChanged = false;
+    if(isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxDown))
+    {
+        hasChanged = true;
+        value += 1;
+        if (value > maxValue) value = maxValue;
+    }
+    else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxUp))
+    {
+        hasChanged = true;
+        value -= 1;
+        if (value < minValue) value = minValue;
+    }
+
+    int maxWidth = m_stbRenderer.width();
+    int padding = 15;
+    int boxSize = 30;
+    int totalBoxWidth = (maxValue + 1) * boxSize + (maxValue * padding);
+    int gap = (maxWidth - totalBoxWidth) / 2;
+    int x = gap;
+    for(int i = 0; i <= maxValue; ++i) {
+        if (i == value){
+            m_stbRenderer.drawRect(x, m_y, boxSize, boxSize);
+            m_stbRenderer.drawText(std::to_string(i+1), x + boxSize/3, m_y + boxSize/4, 24, COLOR::BLACK);
+        } else {
+            m_stbRenderer.drawEmptyRect(x, m_y, boxSize, boxSize);
+            m_stbRenderer.drawText(std::to_string(i+1), x + boxSize/3, m_y + boxSize/4, 24, COLOR::WHITE);
+        }
+        x += boxSize + padding;
+    }
+    m_y += boxSize;
+    // std::string newLabel = "Plane: " + std::to_string(value);
+    // Text(newLabel);
+    return hasChanged;
+}
+
+
 void UI::SpinBoxFloat(const std::string& label, float& value, float minValue, float maxValue, float step)
 {
     if (!m_focusedIdxPtr) return;

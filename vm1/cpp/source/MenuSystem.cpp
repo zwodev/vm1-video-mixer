@@ -433,7 +433,11 @@ void MenuSystem::ControlMenu()
         m_ui.Text("Parameter 3");
     }
     m_ui.Break();
-    m_ui.SpinBoxInt("Out Plane", currentConfig->planeId , 0, m_registry.planes().size()-1);
+    // m_ui.SpinBoxInt("Out Plane", currentConfig->planeId , 0, m_registry.planes().size()-1);
+    if(m_ui.SpinBoxPlaneSelect(currentConfig->planeId, 0, m_registry.planes().size()-1)){
+        m_planeIdx = currentConfig->planeId;
+    }
+
     m_ui.EndList();
 }
 
@@ -447,7 +451,7 @@ void MenuSystem::FxMenu()
 {
     m_ui.MenuTitle("FX");
     m_ui.BeginList(&m_focusedIdx);
-    m_ui.SpinBoxInt("Plane", m_planeIdx, 0, m_registry.planes().size()-1);
+    m_ui.SpinBoxPlaneSelect(m_planeIdx, 0, m_registry.planes().size()-1);
     m_ui.Break();
     auto& effects = m_registry.planes()[m_planeIdx].effects;
     for (int i = 0; i < effects.size(); ++i) {
@@ -468,7 +472,7 @@ void MenuSystem::EffectControl()
     m_ui.MenuTitle("FX/" + effect.name);
 
     m_ui.BeginList(&m_focusedIdx);
-    m_ui.SpinBoxInt("Plane", m_planeIdx, 0, m_registry.planes().size()-1);
+    m_ui.SpinBoxPlaneSelect(m_planeIdx, 0, m_registry.planes().size()-1);
     m_ui.Break();
     for (int i = 0; i < effect.params.size(); ++i) {
         auto& param = effect.params[i];
@@ -491,7 +495,7 @@ void MenuSystem::OutputMenu()
 {
     m_ui.MenuTitle("OUT");
     m_ui.BeginList(&m_focusedIdx);
-    m_ui.SpinBoxInt("Plane", m_planeIdx, 0, m_registry.planes().size()-1);
+    m_ui.SpinBoxPlaneSelect(m_planeIdx, 0, m_registry.planes().size()-1);
     m_ui.Break();
     SubMenu("Mrs. Mask", [this](){ Mask(); });
     SubMenu("Mr. Mapping", [this](){ Mapping(); });
@@ -503,7 +507,7 @@ void MenuSystem::Mask()
 {
     m_ui.MenuTitle("OUT/Mask");
     m_ui.BeginList(&m_focusedIdx);
-    m_ui.SpinBoxInt("Plane", m_planeIdx, 0, m_registry.planes().size()-1);
+    m_ui.SpinBoxPlaneSelect(m_planeIdx, 0, m_registry.planes().size()-1);
     m_ui.Break();
     m_ui.Text("some way to load image or create a mask...");
     m_ui.EndList();
@@ -513,16 +517,16 @@ void MenuSystem::Mapping()
 {
     m_ui.MenuTitle("OUT/Mapping");
     m_ui.BeginList(&m_focusedIdx);
-    m_ui.SpinBoxInt("Plane", m_planeIdx, 0, m_registry.planes().size()-1);
+    m_ui.SpinBoxPlaneSelect(m_planeIdx, 0, m_registry.planes().size()-1);
     m_ui.Break();
     m_ui.SpinBoxVec2("TopLeft", m_registry.planes()[m_planeIdx].coords[3]); 
     m_ui.SpinBoxVec2("TopRight", m_registry.planes()[m_planeIdx].coords[2]); 
     m_ui.SpinBoxVec2("BottomRight", m_registry.planes()[m_planeIdx].coords[1]); 
     m_ui.SpinBoxVec2("BottomLeft", m_registry.planes()[m_planeIdx].coords[0]); 
     m_ui.Break();
-    m_ui.SpinBoxInt("Rotation", m_registry.planes()[m_planeIdx].rotation,0, 360, 1);
+    // m_ui.SpinBoxInt("Rotation", m_registry.planes()[m_planeIdx].rotation,0, 360, 1);
     m_ui.SpinBoxFloat("Scale", m_registry.planes()[m_planeIdx].scale, 0.0f, 10.0f, 0.1f);
-    m_ui.SpinBoxVec2("ScaleXY", m_registry.planes()[m_planeIdx].scaleXY);
+    // m_ui.SpinBoxVec2("ScaleXY", m_registry.planes()[m_planeIdx].scaleXY);
     m_ui.SpinBoxVec2("Translation", m_registry.planes()[m_planeIdx].translation);
     m_ui.Break();
     if(m_ui.Action("Reset")) {

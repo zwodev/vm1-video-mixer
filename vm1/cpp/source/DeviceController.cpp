@@ -164,12 +164,12 @@ void DeviceController::requestVM1DeviceBuffer()
                     else if (buttonId == SECONDARY_ENCODER_CCW)
                     {
                         isFnPressed ? m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 1)) 
-                                    : (void)printf("secondary rotary down, not implemented\n");
+                                    : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxUp));
                     }
                     else if (buttonId == SECONDARY_ENCODER_CW)
                     {
                         isFnPressed ? m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 1)) 
-                                    : (void)printf("secondary rotary up, not implemented\n");
+                                    : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxDown));
                     }
                     else
                     {
