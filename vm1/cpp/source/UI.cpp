@@ -264,19 +264,20 @@ void UI::CenteredText(const std::string &label)
                            COLOR::WHITE);
 }
 
-void UI::Text(const std::string &label)
+bool UI::Text(const std::string &label)
 {
     UI::BeginListElement();
     float fontSize = 16.0f;
     Color color = COLOR::WHITE;
-    if (m_focusedIdxPtr) {
-        if ((*m_focusedIdxPtr) == m_listSize){            
+    bool selected = (m_focusedIdxPtr && ((*m_focusedIdxPtr) == m_listSize));
+    if (selected) {
             m_stbRenderer.drawRect(m_x, m_y - 1, m_stbRenderer.width() - m_x, fontSize - 2, COLOR::WHITE);
             color = COLOR::BLACK;
-        } 
     }
     m_stbRenderer.drawText(label, m_x, m_y, fontSize, color);
     UI::EndListElement();
+
+    return selected;
 }
 
 void UI::PlainText(const std::string &label)
@@ -577,6 +578,6 @@ void UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
         // else if (value > maxValue) value = maxValue;
     }
 
-    std::string newLabel = label + ": " + std::to_string(vec.x) + "/" + std::to_string(vec.y);
+    std::string newLabel = label + ": " + std::to_string(vec.x)+ "/" + std::to_string(vec.y);;
     Text(newLabel);
 }

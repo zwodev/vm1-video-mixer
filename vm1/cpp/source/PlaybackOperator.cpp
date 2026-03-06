@@ -39,7 +39,7 @@ void PlaybackOperator::initialize()
 
     for (int i = 0; i < 2; ++i) {
         m_planeRenderers.push_back(new PlaneRenderer());
-    } 
+    }
 
     for (int i = 0; i < 4; ++i) {
         m_videoPlayers.push_back(new VideoPlayer());
@@ -120,10 +120,10 @@ bool PlaybackOperator::getFreeVideoPlayerId(int& id, int planeId)
 {
     if(m_registry.settings().useFader) {
         auto activeIds = m_planeMixers[planeId].activeIds();
-        printf("activeIds size: %d\n", activeIds.size());
-        for (auto i : activeIds) {
-            printf("%d\n", i);
-        }
+        //printf("activeIds size: %d\n", activeIds.size());
+        // for (auto i : activeIds) {
+        //     printf("%d\n", i);
+        // }
         if(activeIds.size() > 1) {
             if(m_planeMixers[planeId].mixValue() > 0.5) {
                 id = activeIds[0];
@@ -133,11 +133,11 @@ bool PlaybackOperator::getFreeVideoPlayerId(int& id, int planeId)
             return true;
         }
         else {
-            printf("looking for empty videoplayerId...\n");
+            //printf("looking for empty videoplayerId...\n");
             for (int i = 0; i < m_videoPlayers.size(); ++i) {
-                printf("videoplayerId: %d isPlayerIdActive: %d \n", i, isPlayerIdActive(i));
+                //printf("videoplayerId: %d isPlayerIdActive: %d \n", i, isPlayerIdActive(i));
                 if(!isPlayerIdActive(i) && dynamic_cast<VideoPlayer *>(m_mediaPlayers[i])) {
-                    printf("id = %d\n", i);
+                    //printf("id = %d\n", i);
                     id = i;
                     return true;
                 }
@@ -329,7 +329,6 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     }
     else if (ShaderInputConfig *shaderInputConfig = dynamic_cast<ShaderInputConfig *>(inputConfig))
     {
-        printf("Check 1!\n");
         if (!getFreeShaderPlayerId(playerId, planeId)) return;
         fileName = shaderInputConfig->fileName;
         filePath = m_registry.mediaPool().getShaderFilePath(fileName);

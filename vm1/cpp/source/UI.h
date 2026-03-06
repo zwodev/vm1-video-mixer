@@ -42,7 +42,7 @@ public:
     void CenteredText(const std::string &label);
     void startUpLogo();
     void Image(const ImageBuffer& imageBuffer);
-    void Text(const std::string &label);
+    bool Text(const std::string &label);
     void PlainText(const std::string &label);
     void Break();
     void MenuTitle(std::string menuTitle);
