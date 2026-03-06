@@ -581,6 +581,8 @@ void WebcamPlayer::render()
 
 void WebcamPlayer::update()
 {
+    if (!m_isRunning) return;
+    
     EGLDisplay display = eglGetCurrentDisplay();
 
     // Wait for fence and delete it

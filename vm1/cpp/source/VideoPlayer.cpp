@@ -322,6 +322,8 @@ void VideoPlayer::render()
 
 void VideoPlayer::update()
 {
+    if (!m_isRunning) return;
+    
     EGLDisplay display = eglGetCurrentDisplay();
 
     // Wait for fence and delete it
