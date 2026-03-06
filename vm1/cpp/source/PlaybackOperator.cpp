@@ -33,33 +33,38 @@ void PlaybackOperator::subscribeToEvents()
 
 void PlaybackOperator::initialize()
 {
-    for (int i = 0; i < 4; ++i) {
+    int planeCount = m_registry.planes().size();
+    int videoPlayerCount = planeCount * 2;
+    int cameraPlayerCount = 1;
+    int shaderPlayerCount = planeCount * 2;
+
+    for (int i = 0; i < planeCount; ++i) {
         m_planeMixers.push_back(PlaneMixer());
     } 
 
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < planeCount; ++i) {
         m_planeRenderers.push_back(new PlaneRenderer());
     }
 
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < videoPlayerCount; ++i) {
         m_videoPlayers.push_back(new VideoPlayer());
         MediaPlayer* mediaPlayer = m_videoPlayers[i];
         m_mediaPlayers.push_back(mediaPlayer);
     }
 
-    for (int i = 0; i < 1; ++i) {
+    for (int i = 0; i < cameraPlayerCount; ++i) {
         m_cameraPlayers.push_back(new CameraPlayer());
         MediaPlayer* mediaPlayer = m_cameraPlayers[i];
         m_mediaPlayers.push_back(mediaPlayer);
     }
 
-    for (int i = 0; i < 1; ++i) {
+    for (int i = 0; i < cameraPlayerCount; ++i) {
         m_webcamPlayers.push_back(new WebcamPlayer());
         MediaPlayer* mediaPlayer = m_webcamPlayers[i];
         m_mediaPlayers.push_back(mediaPlayer);
     }
 
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < shaderPlayerCount; ++i) {
         m_shaderPlayers.push_back(new ShaderPlayer());
         MediaPlayer* mediaPlayer = m_shaderPlayers[i];
         m_mediaPlayers.push_back(mediaPlayer);
@@ -480,21 +485,37 @@ void PlaybackOperator::renderPlane(int hdmiId)
     if (!m_isInitialized) return;
 
     const auto& planes = m_registry.planes();
-    for (int i = 0; i < planes.size(); ++i) {
-        if (hdmiId == planes[i].hdmiId) {
+
+    std::vector<int> activePlanesIds;
+    for (auto iter = m_mediaSlotIdToPlayerId.begin(); iter != m_mediaSlotIdToPlayerId.end(); ++iter)
+    {
+        int planeId = m_registry.inputMappings().getInputConfig(iter->first)->planeId;
+        if(std::find(activePlanesIds.begin(), activePlanesIds.end(), planeId) == activePlanesIds.end()) {
+            activePlanesIds.push_back(planeId);
+        }
+    }
+    std::sort(activePlanesIds.begin(), activePlanesIds.end(), [](int x, int y){return x < y;});
+    // printf("ActivePlanes: ");
+    // for(int i = 0; i < activePlanesIds.size(); ++i) {
+    //     printf("%d, ", activePlanesIds[i]);
+    // }
+    // printf("\n");
+
+    for (int i = 0; i < activePlanesIds.size(); ++i) {
+        int currentPlaneId = activePlanesIds[i];
+        if (hdmiId == planes[currentPlaneId].hdmiId) {
             if (i >= m_planeRenderers.size()) return;
             
             //printf("Render plane %d on HDMI %d\n", i, hdmiId);
             float volume = float(m_registry.settings().volume) / 10.0f;
-            PlaneRenderer* planeRenderer = m_planeRenderers[i];
-            PlaneMixer& planeMixer = m_planeMixers[i];
+            PlaneRenderer* planeRenderer = m_planeRenderers[currentPlaneId];
+            PlaneMixer& planeMixer = m_planeMixers[currentPlaneId];
             
             int fromId = planeMixer.fromId();
             int toId = planeMixer.toId();
 
             GLuint texture0 = 0;
             if (fromId >= 0) {
-                printf("From Texture\n");
                 texture0 = m_mediaPlayers[fromId]->texture();
                 //AudioStream* audioStream = m_audioStreams[fromId];
                 //if (audioStream) audioStream->setVolume((1.0f - planeMixer.mixValue()) * volume);
@@ -506,7 +527,7 @@ void PlaybackOperator::renderPlane(int hdmiId)
                 //if (audioStream) audioStream->setVolume(planeMixer.mixValue() * volume);
             }
 
-            planeRenderer->update(texture0, texture1, planeMixer.mixValue(), m_registry.planes()[i], m_registry.settings().hdmiRotation0);
+            planeRenderer->update(texture0, texture1, planeMixer.mixValue(), m_registry.planes()[currentPlaneId], m_registry.settings().hdmiRotation0);
             //printf("Mix Value: %f\n", planeMixer.mixValue());
         }
     }

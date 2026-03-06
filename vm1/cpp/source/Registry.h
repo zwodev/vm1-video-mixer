@@ -17,12 +17,16 @@
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/map.hpp>
 #include <cereal/types/memory.hpp>
+#include <cereal/types/vector.hpp>
+#include <cereal/types/string.hpp>
 #include <fstream>
 
 #include "ImageBuffer.h"
 #include "stb/stb_image.h"
 #include "ShaderConfig.h"
 #include "ScreenOptions.h"
+
+const int PLANE_COUNT = 4;
 
 enum class DisplayType {
     SSD1351_OLED = 0,      // Original 1.5" OLED display
@@ -334,13 +338,19 @@ struct PlaneSettings
     glm::vec2 scaleXY = {1.0f, 1.0f};
     glm::vec2 translation = {0.0f, 0.0f};
     
-    // template <class Archive>
-    // void serialize(Archive &ar)
-    // {
-    //     ar(
-    //         cereal::make_nvp("effects", m_effects)
-    //     );
-    // }
+    template <class Archive>
+    void serialize(Archive &ar)
+    {
+        ar(
+            // CEREAL_NVP(effects),
+            // CEREAL_NVP(coords),
+            // CEREAL_NVP(rotation),
+            CEREAL_NVP(scale),
+            // CEREAL_NVP(scaleXY),
+            // CEREAL_NVP(translation),
+            CEREAL_NVP(hdmiId)
+        );
+    }
 };
 
 struct Settings
@@ -444,7 +454,7 @@ public:
         try {
             std::ofstream file("vm1-registry.json");
             cereal::JSONOutputArchive archive(file);
-            archive(m_inputMappings, m_settings);
+            archive(m_inputMappings, m_settings, m_planes);
             printf("Successfully saved registry!\n");
         }
         catch(const std::exception &e) {
@@ -459,7 +469,7 @@ public:
         {
             std::ifstream file("vm1-registry.json");
             cereal::JSONInputArchive archive(file);
-            archive(m_inputMappings, m_settings);
+            archive(m_inputMappings, m_settings, m_planes);
             m_lastHash = hash();
         }
         catch (const std::exception &e)
@@ -474,7 +484,7 @@ private:
     {
         std::stringstream stream;
         cereal::BinaryOutputArchive archive(stream);
-        archive(m_inputMappings, m_settings);
+        archive(m_inputMappings, m_settings, m_planes);
         std::string serialized = stream.str();
         return std::hash<std::string>{}(serialized);
 
@@ -492,5 +502,5 @@ private:
     Settings m_settings;
     InputMappings m_inputMappings;
     MediaPool m_mediaPool;
-    std::vector<PlaneSettings> m_planes = std::vector<PlaneSettings>(4);
+    std::vector<PlaneSettings> m_planes = std::vector<PlaneSettings>(PLANE_COUNT);
 };

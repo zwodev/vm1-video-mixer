@@ -433,7 +433,7 @@ void MenuSystem::ControlMenu()
         m_ui.Text("Parameter 3");
     }
     m_ui.Break();
-    m_ui.SpinBoxInt("Out Plane", currentConfig->planeId , 0, 3);
+    m_ui.SpinBoxInt("Out Plane", currentConfig->planeId , 0, m_registry.planes().size()-1);
     m_ui.EndList();
 }
 
@@ -447,7 +447,7 @@ void MenuSystem::FxMenu()
 {
     m_ui.MenuTitle("FX");
     m_ui.BeginList(&m_focusedIdx);
-    m_ui.SpinBoxInt("Plane", m_planeIdx, 0, 3);
+    m_ui.SpinBoxInt("Plane", m_planeIdx, 0, m_registry.planes().size()-1);
     m_ui.Break();
     auto& effects = m_registry.planes()[m_planeIdx].effects;
     for (int i = 0; i < effects.size(); ++i) {
@@ -468,7 +468,7 @@ void MenuSystem::EffectControl()
     m_ui.MenuTitle("FX/" + effect.name);
 
     m_ui.BeginList(&m_focusedIdx);
-    m_ui.SpinBoxInt("Plane", m_planeIdx, 0, 3);
+    m_ui.SpinBoxInt("Plane", m_planeIdx, 0, m_registry.planes().size()-1);
     m_ui.Break();
     for (int i = 0; i < effect.params.size(); ++i) {
         auto& param = effect.params[i];
@@ -491,7 +491,7 @@ void MenuSystem::OutputMenu()
 {
     m_ui.MenuTitle("OUT");
     m_ui.BeginList(&m_focusedIdx);
-    m_ui.SpinBoxInt("Plane", m_planeIdx, 0, 3);
+    m_ui.SpinBoxInt("Plane", m_planeIdx, 0, m_registry.planes().size()-1);
     m_ui.Break();
     SubMenu("Mrs. Mask", [this](){ Mask(); });
     SubMenu("Mr. Mapping", [this](){ Mapping(); });
@@ -503,7 +503,7 @@ void MenuSystem::Mask()
 {
     m_ui.MenuTitle("OUT/Mask");
     m_ui.BeginList(&m_focusedIdx);
-    m_ui.SpinBoxInt("Plane", m_planeIdx, 0, 3);
+    m_ui.SpinBoxInt("Plane", m_planeIdx, 0, m_registry.planes().size()-1);
     m_ui.Break();
     m_ui.Text("some way to load image or create a mask...");
     m_ui.EndList();
@@ -513,7 +513,7 @@ void MenuSystem::Mapping()
 {
     m_ui.MenuTitle("OUT/Mapping");
     m_ui.BeginList(&m_focusedIdx);
-    m_ui.SpinBoxInt("Plane", m_planeIdx, 0, 7);
+    m_ui.SpinBoxInt("Plane", m_planeIdx, 0, m_registry.planes().size()-1);
     m_ui.Break();
     m_ui.SpinBoxVec2("TopLeft", m_registry.planes()[m_planeIdx].coords[3]); 
     m_ui.SpinBoxVec2("TopRight", m_registry.planes()[m_planeIdx].coords[2]); 
