@@ -112,7 +112,7 @@ public:
     void finalize();
     void showMedia(int mediaId);
     void update(float deltaTime);
-    void renderPlane(int planeId);
+    void renderPlane(int hdmiId);
     
 private:
     void subscribeToEvents();

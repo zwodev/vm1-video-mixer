@@ -24,12 +24,6 @@ struct MenuState {
     std::function<void()> func;
 };
 
-struct MenuItem {
-    std::string label;
-    std::vector<MenuItem> children;
-    std::function<void(int, int*)> func;
-};
-
 class MenuSystem
 {
 public:
@@ -66,7 +60,7 @@ private:
     void handleMenuHierachyNavigation();
 
 private:
-    void SubMenu(const std::string& label, std::function<void()> func);
+    bool SubMenu(const std::string& label, std::function<void()> func);
     void ClearSlot();
 
     void StartupScreen();
@@ -114,7 +108,8 @@ private:
     UI &m_ui;
     
     int m_id = 0;
-    int m_plane = 0;
+    int m_planeIdx = 0;
+    int m_effectIdx = 0;
     int m_focusedIdx = 0;
 
     MenuType m_currentMenuType = MT_StartupScreen;

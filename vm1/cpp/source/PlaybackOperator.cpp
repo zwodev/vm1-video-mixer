@@ -33,11 +33,11 @@ void PlaybackOperator::subscribeToEvents()
 
 void PlaybackOperator::initialize()
 {
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < 4; ++i) {
         m_planeMixers.push_back(PlaneMixer());
     } 
 
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < 4; ++i) {
         m_planeRenderers.push_back(new PlaneRenderer());
     }
 
@@ -229,11 +229,13 @@ void PlaybackOperator::showMedia(int mediaSlotId)
 
 
     float fadeTime = float(m_registry.settings().fadeTime); 
-    int planeId = (mediaSlotId / (MEDIA_BUTTON_COUNT / 2)) % 2;
+    //int planeId = (mediaSlotId / (MEDIA_BUTTON_COUNT / 2)) % 2;
+    int planeId = inputConfig->planeId;
+    int hdmiId = m_registry.planes()[planeId].hdmiId;
     m_planeMixers[planeId].setFadeTime(fadeTime);
 
-    if (m_registry.settings().hdmiOutputs[planeId].empty()) {
-        std::string message = "No HDMI-OUT" + std::to_string(planeId+1);
+    if (m_registry.settings().hdmiOutputs[hdmiId].empty()) {
+        std::string message = "No HDMI-OUT" + std::to_string(hdmiId);
         m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::NoDisplay, message));
         return;
     }
@@ -299,7 +301,7 @@ void PlaybackOperator::showMedia(int mediaSlotId)
 
         if (!m_registry.settings().useUvcCaptureDevice) {
             if (m_registry.settings().hdmiInputs[hdmiInputConfig->hdmiPort] != "1920x1080/30Hz") {
-                std::string message = "No HDMI-IN" + std::to_string(hdmiInputConfig->hdmiPort+1);
+                std::string message = "No HDMI-IN" + std::to_string(hdmiInputConfig->hdmiPort);
                 m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::NoDisplay, message));
                 return;
             }
@@ -473,34 +475,41 @@ void PlaybackOperator::update(float deltaTime)
     updateDeviceController();
 }
 
-void PlaybackOperator::renderPlane(int planeId)
+void PlaybackOperator::renderPlane(int hdmiId)
 {
     if (!m_isInitialized) return;
 
-    if (planeId >= m_planeRenderers.size()) return;
+    const auto& planes = m_registry.planes();
+    for (int i = 0; i < planes.size(); ++i) {
+        if (hdmiId == planes[i].hdmiId) {
+            if (i >= m_planeRenderers.size()) return;
+            
+            //printf("Render plane %d on HDMI %d\n", i, hdmiId);
+            float volume = float(m_registry.settings().volume) / 10.0f;
+            PlaneRenderer* planeRenderer = m_planeRenderers[i];
+            PlaneMixer& planeMixer = m_planeMixers[i];
+            
+            int fromId = planeMixer.fromId();
+            int toId = planeMixer.toId();
 
-    float volume = float(m_registry.settings().volume) / 10.0f;
-    PlaneRenderer* planeRenderer = m_planeRenderers[planeId];
-    PlaneMixer& planeMixer = m_planeMixers[planeId];
-    
-    int fromId = planeMixer.fromId();
-    int toId = planeMixer.toId();
+            GLuint texture0 = 0;
+            if (fromId >= 0) {
+                printf("From Texture\n");
+                texture0 = m_mediaPlayers[fromId]->texture();
+                //AudioStream* audioStream = m_audioStreams[fromId];
+                //if (audioStream) audioStream->setVolume((1.0f - planeMixer.mixValue()) * volume);
+            }
+            GLuint texture1 = 0;
+            if (toId >= 0) {
+                texture1 = m_mediaPlayers[toId]->texture();
+                //AudioStream* audioStream = m_audioStreams[toId];
+                //if (audioStream) audioStream->setVolume(planeMixer.mixValue() * volume);
+            }
 
-    GLuint texture0 = 0;
-    if (fromId >= 0) {
-        texture0 = m_mediaPlayers[fromId]->texture();
-        AudioStream* audioStream = m_audioStreams[fromId];
-        if (audioStream) audioStream->setVolume((1.0f - planeMixer.mixValue()) * volume);
+            planeRenderer->update(texture0, texture1, planeMixer.mixValue(), m_registry.planes()[i], m_registry.settings().hdmiRotation0);
+            //printf("Mix Value: %f\n", planeMixer.mixValue());
+        }
     }
-    GLuint texture1 = 0;
-    if (toId >= 0) {
-        texture1 = m_mediaPlayers[toId]->texture();
-        AudioStream* audioStream = m_audioStreams[toId];
-        if (audioStream) audioStream->setVolume(planeMixer.mixValue() * volume);
-    }
-
-    planeRenderer->update(texture0, texture1, planeMixer.mixValue(), m_registry.planeSettings(), m_registry.settings().hdmiRotation0);
-    //printf("Mix Value: %f\n", planeMixer.mixValue());
 }
 
 void PlaybackOperator::updateDeviceController()

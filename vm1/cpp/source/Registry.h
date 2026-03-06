@@ -36,6 +36,7 @@ public:
     virtual ~InputConfig() = 0;
 
     bool isActive = false;
+    int planeId = 0;
 
     template <class Archive>
     void serialize(Archive& ar) {}
@@ -320,7 +321,7 @@ struct PlaneSettings
     }
 
 
-    int screenId = 0;
+    int hdmiId = 0;
 
     std::vector<ShaderConfig> effects;
     std::vector<glm::vec2> coords = { glm::vec2(-1.0f, -1.0f),   // bottom left
@@ -420,7 +421,7 @@ public:
     Settings& settings() { return m_settings; }
     InputMappings& inputMappings() { return m_inputMappings; }
     MediaPool& mediaPool() { return m_mediaPool; }
-    PlaneSettings& planeSettings() { return m_planeSettings; }
+    auto& planes() { return m_planes; }
 
     void update(float deltaTime) {
         m_timeSinceLastHash += deltaTime;
@@ -491,5 +492,5 @@ private:
     Settings m_settings;
     InputMappings m_inputMappings;
     MediaPool m_mediaPool;
-    PlaneSettings m_planeSettings;
+    std::vector<PlaneSettings> m_planes = std::vector<PlaneSettings>(4);
 };

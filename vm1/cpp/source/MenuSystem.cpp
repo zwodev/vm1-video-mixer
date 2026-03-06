@@ -37,14 +37,16 @@ void MenuSystem::subscribeToEvents()
     });
 }
 
-void MenuSystem::SubMenu(const std::string& label, std::function<void()> func)
+bool MenuSystem::SubMenu(const std::string& label, std::function<void()> func)
 {
     bool selected = m_ui.Text(label);
     if  (selected && m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationRight)) {
         m_currentMenuPath.push_back(MenuState(m_focusedIdx, m_currentMenuFunc));
         m_focusedIdx = 0;
         m_currentMenuFunc = func;
+        return true;
     }
+    return false;
 }
 
 void MenuSystem::setMenu(MenuType menuType)
@@ -431,8 +433,7 @@ void MenuSystem::ControlMenu()
         m_ui.Text("Parameter 3");
     }
     m_ui.Break();
-    int p = 1;
-    m_ui.SpinBoxInt("Out Plane", p, 1, 4);
+    m_ui.SpinBoxInt("Out Plane", currentConfig->planeId , 0, 3);
     m_ui.EndList();
 }
 
@@ -446,25 +447,28 @@ void MenuSystem::FxMenu()
 {
     m_ui.MenuTitle("FX");
     m_ui.BeginList(&m_focusedIdx);
-    m_ui.SpinBoxInt("Plane", m_plane, 0, 7);
+    m_ui.SpinBoxInt("Plane", m_planeIdx, 0, 3);
     m_ui.Break();
-    auto& effects = m_registry.planeSettings().effects;
+    auto& effects = m_registry.planes()[m_planeIdx].effects;
     for (int i = 0; i < effects.size(); ++i) {
-        SubMenu(effects[i].name, [this](){ EffectControl(); });
+        bool isSelectedEffect = SubMenu(effects[i].name, [this](){ EffectControl(); });
+        if (isSelectedEffect) {
+            m_effectIdx = i;
+        }
     }
     m_ui.EndList();
 }
 
 void MenuSystem::EffectControl()
 {
-    
-    auto& effects = m_registry.planeSettings().effects;
-    int effectIndex = 0; // TODO: Save this in variable.
-    auto& effect = m_registry.planeSettings().effects[effectIndex];
+    auto& effects = m_registry.planes()[m_planeIdx].effects;
+    if (effects.empty()) return;
+
+    auto& effect = effects[m_effectIdx];
     m_ui.MenuTitle("FX/" + effect.name);
 
     m_ui.BeginList(&m_focusedIdx);
-    m_ui.SpinBoxInt("Plane", m_plane, 0, 7);
+    m_ui.SpinBoxInt("Plane", m_planeIdx, 0, 3);
     m_ui.Break();
     for (int i = 0; i < effect.params.size(); ++i) {
         auto& param = effect.params[i];
@@ -487,11 +491,11 @@ void MenuSystem::OutputMenu()
 {
     m_ui.MenuTitle("OUT");
     m_ui.BeginList(&m_focusedIdx);
-    m_ui.SpinBoxInt("Plane", m_plane, 0, 7);
+    m_ui.SpinBoxInt("Plane", m_planeIdx, 0, 3);
     m_ui.Break();
     SubMenu("Mrs. Mask", [this](){ Mask(); });
     SubMenu("Mr. Mapping", [this](){ Mapping(); });
-    SubMenu("HDMI Output", [this](){ HdmiSelection(); });
+    m_ui.SpinBoxInt("HDMI Output", m_registry.planes()[m_planeIdx].hdmiId, 0, 1);
     m_ui.EndList();
 }
 
@@ -499,7 +503,7 @@ void MenuSystem::Mask()
 {
     m_ui.MenuTitle("OUT/Mask");
     m_ui.BeginList(&m_focusedIdx);
-    m_ui.SpinBoxInt("Plane", m_plane, 0, 7);
+    m_ui.SpinBoxInt("Plane", m_planeIdx, 0, 3);
     m_ui.Break();
     m_ui.Text("some way to load image or create a mask...");
     m_ui.EndList();
@@ -509,20 +513,20 @@ void MenuSystem::Mapping()
 {
     m_ui.MenuTitle("OUT/Mapping");
     m_ui.BeginList(&m_focusedIdx);
-    m_ui.SpinBoxInt("Plane", m_plane, 0, 7);
+    m_ui.SpinBoxInt("Plane", m_planeIdx, 0, 7);
     m_ui.Break();
-    m_ui.SpinBoxVec2("TopLeft", m_registry.planeSettings().coords[3]); 
-    m_ui.SpinBoxVec2("TopRight", m_registry.planeSettings().coords[2]); 
-    m_ui.SpinBoxVec2("BottomRight", m_registry.planeSettings().coords[1]); 
-    m_ui.SpinBoxVec2("BottomLeft", m_registry.planeSettings().coords[0]); 
+    m_ui.SpinBoxVec2("TopLeft", m_registry.planes()[m_planeIdx].coords[3]); 
+    m_ui.SpinBoxVec2("TopRight", m_registry.planes()[m_planeIdx].coords[2]); 
+    m_ui.SpinBoxVec2("BottomRight", m_registry.planes()[m_planeIdx].coords[1]); 
+    m_ui.SpinBoxVec2("BottomLeft", m_registry.planes()[m_planeIdx].coords[0]); 
     m_ui.Break();
-    m_ui.SpinBoxInt("Rotation", m_registry.planeSettings().rotation,0, 360, 1);
-    m_ui.SpinBoxFloat("Scale", m_registry.planeSettings().scale, 0.0f, 10.0f, 0.1f);
-    m_ui.SpinBoxVec2("ScaleXY", m_registry.planeSettings().scaleXY);
-    m_ui.SpinBoxVec2("Translation", m_registry.planeSettings().translation);
+    m_ui.SpinBoxInt("Rotation", m_registry.planes()[m_planeIdx].rotation,0, 360, 1);
+    m_ui.SpinBoxFloat("Scale", m_registry.planes()[m_planeIdx].scale, 0.0f, 10.0f, 0.1f);
+    m_ui.SpinBoxVec2("ScaleXY", m_registry.planes()[m_planeIdx].scaleXY);
+    m_ui.SpinBoxVec2("Translation", m_registry.planes()[m_planeIdx].translation);
     m_ui.Break();
     if(m_ui.Action("Reset")) {
-        m_registry.planeSettings().resetMapping();
+        m_registry.planes()[m_planeIdx].resetMapping();
     }
     m_ui.EndList();
 }
