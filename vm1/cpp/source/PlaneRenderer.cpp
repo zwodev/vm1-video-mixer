@@ -76,11 +76,23 @@ void PlaneRenderer::createVertexBuffers()
 }
 
 void PlaneRenderer::updateVertexBuffers(ScreenRotation rotation, PlaneSettings& planeSettings) {
-    float angle = glm::radians(float(int(rotation) * 90));
+    float degrees = float(int(rotation) * 90) + planeSettings.rotation;
+    float angle = glm::radians(degrees);
+    // printf("degrees: %f\n", degrees);
+    float scale = planeSettings.scale;
+    glm::vec2 scaleXY = planeSettings.scaleXY;
+    glm::vec2 translation = planeSettings.translation;
+    
     glm::mat2x2 screenRotationMatrix(cos(angle), -sin(angle), sin(angle),  cos(angle));
+    glm::mat2x2 scaleMatrix(scale * scaleXY.x, 0.0f, 0.0f, scale * scaleXY.y);
     for (int i = 0; i < m_plane.size(); ++i) {
-        const glm::vec2& vertex = m_plane[i];
-        m_rotatedPlane[i] = screenRotationMatrix * (vertex + (planeSettings.coords[i] - m_plane[i]));
+        // const glm::vec2& vertex = m_plane[i];
+        // m_rotatedPlane[i] = screenRotationMatrix * (vertex + (planeSettings.coords[i] - m_plane[i]));
+        glm::vec2 v = m_plane[i];
+        v = screenRotationMatrix * v;
+        v = scaleMatrix * v;
+        v += translation;
+        m_rotatedPlane[i] = planeSettings.coords[i] + (v - m_plane[i]);
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, m_posVbo);
