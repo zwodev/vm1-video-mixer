@@ -55,7 +55,7 @@ int *colorForButtonState(ButtonState state)
   case SHADER:
     return yellow_dimmed;
   case MEDIABUTTON_SELECTED:
-    return blue_dimmed;
+    return blue;
   case YELLOW:
     return yellow;
   case GREEN:
@@ -85,7 +85,7 @@ void animateAllNeoPixels()
   for (int i = 0; i < NEOPIXEL_COUNT; ++i)
   {
     strip.setPixelColor(i, colorFromArray(red_dimmed));
-    delay(25);
+    delay(50);
     strip.show();
   }
 
@@ -94,8 +94,9 @@ void animateAllNeoPixels()
   for (int i = 0; i < NEOPIXEL_COUNT; ++i)
   {
     strip.setPixelColor(i, colorFromArray(black));
+    delay(50);
+    strip.show();
   }
-  strip.show();
 }
 
 
@@ -144,4 +145,36 @@ void updateNeoPixels()
   }
 
   strip.show();
+}
+
+void setMediaButtonLED(uint8_t buttonId, int* color)
+{
+  if (buttonId < 8){   // upper row
+    strip.setPixelColor(10 + (7-buttonId), colorFromArray(color));
+  } else {
+    strip.setPixelColor(19 + (buttonId-8), colorFromArray(color));
+  }
+}
+
+void animateActiveMediaSlotLED()
+{
+  if(lastPressedMediaButtonId <0) return;
+
+  unsigned long current_millis = millis();  
+  static long time = 0;
+  static float fadeValue = 0.0f;
+  
+  if (current_millis - time > 16)
+  {
+    time = current_millis;
+    fadeValue = 1.0f - abs(sin(millis()/500.0f));
+    float divider = 1.0f + fadeValue * (dimmed_divider - 1.0f);
+    int fadeColor[3] = {0,0,0};
+    int* color = colorForButtonState(deviceState.mediaButtons[lastPressedMediaButtonId]);
+    for(int i = 0; i < 3; i++){ 
+      fadeColor[i] = color[i] / (int)divider;
+    }
+    setMediaButtonLED(lastPressedMediaButtonId, fadeColor);
+    strip.show();
+  }
 }

@@ -21,6 +21,7 @@
 
 #define PRESSED 0
 #define RELEASED 1
+extern int8_t lastPressedMediaButtonId;
 
 void initButtonMatrix();
 void checkButtonMatrix();

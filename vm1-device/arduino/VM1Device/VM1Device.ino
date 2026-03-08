@@ -21,6 +21,7 @@
 
 DeviceBuffer deviceBuffer = {};   // output buffer for events. Gets cleared after events are sent via i2c
 DeviceState deviceState = {};     // state for the neopixel display, rotary encoder sensitivity etc.
+int8_t lastPressedMediaButtonId = -1;
 
 void showDebugMessage()
 {
@@ -73,6 +74,7 @@ void loop()
 {
   updateButtonMatrix();
   updateRotaryEncoders();
+  animateActiveMediaSlotLED();
 
   uint16_t analog0 = analogRead(A0_PIN);  // ToDo: filter analog inputs, add all four of them
   deviceBuffer.analogInput[0] = analog0;

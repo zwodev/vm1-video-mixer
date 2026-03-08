@@ -42,6 +42,9 @@ void checkButtonMatrix()
         {
             if (previousButtonMatrix[i][j] != currentButtonMatrix[i][j])
             {
+                if(buttonEventMap[i][j].eventType == EventType::MEDIA_BUTTON_EVENT) {
+                    lastPressedMediaButtonId = buttonEventMap[i][j].buttonId;
+                }
                 lastButtonEvent = buttonEventMap[i][j];
                 last_button_state = !currentButtonMatrix[i][j];
                 return;

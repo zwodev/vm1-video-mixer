@@ -7,12 +7,15 @@
 #define NEOPIXEL_COUNT 33
 
 extern Adafruit_NeoPixel strip;
+extern int8_t lastPressedMediaButtonId;
 
 void initNeoPixels();
 int *colorForButtonState(ButtonState state);
 uint32_t colorFromArray(int color[3]);
+void setMediaButtonLED(uint8_t buttonId, int* color);
 void animateAllNeoPixels();
 void updateNeoPixels();
+void animateActiveMediaSlotLED();
 
 
 
