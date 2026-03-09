@@ -59,7 +59,7 @@ public:
     bool SpinBoxFloat(const std::string& label, float& value, float minValue, float maxValue, float step = 0.01f);
     bool SpinBoxVec2(const std::string& label, glm::vec2& vec, float step = 0.1f);
     bool SpinBoxPlaneSelect(int& value, int minValue, int maxValue);
-    void previewPlanes(std::vector<PlaneSettings> planes);
+    void previewPlanes(std::vector<PlaneSettings> planes, int selectedPlane = -1);
 
     bool isValueChangeEventTriggered(ValueChangeEvent::Type eventType, int id);
     bool isNavigationEventTriggered(NavigationEvent::Type eventType);

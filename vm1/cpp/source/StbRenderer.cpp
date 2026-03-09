@@ -211,12 +211,74 @@ void StbRenderer::drawEmptyRect(int x0, int y0, int w, int h, Color color)
     }
 }
 
+void StbRenderer::drawEmptyCenteredRect(int x0, int y0, int w, int h, Color color) 
+{
+    int leftX = x0 - w / 2;
+    int topY = y0 - h / 2;
+    drawEmptyRect(leftX, topY, w, h, color);
+}
+
 void StbRenderer::drawPolygon(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3, Color c) 
+{
+    drawFilledTriangle(x0,y0, x1,y1, x2,y2, c);
+    drawFilledTriangle(x0,y0, x2,y2, x3,y3, c);
+}
+
+void StbRenderer::drawEmptyPolygon(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3, Color c) 
 {
     drawLine(x0, y0, x1, y1, c);
     drawLine(x1, y1, x2, y2, c);
     drawLine(x2, y2, x3, y3, c);
     drawLine(x3, y3, x0, y0, c);
+}
+
+void StbRenderer::drawFilledTriangle(
+    int x0, int y0,
+    int x1, int y1,
+    int x2, int y2,
+    Color c)
+{
+    auto swap = [](int& a, int& b){ int t=a; a=b; b=t; };
+
+    // sort vertices by y
+    if (y0 > y1) { swap(y0,y1); swap(x0,x1); }
+    if (y1 > y2) { swap(y1,y2); swap(x1,x2); }
+    if (y0 > y1) { swap(y0,y1); swap(x0,x1); }
+
+    auto drawScanline = [&](int y, int xa, int xb)
+    {
+        if (y < 0 || y >= m_img.height) return;
+
+        if (xa > xb) swap(xa, xb);
+
+        xa = std::max(xa,0);
+        xb = std::min(xb,m_img.width-1);
+
+        for(int x = xa; x <= xb; x++)
+            m_img.setPixel(x,y,c.r,c.g,c.b);
+    };
+
+    auto edgeInterp = [](int y0,int x0,int y1,int x1,int y) -> int
+    {
+        if (y1 == y0) return x0;
+        return (int)(x0 + (float)(x1-x0)*(y-y0)/(float)(y1-y0));
+    };
+
+    // bottom-flat part
+    for(int y = y0; y <= y1; y++)
+    {
+        int xa = edgeInterp(y0,x0,y2,x2,y);
+        int xb = edgeInterp(y0,x0,y1,x1,y);
+        drawScanline(y, xa, xb);
+    }
+
+    // top-flat part
+    for(int y = y1; y <= y2; y++)
+    {
+        int xa = edgeInterp(y0,x0,y2,x2,y);
+        int xb = edgeInterp(y1,x1,y2,x2,y);
+        drawScanline(y, xa, xb);
+    }
 }
 
 void StbRenderer::drawImage(const ImageBuffer& imageBuffer, int posX, int posY)
