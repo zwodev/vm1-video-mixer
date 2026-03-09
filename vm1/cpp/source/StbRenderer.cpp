@@ -211,6 +211,14 @@ void StbRenderer::drawEmptyRect(int x0, int y0, int w, int h, Color color)
     }
 }
 
+void StbRenderer::drawPolygon(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3, Color c) 
+{
+    drawLine(x0, y0, x1, y1, c);
+    drawLine(x1, y1, x2, y2, c);
+    drawLine(x2, y2, x3, y3, c);
+    drawLine(x3, y3, x0, y0, c);
+}
+
 void StbRenderer::drawImage(const ImageBuffer& imageBuffer, int posX, int posY)
 {
     if (!m_isEnabled) return;

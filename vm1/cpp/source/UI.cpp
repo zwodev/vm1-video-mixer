@@ -634,3 +634,33 @@ bool UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
     Text(newLabel);
     return hasChanged;
 }
+
+void UI::previewPlanes(std::vector<PlaneSettings> planes)
+{
+    // m_y+=20;
+    int i = 0;
+    float aspect = 16.0f/9.0f;
+    Color colors[] = {COLOR::YELLOW, COLOR::GREEN, COLOR::BLUE, COLOR::RED};
+    for(PlaneSettings p : planes) {
+        int x = p.hdmiId == 0 ? 50 :  m_stbRenderer.width() / 2 + 50;
+        float s = 30.0 * p.scale;
+        float tx = p.translation.x;
+        float ty = p.translation.y;
+        m_stbRenderer.drawPolygon(
+            (p.coords[0].x+tx) *  1.0f * aspect * s + x,
+            (p.coords[0].y+ty) * -1.0f          * s + m_y, 
+
+            (p.coords[1].x+tx) *  1.0f * aspect * s + x,
+            (p.coords[1].y+ty) * -1.0f          * s + m_y,
+
+            (p.coords[2].x+tx) *  1.0f * aspect * s + x,
+            (p.coords[2].y+ty) * -1.0f          * s + m_y,
+
+            (p.coords[3].x+tx) *  1.0f * aspect * s + x,
+            (p.coords[3].y+ty) * -1.0f          * s + m_y,
+            colors[i]
+        );
+        i++;
+    }       
+    // m_y += 20;
+}
