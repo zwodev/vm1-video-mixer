@@ -66,6 +66,14 @@ void KeyboardControllerSDL::update(SDL_Event& event)
             }
             return;
             break;
+        case SDLK_X:
+            m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxUp));
+            return;
+            break;
+        case SDLK_Z:
+            m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxDown));
+            return;
+            break;
         default:
             break;
         }
