@@ -85,6 +85,14 @@ void KeyboardControllerLinux::update(input_event& event)
                 }
                 return;
                 break;
+        case KEY_X:
+            m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxUp));
+            return;
+            break;
+        case KEY_Z:
+            m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxDown));
+            return;
+            break;
             default:
                 break;
         }

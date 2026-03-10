@@ -39,6 +39,23 @@ Shader::~Shader()
 	}
 }
 
+// void Shader::extractUniforms()
+// {
+// 	GLint uniformCount;
+// 	glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &uniformCount);
+// 	for(GLint i = 0; i < uniformCount; i++) {
+// 		GLint size, length;
+// 		GLenum type;
+// 		GLchar name[256];
+// 		glGetActiveUniform(program, i, 256, &length, &size, &type, name);
+// 	}
+// }
+
+// std::vector<Parameters> Shader::getUniforms()
+// {
+// 	// return vector
+// }
+
 bool Shader::link()
 {
 	glLinkProgram(m_shaderProgram);
