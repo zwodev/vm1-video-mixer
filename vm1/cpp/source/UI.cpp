@@ -635,8 +635,37 @@ bool UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
     return hasChanged;
 }
 
-void UI::previewPlanes(std::vector<PlaneSettings> planes, int selectedPlane)
+bool UI::previewPlanes(std::vector<PlaneSettings> planes, int& selectedPlane)
 {
+    bool hasChanged = false;
+    if(isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxDown))
+    {
+        hasChanged = true;
+        selectedPlane += 1;
+        if (selectedPlane > planes.size()-1) selectedPlane = 0;
+    }
+    else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxUp))
+    {
+        hasChanged = true;
+        selectedPlane -= 1;
+        if (selectedPlane < 0) selectedPlane = planes.size()-1;
+    }
+
+    static int selectedVertex = 0;
+    if(isNavigationEventTriggered(NavigationEvent::Type::NavigationDown))
+    {
+        // hasChanged = true;
+        selectedVertex += 1;
+        if (selectedVertex > planes[selectedPlane].coords.size()-1) selectedVertex = planes[selectedPlane].coords.size()-1;
+    }
+    else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationUp))
+    {
+        // hasChanged = true;
+        selectedVertex -= 1;
+        if (selectedVertex < 0) selectedVertex = 0;
+    }
+
+
     // draw screen outlines
     float width = float(m_stbRenderer.width()) / 2.5f;
     float aspectRatio = 16.0/9.0f;  // todo: get aspect ratio from screen(s)
@@ -646,12 +675,12 @@ void UI::previewPlanes(std::vector<PlaneSettings> planes, int selectedPlane)
                         float(m_stbRenderer.width()) - centerX[0]};
     float centerY = m_y + height / 2;
     
-    m_stbRenderer.drawEmptyCenteredRect(centerX[0], centerY, width, height, COLOR::WHITE);
-    m_stbRenderer.drawEmptyCenteredRect(centerX[1], centerY, width, height, COLOR::WHITE);
+    m_stbRenderer.drawEmptyCenteredRect(centerX[0], centerY, width, height, COLOR::GREY);
+    m_stbRenderer.drawEmptyCenteredRect(centerX[1], centerY, width, height, COLOR::GREY);
 
     // draw planes
     int i = 0;
-    Color colors[] = {COLOR::YELLOW, COLOR::GREEN, COLOR::BLUE, COLOR::RED};
+    Color colors[] = {COLOR::PLANE_0, COLOR::PLANE_1, COLOR::PLANE_2, COLOR::PLANE_3};
     for(PlaneSettings p : planes) {
         m_stbRenderer.drawPolygon(
             centerX[p.hdmiId] +  p.coords[0].x * width/2.0f  * p.scale + p.translation.x * width/2.0f, 
@@ -684,5 +713,34 @@ void UI::previewPlanes(std::vector<PlaneSettings> planes, int selectedPlane)
                                 fontSize, 
                                 COLOR::BLACK);
         i++;
-    }       
+    }
+
+    // outline selected plane
+    PlaneSettings p = planes[selectedPlane];
+    m_stbRenderer.drawEmptyPolygon(
+        centerX[p.hdmiId] +  p.coords[0].x * width/2.0f  * p.scale + p.translation.x * width/2.0f, 
+        centerY           + (p.coords[0].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
+
+        centerX[p.hdmiId] +  p.coords[1].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
+        centerY           + (p.coords[1].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
+
+        centerX[p.hdmiId] +  p.coords[2].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
+        centerY           + (p.coords[2].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
+
+        centerX[p.hdmiId] +  p.coords[3].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
+        centerY           + (p.coords[3].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
+        COLOR::WHITE
+    );
+
+    // highlight selected vertex
+    int s = p.coords.size()-1 - selectedVertex;
+    m_stbRenderer.drawRect( 
+        centerX[p.hdmiId] +  p.coords[s].x * width/2.0f  * p.scale + p.translation.x * width/2.0f - 5, 
+        centerY           + (p.coords[s].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0 - 5, 
+        10, 
+        10,
+        COLOR::RED);
+    
+    m_y += height;
+    return hasChanged;
 }

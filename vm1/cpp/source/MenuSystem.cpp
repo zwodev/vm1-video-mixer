@@ -461,7 +461,7 @@ void MenuSystem::ControlMenu()
     if(m_ui.SpinBoxInt("Out Plane", currentConfig->planeId , 0, m_registry.planes().size()-1)){
         m_planeIdx = currentConfig->planeId;
     }
-    m_ui.previewPlanes(m_registry.planes());
+    m_ui.previewPlanes(m_registry.planes(), currentConfig->planeId);
 
     m_ui.EndList();
 }
@@ -542,13 +542,13 @@ void MenuSystem::Mapping()
 {
     m_ui.MenuTitle("OUT/Mapping");
     m_ui.BeginList(&m_focusedIdx);
-    m_ui.SpinBoxPlaneSelect(m_planeIdx, 0, m_registry.planes().size()-1);
-    m_ui.Break();
+    // m_ui.SpinBoxPlaneSelect(m_planeIdx, 0, m_registry.planes().size()-1);
+    // m_ui.Break();
+    m_ui.previewPlanes(m_registry.planes(), m_planeIdx);
     m_ui.SpinBoxVec2("TopLeft", m_registry.planes()[m_planeIdx].coords[3]); 
     m_ui.SpinBoxVec2("TopRight", m_registry.planes()[m_planeIdx].coords[2]); 
     m_ui.SpinBoxVec2("BottomRight", m_registry.planes()[m_planeIdx].coords[1]); 
     m_ui.SpinBoxVec2("BottomLeft", m_registry.planes()[m_planeIdx].coords[0]); 
-    m_ui.previewPlanes(m_registry.planes());
     m_ui.Break();
     // m_ui.SpinBoxInt("Rotation", m_registry.planes()[m_planeIdx].rotation,0, 360, 1);
     m_ui.SpinBoxFloat("Scale", m_registry.planes()[m_planeIdx].scale, 0.0f, 10.0f, 0.1f);
