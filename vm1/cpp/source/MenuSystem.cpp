@@ -194,6 +194,28 @@ void MenuSystem::handleBankSwitching()
     }
 }
 
+void MenuSystem::handlePlaneSwitching()
+{
+    int planeId =  m_registry.inputMappings().getInputConfig(m_id)->planeId;
+    bool hasChanged = false;
+    int minValue = 0;
+    int maxValue = m_registry.planes().size() - 1;
+    if(m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxDown))
+    {
+        hasChanged = true;
+        planeId += 1;
+        if (planeId > maxValue) planeId = maxValue;
+    }
+    else if(m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxUp))
+    {
+        hasChanged = true;
+        planeId -= 1;
+        if (planeId < minValue) planeId = minValue;
+    }
+    m_registry.inputMappings().getInputConfig(m_id)->planeId = planeId;
+
+}
+
 void MenuSystem::goUpHierachy() {
     if (!m_currentMenuPath.empty()) {
         MenuState menuState = m_currentMenuPath.back();
@@ -215,15 +237,18 @@ void MenuSystem::render()
 {
     m_ui.NewFrame();
 
-    // Render bank information
+    // Render bank and plane information
     if (m_currentMenuType == MT_InfoMenu  || 
         m_currentMenuType == MT_SourceMenu || 
         m_currentMenuType == MT_ControlMenu ||
         m_currentMenuType == MT_ButtonMatrixMenu) 
     {
+        handlePlaneSwitching();
+
         int id16 = (m_id % MEDIA_BUTTON_COUNT) + 1;
         char bank = m_id / MEDIA_BUTTON_COUNT + 65; // "+65" to get ASCII code
-        std::string mediaSlotString = std::string(1, bank) + std::to_string(id16);
+        int plane =  m_registry.inputMappings().getInputConfig(m_id)->planeId;
+        std::string mediaSlotString = std::string(1, bank) + std::to_string(id16) + ">>" + std::to_string(plane + 1);
 
         m_ui.MenuInfo(mediaSlotString);
     }
@@ -243,7 +268,6 @@ void MenuSystem::render()
     handleUpAndDownKeys();    
     handleBankSwitching();
     handleMenuHierachyNavigation();
-
 
     m_ui.EndFrame();
 }

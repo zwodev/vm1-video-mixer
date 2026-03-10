@@ -635,32 +635,54 @@ bool UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
     return hasChanged;
 }
 
-void UI::previewPlanes(std::vector<PlaneSettings> planes)
+void UI::previewPlanes(std::vector<PlaneSettings> planes, int selectedPlane)
 {
-    // m_y+=20;
+    // draw screen outlines
+    float width = float(m_stbRenderer.width()) / 2.5f;
+    float aspectRatio = 16.0/9.0f;  // todo: get aspect ratio from screen(s)
+    float height = int(float(width) / aspectRatio);
+    
+    float centerX[2] = {float(m_stbRenderer.width()) / 4.0f,
+                        float(m_stbRenderer.width()) - centerX[0]};
+    float centerY = m_y + height / 2;
+    
+    m_stbRenderer.drawEmptyCenteredRect(centerX[0], centerY, width, height, COLOR::WHITE);
+    m_stbRenderer.drawEmptyCenteredRect(centerX[1], centerY, width, height, COLOR::WHITE);
+
+    // draw planes
     int i = 0;
-    float aspect = 16.0f/9.0f;
     Color colors[] = {COLOR::YELLOW, COLOR::GREEN, COLOR::BLUE, COLOR::RED};
     for(PlaneSettings p : planes) {
-        int x = p.hdmiId == 0 ? 50 :  m_stbRenderer.width() / 2 + 50;
-        float s = 30.0 * p.scale;
-        float tx = p.translation.x;
-        float ty = p.translation.y;
         m_stbRenderer.drawPolygon(
-            (p.coords[0].x+tx) *  1.0f * aspect * s + x,
-            (p.coords[0].y+ty) * -1.0f          * s + m_y, 
+            centerX[p.hdmiId] +  p.coords[0].x * width/2.0f  * p.scale + p.translation.x * width/2.0f, 
+            centerY           + (p.coords[0].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
 
-            (p.coords[1].x+tx) *  1.0f * aspect * s + x,
-            (p.coords[1].y+ty) * -1.0f          * s + m_y,
+            centerX[p.hdmiId] +  p.coords[1].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
+            centerY           + (p.coords[1].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
 
-            (p.coords[2].x+tx) *  1.0f * aspect * s + x,
-            (p.coords[2].y+ty) * -1.0f          * s + m_y,
+            centerX[p.hdmiId] +  p.coords[2].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
+            centerY           + (p.coords[2].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
 
-            (p.coords[3].x+tx) *  1.0f * aspect * s + x,
-            (p.coords[3].y+ty) * -1.0f          * s + m_y,
+            centerX[p.hdmiId] +  p.coords[3].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
+            centerY           + (p.coords[3].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
+
             colors[i]
         );
+
+        float polygonCenterX = 0.0f;
+        float polygonCenterY = 0.0f;
+        for(int i = 0; i < p.coords.size(); i++) {
+            polygonCenterX += (p.coords[i].x) * width/2.0f  * p.scale + p.translation.x * width/2.0f;
+            polygonCenterY += ((p.coords[i].y) * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0;
+        }
+        polygonCenterX /= p.coords.size();
+        polygonCenterY /= p.coords.size();
+        float fontSize = 24.0f;
+        m_stbRenderer.drawText(std::to_string(i+1), 
+                                centerX[p.hdmiId] + polygonCenterX, 
+                                centerY           + polygonCenterY - fontSize/4, 
+                                fontSize, 
+                                COLOR::BLACK);
         i++;
     }       
-    // m_y += 20;
 }
