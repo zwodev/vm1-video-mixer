@@ -141,9 +141,7 @@ void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, Pla
                 auto& floatParam = std::get<FloatParameter>(param);
                 std::string uniformName = effect.name + "_" + floatParam.name;
                 m_shader.setValue(uniformName.c_str(), floatParam.value);
-            } else if (std::holds_alternative<ColorParameter>(param)) {
-                // add ColorParam
-            }
+            } 
         }
     }
 

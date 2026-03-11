@@ -449,19 +449,27 @@ void MenuSystem::ControlMenu()
         std::string inputName = "Source: HDMI" + std::to_string(hdmiInputConfig->hdmiPort+1);
         m_ui.Text(inputName);
     }
-    else if (dynamic_cast<ShaderInputConfig*>(currentConfig)) {
+    else if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(currentConfig)) {
         m_ui.BeginList(&m_focusedIdx);
         m_ui.Text("Type: Shader");
-        m_ui.Text("Parameter 1");
-        m_ui.Text("Parameter 2");
-        m_ui.Text("Parameter 3");
+        m_ui.Text("Name: " + shaderInputConfig->fileName);
+        for (auto& param : shaderInputConfig->shaderConfig.params) {
+            if (std::holds_alternative<IntParameter>(param)) {
+                auto& intParam = std::get<IntParameter>(param);  
+                //m_ui.SpinBoxInt(intParam.name, intParam.value, intParam.min, intParam.max, intParam.step);
+                m_ui.SpinBoxInt(intParam.name, intParam.value, 0, 1000000, intParam.step);
+            } else if (std::holds_alternative<FloatParameter>(param)) {
+                auto& floatParam = std::get<FloatParameter>(param); 
+                m_ui.SpinBoxFloat(floatParam.name, floatParam.value, floatParam.min, floatParam.max, floatParam.step);
+            }
+        }
     }
     m_ui.Break();
     
-    if(m_ui.SpinBoxInt("Out Plane", currentConfig->planeId , 0, m_registry.planes().size()-1)){
-        m_planeIdx = currentConfig->planeId;
-    }
-    m_ui.previewPlanes(m_registry.planes());
+    // if(m_ui.SpinBoxInt("Out Plane", currentConfig->planeId , 0, m_registry.planes().size()-1)){
+    //     m_planeIdx = currentConfig->planeId;
+    // }
+    m_ui.previewPlanes(m_registry.planes(), currentConfig->planeId);
 
     m_ui.EndList();
 }
@@ -507,10 +515,7 @@ void MenuSystem::EffectControl()
         } else if (std::holds_alternative<FloatParameter>(param)) {
             auto& floatParam = std::get<FloatParameter>(param); 
             m_ui.SpinBoxFloat(floatParam.name, floatParam.value, floatParam.min, floatParam.max, floatParam.step);
-        } else if (std::holds_alternative<ColorParameter>(param)) {
-            // add ColorParam
-        }
-        
+        } 
     }
     m_ui.EndList(); 
 }

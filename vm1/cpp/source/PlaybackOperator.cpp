@@ -345,10 +345,12 @@ void PlaybackOperator::showMedia(int mediaSlotId)
             return;
         }
 
-        printf("Check 2!\n");
+        if (ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(m_mediaPlayers[playerId])) {
+            shaderInputConfig->shaderConfig = shaderPlayer->shaderConfig();
+            printf("####SIZE: %d\n", shaderInputConfig->shaderConfig.params.size());
+        }
         if (m_planeMixers[planeId].startFade(playerId))  {
             m_planeMixers[planeId].activate();
-            printf("Check 3!\n");
             m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
         }
     }
@@ -446,11 +448,7 @@ void PlaybackOperator::update(float deltaTime)
             ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(mediaPlayer);
             shaderPlayer->setCurrentTime(m_registry.settings().currentTime);
             shaderPlayer->setAnalogValue(m_registry.settings().analog0);
-            //CameraPlayer* cameraPlayer = dynamic_cast<CameraPlayer*>(mediaPlayer);
-            // if (cameraPlayer && cameraPlayer->isPlaying())
-            // {
-            //     cameraPlayer->update();
-            // }
+            shaderPlayer->setShaderUniforms(shaderInputConfig->shaderConfig);
         }
     }
 
@@ -495,18 +493,12 @@ void PlaybackOperator::renderPlane(int hdmiId)
         }
     }
     std::sort(activePlanesIds.begin(), activePlanesIds.end(), [](int x, int y){return x < y;});
-    // printf("ActivePlanes: ");
-    // for(int i = 0; i < activePlanesIds.size(); ++i) {
-    //     printf("%d, ", activePlanesIds[i]);
-    // }
-    // printf("\n");
 
     for (int i = 0; i < activePlanesIds.size(); ++i) {
         int currentPlaneId = activePlanesIds[i];
         if (hdmiId == planes[currentPlaneId].hdmiId) {
             if (i >= m_planeRenderers.size()) return;
             
-            //printf("Render plane %d on HDMI %d\n", i, hdmiId);
             float volume = float(m_registry.settings().volume) / 10.0f;
             PlaneRenderer* planeRenderer = m_planeRenderers[currentPlaneId];
             PlaneMixer& planeMixer = m_planeMixers[currentPlaneId];
@@ -528,7 +520,6 @@ void PlaybackOperator::renderPlane(int hdmiId)
             }
 
             planeRenderer->update(texture0, texture1, planeMixer.mixValue(), m_registry.planes()[currentPlaneId], m_registry.settings().hdmiRotation0);
-            //printf("Mix Value: %f\n", planeMixer.mixValue());
         }
     }
 }

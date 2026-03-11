@@ -13,6 +13,7 @@
 #include "Buffer.h"
 #include "Shader.h"
 #include "CaptureType.h"
+#include "ShaderConfig.h"
 
 #include <SDL3/SDL_render.h> 
 #include <SDL3/SDL_opengl.h>
@@ -22,12 +23,6 @@
 #include <linux/videodev2.h>
 
 #include <vector>
-
-
-    // virtual bool openFile(const std::string& fileName = std::string(), AudioStream* audioStream = nullptr) = 0;
-    // virtual void update() = 0;
-    // virtual void loadShaders() = 0;
-    // virtual void run() = 0;
 
 class ShaderPlayer : public MediaPlayer {
 public: 
@@ -39,6 +34,8 @@ public:
     void close() override;
     void finalize();
     void update() override;
+    const ShaderConfig& shaderConfig();
+    void setShaderUniforms(const ShaderConfig& shaderConfig);
     void setCurrentTime(float time);
     void setAnalogValue(float value);
 
@@ -51,7 +48,8 @@ private:
     void deactivateShader();
 
 private:
-    Shader m_customShader;
+    //Shader m_customShader;
+    ShaderConfig m_shaderConfig;
     float m_currentTime = 0.0f;
     float m_analogValue = 0.0f;
     bool m_isShaderReady = false;

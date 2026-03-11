@@ -60,7 +60,6 @@ public:
     template <class Archive>
     void serialize(Archive& ar)
     {
-        // ar(cereal::base_class<InputConfig>(this), fileName, looping, backwards);
         ar(
             cereal::base_class<InputConfig>(this),
             CEREAL_NVP(fileName),
@@ -84,7 +83,7 @@ public:
     {
         ar(
             cereal::base_class<InputConfig>(this), 
-            hdmiPort
+            CEREAL_NVP(hdmiPort)
         );
     }
 };
@@ -96,6 +95,7 @@ public:
     ~ShaderInputConfig() = default;
 
     std::string fileName;
+    ShaderConfig shaderConfig;
 
     template <class Archive>
     void serialize(Archive& ar)

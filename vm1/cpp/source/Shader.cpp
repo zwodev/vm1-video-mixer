@@ -39,17 +39,39 @@ Shader::~Shader()
 	}
 }
 
-// void Shader::extractUniforms()
-// {
-// 	GLint uniformCount;
-// 	glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &uniformCount);
-// 	for(GLint i = 0; i < uniformCount; i++) {
-// 		GLint size, length;
-// 		GLenum type;
-// 		GLchar name[256];
-// 		glGetActiveUniform(program, i, 256, &length, &size, &type, name);
-// 	}
-// }
+void Shader::createShaderConfigFromUniforms()
+{
+	GLint uniformCount;
+	glGetProgramiv(m_shaderProgram, GL_ACTIVE_UNIFORMS, &uniformCount);
+	for(GLint i = 0; i < uniformCount; i++) {
+		GLint size, length;
+		GLenum type;
+		GLchar name[256];
+		glGetActiveUniform(m_shaderProgram, i, 256, &length, &size, &type, name);
+
+		printf("############");
+		printf("Size: %d\n", size);
+		printf("Name: %s\n", name);
+		if (size != 1) {
+			SDL_Log("Uniforms of size > 0 (arrays/structs) are not supported.\n");
+			continue;
+		}
+
+		switch (type) {
+			case GL_FLOAT:
+				m_shaderConfig.params.push_back(FloatParameter(std::string(name), 0.0f));
+				break;
+			case GL_FLOAT_VEC2:
+				m_shaderConfig.params.push_back(Vec2Parameter(std::string(name), 0.0f, 0.0f));
+				break;
+			case GL_INT:
+				m_shaderConfig.params.push_back(IntParameter(std::string(name), 0));
+				break;
+			default:
+				SDL_Log("This uniform type is not supported: %d\n", type);
+		}
+	}
+}
 
 // std::vector<Parameters> Shader::getUniforms()
 // {
@@ -104,7 +126,11 @@ bool Shader::load(const char* vertFilename, const char* fragFilename){
 
 	glAttachShader(m_shaderProgram, vertShader);
 	glAttachShader(m_shaderProgram, fragShader);
-	link();
+	if (link()) {
+		activate();
+		createShaderConfigFromUniforms();
+		deactivate();
+	}
 	glBindAttribLocation(m_shaderProgram, 0, "in_Position");
 	glBindAttribLocation(m_shaderProgram, 1, "in_TexCoord");
 
@@ -237,6 +263,9 @@ void Shader::deactivate()
 	glUseProgram(0);
 }
 
-
+const ShaderConfig& Shader::shaderConfig()
+{
+	return m_shaderConfig;
+}
 
 

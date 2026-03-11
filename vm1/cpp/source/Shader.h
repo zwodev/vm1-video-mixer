@@ -10,6 +10,8 @@
 
 #include <GLES3/gl3.h>
 
+#include <ShaderConfig.h>
+
 class Shader {
 public:
     Shader();
@@ -23,12 +25,16 @@ public:
     bool setValue(const char* locName, GLint value);
     void activate();
     void deactivate();
+    const ShaderConfig& shaderConfig();
     
 private:
     GLuint loadShaderByType(const char* filename, GLenum shaderType);
     bool link();
+    void createShaderConfigFromUniforms();
     void destroyShaderProg(GLuint shaderProg);
+    
 
 private:
     GLuint m_shaderProgram = 0;
+    ShaderConfig m_shaderConfig;
 };

@@ -1,5 +1,6 @@
 #include "UI.h"
 #include "VM1DeviceDefinitions.h"
+#include "StringHelper.h"
 
 UI::UI(StbRenderer &stbRenderer, EventBus &eventBus) : 
     m_stbRenderer(stbRenderer), 
@@ -585,7 +586,7 @@ bool UI::SpinBoxFloat(const std::string& label, float& value, float minValue, fl
         else if (value > maxValue) value = maxValue;
     }
 
-    std::string newLabel = label + ": " + std::to_string(value);
+    std::string newLabel = label + ": " + strhlpr::formatFloat(value, 2);
     Text(newLabel);
     return hasChanged;
 }
@@ -630,7 +631,7 @@ bool UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
         // else if (value > maxValue) value = maxValue;
     }
 
-    std::string newLabel = label + ": " + std::to_string(vec.x)+ "/" + std::to_string(vec.y);;
+    std::string newLabel = label + ": " + strhlpr::formatFloat(vec.x, 2)+ "/" + strhlpr::formatFloat(vec.y, 2);;
     Text(newLabel);
     return hasChanged;
 }
@@ -650,9 +651,13 @@ void UI::previewPlanes(std::vector<PlaneSettings> planes, int selectedPlane)
     m_stbRenderer.drawEmptyCenteredRect(centerX[1], centerY, width, height, COLOR::WHITE);
 
     // draw planes
-    int i = 0;
     Color colors[] = {COLOR::YELLOW, COLOR::GREEN, COLOR::BLUE, COLOR::RED};
-    for(PlaneSettings p : planes) {
+    for(int i = 0; i < planes.size(); ++i) {
+        // only show selected plane
+        if (selectedPlane >= 0 && selectedPlane != i) continue;
+
+        const PlaneSettings& p = planes[i];
+
         m_stbRenderer.drawPolygon(
             centerX[p.hdmiId] +  p.coords[0].x * width/2.0f  * p.scale + p.translation.x * width/2.0f, 
             centerY           + (p.coords[0].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
@@ -683,6 +688,5 @@ void UI::previewPlanes(std::vector<PlaneSettings> planes, int selectedPlane)
                                 centerY           + polygonCenterY - fontSize/4, 
                                 fontSize, 
                                 COLOR::BLACK);
-        i++;
     }       
 }

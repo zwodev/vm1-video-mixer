@@ -20,6 +20,7 @@
 
 #include <iostream>
 #include <math.h>
+#include <variant>
 
 #include <SDL3/SDL.h>
 #include <GLES3/gl31.h>
@@ -47,7 +48,7 @@ ShaderPlayer::~ShaderPlayer()
 bool ShaderPlayer::openFile(const std::string& fileName, AudioStream* audioStream)
 {
     printf("Load Custom Shader: %s\n", fileName.c_str());
-    m_isShaderReady = m_customShader.load("shaders/pass.vert", fileName.c_str());
+    m_isShaderReady = m_shader.load("shaders/pass.vert", fileName.c_str());
     return true;
 }
 
@@ -56,7 +57,7 @@ void ShaderPlayer::close()
     MediaPlayer::close();
 
     if (m_isShaderReady) {
-        m_customShader = Shader();
+        m_shader = Shader();
         m_isShaderReady = false;
     }
 }
@@ -67,8 +68,6 @@ void ShaderPlayer::finalize()
 
 void ShaderPlayer::loadShaders()
 {
-    //printf("Load Shaders!\n");
-    //m_customShader.load("shaders/pass.vert", "shaders/custom.frag");
 }
 
 void ShaderPlayer::run()
@@ -78,12 +77,12 @@ void ShaderPlayer::run()
 
 void ShaderPlayer::activateShader()
 {
-    m_customShader.activate();
+    m_shader.activate();
 }
 
 void ShaderPlayer::deactivateShader()
 {
-    m_customShader.deactivate();
+    m_shader.deactivate();
 }
 
 void ShaderPlayer::setCurrentTime(float time)
@@ -108,27 +107,20 @@ void ShaderPlayer::render()
 
     glBindVertexArray(m_vao);
 
-    // glActiveTexture(GL_TEXTURE0);
-    // if (m_captureType == CaptureType::CT_CSI || m_captureType == CaptureType::CT_WEBCAM) {
-    //     glBindTexture(GL_TEXTURE_2D, m_yuvTextures[0]);
-    //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    //     GLHelper::glEGLImageTargetTexture2DOESFunc(GL_TEXTURE_2D, m_yuvImages[0]);
-    // }
-    // else {
-    //     glBindTexture(GL_TEXTURE_2D, m_nonZeroCopyTextureId);
-    //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    // }
     //m_shader.bindUniformLocation("inputTexture", 0);
-    m_customShader.setValue("iTime", m_currentTime);
-    m_customShader.setValue("iAnalog0", m_analogValue);
-    
+    //m_shader.setValue("iTime", m_currentTime);
+    //m_shader.setValue("iAnalog0", m_analogValue);
 
+    for (const auto& param : m_shaderConfig.params) {
+        if (std::holds_alternative<IntParameter>(param)) {
+            auto& intParam = std::get<IntParameter>(param);  
+            m_shader.setValue(intParam.name.c_str(), intParam.value);
+        } else if (std::holds_alternative<FloatParameter>(param)) {
+            auto& floatParam = std::get<FloatParameter>(param); 
+            m_shader.setValue(floatParam.name.c_str(), floatParam.value);
+        }
+    }
+    
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glBindVertexArray(0);
@@ -141,4 +133,14 @@ void ShaderPlayer::render()
 void ShaderPlayer::update()
 {
     if (m_isShaderReady) render();
+}
+
+const ShaderConfig& ShaderPlayer::shaderConfig()
+{
+    return m_shader.shaderConfig();
+}
+
+void ShaderPlayer::setShaderUniforms(const ShaderConfig& shaderConfig)
+{
+    m_shaderConfig = shaderConfig;
 }
