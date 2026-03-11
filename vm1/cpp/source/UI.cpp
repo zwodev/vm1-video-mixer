@@ -636,8 +636,37 @@ bool UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
     return hasChanged;
 }
 
-void UI::previewPlanes(std::vector<PlaneSettings> planes, int selectedPlane)
+bool UI::previewPlanes(std::vector<PlaneSettings> planes, int& selectedPlane)
 {
+    bool hasChanged = false;
+    if(isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxDown))
+    {
+        hasChanged = true;
+        selectedPlane += 1;
+        if (selectedPlane > planes.size()-1) selectedPlane = 0;
+    }
+    else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxUp))
+    {
+        hasChanged = true;
+        selectedPlane -= 1;
+        if (selectedPlane < 0) selectedPlane = planes.size()-1;
+    }
+
+    static int selectedVertex = 0;
+    if(isNavigationEventTriggered(NavigationEvent::Type::NavigationDown))
+    {
+        // hasChanged = true;
+        selectedVertex += 1;
+        if (selectedVertex > planes[selectedPlane].coords.size()-1) selectedVertex = planes[selectedPlane].coords.size()-1;
+    }
+    else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationUp))
+    {
+        // hasChanged = true;
+        selectedVertex -= 1;
+        if (selectedVertex < 0) selectedVertex = 0;
+    }
+
+
     // draw screen outlines
     float width = float(m_stbRenderer.width()) / 2.5f;
     float aspectRatio = 16.0/9.0f;  // todo: get aspect ratio from screen(s)
@@ -647,11 +676,11 @@ void UI::previewPlanes(std::vector<PlaneSettings> planes, int selectedPlane)
                         float(m_stbRenderer.width()) - centerX[0]};
     float centerY = m_y + height / 2;
     
-    m_stbRenderer.drawEmptyCenteredRect(centerX[0], centerY, width, height, COLOR::WHITE);
-    m_stbRenderer.drawEmptyCenteredRect(centerX[1], centerY, width, height, COLOR::WHITE);
+    m_stbRenderer.drawEmptyCenteredRect(centerX[0], centerY, width, height, COLOR::GREY);
+    m_stbRenderer.drawEmptyCenteredRect(centerX[1], centerY, width, height, COLOR::GREY);
 
     // draw planes
-    Color colors[] = {COLOR::YELLOW, COLOR::GREEN, COLOR::BLUE, COLOR::RED};
+    Color colors[] = {COLOR::PLANE_0, COLOR::PLANE_1, COLOR::PLANE_2, COLOR::PLANE_3};
     for(int i = 0; i < planes.size(); ++i) {
         // only show selected plane
         if (selectedPlane >= 0 && selectedPlane != i) continue;

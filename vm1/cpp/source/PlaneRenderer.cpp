@@ -88,11 +88,11 @@ void PlaneRenderer::updateVertexBuffers(ScreenRotation rotation, PlaneSettings& 
     for (int i = 0; i < m_plane.size(); ++i) {
         // const glm::vec2& vertex = m_plane[i];
         // m_rotatedPlane[i] = screenRotationMatrix * (vertex + (planeSettings.coords[i] - m_plane[i]));
-        glm::vec2 v = m_plane[i];
-        v = screenRotationMatrix * v;
+        glm::vec2 v = planeSettings.coords[i];
         v = scaleMatrix * v;
         v += translation;
-        m_rotatedPlane[i] = planeSettings.coords[i] + (v - m_plane[i]);
+        v = screenRotationMatrix * v;
+        m_rotatedPlane[i] = v;
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, m_posVbo);

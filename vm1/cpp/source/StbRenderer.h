@@ -54,6 +54,10 @@ namespace COLOR
     static Color YELLOW = {255, 255, 0};
     static Color FOREGROUND = COLOR::WHITE;
     static Color INVERTED = COLOR::BLACK;
+    static Color PLANE_0 = {149, 225, 110};
+    static Color PLANE_1 = {121, 193, 145};
+    static Color PLANE_2 = {94, 161, 180};
+    static Color PLANE_3 = {67, 130, 214};
 };
 
 /**
