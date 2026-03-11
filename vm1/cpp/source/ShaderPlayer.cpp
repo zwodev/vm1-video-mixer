@@ -111,7 +111,9 @@ void ShaderPlayer::render()
     //m_shader.setValue("iTime", m_currentTime);
     //m_shader.setValue("iAnalog0", m_analogValue);
 
-    for (const auto& param : m_shaderConfig.params) {
+    for (const auto& kv : m_shaderConfig.params) {
+        const std::string& name = kv.first;
+        const auto& param = kv.second;
         if (std::holds_alternative<IntParameter>(param)) {
             auto& intParam = std::get<IntParameter>(param);  
             m_shader.setValue(intParam.name.c_str(), intParam.value);

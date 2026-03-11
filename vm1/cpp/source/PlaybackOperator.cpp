@@ -446,9 +446,18 @@ void PlaybackOperator::update(float deltaTime)
         else if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(inputConfig))
         {
             ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(mediaPlayer);
-            shaderPlayer->setCurrentTime(m_registry.settings().currentTime);
-            shaderPlayer->setAnalogValue(m_registry.settings().analog0);
-            shaderPlayer->setShaderUniforms(shaderInputConfig->shaderConfig);
+            //shaderPlayer->setCurrentTime(m_registry.settings().currentTime);
+            //shaderPlayer->setAnalogValue(m_registry.settings().analog0);
+            ShaderConfig& shaderConfig = shaderInputConfig->shaderConfig;
+            if (shaderConfig.params.contains("iTime")) {
+                auto& param = shaderConfig.params["iTime"];
+                if (std::holds_alternative<FloatParameter>(param)) {
+                    auto& intParam = std::get<FloatParameter>(param);
+                    intParam.value = m_registry.settings().currentTime;
+                }
+            } 
+
+            shaderPlayer->setShaderUniforms(shaderConfig);
         }
     }
 

@@ -196,24 +196,25 @@ void MenuSystem::handleBankSwitching()
 
 void MenuSystem::handlePlaneSwitching()
 {
-    int planeId =  m_registry.inputMappings().getInputConfig(m_id)->planeId;
-    bool hasChanged = false;
-    int minValue = 0;
-    int maxValue = m_registry.planes().size() - 1;
-    if(m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxDown))
-    {
-        hasChanged = true;
-        planeId += 1;
-        if (planeId > maxValue) planeId = maxValue;
+    InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_id);
+    if (inputConfig) {
+        int& planeId = inputConfig->planeId;
+        bool hasChanged = false;
+        int minValue = 0;
+        int maxValue = m_registry.planes().size() - 1;
+        if(m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxDown))
+        {
+            hasChanged = true;
+            planeId += 1;
+            if (planeId > maxValue) planeId = maxValue;
+        }
+        else if(m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxUp))
+        {
+            hasChanged = true;
+            planeId -= 1;
+            if (planeId < minValue) planeId = minValue;
+        }
     }
-    else if(m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxUp))
-    {
-        hasChanged = true;
-        planeId -= 1;
-        if (planeId < minValue) planeId = minValue;
-    }
-    m_registry.inputMappings().getInputConfig(m_id)->planeId = planeId;
-
 }
 
 void MenuSystem::goUpHierachy() {
@@ -247,8 +248,13 @@ void MenuSystem::render()
 
         int id16 = (m_id % MEDIA_BUTTON_COUNT) + 1;
         char bank = m_id / MEDIA_BUTTON_COUNT + 65; // "+65" to get ASCII code
-        int plane =  m_registry.inputMappings().getInputConfig(m_id)->planeId;
-        std::string mediaSlotString = std::string(1, bank) + std::to_string(id16) + ">>" + std::to_string(plane + 1);
+
+        std::string mediaSlotString = std::string(1, bank) + std::to_string(id16);
+        InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_id);
+        if (inputConfig) {
+            int plane =  inputConfig->planeId;
+            mediaSlotString += ">>" + std::to_string(plane + 1);
+        }
 
         m_ui.MenuInfo(mediaSlotString);
     }
@@ -453,11 +459,11 @@ void MenuSystem::ControlMenu()
         m_ui.BeginList(&m_focusedIdx);
         m_ui.Text("Type: Shader");
         m_ui.Text("Name: " + shaderInputConfig->fileName);
-        for (auto& param : shaderInputConfig->shaderConfig.params) {
+        for (auto& kv : shaderInputConfig->shaderConfig.params) {
+            auto& param = kv.second;
             if (std::holds_alternative<IntParameter>(param)) {
                 auto& intParam = std::get<IntParameter>(param);  
-                //m_ui.SpinBoxInt(intParam.name, intParam.value, intParam.min, intParam.max, intParam.step);
-                m_ui.SpinBoxInt(intParam.name, intParam.value, 0, 1000000, intParam.step);
+                m_ui.SpinBoxInt(intParam.name, intParam.value, intParam.min, intParam.max, intParam.step);
             } else if (std::holds_alternative<FloatParameter>(param)) {
                 auto& floatParam = std::get<FloatParameter>(param); 
                 m_ui.SpinBoxFloat(floatParam.name, floatParam.value, floatParam.min, floatParam.max, floatParam.step);
@@ -466,6 +472,7 @@ void MenuSystem::ControlMenu()
     }
     m_ui.Break();
     
+    // NOTE: Testing -> Preview only the plane that this slot is associated with
     // if(m_ui.SpinBoxInt("Out Plane", currentConfig->planeId , 0, m_registry.planes().size()-1)){
     //     m_planeIdx = currentConfig->planeId;
     // }
@@ -507,8 +514,9 @@ void MenuSystem::EffectControl()
     m_ui.BeginList(&m_focusedIdx);
     m_ui.SpinBoxPlaneSelect(m_planeIdx, 0, m_registry.planes().size()-1);
     m_ui.Break();
-    for (int i = 0; i < effect.params.size(); ++i) {
-        auto& param = effect.params[i];
+    for (auto& kv : effect.params) {
+        const std::string& name = kv.first;
+        auto& param = kv.second;
         if (std::holds_alternative<IntParameter>(param)) {
             auto& intParam = std::get<IntParameter>(param);  
             m_ui.SpinBoxInt(intParam.name, intParam.value, intParam.min, intParam.max, intParam.step);

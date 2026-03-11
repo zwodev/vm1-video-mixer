@@ -132,7 +132,9 @@ void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, Pla
     // Set mix value
     m_shader.setValue("mixValue", mixValue); 
     for (auto& effect : effects) {
-        for (auto& param : effect.params) {
+        for (auto& kv : effect.params) {
+            const std::string& name = kv.first;
+            auto& param = kv.second;
             if (std::holds_alternative<IntParameter>(param)) {
                 auto& intParam = std::get<IntParameter>(param);
                 std::string uniformName = effect.name + "_" + intParam.name;

@@ -49,9 +49,6 @@ void Shader::createShaderConfigFromUniforms()
 		GLchar name[256];
 		glGetActiveUniform(m_shaderProgram, i, 256, &length, &size, &type, name);
 
-		printf("############");
-		printf("Size: %d\n", size);
-		printf("Name: %s\n", name);
 		if (size != 1) {
 			SDL_Log("Uniforms of size > 0 (arrays/structs) are not supported.\n");
 			continue;
@@ -59,13 +56,13 @@ void Shader::createShaderConfigFromUniforms()
 
 		switch (type) {
 			case GL_FLOAT:
-				m_shaderConfig.params.push_back(FloatParameter(std::string(name), 0.0f));
+				m_shaderConfig.params[name] = FloatParameter(std::string(name), 0.0f, -1000.0f, 1000.0f);
 				break;
 			case GL_FLOAT_VEC2:
-				m_shaderConfig.params.push_back(Vec2Parameter(std::string(name), 0.0f, 0.0f));
+				m_shaderConfig.params[name] = Vec2Parameter(std::string(name), 0.0f, 0.0f);
 				break;
 			case GL_INT:
-				m_shaderConfig.params.push_back(IntParameter(std::string(name), 0));
+				m_shaderConfig.params[name] = IntParameter(std::string(name), 0);
 				break;
 			default:
 				SDL_Log("This uniform type is not supported: %d\n", type);

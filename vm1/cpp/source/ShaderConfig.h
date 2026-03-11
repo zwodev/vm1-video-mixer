@@ -7,11 +7,13 @@
 
 #include <cereal/types/memory.hpp>
 #include <cereal/types/vector.hpp>
+#include <cereal/types/map.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/variant.hpp>
 
 struct IntParameter
 {
+    IntParameter() = default;
     IntParameter(const std::string& name, int value, int min = 0, int max = 100, int step = 1) {
         this->name = name;
         this->value = value;
@@ -41,6 +43,7 @@ struct IntParameter
 
 struct FloatParameter
 {
+    FloatParameter() = default;
     FloatParameter(const std::string& name, float value, float min = 0.0f, float max = 1.0f, float step = 0.01f) {
         this->name = name;
         this->value = value;
@@ -71,6 +74,7 @@ struct FloatParameter
 
 struct Vec2Parameter
 {
+    Vec2Parameter() = default;
     Vec2Parameter(const std::string& name, float x, float y) {
         this->name = name;
         this->x = x;
@@ -94,6 +98,7 @@ struct Vec2Parameter
 
 struct Vec3Parameter
 {
+    Vec3Parameter() = default;
     Vec3Parameter(const std::string& name, float x, float y, float z) {
         this->name = name;
         this->x = x;
@@ -120,6 +125,7 @@ struct Vec3Parameter
 
 // struct ColorParameter
 // {
+//     ColorParameter() = default;
 //     ColorParameter(const std::string& name, float r, float g, float b, float a = 1.0f) {
 //         this->name = name;
 //         this->r = r;
@@ -143,7 +149,7 @@ struct ShaderConfig
     }
 
     std::string name;
-    std::vector<std::variant<IntParameter, FloatParameter, Vec2Parameter, Vec3Parameter>> params;
+    std::map<std::string, std::variant<IntParameter, FloatParameter, Vec2Parameter, Vec3Parameter>> params;
 
     template <class Archive>
     void serialize(Archive& ar)
