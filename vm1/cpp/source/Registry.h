@@ -312,6 +312,12 @@ namespace glm {
 
 struct PlaneSettings
 {
+    enum BlendMode {
+        BM_None,
+        BM_Alpha,
+        BM_Multiply
+    };
+
     PlaneSettings() {
         ShaderConfig colorCorrectionShaderConfig("ColorCorrection");
         colorCorrectionShaderConfig.params["Brightness"] = FloatParameter("Brightness", 0.0f, -1.0f, 1.0f);
@@ -333,8 +339,11 @@ struct PlaneSettings
 
 
     int hdmiId = 0;
-
+    BlendMode blendMode = BlendMode::BM_None;
+    float alpha = 1.0f;
     std::vector<ShaderConfig> effects;
+
+    // Mapping
     std::vector<glm::vec2> coords = { glm::vec2(-1.0f, -1.0f),   // bottom left
                                       glm::vec2(1.0f, -1.0f),    // bottom right
                                       glm::vec2(1.0f,  1.0f),    // top right
@@ -349,13 +358,15 @@ struct PlaneSettings
     void serialize(Archive &ar)
     {
         ar(
+            CEREAL_NVP(hdmiId),
+            CEREAL_NVP(blendMode),
+            CEREAL_NVP(alpha),
             // CEREAL_NVP(effects),
             CEREAL_NVP(coords),
             // CEREAL_NVP(rotation),
             CEREAL_NVP(scale),
             // CEREAL_NVP(scaleXY),
-            CEREAL_NVP(translation),
-            CEREAL_NVP(hdmiId)
+            CEREAL_NVP(translation)
         );
     }
 };

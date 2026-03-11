@@ -537,6 +537,8 @@ void MenuSystem::OutputMenu()
     m_ui.Break();
     SubMenu("Mrs. Mask", [this](){ Mask(); });
     SubMenu("Mr. Mapping", [this](){ Mapping(); });
+    m_ui.SpinBoxInt("Blend Mode", (int&)m_registry.planes()[m_planeIdx].blendMode, 0, 2);
+    m_ui.SpinBoxFloat("Opacity", m_registry.planes()[m_planeIdx].alpha, 0.0f, 1.0f);
     m_ui.SpinBoxInt("HDMI Output", m_registry.planes()[m_planeIdx].hdmiId, 0, 1);
     m_ui.EndList();
 }

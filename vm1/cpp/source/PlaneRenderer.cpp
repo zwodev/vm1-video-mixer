@@ -130,7 +130,8 @@ void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, Pla
     m_shader.bindUniformLocation("inputTexture1", 1);
 
     // Set mix value
-    m_shader.setValue("mixValue", mixValue); 
+    m_shader.setValue("mixValue", mixValue);
+    m_shader.setValue("alpha", planeSettings.alpha);
     for (auto& effect : effects) {
         for (auto& kv : effect.params) {
             const std::string& name = kv.first;
@@ -145,6 +146,20 @@ void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, Pla
                 m_shader.setValue(uniformName.c_str(), floatParam.value);
             } 
         }
+    }
+
+    switch (planeSettings.blendMode) {
+        case PlaneSettings::BlendMode::BM_Alpha:
+            glEnable(GL_BLEND); 
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            break;
+        case PlaneSettings::BlendMode::BM_Multiply:
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_DST_COLOR, GL_ZERO);
+            break;
+        default:
+            glDisable(GL_BLEND);
+            break;
     }
 
     //glDrawArrays(GL_TRIANGLES, 0, 6);
