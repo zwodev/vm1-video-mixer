@@ -448,6 +448,7 @@ void PlaybackOperator::update(float deltaTime)
             ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(mediaPlayer);
             //shaderPlayer->setCurrentTime(m_registry.settings().currentTime);
             //shaderPlayer->setAnalogValue(m_registry.settings().analog0);
+            // TODO: Move to registry, maybe "Animation System"
             ShaderConfig& shaderConfig = shaderInputConfig->shaderConfig;
             if (shaderConfig.params.contains("iTime")) {
                 auto& param = shaderConfig.params["iTime"];

@@ -340,7 +340,7 @@ struct PlaneSettings
 
     int hdmiId = 0;
     BlendMode blendMode = BlendMode::BM_None;
-    float alpha = 1.0f;
+    float opacity = 1.0f;
     std::vector<ShaderConfig> effects;
 
     // Mapping
@@ -360,7 +360,7 @@ struct PlaneSettings
         ar(
             CEREAL_NVP(hdmiId),
             CEREAL_NVP(blendMode),
-            CEREAL_NVP(alpha),
+            CEREAL_NVP(opacity),
             // CEREAL_NVP(effects),
             CEREAL_NVP(coords),
             // CEREAL_NVP(rotation),

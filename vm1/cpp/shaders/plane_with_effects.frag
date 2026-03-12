@@ -20,7 +20,7 @@ out vec4 fragColor;
 uniform sampler2D inputTexture0;
 uniform sampler2D inputTexture1;
 uniform float mixValue;
-uniform float alpha;
+uniform float opacity;
 
 // effects
 uniform float ColorCorrection_Brightness;
@@ -53,5 +53,5 @@ void main() {
 	color = adjustContrast(color, ColorCorrection_Contrast);
 	color = adjustBrightness(color, ColorCorrection_Brightness);
 
-	fragColor = vec4(color, alpha);
+	fragColor = vec4(color, opacity);
 }

@@ -131,7 +131,7 @@ void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, Pla
 
     // Set mix value
     m_shader.setValue("mixValue", mixValue);
-    m_shader.setValue("alpha", planeSettings.alpha);
+    m_shader.setValue("opacity", planeSettings.opacity);
     for (auto& effect : effects) {
         for (auto& kv : effect.params) {
             const std::string& name = kv.first;
