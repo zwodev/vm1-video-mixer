@@ -43,15 +43,33 @@ vec3 adjustSaturation(vec3 color, float value) {
   return mix(grayscale, color, 1.0 + value);
 }
 
+// ### BEGIN CUSTOM
+// // Internal
+// uniform vec2 iResolution;
+// uniform flaot iTime;
+
+// // Custom 
+// uniform int replications;
+// vec3 customMain(vec2 coord, vec3 color) {
+//	return color;
+// }
+// ### END CUSTOM
+
 void main() {
 	// Mix images
 	vec2 coord = vec2(texCoord.x, (1.0f - texCoord.y));
 	vec3 col0 = texture(inputTexture0, coord).rgb;
 	vec3 col1 = texture(inputTexture1, coord).rgb;
 	vec3 color = mix(col0, col1, mixValue);
+
+	// color = customShader(color);
+
 	color = adjustSaturation(color, ColorCorrection_Saturation);
 	color = adjustContrast(color, ColorCorrection_Contrast);
 	color = adjustBrightness(color, ColorCorrection_Brightness);
 
-	fragColor = vec4(color, opacity);
+	color = mix(vec3(1.0f), color, opacity);
+	//color = color * opacity;
+
+	fragColor = vec4(color, 1.0f);
 }
