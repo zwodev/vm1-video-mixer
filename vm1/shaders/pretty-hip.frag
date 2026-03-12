@@ -56,7 +56,7 @@ void main() {
     value += squareDist*.1;
     //fragColor = vec4(value);
     fragColor = mix(vec4(1.0,1.0,1.0,1.0),vec4(0.5,0.75,1.0,1.0), value);
-    fragColor.a = 0.25*clamp(value, 0.0, 1.0);
+    //fragColor.a = 0.25*clamp(value, 0.0, 1.0);
 }
 
 

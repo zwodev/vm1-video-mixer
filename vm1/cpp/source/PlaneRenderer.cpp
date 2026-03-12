@@ -150,20 +150,28 @@ void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, Pla
 
     switch (planeSettings.blendMode) {
         case PlaneSettings::BlendMode::BM_Alpha:
+            printf("BlendMode Alpha\n");
             glEnable(GL_BLEND); 
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             break;
         case PlaneSettings::BlendMode::BM_Multiply:
+            printf("BlendMode Multiply\n");
             glEnable(GL_BLEND);
             glBlendFunc(GL_DST_COLOR, GL_ZERO);
             break;
         default:
-            glDisable(GL_BLEND);
+            printf("Default\n");
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             break;
     }
 
     //glDrawArrays(GL_TRIANGLES, 0, 6);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+    glDisable(GL_BLEND);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     glBindVertexArray(0);
     m_shader.deactivate();
 

@@ -533,6 +533,7 @@ void PlaybackOperator::renderPlane(int hdmiId)
                 //if (audioStream) audioStream->setVolume(planeMixer.mixValue() * volume);
             }
 
+            printf("Active Plane: %d ", currentPlaneId);
             planeRenderer->update(texture0, texture1, planeMixer.mixValue(), m_registry.planes()[currentPlaneId], m_registry.settings().hdmiRotation0);
         }
     }
