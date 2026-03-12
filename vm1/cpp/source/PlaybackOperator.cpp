@@ -496,10 +496,14 @@ void PlaybackOperator::renderPlane(int hdmiId)
     std::vector<int> activePlanesIds;
     for (auto iter = m_mediaSlotIdToPlayerId.begin(); iter != m_mediaSlotIdToPlayerId.end(); ++iter)
     {
-        int planeId = m_registry.inputMappings().getInputConfig(iter->first)->planeId;
-        if(std::find(activePlanesIds.begin(), activePlanesIds.end(), planeId) == activePlanesIds.end()) {
-            activePlanesIds.push_back(planeId);
-        }
+        InputConfig* currentConfig = m_registry.inputMappings().getInputConfig(iter->first);
+        if(currentConfig)
+        {
+            int planeId = currentConfig->planeId;
+            if(std::find(activePlanesIds.begin(), activePlanesIds.end(), planeId) == activePlanesIds.end()) {
+                activePlanesIds.push_back(planeId);
+            }
+        } 
     }
     std::sort(activePlanesIds.begin(), activePlanesIds.end(), [](int x, int y){return x < y;});
 
