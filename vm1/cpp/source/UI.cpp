@@ -643,13 +643,13 @@ bool UI::previewPlanes(std::vector<PlaneSettings> planes, int& selectedPlane)
     {
         hasChanged = true;
         selectedPlane += 1;
-        if (selectedPlane > planes.size()-1) selectedPlane = 0;
+        if (selectedPlane > planes.size()-1) selectedPlane = planes.size() - 1;
     }
     else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxUp))
     {
         hasChanged = true;
         selectedPlane -= 1;
-        if (selectedPlane < 0) selectedPlane = planes.size()-1;
+        if (selectedPlane < 0) selectedPlane = 0;
     }
 
     static int selectedVertex = 0;
@@ -680,13 +680,9 @@ bool UI::previewPlanes(std::vector<PlaneSettings> planes, int& selectedPlane)
     m_stbRenderer.drawEmptyCenteredRect(centerX[1], centerY, width, height, COLOR::GREY);
 
     // draw planes
+    int i = 0;
     Color colors[] = {COLOR::PLANE_0, COLOR::PLANE_1, COLOR::PLANE_2, COLOR::PLANE_3};
-    for(int i = 0; i < planes.size(); ++i) {
-        // only show selected plane
-        if (selectedPlane >= 0 && selectedPlane != i) continue;
-
-        const PlaneSettings& p = planes[i];
-
+    for(PlaneSettings p : planes) {
         m_stbRenderer.drawPolygon(
             centerX[p.hdmiId] +  p.coords[0].x * width/2.0f  * p.scale + p.translation.x * width/2.0f, 
             centerY           + (p.coords[0].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
@@ -717,5 +713,35 @@ bool UI::previewPlanes(std::vector<PlaneSettings> planes, int& selectedPlane)
                                 centerY           + polygonCenterY - fontSize/4, 
                                 fontSize, 
                                 COLOR::BLACK);
-    }       
+        i++;
+    }
+
+    // outline selected plane
+    PlaneSettings p = planes[selectedPlane];
+    m_stbRenderer.drawEmptyPolygon(
+        centerX[p.hdmiId] +  p.coords[0].x * width/2.0f  * p.scale + p.translation.x * width/2.0f, 
+        centerY           + (p.coords[0].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
+
+        centerX[p.hdmiId] +  p.coords[1].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
+        centerY           + (p.coords[1].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
+
+        centerX[p.hdmiId] +  p.coords[2].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
+        centerY           + (p.coords[2].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
+
+        centerX[p.hdmiId] +  p.coords[3].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
+        centerY           + (p.coords[3].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
+        COLOR::WHITE
+    );
+
+    // highlight selected vertex
+    int s = p.coords.size()-1 - selectedVertex;
+    m_stbRenderer.drawRect( 
+        centerX[p.hdmiId] +  p.coords[s].x * width/2.0f  * p.scale + p.translation.x * width/2.0f - 5, 
+        centerY           + (p.coords[s].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0 - 5, 
+        10, 
+        10,
+        COLOR::RED);
+    
+    m_y += height;
+    return hasChanged;
 }
