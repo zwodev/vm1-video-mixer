@@ -157,7 +157,8 @@ void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, Pla
         case PlaneSettings::BlendMode::BM_Multiply:
             //printf("BlendMode Multiply\n");
             glEnable(GL_BLEND);
-            glBlendFunc(GL_DST_COLOR, GL_ZERO);
+            glBlendFunc(GL_ZERO, GL_SRC_COLOR);
+            //glBlendEquation(GL_)
             break;
         default:
             //printf("Default\n");

@@ -68,8 +68,8 @@ void main() {
 	color = adjustContrast(color, ColorCorrection_Contrast);
 	color = adjustBrightness(color, ColorCorrection_Brightness);
 
-	color = mix(vec3(1.0f), color, opacity);
+	//color = mix(vec3(1.0f), color, opacity);
 	//color = color * opacity;
 
-	fragColor = vec4(color, 1.0f);
+	fragColor = vec4(color, opacity);
 }
