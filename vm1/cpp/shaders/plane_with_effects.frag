@@ -21,6 +21,7 @@ uniform sampler2D inputTexture0;
 uniform sampler2D inputTexture1;
 uniform float mixValue;
 uniform float opacity;
+uniform int isMultiplication;
 
 // effects
 uniform float ColorCorrection_Brightness;
@@ -68,8 +69,7 @@ void main() {
 	color = adjustContrast(color, ColorCorrection_Contrast);
 	color = adjustBrightness(color, ColorCorrection_Brightness);
 
-	//color = mix(vec3(1.0f), color, opacity);
-	//color = color * opacity;
+	color = mix(color, mix(vec3(1.0f), color, opacity), float(isMultiplication));
 
 	fragColor = vec4(color, opacity);
 }
