@@ -44,7 +44,7 @@ public:
     void Image(const ImageBuffer& imageBuffer);
     bool Text(const std::string &label);
     void PlainText(const std::string &label);
-    void Break();
+    void Spacer(float value = 15.0f);
     void MenuTitle(std::string menuTitle);
     void MenuInfo(std::string menuInfo);
     void InfoScreen(int bank, int id, std::string filename);
@@ -58,14 +58,22 @@ public:
     bool SpinBoxInt(const std::string& label, int& value, int minValue, int maxValue, int step = 1);
     bool SpinBoxFloat(const std::string& label, float& value, float minValue, float maxValue, float step = 0.01f);
     bool SpinBoxVec2(const std::string& label, glm::vec2& vec, float step = 0.1f);
-    bool SpinBoxPlaneSelect(int& value, int minValue, int maxValue);
-    bool previewPlanes(std::vector<PlaneSettings> planes, int& selectedPlane);
+    bool SpinBoxPlaneSelect(std::vector<PlaneSettings> planes, int& selectedPlane);
+    bool SpinBoxPlaneSelectMapping(std::vector<PlaneSettings> planes, int& selectedPlane);
+    
+    void PlanePreview(std::vector<PlaneSettings> planes, 
+                      int& selectedPlane,
+                      glm::vec2 pos = {0.0f, 0.0f},
+                      float size = 2.5f,
+                      bool isTextvisible = true);
 
     bool isValueChangeEventTriggered(ValueChangeEvent::Type eventType, int id);
     bool isNavigationEventTriggered(NavigationEvent::Type eventType);
     bool isBankChangeEventTriggered(int& bankId);
     bool isMediaSlotEventTriggered(int mediaSlotId);
     bool isEditModeEventTriggered(int modeId);
+
+    void savePNG(const std::string& filename);
 
     std::vector<int> getTriggeredMediaSlotIds();
     std::vector<int> getTriggeredEditButtons();

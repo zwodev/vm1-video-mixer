@@ -16,6 +16,10 @@
 #include <vector>
 #include <string>
 
+#include <chrono>   // only needed for screenshot timestamp
+#include <iomanip>  // only needed for screenshot timestamp
+#include <sstream>  // only needed for screenshot timestamp
+
 MenuSystem::MenuSystem(UI& ui, Registry& registry, EventBus& eventBus) : 
     m_ui(ui), 
     m_registry(registry), 
@@ -123,6 +127,11 @@ void MenuSystem::handleMediaAndEditButtons()
     for (int mediaSlotId : m_ui.getTriggeredMediaSlotIds())
     {
         m_id = mediaSlotId;
+        InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_id);
+        if (inputConfig)
+        {
+            m_planeIdx = inputConfig->planeId;        
+        }
         return;
     }
 
@@ -194,28 +203,46 @@ void MenuSystem::handleBankSwitching()
     }
 }
 
-void MenuSystem::handlePlaneSwitching()
+// Switches the output plane for the currently selected *media slot* (in SRC and CTL menu)
+void MenuSystem::handlePlaneSwitchingSrcCtl()
 {
     InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_id);
     if (inputConfig) {
         int& planeId = inputConfig->planeId;
-        bool hasChanged = false;
         int minValue = 0;
         int maxValue = m_registry.planes().size() - 1;
         if(m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxDown))
         {
-            hasChanged = true;
             planeId += 1;
             if (planeId > maxValue) planeId = maxValue;
         }
         else if(m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxUp))
         {
-            hasChanged = true;
             planeId -= 1;
             if (planeId < minValue) planeId = minValue;
         }
+        m_planeIdx = planeId; // set output plane to new planeId, just for convenience/ui
+    }
+
+}
+
+// Switches the output plane when in FX or OUT menu
+void MenuSystem::handlePlaneSwitchingFxOut()
+{
+    int minValue = 0;
+    int maxValue = m_registry.planes().size() - 1;
+    if(m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxDown))
+    {
+        m_planeIdx += 1;
+        if (m_planeIdx > maxValue) m_planeIdx = maxValue;
+    }
+    else if(m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxUp))
+    {
+        m_planeIdx -= 1;
+        if (m_planeIdx < minValue) m_planeIdx = minValue;
     }
 }
+
 
 void MenuSystem::goUpHierachy() {
     if (!m_currentMenuPath.empty()) {
@@ -244,19 +271,30 @@ void MenuSystem::render()
         m_currentMenuType == MT_ControlMenu ||
         m_currentMenuType == MT_ButtonMatrixMenu) 
     {
-        handlePlaneSwitching();
+        handlePlaneSwitchingSrcCtl();
 
         int id16 = (m_id % MEDIA_BUTTON_COUNT) + 1;
         char bank = m_id / MEDIA_BUTTON_COUNT + 65; // "+65" to get ASCII code
 
         std::string mediaSlotString = std::string(1, bank) + std::to_string(id16);
+        
         InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_id);
         if (inputConfig) {
             int plane =  inputConfig->planeId;
             mediaSlotString += ">>" + std::to_string(plane + 1);
         }
-
         m_ui.MenuInfo(mediaSlotString);
+        m_ui.PlanePreview(m_registry.planes(), m_planeIdx, glm::vec2(116.0f, 0.0f), 8.0, false);
+    }
+
+    // Render plane information / plane preview
+    if (m_currentMenuType == MT_FxMenu ||
+        m_currentMenuType == MT_OutputMenu)
+    {
+        handlePlaneSwitchingFxOut();
+        m_ui.Spacer(30.0);
+        m_ui.PlanePreview(m_registry.planes(), m_planeIdx);
+        m_ui.Spacer(55.0);
     }
 
 
@@ -274,6 +312,21 @@ void MenuSystem::render()
     handleUpAndDownKeys();    
     handleBankSwitching();
     handleMenuHierachyNavigation();
+
+    
+    // Take a screenshot
+    if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::Screenshot)) 
+    {
+        auto now = std::chrono::system_clock::now();
+        std::time_t t = std::chrono::system_clock::to_time_t(now);
+        std::tm tm = *std::localtime(&t);
+        std::ostringstream oss;
+        oss << std::put_time(&tm, "%Y-%m-%d-%H-%M-%S") << ".png";
+        std::string filename = oss.str();
+        
+        printf("Screenshot %s\n", filename.c_str());
+        m_ui.savePNG("screenshots/" + filename);
+    }
 
     m_ui.EndFrame();
 }
@@ -358,7 +411,7 @@ void MenuSystem::FileSelection()
     else if(m_ui.Action("USB-Drive")) {
         printf("Enter USB-Drive\n");
     }
-    m_ui.Break();
+    m_ui.Spacer();
     for (int i = 0; i < files.size(); ++i) {
         std::string fileName = files[i];
         if (m_ui.RadioButton(fileName.c_str(), (config->fileName == fileName))) {
@@ -470,13 +523,13 @@ void MenuSystem::ControlMenu()
             }
         }
     }
-    m_ui.Break();
+    m_ui.Spacer();
     
     // NOTE: Testing -> Preview only the plane that this slot is associated with
     // if(m_ui.SpinBoxInt("Out Plane", currentConfig->planeId , 0, m_registry.planes().size()-1)){
     //     m_planeIdx = currentConfig->planeId;
     // }
-    m_ui.previewPlanes(m_registry.planes(), currentConfig->planeId);
+    // m_ui.previewPlanes(m_registry.planes(), currentConfig->planeId);
 
     m_ui.EndList();
 }
@@ -491,8 +544,6 @@ void MenuSystem::FxMenu()
 {
     m_ui.MenuTitle("FX");
     m_ui.BeginList(&m_focusedIdx);
-    m_ui.SpinBoxPlaneSelect(m_planeIdx, 0, m_registry.planes().size()-1);
-    m_ui.Break();
     auto& effects = m_registry.planes()[m_planeIdx].effects;
     for (int i = 0; i < effects.size(); ++i) {
         bool isSelectedEffect = SubMenu(effects[i].name, [this](){ EffectControl(); });
@@ -512,8 +563,6 @@ void MenuSystem::EffectControl()
     m_ui.MenuTitle("FX/" + effect.name);
 
     m_ui.BeginList(&m_focusedIdx);
-    m_ui.SpinBoxPlaneSelect(m_planeIdx, 0, m_registry.planes().size()-1);
-    m_ui.Break();
     for (auto& kv : effect.params) {
         const std::string& name = kv.first;
         auto& param = kv.second;
@@ -533,8 +582,6 @@ void MenuSystem::OutputMenu()
 {
     m_ui.MenuTitle("OUT");
     m_ui.BeginList(&m_focusedIdx);
-    m_ui.SpinBoxPlaneSelect(m_planeIdx, 0, m_registry.planes().size()-1);
-    m_ui.Break();
     SubMenu("Mrs. Mask", [this](){ Mask(); });
     SubMenu("Mr. Mapping", [this](){ Mapping(); });
     m_ui.SpinBoxInt("Blend Mode", (int&)m_registry.planes()[m_planeIdx].blendMode, 0, 2);
@@ -547,8 +594,6 @@ void MenuSystem::Mask()
 {
     m_ui.MenuTitle("OUT/Mask");
     m_ui.BeginList(&m_focusedIdx);
-    m_ui.SpinBoxPlaneSelect(m_planeIdx, 0, m_registry.planes().size()-1);
-    m_ui.Break();
     m_ui.Text("some way to load image or create a mask...");
     m_ui.EndList();
 }
@@ -557,19 +602,16 @@ void MenuSystem::Mapping()
 {
     m_ui.MenuTitle("OUT/Mapping");
     m_ui.BeginList(&m_focusedIdx);
-    // m_ui.SpinBoxPlaneSelect(m_planeIdx, 0, m_registry.planes().size()-1);
-    // m_ui.Break();
-    m_ui.previewPlanes(m_registry.planes(), m_planeIdx);
     m_ui.SpinBoxVec2("TopLeft", m_registry.planes()[m_planeIdx].coords[3]); 
     m_ui.SpinBoxVec2("TopRight", m_registry.planes()[m_planeIdx].coords[2]); 
     m_ui.SpinBoxVec2("BottomRight", m_registry.planes()[m_planeIdx].coords[1]); 
     m_ui.SpinBoxVec2("BottomLeft", m_registry.planes()[m_planeIdx].coords[0]); 
-    m_ui.Break();
+    m_ui.Spacer();
     // m_ui.SpinBoxInt("Rotation", m_registry.planes()[m_planeIdx].rotation,0, 360, 1);
     m_ui.SpinBoxFloat("Scale", m_registry.planes()[m_planeIdx].scale, 0.0f, 10.0f, 0.1f);
     // m_ui.SpinBoxVec2("ScaleXY", m_registry.planes()[m_planeIdx].scaleXY);
     m_ui.SpinBoxVec2("Translation", m_registry.planes()[m_planeIdx].translation);
-    m_ui.Break();
+    m_ui.Spacer();
     if(m_ui.Action("Reset")) {
         m_registry.planes()[m_planeIdx].resetMapping();
     }
@@ -714,12 +756,12 @@ void MenuSystem::HdmiSelection()
 //     m_ui.BeginList(&m_focusedIdx);
 //     m_ui.Text("If no fx is selected, file-list is visible.");
 //     m_ui.Text("If fx is selected, parameters are visible,");
-//     m_ui.Break();
+//     m_ui.Spacer();
 //     m_ui.RadioButton("file-1.frag", false);
 //     m_ui.RadioButton("file-2.frag", false);
 //     m_ui.RadioButton("file-3.frag", false);
 //     m_ui.RadioButton("file-4.frag", false);
-//     m_ui.Break();
+//     m_ui.Spacer();
 //     m_ui.Action("Reset");
 //     m_ui.Action("Remove (only visible when fx-shader active)");
 //     m_ui.CheckBox("Enabled", true);
@@ -735,7 +777,7 @@ void MenuSystem::HdmiSelection()
 //     m_ui.SpinBoxInt("Smoothness", smoothness, 0, 100);
 //     m_ui.SpinBoxInt("Spill", spill, 0, 100);
 //     m_ui.Text("Pre-Mask");
-//     m_ui.Break();
+//     m_ui.Spacer();
 //     m_ui.Action("Reset");
 //     m_ui.CheckBox("Enabled", true);
 //     m_ui.EndList();
@@ -751,7 +793,7 @@ void MenuSystem::HdmiSelection()
 //     m_ui.SpinBoxInt("Temperature", temperature, 0, 100);
 //     m_ui.SpinBoxInt("Tint", tint, 0, 100);
 //     m_ui.SpinBoxInt("Saturation", sat, 0, 100);
-//     m_ui.Break();
+//     m_ui.Spacer();
 //     m_ui.Action("Reset");
 //     m_ui.CheckBox("Enabled", true);
 //     m_ui.EndList();

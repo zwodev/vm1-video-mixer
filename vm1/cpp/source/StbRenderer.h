@@ -86,6 +86,8 @@ private:
     std::mutex m_mutex;
     std::condition_variable m_cv;
     bool m_isEnabled = true;
+    // std::string fontName = "CreatoDisplay-Regular.otf";
+    std::string fontNameMonospaced = "ProggyClean.ttf";
 
     void queueCurrentImage();
 

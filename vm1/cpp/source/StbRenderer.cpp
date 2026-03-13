@@ -47,11 +47,11 @@ StbRenderer::StbRenderer(int width, int height) : m_img(width, height)
 {
     clear();
 
-    if (!loadFont("fonts/ProggyClean.ttf"))
+    if (!loadFont("fonts/" + fontNameMonospaced))
     {
         std::cerr << "Font load failed" << std::endl;
     }
-    std::cout << "Renderer initialized with " << width << "x" << height << std::endl;
+    std::cout << "StbRenderer Constructor: Renderer initialized with " << width << "x" << height << std::endl;
 }
 
 void StbRenderer::init(int width, int height)
@@ -62,11 +62,11 @@ void StbRenderer::init(int width, int height)
     
     clear();
 
-    if (!loadFont("fonts/ProggyClean.ttf"))
+    if (!loadFont("fonts/" + fontNameMonospaced))
     {
         std::cerr << "Font load failed" << std::endl;
     }
-    std::cout << "Renderer initialized with " << width << "x" << height << std::endl;
+    std::cout << "StbRenderer Init: Renderer initialized with " << width << "x" << height << std::endl;
 }
 
 StbRenderer::~StbRenderer()
@@ -357,10 +357,18 @@ void StbRenderer::drawText(const std::string& text, int posX, int posY, float fo
                 uint8_t value = bitmap[y * width + x]; // 0..255
                 if (value == 0)
                     continue;
-                uint8_t r_ = (uint8_t)((float)color.r / 255.0) * (float)value;
-                uint8_t g_ = (uint8_t)((float)color.g / 255.0) * (float)value;
-                uint8_t b_ = (uint8_t)((float)color.b / 255.0) * (float)value;
-                m_img.setPixel(x + posX + xoff, y + posY + yoff + baseline, r_, g_, b_);
+                // uint8_t r_ = (uint8_t)((float)color.r / 255.0) * (float)value;
+                // uint8_t g_ = (uint8_t)((float)color.g / 255.0) * (float)value;
+                // uint8_t b_ = (uint8_t)((float)color.b / 255.0) * (float)value;
+                // m_img.setPixel(x + posX + xoff, y + posY + yoff + baseline, r_, g_, b_);
+                m_img.blendPixel(
+                    x + posX + xoff,
+                    y + posY + yoff + baseline,
+                    color.r,
+                    color.g,
+                    color.b,
+                    value
+                );                
             }
         }
 

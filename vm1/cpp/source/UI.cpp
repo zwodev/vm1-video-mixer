@@ -296,31 +296,32 @@ void UI::PlainText(const std::string &label)
     UI::EndListElement();
 }
 
-void UI::Break() {
-    m_y += 15.0f;
+void UI::Spacer(float value) {
+    m_y += value;
 }
 
 void UI::MenuTitle(std::string menuTitle)
 {
     float fontSize = 32.0f;
-    m_stbRenderer.drawText(menuTitle, m_x, m_y, fontSize, COLOR::WHITE);
+    m_stbRenderer.drawText(menuTitle, m_x, 0, fontSize, COLOR::WHITE);
     m_y += m_stbRenderer.getFontLineHeight(fontSize);
     m_y += m_titlePaddingBottom;
 }
 
 void UI::MenuInfo(std::string menuInfo)
 {
+    float paddingRight = 100.0f;
     float fontSize = 32.0f;
     int width = m_stbRenderer.width();
     int textWidth = m_stbRenderer.getTextWidth(menuInfo, fontSize);
     // std::cout << "text width for '" << menuInfo << "': " << textWidth << std::endl;
-    m_stbRenderer.drawEmptyRect(width - textWidth - 2, 
+    m_stbRenderer.drawEmptyRect(width - textWidth - 2 - paddingRight, 
                                 0, 
                                 textWidth + 1, 
                                 m_stbRenderer.getFontLineHeight(fontSize) - 1, 
-                                COLOR::WHITE);
+                                COLOR::GREY);
     m_stbRenderer.drawText(menuInfo, 
-                           width - textWidth - 1, 
+                           width - textWidth - 1 - paddingRight, 
                            0, 
                            fontSize, 
                            COLOR::WHITE);
@@ -524,41 +525,43 @@ bool UI::SpinBoxInt(const std::string& label, int& value, int minValue, int maxV
     return hasChanged;
 }
 
-bool UI::SpinBoxPlaneSelect(int& value, int minValue, int maxValue)
+bool UI::SpinBoxPlaneSelect(std::vector<PlaneSettings> planes, int& selectedPlane)
 {
     bool hasChanged = false;
+
     if(isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxDown))
     {
         hasChanged = true;
-        value += 1;
-        if (value > maxValue) value = maxValue;
+        selectedPlane += 1;
+        if (selectedPlane > planes.size()-1) selectedPlane = planes.size() - 1;
     }
     else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxUp))
     {
         hasChanged = true;
-        value -= 1;
-        if (value < minValue) value = minValue;
+        selectedPlane -= 1;
+        if (selectedPlane < 0) selectedPlane = 0;
     }
 
-    int maxWidth = m_stbRenderer.width();
-    int padding = 15;
-    int boxSize = 30;
-    int totalBoxWidth = (maxValue + 1) * boxSize + (maxValue * padding);
-    int gap = (maxWidth - totalBoxWidth) / 2;
-    int x = gap;
-    for(int i = 0; i <= maxValue; ++i) {
-        if (i == value){
-            m_stbRenderer.drawRect(x, m_y, boxSize, boxSize);
-            m_stbRenderer.drawText(std::to_string(i+1), x + boxSize/3, m_y + boxSize/4, 24, COLOR::BLACK);
-        } else {
-            m_stbRenderer.drawEmptyRect(x, m_y, boxSize, boxSize);
-            m_stbRenderer.drawText(std::to_string(i+1), x + boxSize/3, m_y + boxSize/4, 24, COLOR::WHITE);
-        }
-        x += boxSize + padding;
-    }
-    m_y += boxSize;
-    // std::string newLabel = "Plane: " + std::to_string(value);
-    // Text(newLabel);
+    PlanePreview(planes, selectedPlane);
+
+    // int maxWidth = m_stbRenderer.width();
+    // int padding = 15;
+    // int boxSize = 30;
+    // int totalBoxWidth = (maxValue + 1) * boxSize + (maxValue * padding);
+    // int gap = (maxWidth - totalBoxWidth) / 2;
+    // int x = gap;
+    // for(int i = 0; i <= maxValue; ++i) {
+    //     if (i == value){
+    //         m_stbRenderer.drawRect(x, m_y, boxSize, boxSize);
+    //         m_stbRenderer.drawText(std::to_string(i+1), x + boxSize/3, m_y + boxSize/4, 24, COLOR::BLACK);
+    //     } else {
+    //         m_stbRenderer.drawEmptyRect(x, m_y, boxSize, boxSize);
+    //         m_stbRenderer.drawText(std::to_string(i+1), x + boxSize/3, m_y + boxSize/4, 24, COLOR::WHITE);
+    //     }
+    //     x += boxSize + padding;
+    // }
+    // m_y += boxSize;
+
     return hasChanged;
 }
 
@@ -591,7 +594,6 @@ bool UI::SpinBoxFloat(const std::string& label, float& value, float minValue, fl
     return hasChanged;
 }
 
-// TODO: Get rid of PlaneSettings::vec2. Maybe use GLM lib in the future?
 bool UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
 {
     bool hasChanged = false;
@@ -636,21 +638,21 @@ bool UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
     return hasChanged;
 }
 
-bool UI::previewPlanes(std::vector<PlaneSettings> planes, int& selectedPlane)
+bool UI::SpinBoxPlaneSelectMapping(std::vector<PlaneSettings> planes, int& selectedPlane)
 {
-    bool hasChanged = false;
-    if(isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxDown))
-    {
-        hasChanged = true;
-        selectedPlane += 1;
-        if (selectedPlane > planes.size()-1) selectedPlane = planes.size() - 1;
-    }
-    else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxUp))
-    {
-        hasChanged = true;
-        selectedPlane -= 1;
-        if (selectedPlane < 0) selectedPlane = 0;
-    }
+    // bool hasChanged = false;
+    // if(isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxDown))
+    // {
+    //     hasChanged = true;
+    //     selectedPlane += 1;
+    //     if (selectedPlane > planes.size()-1) selectedPlane = planes.size() - 1;
+    // }
+    // else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxUp))
+    // {
+    //     hasChanged = true;
+    //     selectedPlane -= 1;
+    //     if (selectedPlane < 0) selectedPlane = 0;
+    // }
 
     static int selectedVertex = 0;
     if(isNavigationEventTriggered(NavigationEvent::Type::NavigationDown))
@@ -666,82 +668,115 @@ bool UI::previewPlanes(std::vector<PlaneSettings> planes, int& selectedPlane)
         if (selectedVertex < 0) selectedVertex = 0;
     }
 
+    PlanePreview(planes, selectedPlane);
 
-    // draw screen outlines
-    float width = float(m_stbRenderer.width()) / 2.5f;
-    float aspectRatio = 16.0/9.0f;  // todo: get aspect ratio from screen(s)
+
+
+    // float width = float(m_stbRenderer.width()) / 2.5f;
+    // float aspectRatio = 16.0/9.0f;  // todo: get aspect ratio from screen(s)
+    // float height = int(float(width) / aspectRatio);
+    // float centerX[2] = {float(m_stbRenderer.width()) / 4.0f,
+    //                     float(m_stbRenderer.width()) - centerX[0]};
+    // float centerY = m_y + height / 2;
+
+    // highlight selected vertex
+    // PlaneSettings p = planes[selectedPlane];
+    // int s = p.coords.size()-1 - selectedVertex;
+    // m_stbRenderer.drawRect( 
+    //     centerX[p.hdmiId] +  p.coords[s].x * width/2.0f  * p.scale + p.translation.x * width/2.0f - 5, 
+    //     centerY           + (p.coords[s].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0 - 5, 
+    //     10, 
+    //     10,
+    //     COLOR::RED);
+    
+    // return hasChanged;
+}
+
+void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, glm::vec2 pos, float size, bool isTextvisible)
+{
+    float width = float(m_stbRenderer.width()) / size;
+
+    float aspectRatio = 16.0/9.0f;                         // todo: get aspect ratio from screen(s)
     float height = int(float(width) / aspectRatio);
+    float centerX[2] = {float(m_stbRenderer.width()) / 2.0f - width/1.75f + pos.x,
+                        float(m_stbRenderer.width()) / 2.0f + width/1.75f + pos.x};
+    float centerY = m_y + height / 2 + pos.y;
     
-    float centerX[2] = {float(m_stbRenderer.width()) / 4.0f,
-                        float(m_stbRenderer.width()) - centerX[0]};
-    float centerY = m_y + height / 2;
-    
+
+    // draw screens outlines
     m_stbRenderer.drawEmptyCenteredRect(centerX[0], centerY, width, height, COLOR::GREY);
     m_stbRenderer.drawEmptyCenteredRect(centerX[1], centerY, width, height, COLOR::GREY);
+
+    // calculate vertices for tiny preview display
+    std::vector<std::vector<glm::vec2>> correctedPlanes;    // planes<vertices<x,y>> 
+    for(PlaneSettings p : planes) {
+        std::vector<glm::vec2> correctedPlane;
+        correctedPlanes.push_back(correctedPlane);
+        for(glm::vec2 coord : p.coords) {
+            glm::vec2 pos;
+            pos.x = centerX[p.hdmiId] +  coord.x * width/2.0f  * p.scale + p.translation.x * width/2.0f;
+            pos.y = centerY           + (coord.y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0;  
+            correctedPlanes.back().push_back(pos);  
+        }
+    }
 
     // draw planes
     int i = 0;
     Color colors[] = {COLOR::PLANE_0, COLOR::PLANE_1, COLOR::PLANE_2, COLOR::PLANE_3};
-    for(PlaneSettings p : planes) {
-        m_stbRenderer.drawPolygon(
-            centerX[p.hdmiId] +  p.coords[0].x * width/2.0f  * p.scale + p.translation.x * width/2.0f, 
-            centerY           + (p.coords[0].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
-
-            centerX[p.hdmiId] +  p.coords[1].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
-            centerY           + (p.coords[1].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
-
-            centerX[p.hdmiId] +  p.coords[2].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
-            centerY           + (p.coords[2].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
-
-            centerX[p.hdmiId] +  p.coords[3].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
-            centerY           + (p.coords[3].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
-
-            colors[i]
-        );
-
-        float polygonCenterX = 0.0f;
-        float polygonCenterY = 0.0f;
-        for(int i = 0; i < p.coords.size(); i++) {
-            polygonCenterX += (p.coords[i].x) * width/2.0f  * p.scale + p.translation.x * width/2.0f;
-            polygonCenterY += ((p.coords[i].y) * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0;
+    for(std::vector<glm::vec2> p : correctedPlanes) {
+        if(p.size() >= 4){
+            m_stbRenderer.drawPolygon
+                (
+                p[0].x, p[0].y, 
+                p[1].x, p[1].y,
+                p[2].x, p[2].y,
+                p[3].x, p[3].y,
+                colors[i]
+            );
+            i++;
         }
-        polygonCenterX /= p.coords.size();
-        polygonCenterY /= p.coords.size();
-        float fontSize = 24.0f;
-        m_stbRenderer.drawText(std::to_string(i+1), 
-                                centerX[p.hdmiId] + polygonCenterX, 
-                                centerY           + polygonCenterY - fontSize/4, 
-                                fontSize, 
-                                COLOR::BLACK);
-        i++;
     }
 
-    // outline selected plane
-    PlaneSettings p = planes[selectedPlane];
-    m_stbRenderer.drawEmptyPolygon(
-        centerX[p.hdmiId] +  p.coords[0].x * width/2.0f  * p.scale + p.translation.x * width/2.0f, 
-        centerY           + (p.coords[0].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
+    // draw outline of selected plane on top of everything
+    {
+    std::vector<glm::vec2> p = correctedPlanes[selectedPlane];
+    if(p.size() >= 4){
+        m_stbRenderer.drawEmptyPolygon
+            (
+            p[0].x, p[0].y, 
+            p[1].x, p[1].y,
+            p[2].x, p[2].y,
+            p[3].x, p[3].y,
+            COLOR::WHITE
+        );
+    }
+    }
 
-        centerX[p.hdmiId] +  p.coords[1].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
-        centerY           + (p.coords[1].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
+    // draw plane indices
+    if(isTextvisible) 
+    {
+        i = 0;
+        for(std::vector<glm::vec2> p : correctedPlanes) 
+        {
+            glm::vec2 polygonCenter = {0.0f, 0.0f};
+            for(int i = 0; i < p.size(); i++) {
+                polygonCenter += p[i];
+            }
+            polygonCenter /= p.size();
+        
+            float fontSize = 24.0f;
+            m_stbRenderer.drawText(std::to_string(i+1), 
+                                    polygonCenter.x, 
+                                    polygonCenter.y - fontSize/4, 
+                                    fontSize, 
+                                    COLOR::BLACK);
+            i++;
+        }
+    }
 
-        centerX[p.hdmiId] +  p.coords[2].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
-        centerY           + (p.coords[2].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
+    // m_y += height;
+}
 
-        centerX[p.hdmiId] +  p.coords[3].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
-        centerY           + (p.coords[3].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
-        COLOR::WHITE
-    );
-
-    // highlight selected vertex
-    int s = p.coords.size()-1 - selectedVertex;
-    m_stbRenderer.drawRect( 
-        centerX[p.hdmiId] +  p.coords[s].x * width/2.0f  * p.scale + p.translation.x * width/2.0f - 5, 
-        centerY           + (p.coords[s].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0 - 5, 
-        10, 
-        10,
-        COLOR::RED);
-    
-    m_y += height;
-    return hasChanged;
+void UI::savePNG(const std::string& filename){
+    m_stbRenderer.savePNG(filename);
 }
