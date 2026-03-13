@@ -56,8 +56,7 @@ private:
     void handleMediaAndEditButtons();
     void handleUpAndDownKeys();
     void handleBankSwitching();
-    void handlePlaneSwitchingSrcCtl();
-    void handlePlaneSwitchingFxOut();
+    void handlePlaneSwitching();
     void goUpHierachy();
     void handleMenuHierachyNavigation();
 

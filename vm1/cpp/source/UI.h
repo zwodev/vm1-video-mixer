@@ -24,6 +24,14 @@ public:
         ERROR,
         WARNING
     };
+
+    enum PlanePreviewStyle
+    {
+        PLANE_PREVIEW_SMALL,
+        PLANE_PREVIEW_LARGE,
+        PLANE_PREVIEW_VERTICES
+    };
+
     UI() = delete;
     ~UI() = default;
     UI(StbRenderer &stbRenderer, EventBus &eventBus);
@@ -58,14 +66,7 @@ public:
     bool SpinBoxInt(const std::string& label, int& value, int minValue, int maxValue, int step = 1);
     bool SpinBoxFloat(const std::string& label, float& value, float minValue, float maxValue, float step = 0.01f);
     bool SpinBoxVec2(const std::string& label, glm::vec2& vec, float step = 0.1f);
-    bool SpinBoxPlaneSelect(std::vector<PlaneSettings> planes, int& selectedPlane);
-    bool SpinBoxPlaneSelectMapping(std::vector<PlaneSettings> planes, int& selectedPlane);
-    
-    void PlanePreview(std::vector<PlaneSettings> planes, 
-                      int& selectedPlane,
-                      glm::vec2 pos = {0.0f, 0.0f},
-                      float size = 2.5f,
-                      bool isTextvisible = true);
+    void PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, PlanePreviewStyle style);
 
     bool isValueChangeEventTriggered(ValueChangeEvent::Type eventType, int id);
     bool isNavigationEventTriggered(NavigationEvent::Type eventType);

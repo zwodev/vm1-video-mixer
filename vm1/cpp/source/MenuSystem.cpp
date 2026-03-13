@@ -203,46 +203,48 @@ void MenuSystem::handleBankSwitching()
     }
 }
 
-// Switches the output plane for the currently selected *media slot* (in SRC and CTL menu)
-void MenuSystem::handlePlaneSwitchingSrcCtl()
+void MenuSystem::handlePlaneSwitching()
 {
-    InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_id);
-    if (inputConfig) {
-        int& planeId = inputConfig->planeId;
-        int minValue = 0;
-        int maxValue = m_registry.planes().size() - 1;
-        if(m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxDown))
-        {
-            planeId += 1;
-            if (planeId > maxValue) planeId = maxValue;
-        }
-        else if(m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxUp))
-        {
-            planeId -= 1;
-            if (planeId < minValue) planeId = minValue;
-        }
-        m_planeIdx = planeId; // set output plane to new planeId, just for convenience/ui
-    }
-
-}
-
-// Switches the output plane when in FX or OUT menu
-void MenuSystem::handlePlaneSwitchingFxOut()
-{
-    int minValue = 0;
-    int maxValue = m_registry.planes().size() - 1;
+    int diff = 0;
     if(m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxDown))
     {
-        m_planeIdx += 1;
-        if (m_planeIdx > maxValue) m_planeIdx = maxValue;
+        diff = 1;        
     }
     else if(m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxUp))
     {
-        m_planeIdx -= 1;
-        if (m_planeIdx < minValue) m_planeIdx = minValue;
+        diff = -1;
+    }
+    else 
+    {
+        return;
+    }
+    
+    int* id = nullptr;
+    if (m_currentMenuType == MT_SourceMenu || 
+        m_currentMenuType == MT_ControlMenu ) 
+    {
+        // change output plane for the currently selected media slot
+        InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_id);
+        if (inputConfig) {
+            id = &inputConfig->planeId;
+        } 
+    }
+    else if (m_currentMenuType == MT_FxMenu ||
+             m_currentMenuType == MT_OutputMenu)
+    {
+        // select output plane for FX or OUT menu
+        id = &m_planeIdx;
+    }
+
+    if (id != nullptr)
+    {
+        *id += diff;
+        int minValue = 0;
+        int maxValue = m_registry.planes().size() - 1;
+        if (*id > maxValue) *id = maxValue;
+        if (*id < minValue) *id = minValue;
     }
 }
-
 
 void MenuSystem::goUpHierachy() {
     if (!m_currentMenuPath.empty()) {
@@ -265,35 +267,30 @@ void MenuSystem::render()
 {
     m_ui.NewFrame();
 
-    // Render bank and plane information
     if (m_currentMenuType == MT_InfoMenu  || 
         m_currentMenuType == MT_SourceMenu || 
         m_currentMenuType == MT_ControlMenu ||
         m_currentMenuType == MT_ButtonMatrixMenu) 
-    {
-        handlePlaneSwitchingSrcCtl();
-
+    {        
         int id16 = (m_id % MEDIA_BUTTON_COUNT) + 1;
         char bank = m_id / MEDIA_BUTTON_COUNT + 65; // "+65" to get ASCII code
-
+        int planeId = 0;
         std::string mediaSlotString = std::string(1, bank) + std::to_string(id16);
-        
         InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_id);
         if (inputConfig) {
-            int plane =  inputConfig->planeId;
-            mediaSlotString += ">>" + std::to_string(plane + 1);
+            planeId =  inputConfig->planeId;
+            mediaSlotString += ">>" + std::to_string(planeId + 1);
         }
+        m_ui.PlanePreview(m_registry.planes(), planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
         m_ui.MenuInfo(mediaSlotString);
-        m_ui.PlanePreview(m_registry.planes(), m_planeIdx, glm::vec2(116.0f, 0.0f), 8.0, false);
-    }
-
-    // Render plane information / plane preview
-    if (m_currentMenuType == MT_FxMenu ||
-        m_currentMenuType == MT_OutputMenu)
+    } 
+    else if (m_currentMenuType == MT_FxMenu ||
+             m_currentMenuType == MT_OutputMenu)
     {
-        handlePlaneSwitchingFxOut();
+        UI::PlanePreviewStyle previewStyle = UI::PlanePreviewStyle::PLANE_PREVIEW_LARGE;
+        // ToDo: Check if we are in the mapping submenu and set the preview style to PLANE_PREVIEW_VERTICES
         m_ui.Spacer(30.0);
-        m_ui.PlanePreview(m_registry.planes(), m_planeIdx);
+        m_ui.PlanePreview(m_registry.planes(), m_planeIdx, previewStyle);
         m_ui.Spacer(55.0);
     }
 
@@ -312,6 +309,7 @@ void MenuSystem::render()
     handleUpAndDownKeys();    
     handleBankSwitching();
     handleMenuHierachyNavigation();
+    handlePlaneSwitching();
 
     
     // Take a screenshot
