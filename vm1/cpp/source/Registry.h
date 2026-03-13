@@ -297,7 +297,7 @@ public:
 
 private:
     std::string m_videoFilePath = "../videos/";
-    std::string m_shaderFilePath = "../shaders/";
+    std::string m_shaderFilePath = "../shaders/generative/";
     std::vector<std::string> m_videoFiles;
     std::vector<std::string> m_shaderFiles;
     ImageBuffer m_qrCodeImageBuffer;

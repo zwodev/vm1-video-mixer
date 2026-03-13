@@ -148,23 +148,23 @@ void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, Pla
         }
     }
 
+    int isMultiplication = 0;
     switch (planeSettings.blendMode) {
         case PlaneSettings::BlendMode::BM_Alpha:
-            printf("BlendMode Alpha\n");
             glEnable(GL_BLEND); 
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             break;
         case PlaneSettings::BlendMode::BM_Multiply:
-            printf("BlendMode Multiply\n");
+            isMultiplication = 1;
             glEnable(GL_BLEND);
-            glBlendFunc(GL_DST_COLOR, GL_ZERO);
+            glBlendFunc(GL_ZERO, GL_SRC_COLOR);
             break;
         default:
-            printf("Default\n");
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             break;
     }
+    m_shader.setValue("isMultiplication", isMultiplication);
 
     //glDrawArrays(GL_TRIANGLES, 0, 6);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);

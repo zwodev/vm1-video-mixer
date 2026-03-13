@@ -6,11 +6,13 @@ in vec2 texCoord;
 out vec4 fragColor;
 
 const vec2 OUT_TEX_SIZE = vec2(1920.0f, 1080.0f);
-uniform float iTime;
+// uniform vec2 iResolution; { "internal": true }
+// uniform float iTime; // { "name": "Elapsed Time", "default": 0.0, "min": 0.0, "max": 1000000.0, "step": 0.01 }
 uniform float offsetX;
 uniform float offsetY;
 uniform float scale;
-///uniform float radius;
+// uniform vec2 pos; // { "name": "Local Position", "default": [0.0, 0.0], "min": [-0.0, -0.0], "max": [1.0, 2.0], "step": [0.1, 0.01] }
+// uniform float radius;
 
 float sdCircle( in vec2 p, in float r ) 
 {
