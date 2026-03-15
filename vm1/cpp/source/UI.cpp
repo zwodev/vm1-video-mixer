@@ -170,6 +170,17 @@ void UI::FocusPreviousElement()
     }
 }
 
+void UI::TextStyle(FONT::TextStyle textStyle)
+{
+    m_currentTextStyle = textStyle;
+    m_lineHeight = m_stbRenderer.getFontLineHeight(m_currentTextStyle) + m_textPaddingBottom;
+}
+
+void UI::TextColor(Color color)
+{
+    m_currentColor = color;
+}
+
 void UI::BeginList(int* focusedIdxPtr) 
 {   
     if (!focusedIdxPtr) return;
@@ -178,7 +189,7 @@ void UI::BeginList(int* focusedIdxPtr)
     float fontSize = 16.0f;
     m_listSize = 0;
     m_focusedIdxPtr = focusedIdxPtr;
-    m_lineHeight = m_stbRenderer.getFontLineHeight(fontSize) + m_textPaddingBottom;
+    m_lineHeight = m_stbRenderer.getFontLineHeight(m_currentTextStyle) + m_textPaddingBottom;
     m_menuHeight = maxHeight - m_y;
     m_visibleListElements = m_menuHeight / m_lineHeight;
 
@@ -251,9 +262,9 @@ void UI::Image(const ImageBuffer& imageBuffer)
 
 void UI::CenteredText(const std::string &label)
 {
-    float fontSize = 16.0f;
-    float fontWidth = m_stbRenderer.getTextWidth(label, fontSize);
-    float fontHeight = m_stbRenderer.getFontLineHeight(fontSize);
+    // float fontSize = 16.0f;
+    float fontWidth = m_stbRenderer.getTextWidth(label, m_currentTextStyle);
+    float fontHeight = m_stbRenderer.getFontLineHeight(m_currentTextStyle);
 
     int centerX = m_stbRenderer.width() / 2;
     int centerY = m_stbRenderer.height() / 2;
@@ -261,21 +272,27 @@ void UI::CenteredText(const std::string &label)
     m_stbRenderer.drawText(label, 
                            centerX - fontWidth / 2, 
                            centerY - fontHeight / 2, 
-                           fontSize, 
-                           COLOR::WHITE);
+                           m_currentTextStyle, 
+                           m_currentColor);
 }
 
 bool UI::Text(const std::string &label)
 {
     UI::BeginListElement();
-    float fontSize = 16.0f;
-    Color color = COLOR::WHITE;
+    // float fontSize = m_currentTextStyle.size;
+    Color color = m_currentColor;
+    float textWidth = m_stbRenderer.getTextWidth(label, m_currentTextStyle);
     bool selected = (m_focusedIdxPtr && ((*m_focusedIdxPtr) == m_listSize));
     if (selected) {
-            m_stbRenderer.drawRect(m_x, m_y - 1, m_stbRenderer.width() - m_x, fontSize - 2, COLOR::WHITE);
+            m_stbRenderer.drawRect(m_x, 
+                                   m_y - 1, 
+                                // m_stbRenderer.width() - m_x, 
+                                   textWidth, 
+                                   m_lineHeight, 
+                                   color);
             color = COLOR::BLACK;
     }
-    m_stbRenderer.drawText(label, m_x, m_y, fontSize, color);
+    m_stbRenderer.drawText(label, m_x, m_y, m_currentTextStyle, color);
     UI::EndListElement();
 
     return selected;
@@ -284,15 +301,15 @@ bool UI::Text(const std::string &label)
 void UI::PlainText(const std::string &label)
 {
     UI::BeginListElement();
-    float fontSize = 16.0f;
-    Color color = COLOR::WHITE;
+    // float fontSize = 16.0f;
+    // Color color = COLOR::WHITE;
     // if (m_focusedIdxPtr) {
     //     if ((*m_focusedIdxPtr) == m_listSize){            
     //         m_stbRenderer.drawRect(m_x, m_y - 1, m_stbRenderer.width() - m_x, fontSize - 2, COLOR::WHITE);
     //         color = COLOR::BLACK;
     //     } 
     // }
-    m_stbRenderer.drawText(label, m_x, m_y, fontSize, color);
+    m_stbRenderer.drawText(label, m_x, m_y, m_currentTextStyle, m_currentColor);
     UI::EndListElement();
 }
 
@@ -300,30 +317,30 @@ void UI::Spacer(float value) {
     m_y += value;
 }
 
-void UI::MenuTitle(std::string menuTitle)
+void UI::MenuTitle(std::string menuTitle, Color color)
 {
-    float fontSize = 32.0f;
-    m_stbRenderer.drawText(menuTitle, m_x, 0, fontSize, COLOR::WHITE);
-    m_y += m_stbRenderer.getFontLineHeight(fontSize);
+    // float fontSize = 32.0f;
+    m_stbRenderer.drawText(menuTitle, m_x, 0, FONT::TEXTSTYLE::MENU_TITLE, color);
+    m_y += m_stbRenderer.getFontLineHeight(FONT::TEXTSTYLE::MENU_TITLE);
     m_y += m_titlePaddingBottom;
 }
 
 void UI::MenuInfo(std::string menuInfo)
 {
     float paddingRight = 100.0f;
-    float fontSize = 32.0f;
+    // float fontSize = 32.0f;
     int width = m_stbRenderer.width();
-    int textWidth = m_stbRenderer.getTextWidth(menuInfo, fontSize);
+    int textWidth = m_stbRenderer.getTextWidth(menuInfo, FONT::TEXTSTYLE::STANDARD);
     // std::cout << "text width for '" << menuInfo << "': " << textWidth << std::endl;
     m_stbRenderer.drawEmptyRect(width - textWidth - 2 - paddingRight, 
                                 0, 
                                 textWidth + 1, 
-                                m_stbRenderer.getFontLineHeight(fontSize) - 1, 
+                                m_stbRenderer.getFontLineHeight(FONT::TEXTSTYLE::STANDARD) - 1, 
                                 COLOR::GREY);
     m_stbRenderer.drawText(menuInfo, 
                            width - textWidth - 1 - paddingRight, 
                            0, 
-                           fontSize, 
+                           FONT::TEXTSTYLE::STANDARD, 
                            COLOR::WHITE);
 }
 
@@ -343,11 +360,11 @@ void UI::ShowPopupMessage(std::string message)
     int height = m_stbRenderer.height();
     m_stbRenderer.clear();
 
-    int fontSize = 16;
+    int fontSize = FONT::TEXTSTYLE::STANDARD.size;
     int x = 4;
     int y = height/2 - fontSize/2;
 
-    m_stbRenderer.drawText(message, x, y, fontSize, COLOR::WHITE);
+    m_stbRenderer.drawText(message, x, y, FONT::TEXTSTYLE::STANDARD, COLOR::WHITE);
 }
 
 void UI::ShowStringInputDialog(std::string title, int& cursorIdx, std::string& input)
@@ -378,8 +395,8 @@ void UI::ShowStringInputDialog(std::string title, int& cursorIdx, std::string& i
     input.at(cursorIdx) = currentChar;
     m_stbRenderer.drawRect(width/10, height/10, width - (width/10*2), height - (height/10*2), COLOR::BLACK);
     m_stbRenderer.drawEmptyRect(width/10, height/10, width - (width/10*2), height - (height/10*2), COLOR::WHITE);
-    m_stbRenderer.drawText(title, width/10+10, height/10+10, 26, COLOR::WHITE);
-    m_stbRenderer.drawText(input, width/10+10, height/10+70, 22, COLOR::WHITE);
+    m_stbRenderer.drawText(title, width/10+10, height/10+10, FONT::TEXTSTYLE::STANDARD, COLOR::WHITE);
+    m_stbRenderer.drawText(input, width/10+10, height/10+70, FONT::TEXTSTYLE::STANDARD, COLOR::WHITE);
 }
 
 void UI::ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts)
@@ -390,7 +407,7 @@ void UI::ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts)
     
     int quadPadding = 2;
     int quadSize = (width / (buttonTexts.size() / 2)) - quadPadding;
-    int fontSize = 16;
+    // int fontSize = 16;
     for(int i = 0; i < buttonTexts.size(); i++)
     {
         int x = (quadPadding / 2) + (i % 8) * (quadSize + quadPadding);
@@ -398,11 +415,11 @@ void UI::ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts)
 
         if (buttonTexts[i].second == COLOR::BLACK) {
             m_stbRenderer.drawRect(x, y, quadSize, quadSize, Color(30, 30, 30));
-            m_stbRenderer.drawText(std::string(1, static_cast<char>(buttonTexts[i].first)), x + 4, y + 3, fontSize, Color(120, 120, 120));
+            m_stbRenderer.drawText(std::string(1, static_cast<char>(buttonTexts[i].first)), x + 4, y + 3, FONT::TEXTSTYLE::STANDARD, Color(120, 120, 120));
         }
         else {
             m_stbRenderer.drawRect(x, y, quadSize, quadSize, buttonTexts[i].second);
-            m_stbRenderer.drawText(std::string(1, static_cast<char>(buttonTexts[i].first)), x + 4, y + 3, fontSize, COLOR::WHITE);
+            m_stbRenderer.drawText(std::string(1, static_cast<char>(buttonTexts[i].first)), x + 4, y + 3, FONT::TEXTSTYLE::STANDARD, COLOR::WHITE);
             m_stbRenderer.drawEmptyRect(x, y, quadSize, quadSize, Color(30, 30, 30));
         }
     }
@@ -416,17 +433,17 @@ void UI::ShowBankInfo(int bank)
     
     int quadPadding = 5;
     int quadSize = (width / BANK_COUNT) - quadPadding;
-    int fontSize = 16;
+    // int fontSize = 16;
     for(int i = 0; i < BANK_COUNT; i++)
     {
         int x = quadPadding / 2 + i * (quadSize + quadPadding);
         int y = height/2 - quadSize / 2;
         if(bank == i) {
             m_stbRenderer.drawRect(x, y, quadSize, quadSize, COLOR::WHITE);
-            m_stbRenderer.drawText(std::string(1, static_cast<char>(i + 65)), x + 4, y + 3, fontSize, COLOR::BLACK);
+            m_stbRenderer.drawText(std::string(1, static_cast<char>(i + 65)), x + 4, y + 3, FONT::TEXTSTYLE::STANDARD, COLOR::BLACK);
         } else {
             m_stbRenderer.drawEmptyRect(x, y, quadSize, quadSize, COLOR::WHITE);
-            m_stbRenderer.drawText(std::string(1, static_cast<char>(i + 65)), x + 4, y + 3, fontSize, COLOR::WHITE);
+            m_stbRenderer.drawText(std::string(1, static_cast<char>(i + 65)), x + 4, y + 3, FONT::TEXTSTYLE::STANDARD, COLOR::WHITE);
         }
     }
 }
@@ -695,11 +712,11 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, Pla
             }
             polygonCenter /= p.vertices.size();
         
-            float fontSize = 24.0f;
+            float fontSize = FONT::TEXTSTYLE::STANDARD.size;
             m_stbRenderer.drawText(std::to_string(i+1), 
                                     polygonCenter.x, 
                                     polygonCenter.y - fontSize/4, 
-                                    fontSize, 
+                                    FONT::TEXTSTYLE::STANDARD, 
                                     COLOR::BLACK);
             i++;
         }

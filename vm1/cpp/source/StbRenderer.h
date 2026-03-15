@@ -7,6 +7,8 @@
 #include <vector>
 #include <mutex>
 #include <condition_variable>
+#include <unordered_map>
+#include <utility>
 
 #include "stb/stb_image.h"
 #include "stb/stb_image_write.h"
@@ -52,6 +54,8 @@ namespace COLOR
     static Color BLUE = {0, 0, 255};
     static Color DARK_BLUE = {0, 0, 100};
     static Color YELLOW = {255, 255, 0};
+    static Color MAGENTA = {255, 0, 255};
+    static Color CYAN = {0, 255, 255};
     static Color FOREGROUND = COLOR::WHITE;
     static Color INVERTED = COLOR::BLACK;
     static Color PLANE_0 = {149, 225, 110};
@@ -60,43 +64,49 @@ namespace COLOR
     static Color PLANE_3 = {67, 130, 214};
 };
 
-/**
- * @class StbRenderer
- * @brief A simple renderer for drawing shapes and text using stb_truetype and a custom image buffer.
- *
- * This class provides basic 2D rendering functionality, including drawing rectangles,
- * rendering text using a baked font atlas, and saving the rendered image as a PNG file.
- * It uses stb_truetype for font handling and manages its own image buffer.
- *
- * @note The renderer supports ASCII characters 32..126 for text rendering.
- *
- * @author [Your Name]
- * @date [Date]
- */
+namespace FONT
+{
+    struct FontData {
+        std::vector<unsigned char> fontBuffer;
+        stbtt_fontinfo font;
+        std::string filename;
+        // stbtt_bakedchar cdata[96];            // not needed at the moment,
+        // unsigned char fontBitmap[512 * 512];  // but maybe we chache the font later...
+    };
+
+    struct TextStyle {
+        std::string fontName;
+        float size;
+    };
+    namespace TEXTSTYLE
+    {
+        static TextStyle MENU_TITLE = {"CreatoDisplay-Regular.otf", 32.0f};
+        static TextStyle ROOT_MENU_ITEM = {"CreatoDisplay-Regular.otf", 20.0f};
+        static TextStyle STANDARD = {"CreatoDisplay-Regular.otf", 16.0f};
+        static TextStyle LIST_ITEM = {"ProggyClean.ttf", 16.0f};
+    };
+};
 
 class StbRenderer
 {
 private:
-    stbtt_bakedchar cdata[96];           // ASCII 32..126
-    unsigned char fontBitmap[512 * 512]; // grayscale glyph atlas
-    std::vector<unsigned char> fontBuffer;
-    stbtt_fontinfo font;
     Image m_img;
     std::queue<Image> m_imageQueue;
     std::mutex m_mutex;
     std::condition_variable m_cv;
     bool m_isEnabled = true;
-    // std::string fontName = "CreatoDisplay-Regular.otf";
-    std::string fontNameMonospaced = "ProggyClean.ttf";
+
+    const std::vector<std::string> m_fontFilenames = {"ProggyClean.ttf", "CreatoDisplay-Regular.otf"};
+    std::unordered_map<std::string, FONT::FontData> m_fontData; // filename, FontData
 
     void queueCurrentImage();
 
 public:
-    StbRenderer();  // Default constructor - call init() before use
-    StbRenderer(int width, int height);
+    StbRenderer();  // call init() after use
+    // StbRenderer(int width, int height);
     ~StbRenderer();
     
-    void init(int width, int height);  // Initialize with dimensions
+    void init(int width, int height);
     
     int width() const;
     int height() const;
@@ -109,7 +119,7 @@ public:
     Image popImage();
 
     void savePNG(const std::string& filename);
-    bool loadFont(const std::string& fontPath);
+    bool loadFont(FONT::FontData& fontData);
     void drawImage(const ImageBuffer& imageBuffer, int posX = 0, int posY = 0);
     void drawLine(int x0, int y0, int x1, int y1, Color color = COLOR::WHITE);
     void drawRect(int x0, int y0, int w, int h, Color color = COLOR::WHITE);
@@ -119,7 +129,7 @@ public:
     void drawEmptyPolygon(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3, Color c = COLOR::WHITE);
     void drawPolygon(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3, Color c = COLOR::WHITE);
     void drawFilledTriangle(int x0, int y0, int x1, int y1, int x2, int y2,Color c = COLOR::WHITE);
-    void drawText(const std::string& text, int posX, int posY, float fontSize, Color color = COLOR::WHITE);
-    int getFontLineHeight(float fontSize);
-    int getTextWidth(const std::string& text, float fontSize);
+    void drawText(const std::string& text, int posX, int posY, FONT::TextStyle textStyle, Color color = COLOR::WHITE);
+    int getFontLineHeight(FONT::TextStyle textStyle);
+    int getTextWidth(const std::string& text, FONT::TextStyle textStyle);
 };

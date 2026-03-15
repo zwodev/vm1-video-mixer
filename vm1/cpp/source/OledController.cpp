@@ -101,7 +101,7 @@ int OledController::initializeImageBuffer()
         printf("Failed to apply for black memory...\r\n");
         return -1;
     }
-    Paint_NewImage(oledImage, OLED_1in5_RGB_WIDTH, OLED_1in5_RGB_HEIGHT, 0, BLACK);
+    Paint_NewImage(oledImage, OLED_1in5_RGB_WIDTH, OLED_1in5_RGB_HEIGHT, 0, OLED_BLACK);
     Paint_SetScale(65);
 
     printf("OLED buffer initialized with %u Bytes.\n", m_imagesize + 300);

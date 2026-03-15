@@ -379,12 +379,19 @@ void MenuSystem::InfoMenu()
 void MenuSystem::SourceMenu() 
 {
     m_ui.MenuTitle("SRC");
+    m_ui.TextStyle(FONT::TEXTSTYLE::ROOT_MENU_ITEM);
     m_ui.BeginList(&m_focusedIdx);
-    SubMenu("Media Files", [this](){ FileSelection(); });
-    SubMenu("HDMI Inputs", [this](){ LiveInputSelection(); });
-    SubMenu("Shaders", [this](){ ShaderSelection(); });
-    SubMenu("Clear Slot", [this](){ ClearSlot(); }); // TODO: Use Action.
+    m_ui.TextColor(COLOR::YELLOW);
+    SubMenu("MEDIA", [this](){ FileSelection(); });
+    m_ui.TextColor(COLOR::MAGENTA);
+    SubMenu("HDMI", [this](){ LiveInputSelection(); });
+    m_ui.TextColor(COLOR::CYAN);
+    SubMenu("SHADERS", [this](){ ShaderSelection(); });
+    m_ui.Spacer();
+    m_ui.TextColor(COLOR::WHITE);
+    SubMenu("CLEAR SLOT", [this](){ ClearSlot(); }); // TODO: Use Action.
     m_ui.EndList();
+    m_ui.TextStyle(FONT::TEXTSTYLE::STANDARD);
 }
 
 void MenuSystem::FileSelection()
@@ -410,6 +417,7 @@ void MenuSystem::FileSelection()
         printf("Enter USB-Drive\n");
     }
     m_ui.Spacer();
+    m_ui.TextStyle(FONT::TEXTSTYLE::LIST_ITEM);
     for (int i = 0; i < files.size(); ++i) {
         std::string fileName = files[i];
         if (m_ui.RadioButton(fileName.c_str(), (config->fileName == fileName))) {
@@ -417,6 +425,7 @@ void MenuSystem::FileSelection()
             changed = true;
         }
     }
+    m_ui.TextStyle(FONT::TEXTSTYLE::STANDARD);
     m_ui.EndList(); 
 
     if (changed)

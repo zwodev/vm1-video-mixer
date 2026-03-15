@@ -131,24 +131,24 @@ extern "C"
 /**
  * image color
  **/
-#define WHITE 0xFFFF
-#define BLACK 0x0000
-#define BLUE 0x001F
-#define BRED 0XF81F
-#define GRED 0XFFE0
-#define GBLUE 0X07FF
-#define RED 0xF800
-#define MAGENTA 0xF81F
-#define GREEN 0x07E0
-#define CYAN 0x7FFF
-#define YELLOW 0xFFE0
-#define BROWN 0XBC40
-#define BRRED 0XFC07
-#define GRAY 0X8430
+#define OLED_WHITE 0xFFFF
+#define OLED_BLACK 0x0000
+#define OLED_BLUE 0x001F
+#define OLED_BRED 0XF81F
+#define OLED_GRED 0XFFE0
+#define OLED_GBLUE 0X07FF
+#define OLED_RED 0xF800
+#define OLED_MAGENTA 0xF81F
+#define OLED_GREEN 0x07E0
+#define OLED_CYAN 0x7FFF
+#define OLED_YELLOW 0xFFE0
+#define OLED_BROWN 0XBC40
+#define OLED_BRRED 0XFC07
+#define OLED_GRAY 0X8430
 
-#define IMAGE_BACKGROUND WHITE
-#define FONT_FOREGROUND BLACK
-#define FONT_BACKGROUND WHITE
+#define IMAGE_BACKGROUND OLED_WHITE
+#define FONT_FOREGROUND OLED_BLACK
+#define FONT_BACKGROUND OLED_WHITE
 
     /**
      * The size of the point

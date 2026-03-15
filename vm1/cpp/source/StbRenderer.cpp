@@ -43,28 +43,33 @@ StbRenderer::StbRenderer() : m_img(1, 1)  // Default: 1x1 placeholder
     // Font loading will happen in init()
 }
 
-StbRenderer::StbRenderer(int width, int height) : m_img(width, height)
-{
-    clear();
-
-    if (!loadFont("fonts/" + fontNameMonospaced))
-    {
-        std::cerr << "Font load failed" << std::endl;
-    }
-    std::cout << "StbRenderer Constructor: Renderer initialized with " << width << "x" << height << std::endl;
-}
+// StbRenderer::StbRenderer(int width, int height) : m_img(width, height)
+// {
+//     clear();
+//     if (!loadFont("fonts/" + fontNameMonospaced))
+//     {
+//         std::cerr << "Font load failed" << std::endl;
+//     }
+//     std::cout << "StbRenderer Constructor: Renderer initialized with " << width << "x" << height << std::endl;
+// }
 
 void StbRenderer::init(int width, int height)
 {
-    // Recreate the image with new dimensions using placement new
     m_img.~Image();
     new (&m_img) Image(width, height);
     
     clear();
 
-    if (!loadFont("fonts/" + fontNameMonospaced))
+    for (const std::string& filename : m_fontFilenames)
     {
-        std::cerr << "Font load failed" << std::endl;
+        FONT::FontData fontData;
+        fontData.filename = filename;
+        m_fontData.emplace(filename, std::move(fontData));
+    }
+    for (auto& filenameDataPair : m_fontData)
+    {
+        if (!loadFont(filenameDataPair.second))
+            std::cerr << "Font load failed: fonts/" + filenameDataPair.first << std::endl;
     }
     std::cout << "StbRenderer Init: Renderer initialized with " << width << "x" << height << std::endl;
 }
@@ -303,22 +308,23 @@ void StbRenderer::savePNG(const std::string& filename)
     stbi_write_png(filename.c_str(), m_img.width, m_img.height, 3, m_img.pixels.data(), m_img.width * 3);
 }
 
-bool StbRenderer::loadFont(const std::string& fontPath)
+bool StbRenderer::loadFont(FONT::FontData& fontData)
 {
-    std::ifstream file(fontPath, std::ios::binary);
+    std::string path = "fonts/" + fontData.filename;
+    std::ifstream file(path, std::ios::binary);
     if (!file)
     {
-        std::cerr << "Error: Cannot open font file: " << fontPath << "\n";
+        std::cerr << "Error: Cannot open font file: " << path << "\n";
         return false;
     }
 
     file.seekg(0, std::ios::end);
     size_t size = file.tellg();
     file.seekg(0);
-    fontBuffer.resize(size);
-    file.read((char *)fontBuffer.data(), size);
+    fontData.fontBuffer.resize(size);
+    file.read((char *)fontData.fontBuffer.data(), size);
 
-    if (!stbtt_InitFont(&font, fontBuffer.data(), 0))
+    if (!stbtt_InitFont(&fontData.font, fontData.fontBuffer.data(), 0))
     {
         std::cerr << "Error: stbtt_InitFont failed\n";
         return false;
@@ -326,15 +332,15 @@ bool StbRenderer::loadFont(const std::string& fontPath)
     return true;
 }
 
-void StbRenderer::drawText(const std::string& text, int posX, int posY, float fontSize, Color color)
+void StbRenderer::drawText(const std::string& text, int posX, int posY, FONT::TextStyle textStyle, Color color)
 {
     if (!m_isEnabled) return;
-
-    float scale = stbtt_ScaleForMappingEmToPixels(&font, fontSize);
+    FONT::FontData& fontData = m_fontData[textStyle.fontName];  
+    float scale = stbtt_ScaleForMappingEmToPixels(&fontData.font, textStyle.size);
 
     // Get font metrics
     int ascent, descent, lineGap;
-    stbtt_GetFontVMetrics(&font, &ascent, &descent, &lineGap);
+    stbtt_GetFontVMetrics(&fontData.font, &ascent, &descent, &lineGap);
     int baseline = (int)(ascent * scale);
     // std::cout << "scale: " << scale
     //           << " ascent: " << ascent
@@ -346,7 +352,7 @@ void StbRenderer::drawText(const std::string& text, int posX, int posY, float fo
     {
         int width, height, xoff, yoff;
         // TODO: We need some caching eg. create a character map with these bitmaps.
-        unsigned char *bitmap = stbtt_GetCodepointBitmap(&font, 0, scale, c, &width, &height, &xoff, &yoff);
+        unsigned char *bitmap = stbtt_GetCodepointBitmap(&fontData.font, 0, scale, c, &width, &height, &xoff, &yoff);
 
         //std::cout << "Codepoint: " << c << " width: " << width << " height: " << height << " xoff: " << xoff << " yoff: " << yoff;
 
@@ -357,10 +363,6 @@ void StbRenderer::drawText(const std::string& text, int posX, int posY, float fo
                 uint8_t value = bitmap[y * width + x]; // 0..255
                 if (value == 0)
                     continue;
-                // uint8_t r_ = (uint8_t)((float)color.r / 255.0) * (float)value;
-                // uint8_t g_ = (uint8_t)((float)color.g / 255.0) * (float)value;
-                // uint8_t b_ = (uint8_t)((float)color.b / 255.0) * (float)value;
-                // m_img.setPixel(x + posX + xoff, y + posY + yoff + baseline, r_, g_, b_);
                 m_img.blendPixel(
                     x + posX + xoff,
                     y + posY + yoff + baseline,
@@ -373,7 +375,7 @@ void StbRenderer::drawText(const std::string& text, int posX, int posY, float fo
         }
 
         int advanceWidth, leftSideBearing;
-        stbtt_GetCodepointHMetrics(&font, c, &advanceWidth, &leftSideBearing);
+        stbtt_GetCodepointHMetrics(&fontData.font, c, &advanceWidth, &leftSideBearing);
         // std::cout << " advanceWidth: " << (float)advanceWidth * scale
         //           << " leftSideBearing: " << (float)leftSideBearing * scale << std::endl;
         posX += advanceWidth * scale;
@@ -382,24 +384,28 @@ void StbRenderer::drawText(const std::string& text, int posX, int posY, float fo
     }
 }
 
-int StbRenderer::getFontLineHeight(float fontSize)
+int StbRenderer::getFontLineHeight(FONT::TextStyle textStyle)
 {
-    float scale = stbtt_ScaleForMappingEmToPixels(&font, fontSize);
+    FONT::FontData& fontData = m_fontData[textStyle.fontName];  
+
+    float scale = stbtt_ScaleForMappingEmToPixels(&fontData.font, textStyle.size);
     int ascent, descent, lineGap;
-    stbtt_GetFontVMetrics(&font, &ascent, &descent, &lineGap);
+    stbtt_GetFontVMetrics(&fontData.font, &ascent, &descent, &lineGap);
     int baseline = (int)(ascent * scale);
     return baseline + 3; // '+3' is just a 'random' value for aesthetic purpose
 }
 
-int StbRenderer::getTextWidth(const std::string& text, float fontSize)
+int StbRenderer::getTextWidth(const std::string& text, FONT::TextStyle textStyle)
 {
-    float scale = stbtt_ScaleForMappingEmToPixels(&font, fontSize);
+    FONT::FontData& fontData = m_fontData[textStyle.fontName];  
+
+    float scale = stbtt_ScaleForMappingEmToPixels(&fontData.font, textStyle.size);
     int textWidth = 0;
     for (char c : text)
     {
         int width, height, xoff, yoff;
         int advanceWidth, leftSideBearing;
-        stbtt_GetCodepointHMetrics(&font, c, &advanceWidth, &leftSideBearing);
+        stbtt_GetCodepointHMetrics(&fontData.font, c, &advanceWidth, &leftSideBearing);
         textWidth += advanceWidth * scale;
     }
 

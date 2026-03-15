@@ -42,6 +42,10 @@ public:
     void StopOverlay();
     void FocusNextElement();
     void FocusPreviousElement();
+
+    void TextStyle(FONT::TextStyle textStyle);
+    void TextColor(Color color);
+
     void DrawTitle(const std::string& label);
     void BeginList(int* focusedIdxPtr);
     void EndList();
@@ -53,8 +57,9 @@ public:
     bool Text(const std::string &label);
     void PlainText(const std::string &label);
     void Spacer(float value = 15.0f);
-    void MenuTitle(std::string menuTitle);
-    void MenuInfo(std::string menuInfo);
+    void MenuTitle(std::string menuTitle, Color color = COLOR::WHITE);
+    void MenuInfo(std::string menuInfo);    // float fontSize = 16.0f;
+
     void InfoScreen(int bank, int id, std::string filename);
     void ShowPopupMessage(std::string message);
     void ShowStringInputDialog(std::string title, int& cursorIdx, std::string& input);
@@ -104,6 +109,9 @@ private:
     int m_titlePaddingBottom = 10;
     int m_textPaddingBottom = 2;
     int m_listPaddingLeft = 10;
+
+    FONT::TextStyle m_currentTextStyle = FONT::TEXTSTYLE::STANDARD;
+    Color m_currentColor = COLOR::WHITE;
 
     std::function<void()> m_overlay;
     int64_t m_overlayStartTimeMs = 0;
