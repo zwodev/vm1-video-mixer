@@ -42,6 +42,13 @@ struct Color
     bool operator==(const Color&) const = default;
 };
 
+struct DrawStyle
+{
+    Color color;
+    float thickness;
+    bool isFilled;
+};
+
 namespace COLOR
 {
     static Color WHITE = {255, 255, 255};
@@ -58,13 +65,13 @@ namespace COLOR
     static Color CYAN = {0, 255, 255};
     static Color FOREGROUND = COLOR::WHITE;
     static Color INVERTED = COLOR::BLACK;
-    static Color PLANE_0 = {149, 225, 110};
-    static Color PLANE_1 = {121, 193, 145};
-    static Color PLANE_2 = {94, 161, 180};
-    static Color PLANE_3 = {67, 130, 214};
+    static Color PLANE_0 = {0, 183, 150};
+    static Color PLANE_1 = {255, 214, 53};
+    static Color PLANE_2 = {255, 95, 162};
+    static Color PLANE_3 = {138, 105, 212};
 };
 
-namespace FONT
+namespace FONT  
 {
     struct FontData {
         std::vector<unsigned char> fontBuffer;
@@ -80,7 +87,7 @@ namespace FONT
     };
     namespace TEXTSTYLE
     {
-        static TextStyle MENU_TITLE = {"CreatoDisplay-Regular.otf", 32.0f};
+        static TextStyle MENU_TITLE = {"CreatoDisplay-Regular.otf", 28.0f};
         static TextStyle ROOT_MENU_ITEM = {"CreatoDisplay-Regular.otf", 20.0f};
         static TextStyle STANDARD = {"CreatoDisplay-Regular.otf", 16.0f};
         static TextStyle LIST_ITEM = {"ProggyClean.ttf", 16.0f};
@@ -121,12 +128,12 @@ public:
     void savePNG(const std::string& filename);
     bool loadFont(FONT::FontData& fontData);
     void drawImage(const ImageBuffer& imageBuffer, int posX = 0, int posY = 0);
-    void drawLine(int x0, int y0, int x1, int y1, Color color = COLOR::WHITE);
+    void drawLine(int x0, int y0, int x1, int y1, Color color = COLOR::WHITE, int thickness = 1);
     void drawRect(int x0, int y0, int w, int h, Color color = COLOR::WHITE);
     void drawArrow(int x0, int y0, int size, int direction, Color color = COLOR::WHITE);
-    void drawEmptyRect(int x0, int y0, int w, int h, Color color = COLOR::WHITE);
+    void drawEmptyRect(int x0, int y0, int w, int h, Color color = COLOR::WHITE, int thickness = 1);
     void drawEmptyCenteredRect(int x0, int y0, int w, int h, Color color = COLOR::WHITE);
-    void drawEmptyPolygon(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3, Color c = COLOR::WHITE);
+    void drawEmptyPolygon(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3, Color c = COLOR::WHITE, float thickness = 1.0f);
     void drawPolygon(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3, Color c = COLOR::WHITE);
     void drawFilledTriangle(int x0, int y0, int x1, int y1, int x2, int y2,Color c = COLOR::WHITE);
     void drawText(const std::string& text, int posX, int posY, FONT::TextStyle textStyle, Color color = COLOR::WHITE);

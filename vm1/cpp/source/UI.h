@@ -45,26 +45,33 @@ public:
 
     void TextStyle(FONT::TextStyle textStyle);
     void TextColor(Color color);
+    void pushTranslate(int x, int y);
+    void popTranslate();
 
-    void DrawTitle(const std::string& label);
-    void BeginList(int* focusedIdxPtr);
-    void EndList();
-    void BeginListElement();
-    void EndListElement();
-    void CenteredText(const std::string &label);
-    void startUpLogo();
-    void Image(const ImageBuffer& imageBuffer);
-    bool Text(const std::string &label);
-    void PlainText(const std::string &label);
-    void Spacer(float value = 15.0f);
-    void MenuTitle(std::string menuTitle, Color color = COLOR::WHITE);
-    void MenuInfo(std::string menuInfo);    // float fontSize = 16.0f;
-
-    void InfoScreen(int bank, int id, std::string filename);
+    void ShowMenuTitle(std::string menuTitle, Color color = COLOR::WHITE);
+    void ShowMediaSlotInfo(std::string menuInfo);
+    void ShowBankInfo(int bank);
     void ShowPopupMessage(std::string message);
     void ShowStringInputDialog(std::string title, int& cursorIdx, std::string& input);
-    void ShowBankInfo(int bank);
+
+    // void DrawTitle(const std::string& label);
+    bool Text(const std::string &label);
+    void CenteredText(const std::string &label);
+    void PlainText(const std::string &label);
+
+    void BeginList(int* focusedIdxPtr);
+    void BeginListElement();
+    void EndListElement();
+    void EndList();
+    
+    void startUpLogo();
+    void InfoScreen(int bank, int id, std::string filename);
     void ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts);
+    
+    void Image(const ImageBuffer& imageBuffer);
+    void Spacer(float value = 15.0f);
+    
+
     bool Action(const std::string& label);
     bool CheckBox(const std::string& label, bool checked);
     bool RadioButton(const std::string& label, bool active);
@@ -98,6 +105,7 @@ private:
     EventBus& m_eventBus;
     int m_x = 0;
     int m_y = 0;
+    std::vector<glm::vec2> m_translateStack;
     int m_listSize = 0;
     int m_lineHeight = 0;
     int m_menuHeight = 0;
@@ -106,7 +114,7 @@ private:
     int m_firstLine = 0;
     int m_currentElementHeight = 0;
 
-    int m_titlePaddingBottom = 10;
+    // int m_titlePaddingBottom = 10;
     int m_textPaddingBottom = 2;
     int m_listPaddingLeft = 10;
 

@@ -130,24 +130,61 @@ Image StbRenderer::popImage()
     return imageBuffer;
 }
 
-void StbRenderer::drawLine(int x0, int y0, int x1, int y1, Color color) 
-{
-    // Clamp endpoints first
-    x0 = std::max(0, std::min(x0, m_img.width-1));
-    y0 = std::max(0, std::min(y0, m_img.height-1));
-    x1 = std::max(0, std::min(x1, m_img.width-1));
-    y1 = std::max(0, std::min(y1, m_img.height-1));
+// void StbRenderer::drawLine(int x0, int y0, int x1, int y1, Color color, int thickness) 
+// {
+//     // Clamp endpoints first
+//     x0 = std::max(0, std::min(x0, m_img.width-1));
+//     y0 = std::max(0, std::min(y0, m_img.height-1));
+//     x1 = std::max(0, std::min(x1, m_img.width-1));
+//     y1 = std::max(0, std::min(y1, m_img.height-1));
     
+//     int dx = abs(x1 - x0);
+//     int dy = abs(y1 - y0);
+//     int sx = x0 < x1 ? 1 : -1;
+//     int sy = y0 < y1 ? 1 : -1;
+//     int err = dx - dy;
+    
+//     while (true) {
+//         m_img.setPixel(x0, y0, color.r, color.g, color.b);
+//         if (x0 == x1 && y0 == y1) break;
+        
+//         int e2 = 2 * err;
+//         if (e2 > -dy) {
+//             err -= dy;
+//             x0 += sx;
+//         }
+//         if (e2 < dx) {
+//             err += dx;
+//             y0 += sy;
+//         }
+//     }
+// }
+void StbRenderer::drawLine(int x0, int y0, int x1, int y1, Color color, int thickness)
+{
+    if (!m_isEnabled) return;
+
+    thickness = std::max(1, thickness);
     int dx = abs(x1 - x0);
     int dy = abs(y1 - y0);
     int sx = x0 < x1 ? 1 : -1;
     int sy = y0 < y1 ? 1 : -1;
     int err = dx - dy;
-    
+
     while (true) {
-        m_img.setPixel(x0, y0, color.r, color.g, color.b);
+        if (x0 >= 0 && x0 < m_img.width && y0 >= 0 && y0 < m_img.height) {
+            if (thickness == 1) {
+                m_img.setPixel(x0, y0, color.r, color.g, color.b);
+            } else {
+                int half = thickness / 2;
+                int left = x0 - half;
+                int top = y0 - half;
+                for (int oy = 0; oy < thickness; ++oy)
+                    for (int ox = 0; ox < thickness; ++ox)
+                        m_img.setPixel(left + ox, top + oy, color.r, color.g, color.b);
+            }
+        }
         if (x0 == x1 && y0 == y1) break;
-        
+
         int e2 = 2 * err;
         if (e2 > -dy) {
             err -= dy;
@@ -159,7 +196,6 @@ void StbRenderer::drawLine(int x0, int y0, int x1, int y1, Color color)
         }
     }
 }
-
 
 
 void StbRenderer::drawRect(int x0, int y0, int w, int h, Color color)
@@ -200,20 +236,26 @@ void StbRenderer::drawArrow(int x0, int y0, int s, int direction, Color color)
     }
 }
 
-void StbRenderer::drawEmptyRect(int x0, int y0, int w, int h, Color color)
+void StbRenderer::drawEmptyRect(int x0, int y0, int w, int h, Color color, int thickness)
 {
     if (!m_isEnabled) return;
 
-    for (int x = x0; x <= x0 + w; ++x)
-    {
-        m_img.setPixel(x, y0, color.r, color.g, color.b);
-        m_img.setPixel(x, y0 + h, color.r, color.g, color.b);
-    }
-    for (int y = y0; y <= y0 + h; ++y)
-    {
-        m_img.setPixel(x0, y, color.r, color.g, color.b);
-        m_img.setPixel(x0 + w, y, color.r, color.g, color.b);
-    }
+    drawLine(x0, y0, x0 + w, y0, color, thickness);
+    drawLine(x0 + w, y0, x0 + w, y0 + h, color, thickness);
+    drawLine(x0, y0 + h, x0 + w, y0 + h, color, thickness);
+    drawLine(x0, y0, x0, y0 + h, color, thickness);
+
+
+    // for (int x = x0; x <= x0 + w; ++x)
+    // {
+    //     m_img.setPixel(x, y0, color.r, color.g, color.b);
+    //     m_img.setPixel(x, y0 + h, color.r, color.g, color.b);
+    // }
+    // for (int y = y0; y <= y0 + h; ++y)
+    // {
+    //     m_img.setPixel(x0, y, color.r, color.g, color.b);
+    //     m_img.setPixel(x0 + w, y, color.r, color.g, color.b);
+    // }
 }
 
 void StbRenderer::drawEmptyCenteredRect(int x0, int y0, int w, int h, Color color) 
@@ -229,12 +271,12 @@ void StbRenderer::drawPolygon(int x0, int y0, int x1, int y1, int x2, int y2, in
     drawFilledTriangle(x0,y0, x2,y2, x3,y3, c);
 }
 
-void StbRenderer::drawEmptyPolygon(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3, Color c) 
+void StbRenderer::drawEmptyPolygon(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3, Color color, float thickness) 
 {
-    drawLine(x0, y0, x1, y1, c);
-    drawLine(x1, y1, x2, y2, c);
-    drawLine(x2, y2, x3, y3, c);
-    drawLine(x3, y3, x0, y0, c);
+    drawLine(x0, y0, x1, y1, color, thickness);
+    drawLine(x1, y1, x2, y2, color, thickness);
+    drawLine(x2, y2, x3, y3, color, thickness);
+    drawLine(x3, y3, x0, y0, color, thickness);
 }
 
 void StbRenderer::drawFilledTriangle(
