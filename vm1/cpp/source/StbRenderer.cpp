@@ -258,11 +258,11 @@ void StbRenderer::drawEmptyRect(int x0, int y0, int w, int h, Color color, int t
     // }
 }
 
-void StbRenderer::drawEmptyCenteredRect(int x0, int y0, int w, int h, Color color) 
+void StbRenderer::drawEmptyCenteredRect(int x0, int y0, int w, int h, Color color, float thickness) 
 {
     int leftX = x0 - w / 2;
     int topY = y0 - h / 2;
-    drawEmptyRect(leftX, topY, w, h, color);
+    drawEmptyRect(leftX, topY, w, h, color, thickness);
 }
 
 void StbRenderer::drawPolygon(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3, Color c) 

@@ -42,11 +42,18 @@ struct Color
     bool operator==(const Color&) const = default;
 };
 
+// TODO: Use this for drawing styles (?)
 struct DrawStyle
 {
+    enum Anchor {
+        TOP_LEFT,
+        CENTER
+    };
+
     Color color;
-    float thickness;
+    float strokeWidth;
     bool isFilled;
+    Anchor anchor;
 };
 
 namespace COLOR
@@ -132,7 +139,7 @@ public:
     void drawRect(int x0, int y0, int w, int h, Color color = COLOR::WHITE);
     void drawArrow(int x0, int y0, int size, int direction, Color color = COLOR::WHITE);
     void drawEmptyRect(int x0, int y0, int w, int h, Color color = COLOR::WHITE, int thickness = 1);
-    void drawEmptyCenteredRect(int x0, int y0, int w, int h, Color color = COLOR::WHITE);
+    void drawEmptyCenteredRect(int x0, int y0, int w, int h, Color color = COLOR::WHITE, float thickness = 1.0f);
     void drawEmptyPolygon(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3, Color c = COLOR::WHITE, float thickness = 1.0f);
     void drawPolygon(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3, Color c = COLOR::WHITE);
     void drawFilledTriangle(int x0, int y0, int x1, int y1, int x2, int y2,Color c = COLOR::WHITE);

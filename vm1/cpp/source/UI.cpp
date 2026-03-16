@@ -117,6 +117,7 @@ void UI::NewFrame()
     m_focusedIdxPtr = nullptr;
     m_x = 0;
     m_y = 0;
+    m_menuTitleHeight = m_stbRenderer.getFontLineHeight(FONT::TEXTSTYLE::MENU_TITLE);
 }
 
 void UI::EndFrame()
@@ -335,41 +336,41 @@ void UI::Spacer(float value) {
 
 void UI::ShowMenuTitle(std::string menuTitle, Color color)
 {
-    m_stbRenderer.drawText(menuTitle, 0, 0, FONT::TEXTSTYLE::MENU_TITLE, color);
-    m_y += m_stbRenderer.getFontLineHeight(FONT::TEXTSTYLE::MENU_TITLE);
+    m_y = m_screenPaddingTop;
+    // m_stbRenderer.drawText(menuTitle, 0, 0, FONT::TEXTSTYLE::MENU_TITLE, color);
+    // m_y += m_stbRenderer.getFontLineHeight(FONT::TEXTSTYLE::MENU_TITLE);
     // m_y += m_titlePaddingBottom;
+    m_menuTitleWidth = m_stbRenderer.getTextWidth(menuTitle, FONT::TEXTSTYLE::MENU_TITLE);
+    m_stbRenderer.drawEmptyRect(
+        m_x, 
+        m_y, 
+        m_menuTitleWidth + 10, 
+        m_menuTitleHeight, 
+        COLOR::WHITE, 2);
+    m_stbRenderer.drawText(menuTitle, 
+        m_x + 5, 
+        m_y, 
+        FONT::TEXTSTYLE::MENU_TITLE, 
+        COLOR::WHITE);
 }
 
 void UI::ShowMediaSlotInfo(std::string menuInfo)
 {
-    // float paddingRight = 100.0f;
-    int centerX = m_stbRenderer.width() / 2;
+    m_y = m_screenPaddingTop;
+    m_x = 70;
     int textWidth = m_stbRenderer.getTextWidth(menuInfo, FONT::TEXTSTYLE::MENU_TITLE);
-    int textHeight = m_stbRenderer.getFontLineHeight(FONT::TEXTSTYLE::MENU_TITLE);
-    m_x = centerX - textWidth / 2;
-    // m_stbRenderer.drawEmptyRect(width - textWidth - 2 - paddingRight, 
-    //                             0, 
-    //                             textWidth + 1, 
-    //                             m_stbRenderer.getFontLineHeight(FONT::TEXTSTYLE::MEDIA_SLOT_INFO) - 1, 
-    //                             COLOR::GREY);
-    // m_stbRenderer.drawText(menuInfo, 
-    //                        width - textWidth - 1 - paddingRight, 
-    //                        0, 
-    //                        FONT::TEXTSTYLE::MEDIA_SLOT_INFO, 
-    //                        COLOR::WHITE);
 
     m_stbRenderer.drawEmptyRect(m_x, 
-                                0, 
-                                textWidth, 
-                                textHeight, 
+                                m_y, 
+                                textWidth + 10, 
+                                m_menuTitleHeight, 
                                 COLOR::WHITE, 2);
     m_stbRenderer.drawText(menuInfo, 
-                            m_x, 
-                            0, 
+                            m_x + 5, 
+                            m_y, 
                             FONT::TEXTSTYLE::MENU_TITLE, 
                             COLOR::WHITE);
     m_x = 0;
-    m_y += textHeight;
 }
 
 void UI::InfoScreen(int bank, int id, std::string filename)
@@ -651,14 +652,17 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, Pla
     float rectCenterX[2];
     float aspectRatio = 16.0/9.0f;                         // todo: get aspect ratio from screen(s)
     float polygonThickness = 2.0f;
-
+    
     if (style == PLANE_PREVIEW_SMALL) 
     {
-        rectWidth = float(m_stbRenderer.width()) / 8.0f;
-        rectHeight = int(float(rectWidth) / aspectRatio);
-        float offsetX = 110.0f;
+        m_y = m_screenPaddingTop;
+        // rectWidth = float(m_stbRenderer.width()) / 8.0f;
+        // rectHeight = int(float(rectWidth) / aspectRatio);
+        rectHeight = m_menuTitleHeight;
+        rectWidth = int(float(rectHeight) * aspectRatio);
         float spacing = 7.0f;
-        centerX = float(m_stbRenderer.width()) / 2.0f + offsetX;
+        float paddingRight = 15.0f;
+        centerX = float(m_stbRenderer.width() - rectWidth - spacing * 2.0f - paddingRight);
         rectCenterX[0] = centerX - rectWidth/1.75f - spacing;
         rectCenterX[1] = centerX + rectWidth/1.75f + spacing;
         centerY = m_y + rectHeight / 2;
@@ -699,8 +703,16 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, Pla
     }
 
     // draw screens outlines
-    m_stbRenderer.drawEmptyCenteredRect(rectCenterX[0], centerY, rectWidth, rectHeight, COLOR::GREY);
-    m_stbRenderer.drawEmptyCenteredRect(rectCenterX[1], centerY, rectWidth, rectHeight, COLOR::GREY);
+    if (style == PLANE_PREVIEW_SMALL) 
+    {
+        m_stbRenderer.drawEmptyCenteredRect(rectCenterX[0], centerY, rectWidth, rectHeight, COLOR::WHITE, 2.0f);
+        m_stbRenderer.drawEmptyCenteredRect(rectCenterX[1], centerY, rectWidth, rectHeight, COLOR::WHITE, 2.0f);
+    }
+    else if (style == PLANE_PREVIEW_LARGE || style == PLANE_PREVIEW_VERTICES) 
+    {
+        m_stbRenderer.drawEmptyCenteredRect(rectCenterX[0], centerY, rectWidth, rectHeight, COLOR::GREY);
+        m_stbRenderer.drawEmptyCenteredRect(rectCenterX[1], centerY, rectWidth, rectHeight, COLOR::GREY);
+    }
 
     // draw planes
     Color colors[] = {COLOR::PLANE_0, COLOR::PLANE_1, COLOR::PLANE_2, COLOR::PLANE_3};
@@ -740,13 +752,38 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, Pla
         }
     }
 
-    // draw plane indices
+    // draw tiny horizontal lines to indicate the layer position
+    if (style == PLANE_PREVIEW_SMALL) 
+    {
+        int i = 0;
+        for(PlaneShape p : correctedPlanes)
+        {
+            int y = m_menuTitleHeight - int(float(i) * 5.0f) - 5;
+            int x;
+            Color color = i == selectedPlane ? colors[i] : COLOR::WHITE;
+             
+            if(planes[i].hdmiId == 0)
+            {
+                x = rectCenterX[0] - rectWidth/2 - 5;
+                m_stbRenderer.drawLine(x, y, x - 10, y, color, 2);
+            }
+            else
+            {
+                x = rectCenterX[1] + rectWidth/2 + 5;
+                m_stbRenderer.drawLine(x, y, x + 10, y, color, 2);
+            }
+            i++;
+        }
+    }
+
+    
+    // draw plane indices as numbers
     if (style == PLANE_PREVIEW_SMALL) 
     {
         // draw only currently selected plane index between the two rectangles
         Color color = colors[selectedPlane];
         FONT::TextStyle textStyle = FONT::TEXTSTYLE::STANDARD;
-        textStyle.size = 20.0f;
+        textStyle.size = 24.0f;
         m_stbRenderer.drawText(std::to_string(selectedPlane + 1), 
                                 centerX - textStyle.size / 4, 
                                 centerY - textStyle.size / 2, 
@@ -798,11 +835,13 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, Pla
         glm::vec2 vertex = p.vertices[i];
         m_stbRenderer.drawRect(vertex.x, vertex.y, 5, 5, COLOR::RED);
     }
-
-    // m_y += height;
 }
 
 void UI::savePNG(const std::string& filename){
     m_stbRenderer.savePNG(filename);
 }
 
+int UI::getMenuTitleHeight() const
+{
+    return m_menuTitleHeight;
+}

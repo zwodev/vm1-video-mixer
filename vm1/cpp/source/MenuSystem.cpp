@@ -243,14 +243,14 @@ void MenuSystem::handlePlaneSwitching()
         int maxValue = m_registry.planes().size() - 1;
         if (*id > maxValue) *id = maxValue;
         if (*id < minValue) *id = minValue;
+
+        if (m_currentMenuType == MT_SourceMenu || 
+            m_currentMenuType == MT_ControlMenu ) 
+        {
+            m_planeIdx = *id; // switch output plane as well
+        }
     }
 
-    // switch output plane for Source or Control menu
-    if (m_currentMenuType == MT_SourceMenu || 
-        m_currentMenuType == MT_ControlMenu ) 
-    {
-        m_planeIdx = *id;
-    }
 
 }
 
@@ -297,9 +297,8 @@ void MenuSystem::render()
     {
         UI::PlanePreviewStyle previewStyle = UI::PlanePreviewStyle::PLANE_PREVIEW_LARGE;
         // ToDo: Check if we are in the mapping submenu and set the preview style to PLANE_PREVIEW_VERTICES
-        m_ui.Spacer(30.0);
+        m_ui.Spacer(40.0);
         m_ui.PlanePreview(m_registry.planes(), m_planeIdx, previewStyle);
-        m_ui.Spacer(55.0);
     }
 
 
@@ -387,15 +386,17 @@ void MenuSystem::InfoMenu()
 void MenuSystem::SourceMenu() 
 {
     m_ui.ShowMenuTitle("SRC");
+    m_ui.Spacer(m_ui.getMenuTitleHeight());
+    m_ui.pushTranslate(50, 40);
+
     m_ui.TextStyle(FONT::TEXTSTYLE::ROOT_MENU_ITEM);
-    m_ui.pushTranslate(30, 30);
     m_ui.BeginList(&m_focusedIdx);
     m_ui.TextColor(COLOR::YELLOW);
     SubMenu("MEDIA", [this](){ FileSelection(); });
     m_ui.TextColor(COLOR::MAGENTA);
     SubMenu("HDMI", [this](){ LiveInputSelection(); });
     m_ui.TextColor(COLOR::CYAN);
-    SubMenu("SHADERS", [this](){ ShaderSelection(); });
+    SubMenu("SHADER", [this](){ ShaderSelection(); });
     m_ui.Spacer();
     m_ui.TextColor(COLOR::WHITE);
     SubMenu("CLEAR SLOT", [this](){ ClearSlot(); }); // TODO: Use Action.
@@ -406,7 +407,9 @@ void MenuSystem::SourceMenu()
 
 void MenuSystem::FileSelection()
 {
-    m_ui.ShowMenuTitle("SRC/Files");
+    m_ui.ShowMenuTitle("MEDIA");
+    m_ui.Spacer(m_ui.getMenuTitleHeight());
+
     auto config = std::make_unique<VideoInputConfig>();
     config->looping = m_registry.settings().defaultLooping;
 
@@ -444,7 +447,9 @@ void MenuSystem::FileSelection()
 
 void MenuSystem::LiveInputSelection() 
 {
-    m_ui.ShowMenuTitle("SRC/Live");
+    m_ui.ShowMenuTitle("HDMI");
+    m_ui.Spacer(m_ui.getMenuTitleHeight());
+
     auto config = std::make_unique<HdmiInputConfig>();
     HdmiInputConfig* currentConfig = m_registry.inputMappings().getHdmiInputConfig(m_id);
     if (currentConfig) { *config = *currentConfig; }
@@ -470,7 +475,9 @@ void MenuSystem::LiveInputSelection()
 
 void MenuSystem::ShaderSelection()
 {
-    m_ui.ShowMenuTitle("SRC/Shaders");
+    m_ui.ShowMenuTitle("SHADER");
+    m_ui.Spacer(m_ui.getMenuTitleHeight());
+
     auto config = std::make_unique<ShaderInputConfig>();
 
     ShaderInputConfig* currentConfig = m_registry.inputMappings().getShaderInputConfig(m_id);
@@ -497,7 +504,10 @@ void MenuSystem::ShaderSelection()
 // ##### CONTROL MENU #####
 void MenuSystem::ControlMenu() 
 {
-    m_ui.ShowMenuTitle("CTRL");
+    m_ui.ShowMenuTitle("CTL");
+    m_ui.Spacer(m_ui.getMenuTitleHeight());
+    m_ui.pushTranslate(0, 20);
+
     InputConfig* currentConfig = m_registry.inputMappings().getInputConfig(m_id);
     if (!currentConfig) {
         m_ui.BeginList(&m_focusedIdx);
@@ -549,6 +559,7 @@ void MenuSystem::ControlMenu()
     // m_ui.previewPlanes(m_registry.planes(), currentConfig->planeId);
 
     m_ui.EndList();
+    m_ui.popTranslate();
 }
 
 // ##### FX MENU #####
@@ -560,6 +571,9 @@ void MenuSystem::ControlMenu()
 void MenuSystem::FxMenu()
 {
     m_ui.ShowMenuTitle("FX");
+    m_ui.Spacer(m_ui.getMenuTitleHeight());
+    m_ui.pushTranslate(0, 100);
+
     m_ui.BeginList(&m_focusedIdx);
     auto& effects = m_registry.planes()[m_planeIdx].effects;
     for (int i = 0; i < effects.size(); ++i) {
@@ -569,6 +583,7 @@ void MenuSystem::FxMenu()
         }
     }
     m_ui.EndList();
+    m_ui.popTranslate();
 }
 
 void MenuSystem::EffectControl()
@@ -578,6 +593,9 @@ void MenuSystem::EffectControl()
 
     auto& effect = effects[m_effectIdx];
     m_ui.ShowMenuTitle("FX/" + effect.name);
+    m_ui.Spacer(m_ui.getMenuTitleHeight());
+
+    m_ui.pushTranslate(0, 100);
 
     m_ui.BeginList(&m_focusedIdx);
     for (auto& kv : effect.params) {
@@ -592,12 +610,16 @@ void MenuSystem::EffectControl()
         } 
     }
     m_ui.EndList(); 
+    m_ui.popTranslate();
 }
 
 // ##### OUT MENU #####
 void MenuSystem::OutputMenu()
 {
     m_ui.ShowMenuTitle("OUT");
+    m_ui.Spacer(m_ui.getMenuTitleHeight());
+
+    m_ui.pushTranslate(0, 100);
     m_ui.BeginList(&m_focusedIdx);
     SubMenu("Mrs. Mask", [this](){ Mask(); });
     SubMenu("Mr. Mapping", [this](){ Mapping(); });
@@ -605,19 +627,27 @@ void MenuSystem::OutputMenu()
     m_ui.SpinBoxFloat("Opacity", m_registry.planes()[m_planeIdx].opacity, 0.0f, 1.0f);
     m_ui.SpinBoxInt("HDMI Output", m_registry.planes()[m_planeIdx].hdmiId, 0, 1);
     m_ui.EndList();
+    m_ui.popTranslate();
 }
 
 void MenuSystem::Mask()
 {
     m_ui.ShowMenuTitle("OUT/Mask");
+    m_ui.Spacer(m_ui.getMenuTitleHeight());
+    m_ui.pushTranslate(0, 100);
+
     m_ui.BeginList(&m_focusedIdx);
     m_ui.Text("some way to load image or create a mask...");
     m_ui.EndList();
+    m_ui.popTranslate();
 }
 
 void MenuSystem::Mapping()
 {
     m_ui.ShowMenuTitle("OUT/Mapping");
+    m_ui.Spacer(m_ui.getMenuTitleHeight());
+    m_ui.pushTranslate(0, 100);
+
     m_ui.BeginList(&m_focusedIdx);
     m_ui.SpinBoxVec2("TopLeft", m_registry.planes()[m_planeIdx].coords[3]); 
     m_ui.SpinBoxVec2("TopRight", m_registry.planes()[m_planeIdx].coords[2]); 
@@ -633,6 +663,7 @@ void MenuSystem::Mapping()
         m_registry.planes()[m_planeIdx].resetMapping();
     }
     m_ui.EndList();
+    m_ui.popTranslate();
 }
 
 
@@ -641,6 +672,8 @@ void MenuSystem::Mapping()
 void MenuSystem::NetworkMenu() 
 {
     m_ui.ShowMenuTitle("Network");
+    m_ui.Spacer(m_ui.getMenuTitleHeight());
+
     Settings& settings = m_registry.settings();
     std::string eth0;
     std::string wlan0;
@@ -664,6 +697,8 @@ void MenuSystem::NetworkMenu()
 void MenuSystem::GlobalSettingsMenu() 
 {
     m_ui.ShowMenuTitle("Settings");
+    m_ui.Spacer(m_ui.getMenuTitleHeight());
+
     Settings& settings = m_registry.settings();
 
     m_ui.BeginList(&m_focusedIdx);
@@ -686,6 +721,8 @@ void MenuSystem::GlobalSettingsMenu()
 void MenuSystem::DeviceSettingsMenu() 
 {  
     m_ui.ShowMenuTitle("Hdmi Settings");
+    m_ui.Spacer(m_ui.getMenuTitleHeight());
+
     Settings& settings = m_registry.settings();
 
     m_ui.BeginList(&m_focusedIdx);
@@ -719,6 +756,8 @@ void MenuSystem::DeviceSettingsMenu()
 void MenuSystem::ButtonMatrixMenu() 
 {
     m_ui.ShowMenuTitle("Button");
+    m_ui.Spacer(m_ui.getMenuTitleHeight());
+
     int bank = m_registry.inputMappings().bank;
     for (int i = 0; i < m_buttonTexts.size(); ++i) {
         int mediaSlot = bank * 16 + i;

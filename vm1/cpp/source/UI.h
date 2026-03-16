@@ -87,7 +87,7 @@ public:
     bool isEditModeEventTriggered(int modeId);
 
     void savePNG(const std::string& filename);
-
+    int getMenuTitleHeight() const;
     std::vector<int> getTriggeredMediaSlotIds();
     std::vector<int> getTriggeredEditButtons();
 
@@ -116,7 +116,10 @@ private:
 
     // int m_titlePaddingBottom = 10;
     int m_textPaddingBottom = 2;
+    int m_screenPaddingTop = 2;
     int m_listPaddingLeft = 10;
+    int m_menuTitleHeight = 0;
+    int m_menuTitleWidth = 0;
 
     FONT::TextStyle m_currentTextStyle = FONT::TEXTSTYLE::STANDARD;
     Color m_currentColor = COLOR::WHITE;
