@@ -669,7 +669,7 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, Pla
     }
     else if (style == PLANE_PREVIEW_LARGE || style == PLANE_PREVIEW_VERTICES) 
     {
-        rectWidth = float(m_stbRenderer.width()) / 2.5f;
+        rectWidth = float(m_stbRenderer.width()) / 3.0f;
         rectHeight = int(float(rectWidth) / aspectRatio);
         centerX = float(m_stbRenderer.width()) / 2.0f;
         rectCenterX[0] = centerX - rectWidth/1.75f;
@@ -680,11 +680,13 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, Pla
     // create preview scale plane shapes
     struct PlaneShape {
         std::vector<glm::vec2> vertices;
+        int hdmiId;
     };
     std::vector<PlaneShape> correctedPlanes;
     correctedPlanes.reserve(planes.size());
     for (const PlaneSettings& p : planes) {
         correctedPlanes.push_back(PlaneShape{});
+        correctedPlanes.back().hdmiId = p.hdmiId;
         correctedPlanes.back().vertices.reserve(p.coords.size());
         const float halfWidth  = rectWidth * 0.5f;
         const float halfHeight = rectHeight * 0.5f;
@@ -710,8 +712,8 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, Pla
     }
     else if (style == PLANE_PREVIEW_LARGE || style == PLANE_PREVIEW_VERTICES) 
     {
-        m_stbRenderer.drawEmptyCenteredRect(rectCenterX[0], centerY, rectWidth, rectHeight, COLOR::GREY);
-        m_stbRenderer.drawEmptyCenteredRect(rectCenterX[1], centerY, rectWidth, rectHeight, COLOR::GREY);
+        m_stbRenderer.drawEmptyCenteredRect(rectCenterX[0], centerY, rectWidth, rectHeight, COLOR::WHITE);
+        m_stbRenderer.drawEmptyCenteredRect(rectCenterX[1], centerY, rectWidth, rectHeight, COLOR::WHITE);
     }
 
     // draw planes
@@ -753,27 +755,37 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, Pla
     }
 
     // draw tiny horizontal lines to indicate the layer position
+    int layerlineLength;
+    float layerSpacing;
     if (style == PLANE_PREVIEW_SMALL) 
     {
-        int i = 0;
-        for(PlaneShape p : correctedPlanes)
+        layerlineLength = 10;
+        layerSpacing = 5.0f;
+    }
+    else if (style == PLANE_PREVIEW_LARGE || style == PLANE_PREVIEW_VERTICES)
+    {
+        layerlineLength = 15;
+        layerSpacing = 5.0f;
+    }
+    int layerPreviewHeight = correctedPlanes.size() * layerSpacing;
+    int layerPreviewBottom = centerY + layerPreviewHeight / 2.0f;
+    int i = 0;
+    for(PlaneShape p : correctedPlanes)
+    {
+        int y = int(layerPreviewBottom - float(i) * layerSpacing);
+        Color color = i == selectedPlane ? colors[i] : COLOR::WHITE;
+            
+        if(p.hdmiId == 0)
         {
-            int y = m_menuTitleHeight - int(float(i) * 5.0f) - 5;
-            int x;
-            Color color = i == selectedPlane ? colors[i] : COLOR::WHITE;
-             
-            if(planes[i].hdmiId == 0)
-            {
-                x = rectCenterX[0] - rectWidth/2 - 5;
-                m_stbRenderer.drawLine(x, y, x - 10, y, color, 2);
-            }
-            else
-            {
-                x = rectCenterX[1] + rectWidth/2 + 5;
-                m_stbRenderer.drawLine(x, y, x + 10, y, color, 2);
-            }
-            i++;
+            int x = rectCenterX[0] - rectWidth/2 - 5;
+            m_stbRenderer.drawLine(x, y, x - layerlineLength, y, color, 2);
         }
+        else if(p.hdmiId == 1)
+        {
+            int x = rectCenterX[1] + rectWidth/2 + 5;
+            m_stbRenderer.drawLine(x, y, x + layerlineLength, y, color, 2);
+        }
+        i++;
     }
 
     
