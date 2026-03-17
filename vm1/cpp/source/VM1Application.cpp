@@ -37,6 +37,7 @@ VM1Application::VM1Application() :
     m_cameraController(m_eventBus)
 {
     subscribeToEvents();
+    glGenTextures(1, &m_miniDisplayTexture);
     //auto captureDevices = m_cameraController.getCaptureDevices("uvcvideo");
     // auto captureDevices = m_cameraController.getCaptureDevices("rp1-cfe");
     // for (auto captureDevice: captureDevices) {
@@ -521,34 +522,18 @@ void VM1Application::checkTimeoutAndReset(float deltaTime)
 }
 
 // Simple helper function to load an image into a OpenGL texture with common settings
-bool LoadTextureFromMemory(const void* data, size_t data_size, GLuint* out_texture, int* out_width, int* out_height)
+void VM1Application::updateMiniDisplayTexture()
 {
-    // Load from file
-    int image_width = 0;
-    int image_height = 0;
-    unsigned char* image_data = stbi_load_from_memory((const unsigned char*)data, (int)data_size, &image_width, &image_height, NULL, 4);
-    if (image_data == NULL)
-        return false;
-
-    // Create a OpenGL texture identifier
-    GLuint image_texture;
-    glGenTextures(1, &image_texture);
-    glBindTexture(GL_TEXTURE_2D, image_texture);
+    glBindTexture(GL_TEXTURE_2D, m_miniDisplayTexture);
 
     // Setup filtering parameters for display
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     // Upload pixels into texture
+    const auto& imageBuffer = m_oledController.getImageBuffer();
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
-    stbi_image_free(image_data);
-
-    *out_texture = image_texture;
-    *out_width = image_width;
-    *out_height = image_height;
-
-    return true;
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageBuffer.width, imageBuffer.height, 0, GL_RGB, GL_UNSIGNED_BYTE, imageBuffer.pixels.data());
 }
 
 void VM1Application::renderImGui()
@@ -577,13 +562,12 @@ void VM1Application::renderImGui()
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
             ImGui::End();
         }
-        // {
-        //     ImGui::Begin("Development");
-        //     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-        //     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
-        //     ImGui::Image((ImTextureID)(intptr_t)texture, ImVec2(texture->Width, texture->Height));
-        //     ImGui::End()
-        // }
+        {
+            ImGui::Begin("Mini Display");
+            updateMiniDisplayTexture();
+            ImGui::Image((ImTextureID)(intptr_t)m_miniDisplayTexture, ImVec2(320, 240));
+            ImGui::End();
+        }
     }
 
     m_fileAssignmentWidget.render();

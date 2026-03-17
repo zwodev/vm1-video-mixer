@@ -9,4 +9,10 @@ namespace strhlpr {
         oss << std::fixed << std::setprecision(decimals) << value;
         return oss.str();
     }
+
+    // void removeAllWhitespaces(std::string& s) {
+    //     // Remove ALL whitespace (including internal spaces/tabs/etc.)
+    //     s.erase(std::remove_if(s.begin(), s.end(), 
+    //         [](unsigned char ch) { return std::isspace(ch); }), s.end());
+    // }
 }

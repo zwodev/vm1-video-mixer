@@ -31,6 +31,8 @@ private:
     GLuint loadShaderByType(const char* filename, GLenum shaderType);
     bool link();
     void createShaderConfigFromUniforms();
+    void parseUnifromJson(const std::string& uniformName, const std::string& uniformType, const std::string& uniformJson);
+    void extractUniformMetadata(const char* filename);
     void destroyShaderProg(GLuint shaderProg);
     
 

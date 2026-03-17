@@ -35,6 +35,8 @@ public:
     void renderToRGB565(Image& imageBuffer, bool saveAsBmp);
     void render();
 
+    const Image& getImageBuffer();
+
 private:
     void process();
 
@@ -42,8 +44,10 @@ public:
     UBYTE *oledImage;
 
 private:
+    std::mutex m_mutex;
     bool m_isRunning = false;
     std::thread m_thread;
     StbRenderer* m_stbRenderer = nullptr;
+    Image m_imageBuffer;
     UWORD m_imagesize;
 };

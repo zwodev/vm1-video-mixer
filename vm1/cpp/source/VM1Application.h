@@ -65,6 +65,7 @@ private:
     void renderImGui();
     void renderWindow(int windowIndex);
     void checkTimeoutAndReset(float deltaTime);
+    void updateMiniDisplayTexture();
 
 private:
     bool m_hadKeyDown = false;
@@ -88,8 +89,11 @@ private:
     FileAssignmentWidget m_fileAssignmentWidget;
     StbRenderer m_stbRenderer;
     UI m_ui;
+
     OledController m_oledController;
     ILI9341Controller m_ili9341Controller;
+    GLuint m_miniDisplayTexture;
+
     MenuSystem m_menuSystem;
     DeviceController m_deviceController;
 };

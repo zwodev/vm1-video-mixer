@@ -72,16 +72,26 @@ struct FloatParameter
     }  
 };
 
-struct Vec2Parameter
+struct Vec2
 {
-    Vec2Parameter() = default;
-    Vec2Parameter(const std::string& name, float x, float y) {
-        this->name = name;
+    Vec2() = default;
+    Vec2(float x, float y) {
         this->x = x;
         this->y = y;
     }
-    
-    std::string name;
+
+    float& operator[](std::size_t i) {
+        if (i == 0) return x;
+        else if (i == 1) return y;
+        else throw std::out_of_range("Vec2 index");
+    }
+
+    const float& operator[](std::size_t i) const {
+        if (i == 0) return x;
+        else if (i == 1) return y;
+        else throw std::out_of_range("Vec2 index");
+    }
+
     float x = 0.0f;
     float y = 0.0f;
 
@@ -89,24 +99,62 @@ struct Vec2Parameter
     void serialize(Archive& ar)
     {
         ar(
-            CEREAL_NVP(name),
             CEREAL_NVP(x),
             CEREAL_NVP(y)
         );
     }  
 };
 
-struct Vec3Parameter
+struct Vec2Parameter
 {
-    Vec3Parameter() = default;
-    Vec3Parameter(const std::string& name, float x, float y, float z) {
+    Vec2Parameter() = default;
+    Vec2Parameter(const std::string& name, Vec2 value, Vec2 min = Vec2(0.0f, 0.0f), Vec2 max = Vec2(1.0f, 1.0f), Vec2 step = Vec2(0.01f, 0.01f)) {
         this->name = name;
+        this->value = value;
+    }
+    
+    std::string name;
+    Vec2 value;
+    Vec2 min = Vec2(0.0f, 0.0f);
+    Vec2 max = Vec2(1.0f, 1.0f);
+    Vec2 step = Vec2(0.01f, 0.01f);
+
+    template <class Archive>
+    void serialize(Archive& ar)
+    {
+        ar(
+            CEREAL_NVP(name),
+            CEREAL_NVP(value),
+            CEREAL_NVP(min),
+            CEREAL_NVP(max),
+            CEREAL_NVP(step)
+        );
+    }  
+};
+
+struct Vec3
+{
+    Vec3() = default;
+    Vec3(float x, float y, float z) {
         this->x = x;
         this->y = y;
         this->z = z;
     }
-    
-    std::string name;
+
+    float& operator[](std::size_t i) {
+        if (i == 0) return x;
+        else if (i == 1) return y;
+        else if (i == 2) return z;
+        else throw std::out_of_range("Vec3 index");
+    }
+
+    const float& operator[](std::size_t i) const {
+        if (i == 0) return x;
+        else if (i == 1) return y;
+        else if (i == 2) return z;
+        else throw std::out_of_range("Vec3 index");
+    }
+
     float x = 0.0f;
     float y = 0.0f;
     float z = 0.0f;
@@ -115,10 +163,37 @@ struct Vec3Parameter
     void serialize(Archive& ar)
     {
         ar(
-            CEREAL_NVP(name),
             CEREAL_NVP(x),
             CEREAL_NVP(y),
             CEREAL_NVP(z)
+        );
+    }  
+};
+
+struct Vec3Parameter
+{
+    Vec3Parameter() = default;
+    Vec3Parameter(const std::string& name, Vec3 value) {
+        this->name = name;
+        this->value = value;
+    }
+    
+    std::string name;
+    Vec3 value;
+    Vec3 min = Vec3(0.0f, 0.0f, 0.0f);
+    Vec3 max = Vec3(1.0f, 1.0f, 1.0f);
+    Vec3 step = Vec3(0.01f, 0.01f, 0.01f);
+
+
+    template <class Archive>
+    void serialize(Archive& ar)
+    {
+        ar(
+            CEREAL_NVP(name),
+            CEREAL_NVP(value),
+            CEREAL_NVP(min),
+            CEREAL_NVP(max),
+            CEREAL_NVP(step)
         );
     }    
 };

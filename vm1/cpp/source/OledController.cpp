@@ -12,7 +12,8 @@
 
 #include "OledController.h"
 
-OledController::OledController()
+OledController::OledController() :
+    m_imageBuffer(320, 240)
 {
 }
 
@@ -45,6 +46,12 @@ void OledController::stop()
     }
 }
 
+const Image& OledController::getImageBuffer()
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_imageBuffer;
+}
+
 void OledController::process()
 {
     if (!m_stbRenderer) return;
@@ -52,15 +59,14 @@ void OledController::process()
     initializeOled();
     initializeImageBuffer();
     while (m_isRunning) {
-        Image imageBuffer = m_stbRenderer->popImage();
-        renderToRGB565(imageBuffer, false);
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_imageBuffer = m_stbRenderer->popImage();
+        renderToRGB565(m_imageBuffer, false);
         render();
     }   
 
     OLED_1in5_rgb_Clear();
     DEV_ModuleExit();
-    //delete oledImage;
-    //oledImage = nullptr;
 }
 
 void OledController::Handler(int signo)
