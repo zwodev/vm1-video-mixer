@@ -113,7 +113,8 @@ struct NavigationEvent {
         NavigationRight,
         NavigationLeft,
         NavigationAuxUp,
-        NavigationAuxDown   
+        NavigationAuxDown,
+        Screenshot
     };
 
     NavigationEvent() = delete;

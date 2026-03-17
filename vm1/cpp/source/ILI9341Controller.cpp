@@ -137,19 +137,19 @@ int ILI9341Controller::initializeImageBuffer()
 
 void ILI9341Controller::render()
 {
-    static int renderCount = 0;
-    static auto startTime = std::chrono::steady_clock::now();
+    // static int renderCount = 0;
+    // static auto startTime = std::chrono::steady_clock::now();
     
     ILI9341_Display_nByte(m_displayBuffer, m_bufferSize);
-    renderCount++;
-    
-    if (renderCount % 60 == 0) {  // Print every 60 frames
-        auto currentTime = std::chrono::steady_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
-        double fps = (renderCount * 1000.0) / elapsed;
-        std::cout << "ILI9341: Rendered " << renderCount << " frames (" 
-                  << std::fixed << std::setprecision(1) << fps << " fps)\n";
-    }
+
+    // renderCount++;
+    // if (renderCount % 60 == 0) {  // Print every 60 frames
+    //     auto currentTime = std::chrono::steady_clock::now();
+    //     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
+    //     double fps = (renderCount * 1000.0) / elapsed;
+    //     std::cout << "ILI9341: Rendered " << renderCount << " frames (" 
+    //               << std::fixed << std::setprecision(1) << fps << " fps)\n";
+    // }
 }
 
 void ILI9341Controller::convertToRGB565(Image& imageBuffer)

@@ -95,6 +95,10 @@ void KeyboardControllerLinux::update(input_event& event)
             break;
             default:
                 break;
+        case KEY_SPACE:
+            m_eventBus.publish(NavigationEvent(NavigationEvent::Type::Screenshot));
+            return;
+            break;
         }
 
         for(int i = 0; i < m_editKeys.size(); ++i) 

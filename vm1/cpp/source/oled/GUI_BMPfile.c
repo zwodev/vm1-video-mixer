@@ -108,13 +108,13 @@ UBYTE GUI_ReadBmp(const char *path, UWORD Xstart, UWORD Ystart)
     }
     if (bmprgbquad[0].rgbBlue == 0xff && bmprgbquad[0].rgbGreen == 0xff && bmprgbquad[0].rgbRed == 0xff)
     {
-        Bcolor = BLACK;
-        Wcolor = WHITE;
+        Bcolor = OLED_BLACK;
+        Wcolor = OLED_WHITE;
     }
     else
     {
-        Bcolor = WHITE;
-        Wcolor = BLACK;
+        Bcolor = OLED_WHITE;
+        Wcolor = OLED_BLACK;
     }
 
     // Read image data into the cache

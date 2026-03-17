@@ -24,6 +24,14 @@ public:
         ERROR,
         WARNING
     };
+
+    enum PlanePreviewStyle
+    {
+        PLANE_PREVIEW_SMALL,
+        PLANE_PREVIEW_LARGE,
+        PLANE_PREVIEW_VERTICES
+    };
+
     UI() = delete;
     ~UI() = default;
     UI(StbRenderer &stbRenderer, EventBus &eventBus);
@@ -34,32 +42,43 @@ public:
     void StopOverlay();
     void FocusNextElement();
     void FocusPreviousElement();
-    void DrawTitle(const std::string& label);
-    void BeginList(int* focusedIdxPtr);
-    void EndList();
-    void BeginListElement();
-    void EndListElement();
-    void CenteredText(const std::string &label);
-    void startUpLogo();
-    void Image(const ImageBuffer& imageBuffer);
-    bool Text(const std::string &label);
-    void PlainText(const std::string &label);
-    void Break();
-    void MenuTitle(std::string menuTitle);
-    void MenuInfo(std::string menuInfo);
-    void InfoScreen(int bank, int id, std::string filename);
+
+    void TextStyle(FONT::TextStyle textStyle);
+    void TextColor(Color color);
+    void pushTranslate(int x, int y);
+    void popTranslate();
+
+    void ShowMenuTitle(std::string menuTitle, Color color = COLOR::WHITE);
+    void ShowMediaSlotInfo(std::string menuInfo);
+    void ShowBankInfo(int bank);
     void ShowPopupMessage(std::string message);
     void ShowStringInputDialog(std::string title, int& cursorIdx, std::string& input);
-    void ShowBankInfo(int bank);
+
+    // void DrawTitle(const std::string& label);
+    bool Text(const std::string &label);
+    void CenteredText(const std::string &label);
+    void PlainText(const std::string &label);
+
+    void BeginList(int* focusedIdxPtr);
+    void BeginListElement();
+    void EndListElement();
+    void EndList();
+    
+    void startUpLogo();
+    void InfoScreen(int bank, int id, std::string filename);
     void ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts);
+    
+    void Image(const ImageBuffer& imageBuffer);
+    void Spacer(float value = 15.0f);
+    
+
     bool Action(const std::string& label);
     bool CheckBox(const std::string& label, bool checked);
     bool RadioButton(const std::string& label, bool active);
     bool SpinBoxInt(const std::string& label, int& value, int minValue, int maxValue, int step = 1);
     bool SpinBoxFloat(const std::string& label, float& value, float minValue, float maxValue, float step = 0.01f);
     bool SpinBoxVec2(const std::string& label, glm::vec2& vec, float step = 0.1f);
-    bool SpinBoxPlaneSelect(int& value, int minValue, int maxValue);
-    bool previewPlanes(std::vector<PlaneSettings> planes, int& selectedPlane);
+    void PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, PlanePreviewStyle style);
 
     bool isValueChangeEventTriggered(ValueChangeEvent::Type eventType, int id);
     bool isNavigationEventTriggered(NavigationEvent::Type eventType);
@@ -67,6 +86,8 @@ public:
     bool isMediaSlotEventTriggered(int mediaSlotId);
     bool isEditModeEventTriggered(int modeId);
 
+    void savePNG(const std::string& filename);
+    int getMenuTitleHeight() const;
     std::vector<int> getTriggeredMediaSlotIds();
     std::vector<int> getTriggeredEditButtons();
 
@@ -84,6 +105,7 @@ private:
     EventBus& m_eventBus;
     int m_x = 0;
     int m_y = 0;
+    std::vector<glm::vec2> m_translateStack;
     int m_listSize = 0;
     int m_lineHeight = 0;
     int m_menuHeight = 0;
@@ -92,9 +114,15 @@ private:
     int m_firstLine = 0;
     int m_currentElementHeight = 0;
 
-    int m_titlePaddingBottom = 10;
+    // int m_titlePaddingBottom = 10;
     int m_textPaddingBottom = 2;
+    int m_screenPaddingTop = 2;
     int m_listPaddingLeft = 10;
+    int m_menuTitleHeight = 0;
+    int m_menuTitleWidth = 0;
+
+    FONT::TextStyle m_currentTextStyle = FONT::TEXTSTYLE::STANDARD;
+    Color m_currentColor = COLOR::WHITE;
 
     std::function<void()> m_overlay;
     int64_t m_overlayStartTimeMs = 0;

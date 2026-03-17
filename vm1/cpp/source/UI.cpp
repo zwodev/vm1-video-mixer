@@ -117,6 +117,7 @@ void UI::NewFrame()
     m_focusedIdxPtr = nullptr;
     m_x = 0;
     m_y = 0;
+    m_menuTitleHeight = m_stbRenderer.getFontLineHeight(FONT::TEXTSTYLE::MENU_TITLE);
 }
 
 void UI::EndFrame()
@@ -170,6 +171,33 @@ void UI::FocusPreviousElement()
     }
 }
 
+void UI::TextStyle(FONT::TextStyle textStyle)
+{
+    m_currentTextStyle = textStyle;
+    m_lineHeight = m_stbRenderer.getFontLineHeight(m_currentTextStyle) + m_textPaddingBottom;
+}
+
+void UI::TextColor(Color color)
+{
+    m_currentColor = color;
+}
+
+void UI::pushTranslate(int x, int y)
+{
+    m_translateStack.push_back(glm::vec2(m_x, m_y));
+    m_x += x;
+    m_y += y;
+}
+
+void UI::popTranslate()
+{
+    if (m_translateStack.empty()) return;
+    glm::vec2 translate = m_translateStack.back();
+    m_translateStack.pop_back();
+    m_x = translate.x;
+    m_y = translate.y;
+}
+
 void UI::BeginList(int* focusedIdxPtr) 
 {   
     if (!focusedIdxPtr) return;
@@ -178,7 +206,7 @@ void UI::BeginList(int* focusedIdxPtr)
     float fontSize = 16.0f;
     m_listSize = 0;
     m_focusedIdxPtr = focusedIdxPtr;
-    m_lineHeight = m_stbRenderer.getFontLineHeight(fontSize) + m_textPaddingBottom;
+    m_lineHeight = m_stbRenderer.getFontLineHeight(m_currentTextStyle) + m_textPaddingBottom;
     m_menuHeight = maxHeight - m_y;
     m_visibleListElements = m_menuHeight / m_lineHeight;
 
@@ -251,9 +279,9 @@ void UI::Image(const ImageBuffer& imageBuffer)
 
 void UI::CenteredText(const std::string &label)
 {
-    float fontSize = 16.0f;
-    float fontWidth = m_stbRenderer.getTextWidth(label, fontSize);
-    float fontHeight = m_stbRenderer.getFontLineHeight(fontSize);
+    // float fontSize = 16.0f;
+    float fontWidth = m_stbRenderer.getTextWidth(label, m_currentTextStyle);
+    float fontHeight = m_stbRenderer.getFontLineHeight(m_currentTextStyle);
 
     int centerX = m_stbRenderer.width() / 2;
     int centerY = m_stbRenderer.height() / 2;
@@ -261,21 +289,27 @@ void UI::CenteredText(const std::string &label)
     m_stbRenderer.drawText(label, 
                            centerX - fontWidth / 2, 
                            centerY - fontHeight / 2, 
-                           fontSize, 
-                           COLOR::WHITE);
+                           m_currentTextStyle, 
+                           m_currentColor);
 }
 
 bool UI::Text(const std::string &label)
 {
     UI::BeginListElement();
-    float fontSize = 16.0f;
-    Color color = COLOR::WHITE;
+    // float fontSize = m_currentTextStyle.size;
+    Color color = m_currentColor;
+    float textWidth = m_stbRenderer.getTextWidth(label, m_currentTextStyle);
     bool selected = (m_focusedIdxPtr && ((*m_focusedIdxPtr) == m_listSize));
     if (selected) {
-            m_stbRenderer.drawRect(m_x, m_y - 1, m_stbRenderer.width() - m_x, fontSize - 2, COLOR::WHITE);
+            m_stbRenderer.drawRect(m_x, 
+                                   m_y - 1, 
+                                // m_stbRenderer.width() - m_x, 
+                                   textWidth, 
+                                   m_lineHeight, 
+                                   color);
             color = COLOR::BLACK;
     }
-    m_stbRenderer.drawText(label, m_x, m_y, fontSize, color);
+    m_stbRenderer.drawText(label, m_x, m_y, m_currentTextStyle, color);
     UI::EndListElement();
 
     return selected;
@@ -284,46 +318,59 @@ bool UI::Text(const std::string &label)
 void UI::PlainText(const std::string &label)
 {
     UI::BeginListElement();
-    float fontSize = 16.0f;
-    Color color = COLOR::WHITE;
+    // float fontSize = 16.0f;
+    // Color color = COLOR::WHITE;
     // if (m_focusedIdxPtr) {
     //     if ((*m_focusedIdxPtr) == m_listSize){            
     //         m_stbRenderer.drawRect(m_x, m_y - 1, m_stbRenderer.width() - m_x, fontSize - 2, COLOR::WHITE);
     //         color = COLOR::BLACK;
     //     } 
     // }
-    m_stbRenderer.drawText(label, m_x, m_y, fontSize, color);
+    m_stbRenderer.drawText(label, m_x, m_y, m_currentTextStyle, m_currentColor);
     UI::EndListElement();
 }
 
-void UI::Break() {
-    m_y += 15.0f;
+void UI::Spacer(float value) {
+    m_y += value;
 }
 
-void UI::MenuTitle(std::string menuTitle)
+void UI::ShowMenuTitle(std::string menuTitle, Color color)
 {
-    float fontSize = 32.0f;
-    m_stbRenderer.drawText(menuTitle, m_x, m_y, fontSize, COLOR::WHITE);
-    m_y += m_stbRenderer.getFontLineHeight(fontSize);
-    m_y += m_titlePaddingBottom;
+    m_y = m_screenPaddingTop;
+    // m_stbRenderer.drawText(menuTitle, 0, 0, FONT::TEXTSTYLE::MENU_TITLE, color);
+    // m_y += m_stbRenderer.getFontLineHeight(FONT::TEXTSTYLE::MENU_TITLE);
+    // m_y += m_titlePaddingBottom;
+    m_menuTitleWidth = m_stbRenderer.getTextWidth(menuTitle, FONT::TEXTSTYLE::MENU_TITLE);
+    m_stbRenderer.drawEmptyRect(
+        m_x, 
+        m_y, 
+        m_menuTitleWidth + 10, 
+        m_menuTitleHeight, 
+        COLOR::WHITE, 2);
+    m_stbRenderer.drawText(menuTitle, 
+        m_x + 5, 
+        m_y, 
+        FONT::TEXTSTYLE::MENU_TITLE, 
+        COLOR::WHITE);
 }
 
-void UI::MenuInfo(std::string menuInfo)
+void UI::ShowMediaSlotInfo(std::string menuInfo)
 {
-    float fontSize = 32.0f;
-    int width = m_stbRenderer.width();
-    int textWidth = m_stbRenderer.getTextWidth(menuInfo, fontSize);
-    // std::cout << "text width for '" << menuInfo << "': " << textWidth << std::endl;
-    m_stbRenderer.drawEmptyRect(width - textWidth - 2, 
-                                0, 
-                                textWidth + 1, 
-                                m_stbRenderer.getFontLineHeight(fontSize) - 1, 
-                                COLOR::WHITE);
+    m_y = m_screenPaddingTop;
+    m_x = 70;
+    int textWidth = m_stbRenderer.getTextWidth(menuInfo, FONT::TEXTSTYLE::MENU_TITLE);
+
+    m_stbRenderer.drawEmptyRect(m_x, 
+                                m_y, 
+                                textWidth + 10, 
+                                m_menuTitleHeight, 
+                                COLOR::WHITE, 2);
     m_stbRenderer.drawText(menuInfo, 
-                           width - textWidth - 1, 
-                           0, 
-                           fontSize, 
-                           COLOR::WHITE);
+                            m_x + 5, 
+                            m_y, 
+                            FONT::TEXTSTYLE::MENU_TITLE, 
+                            COLOR::WHITE);
+    m_x = 0;
 }
 
 void UI::InfoScreen(int bank, int id, std::string filename)
@@ -342,11 +389,11 @@ void UI::ShowPopupMessage(std::string message)
     int height = m_stbRenderer.height();
     m_stbRenderer.clear();
 
-    int fontSize = 16;
+    int fontSize = FONT::TEXTSTYLE::STANDARD.size;
     int x = 4;
     int y = height/2 - fontSize/2;
 
-    m_stbRenderer.drawText(message, x, y, fontSize, COLOR::WHITE);
+    m_stbRenderer.drawText(message, x, y, FONT::TEXTSTYLE::STANDARD, COLOR::WHITE);
 }
 
 void UI::ShowStringInputDialog(std::string title, int& cursorIdx, std::string& input)
@@ -377,8 +424,8 @@ void UI::ShowStringInputDialog(std::string title, int& cursorIdx, std::string& i
     input.at(cursorIdx) = currentChar;
     m_stbRenderer.drawRect(width/10, height/10, width - (width/10*2), height - (height/10*2), COLOR::BLACK);
     m_stbRenderer.drawEmptyRect(width/10, height/10, width - (width/10*2), height - (height/10*2), COLOR::WHITE);
-    m_stbRenderer.drawText(title, width/10+10, height/10+10, 26, COLOR::WHITE);
-    m_stbRenderer.drawText(input, width/10+10, height/10+70, 22, COLOR::WHITE);
+    m_stbRenderer.drawText(title, width/10+10, height/10+10, FONT::TEXTSTYLE::STANDARD, COLOR::WHITE);
+    m_stbRenderer.drawText(input, width/10+10, height/10+70, FONT::TEXTSTYLE::STANDARD, COLOR::WHITE);
 }
 
 void UI::ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts)
@@ -389,7 +436,7 @@ void UI::ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts)
     
     int quadPadding = 2;
     int quadSize = (width / (buttonTexts.size() / 2)) - quadPadding;
-    int fontSize = 16;
+    // int fontSize = 16;
     for(int i = 0; i < buttonTexts.size(); i++)
     {
         int x = (quadPadding / 2) + (i % 8) * (quadSize + quadPadding);
@@ -397,11 +444,11 @@ void UI::ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts)
 
         if (buttonTexts[i].second == COLOR::BLACK) {
             m_stbRenderer.drawRect(x, y, quadSize, quadSize, Color(30, 30, 30));
-            m_stbRenderer.drawText(std::string(1, static_cast<char>(buttonTexts[i].first)), x + 4, y + 3, fontSize, Color(120, 120, 120));
+            m_stbRenderer.drawText(std::string(1, static_cast<char>(buttonTexts[i].first)), x + 4, y + 3, FONT::TEXTSTYLE::STANDARD, Color(120, 120, 120));
         }
         else {
             m_stbRenderer.drawRect(x, y, quadSize, quadSize, buttonTexts[i].second);
-            m_stbRenderer.drawText(std::string(1, static_cast<char>(buttonTexts[i].first)), x + 4, y + 3, fontSize, COLOR::WHITE);
+            m_stbRenderer.drawText(std::string(1, static_cast<char>(buttonTexts[i].first)), x + 4, y + 3, FONT::TEXTSTYLE::STANDARD, COLOR::WHITE);
             m_stbRenderer.drawEmptyRect(x, y, quadSize, quadSize, Color(30, 30, 30));
         }
     }
@@ -415,17 +462,17 @@ void UI::ShowBankInfo(int bank)
     
     int quadPadding = 5;
     int quadSize = (width / BANK_COUNT) - quadPadding;
-    int fontSize = 16;
+    // int fontSize = 16;
     for(int i = 0; i < BANK_COUNT; i++)
     {
         int x = quadPadding / 2 + i * (quadSize + quadPadding);
         int y = height/2 - quadSize / 2;
         if(bank == i) {
             m_stbRenderer.drawRect(x, y, quadSize, quadSize, COLOR::WHITE);
-            m_stbRenderer.drawText(std::string(1, static_cast<char>(i + 65)), x + 4, y + 3, fontSize, COLOR::BLACK);
+            m_stbRenderer.drawText(std::string(1, static_cast<char>(i + 65)), x + 4, y + 3, FONT::TEXTSTYLE::STANDARD, COLOR::BLACK);
         } else {
             m_stbRenderer.drawEmptyRect(x, y, quadSize, quadSize, COLOR::WHITE);
-            m_stbRenderer.drawText(std::string(1, static_cast<char>(i + 65)), x + 4, y + 3, fontSize, COLOR::WHITE);
+            m_stbRenderer.drawText(std::string(1, static_cast<char>(i + 65)), x + 4, y + 3, FONT::TEXTSTYLE::STANDARD, COLOR::WHITE);
         }
     }
 }
@@ -524,45 +571,6 @@ bool UI::SpinBoxInt(const std::string& label, int& value, int minValue, int maxV
     return hasChanged;
 }
 
-bool UI::SpinBoxPlaneSelect(int& value, int minValue, int maxValue)
-{
-    bool hasChanged = false;
-    if(isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxDown))
-    {
-        hasChanged = true;
-        value += 1;
-        if (value > maxValue) value = maxValue;
-    }
-    else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxUp))
-    {
-        hasChanged = true;
-        value -= 1;
-        if (value < minValue) value = minValue;
-    }
-
-    int maxWidth = m_stbRenderer.width();
-    int padding = 15;
-    int boxSize = 30;
-    int totalBoxWidth = (maxValue + 1) * boxSize + (maxValue * padding);
-    int gap = (maxWidth - totalBoxWidth) / 2;
-    int x = gap;
-    for(int i = 0; i <= maxValue; ++i) {
-        if (i == value){
-            m_stbRenderer.drawRect(x, m_y, boxSize, boxSize);
-            m_stbRenderer.drawText(std::to_string(i+1), x + boxSize/3, m_y + boxSize/4, 24, COLOR::BLACK);
-        } else {
-            m_stbRenderer.drawEmptyRect(x, m_y, boxSize, boxSize);
-            m_stbRenderer.drawText(std::to_string(i+1), x + boxSize/3, m_y + boxSize/4, 24, COLOR::WHITE);
-        }
-        x += boxSize + padding;
-    }
-    m_y += boxSize;
-    // std::string newLabel = "Plane: " + std::to_string(value);
-    // Text(newLabel);
-    return hasChanged;
-}
-
-
 bool UI::SpinBoxFloat(const std::string& label, float& value, float minValue, float maxValue, float step)
 {
     bool hasChanged = false;
@@ -591,7 +599,6 @@ bool UI::SpinBoxFloat(const std::string& label, float& value, float minValue, fl
     return hasChanged;
 }
 
-// TODO: Get rid of PlaneSettings::vec2. Maybe use GLM lib in the future?
 bool UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
 {
     bool hasChanged = false;
@@ -636,112 +643,217 @@ bool UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
     return hasChanged;
 }
 
-bool UI::previewPlanes(std::vector<PlaneSettings> planes, int& selectedPlane)
+void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, PlanePreviewStyle style)
 {
-    bool hasChanged = false;
-    if(isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxDown))
-    {
-        hasChanged = true;
-        selectedPlane += 1;
-        if (selectedPlane > planes.size()-1) selectedPlane = planes.size() - 1;
-    }
-    else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationAuxUp))
-    {
-        hasChanged = true;
-        selectedPlane -= 1;
-        if (selectedPlane < 0) selectedPlane = 0;
-    }
-
-    static int selectedVertex = 0;
-    if(isNavigationEventTriggered(NavigationEvent::Type::NavigationDown))
-    {
-        // hasChanged = true;
-        selectedVertex += 1;
-        if (selectedVertex > planes[selectedPlane].coords.size()-1) selectedVertex = planes[selectedPlane].coords.size()-1;
-    }
-    else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationUp))
-    {
-        // hasChanged = true;
-        selectedVertex -= 1;
-        if (selectedVertex < 0) selectedVertex = 0;
-    }
-
-
-    // draw screen outlines
-    float width = float(m_stbRenderer.width()) / 2.5f;
-    float aspectRatio = 16.0/9.0f;  // todo: get aspect ratio from screen(s)
-    float height = int(float(width) / aspectRatio);
+    float rectWidth;
+    float rectHeight;
+    float centerX;
+    float centerY;
+    float rectCenterX[2];
+    float aspectRatio = 16.0/9.0f;                         // todo: get aspect ratio from screen(s)
+    float polygonThickness = 2.0f;
     
-    float centerX[2] = {float(m_stbRenderer.width()) / 4.0f,
-                        float(m_stbRenderer.width()) - centerX[0]};
-    float centerY = m_y + height / 2;
-    
-    m_stbRenderer.drawEmptyCenteredRect(centerX[0], centerY, width, height, COLOR::GREY);
-    m_stbRenderer.drawEmptyCenteredRect(centerX[1], centerY, width, height, COLOR::GREY);
+    if (style == PLANE_PREVIEW_SMALL) 
+    {
+        m_y = m_screenPaddingTop;
+        // rectWidth = float(m_stbRenderer.width()) / 8.0f;
+        // rectHeight = int(float(rectWidth) / aspectRatio);
+        rectHeight = m_menuTitleHeight;
+        rectWidth = int(float(rectHeight) * aspectRatio);
+        float spacing = 7.0f;
+        float paddingRight = 15.0f;
+        centerX = float(m_stbRenderer.width() - rectWidth - spacing * 2.0f - paddingRight);
+        rectCenterX[0] = centerX - rectWidth/1.75f - spacing;
+        rectCenterX[1] = centerX + rectWidth/1.75f + spacing;
+        centerY = m_y + rectHeight / 2;
+    }
+    else if (style == PLANE_PREVIEW_LARGE || style == PLANE_PREVIEW_VERTICES) 
+    {
+        rectWidth = float(m_stbRenderer.width()) / 3.0f;
+        rectHeight = int(float(rectWidth) / aspectRatio);
+        centerX = float(m_stbRenderer.width()) / 2.0f;
+        rectCenterX[0] = centerX - rectWidth/1.75f;
+        rectCenterX[1] = centerX + rectWidth/1.75f;
+        centerY = m_y + rectHeight / 2;
+    }
+
+    // create preview scale plane shapes
+    struct PlaneShape {
+        std::vector<glm::vec2> vertices;
+        int hdmiId;
+    };
+    std::vector<PlaneShape> correctedPlanes;
+    correctedPlanes.reserve(planes.size());
+    for (const PlaneSettings& p : planes) {
+        correctedPlanes.push_back(PlaneShape{});
+        correctedPlanes.back().hdmiId = p.hdmiId;
+        correctedPlanes.back().vertices.reserve(p.coords.size());
+        const float halfWidth  = rectWidth * 0.5f;
+        const float halfHeight = rectHeight * 0.5f;
+        const float cx         = rectCenterX[p.hdmiId];
+        const float cy         = centerY;
+        const float scale      = p.scale;
+        const float tx         = p.translation.x * halfWidth;
+        const float ty         = p.translation.y * halfHeight;
+        
+        for (const glm::vec2& coord : p.coords) {
+            glm::vec2 pos;
+            pos.x = cx +  coord.x * halfWidth  * scale + tx;
+            pos.y = cy + (coord.y * halfHeight * scale + ty) * -1.0f;
+            correctedPlanes.back().vertices.push_back(pos);
+        }
+    }
+
+    // draw screens outlines
+    if (style == PLANE_PREVIEW_SMALL) 
+    {
+        m_stbRenderer.drawEmptyCenteredRect(rectCenterX[0], centerY, rectWidth, rectHeight, COLOR::WHITE, 2.0f);
+        m_stbRenderer.drawEmptyCenteredRect(rectCenterX[1], centerY, rectWidth, rectHeight, COLOR::WHITE, 2.0f);
+    }
+    else if (style == PLANE_PREVIEW_LARGE || style == PLANE_PREVIEW_VERTICES) 
+    {
+        m_stbRenderer.drawEmptyCenteredRect(rectCenterX[0], centerY, rectWidth, rectHeight, COLOR::WHITE);
+        m_stbRenderer.drawEmptyCenteredRect(rectCenterX[1], centerY, rectWidth, rectHeight, COLOR::WHITE);
+    }
 
     // draw planes
-    int i = 0;
     Color colors[] = {COLOR::PLANE_0, COLOR::PLANE_1, COLOR::PLANE_2, COLOR::PLANE_3};
-    for(PlaneSettings p : planes) {
-        m_stbRenderer.drawPolygon(
-            centerX[p.hdmiId] +  p.coords[0].x * width/2.0f  * p.scale + p.translation.x * width/2.0f, 
-            centerY           + (p.coords[0].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
-
-            centerX[p.hdmiId] +  p.coords[1].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
-            centerY           + (p.coords[1].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
-
-            centerX[p.hdmiId] +  p.coords[2].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
-            centerY           + (p.coords[2].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
-
-            centerX[p.hdmiId] +  p.coords[3].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
-            centerY           + (p.coords[3].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
-
-            colors[i]
-        );
-
-        float polygonCenterX = 0.0f;
-        float polygonCenterY = 0.0f;
-        for(int i = 0; i < p.coords.size(); i++) {
-            polygonCenterX += (p.coords[i].x) * width/2.0f  * p.scale + p.translation.x * width/2.0f;
-            polygonCenterY += ((p.coords[i].y) * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0;
+    if (style == PLANE_PREVIEW_SMALL) 
+    {
+        // draw only one plane 
+        PlaneShape p = correctedPlanes[selectedPlane];
+        Color color = colors[selectedPlane];
+        if(p.vertices.size() >= 4)
+        {
+            m_stbRenderer.drawEmptyPolygon (
+                p.vertices[0].x, p.vertices[0].y, 
+                p.vertices[1].x, p.vertices[1].y,
+                p.vertices[2].x, p.vertices[2].y,
+                p.vertices[3].x, p.vertices[3].y,
+                color,
+                polygonThickness);
         }
-        polygonCenterX /= p.coords.size();
-        polygonCenterY /= p.coords.size();
-        float fontSize = 24.0f;
-        m_stbRenderer.drawText(std::to_string(i+1), 
-                                centerX[p.hdmiId] + polygonCenterX, 
-                                centerY           + polygonCenterY - fontSize/4, 
-                                fontSize, 
-                                COLOR::BLACK);
+    }
+    else if (style == PLANE_PREVIEW_LARGE || style == PLANE_PREVIEW_VERTICES)
+    {
+        // draw all planes
+        int i = 0;
+        for(PlaneShape p : correctedPlanes) {
+            if(p.vertices.size() >= 4){
+                Color color = i == selectedPlane ? colors[i] : COLOR::GREY;
+
+                m_stbRenderer.drawEmptyPolygon(
+                    p.vertices[0].x, p.vertices[0].y, 
+                    p.vertices[1].x, p.vertices[1].y,
+                    p.vertices[2].x, p.vertices[2].y,
+                    p.vertices[3].x, p.vertices[3].y,
+                    color,
+                    polygonThickness);
+                i++;
+            }
+        }
+    }
+
+    // draw tiny horizontal lines to indicate the layer position
+    int layerlineLength;
+    float layerSpacing;
+    if (style == PLANE_PREVIEW_SMALL) 
+    {
+        layerlineLength = 10;
+        layerSpacing = 5.0f;
+    }
+    else if (style == PLANE_PREVIEW_LARGE || style == PLANE_PREVIEW_VERTICES)
+    {
+        layerlineLength = 15;
+        layerSpacing = 5.0f;
+    }
+    int layerPreviewHeight = correctedPlanes.size() * layerSpacing;
+    int layerPreviewBottom = centerY + layerPreviewHeight / 2.0f;
+    int i = 0;
+    for(PlaneShape p : correctedPlanes)
+    {
+        int y = int(layerPreviewBottom - float(i) * layerSpacing);
+        Color color = i == selectedPlane ? colors[i] : COLOR::WHITE;
+            
+        if(p.hdmiId == 0)
+        {
+            int x = rectCenterX[0] - rectWidth/2 - 5;
+            m_stbRenderer.drawLine(x, y, x - layerlineLength, y, color, 2);
+        }
+        else if(p.hdmiId == 1)
+        {
+            int x = rectCenterX[1] + rectWidth/2 + 5;
+            m_stbRenderer.drawLine(x, y, x + layerlineLength, y, color, 2);
+        }
         i++;
     }
 
-    // outline selected plane
-    PlaneSettings p = planes[selectedPlane];
-    m_stbRenderer.drawEmptyPolygon(
-        centerX[p.hdmiId] +  p.coords[0].x * width/2.0f  * p.scale + p.translation.x * width/2.0f, 
-        centerY           + (p.coords[0].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
-
-        centerX[p.hdmiId] +  p.coords[1].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
-        centerY           + (p.coords[1].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
-
-        centerX[p.hdmiId] +  p.coords[2].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
-        centerY           + (p.coords[2].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
-
-        centerX[p.hdmiId] +  p.coords[3].x * width/2.0f  * p.scale + p.translation.x * width/2.0f,
-        centerY           + (p.coords[3].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0, 
-        COLOR::WHITE
-    );
-
-    // highlight selected vertex
-    int s = p.coords.size()-1 - selectedVertex;
-    m_stbRenderer.drawRect( 
-        centerX[p.hdmiId] +  p.coords[s].x * width/2.0f  * p.scale + p.translation.x * width/2.0f - 5, 
-        centerY           + (p.coords[s].y * height/2.0f * p.scale + p.translation.y * height/2.0f) * -1.0 - 5, 
-        10, 
-        10,
-        COLOR::RED);
     
-    m_y += height;
-    return hasChanged;
+    // draw plane indices as numbers
+    if (style == PLANE_PREVIEW_SMALL) 
+    {
+        // draw only currently selected plane index between the two rectangles
+        Color color = colors[selectedPlane];
+        FONT::TextStyle textStyle = FONT::TEXTSTYLE::STANDARD;
+        textStyle.size = 24.0f;
+        m_stbRenderer.drawText(std::to_string(selectedPlane + 1), 
+                                centerX - textStyle.size / 4, 
+                                centerY - textStyle.size / 2, 
+                                textStyle,
+                                color);
+    }
+    else if (style == PLANE_PREVIEW_LARGE || style == PLANE_PREVIEW_VERTICES) 
+    {
+        // draw plane indices in the center of the polygons
+        int i = 0;
+        for(PlaneShape p : correctedPlanes) 
+        {
+            glm::vec2 polygonCenter = {0.0f, 0.0f};
+            for(std::size_t i = 0; i < p.vertices.size(); i++) {
+                polygonCenter += p.vertices[i];
+            }
+            polygonCenter /= p.vertices.size();
+        
+            FONT::TextStyle textStyle = FONT::TEXTSTYLE::STANDARD;
+            textStyle.size = 24.0f;
+            Color color = i == selectedPlane ? colors[i] : COLOR::GREY;
+            m_stbRenderer.drawText(std::to_string(i+1), 
+                                    polygonCenter.x, 
+                                    polygonCenter.y - textStyle.size/4, 
+                                    textStyle, 
+                                    color);
+            i++;
+        }
+    }
+
+    // handle vertex selection and highlight selected vertex
+    static int selectedVertex = 0;
+    if(style == PLANE_PREVIEW_VERTICES)    
+    {
+        if(isNavigationEventTriggered(NavigationEvent::Type::NavigationDown))
+        {
+            selectedVertex += 1;
+            if (selectedVertex > planes[selectedPlane].coords.size()-1) selectedVertex = planes[selectedPlane].coords.size()-1;
+        }
+        else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationUp))
+        {
+            selectedVertex -= 1;
+            if (selectedVertex < 0) selectedVertex = 0;
+        }
+
+        // highlight selected vertex
+        PlaneShape p = correctedPlanes[selectedPlane];
+        int i = p.vertices.size() - 1 - selectedVertex; // (vertices are in reverse order)
+        glm::vec2 vertex = p.vertices[i];
+        m_stbRenderer.drawRect(vertex.x, vertex.y, 5, 5, COLOR::RED);
+    }
+}
+
+void UI::savePNG(const std::string& filename){
+    m_stbRenderer.savePNG(filename);
+}
+
+int UI::getMenuTitleHeight() const
+{
+    return m_menuTitleHeight;
 }

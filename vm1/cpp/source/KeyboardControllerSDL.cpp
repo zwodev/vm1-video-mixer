@@ -74,6 +74,10 @@ void KeyboardControllerSDL::update(SDL_Event& event)
             m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxUp));
             return;
             break;
+        case SDLK_SPACE:
+            m_eventBus.publish(NavigationEvent(NavigationEvent::Type::Screenshot));
+            return;
+            break;
         default:
             break;
         }
