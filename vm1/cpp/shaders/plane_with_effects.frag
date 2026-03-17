@@ -24,9 +24,9 @@ uniform float opacity;
 uniform int isMultiplication;
 
 // effects
-uniform float ColorCorrection_Brightness;
-uniform float ColorCorrection_Contrast;
-uniform float ColorCorrection_Saturation;
+uniform float ColorCorrection_Brightness; // { "name": "Brightness", "group": "Color Correction" }
+uniform float ColorCorrection_Contrast;	  // { "name": "Contrast", "group": "Color Correction" }
+uniform float ColorCorrection_Saturation; // { "name": "Saturation", "group": "Color Correction" }
 
 vec3 adjustBrightness(vec3 color, float value) {
   return color + value;

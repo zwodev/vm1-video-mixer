@@ -102,7 +102,8 @@ public:
     {
         ar(
             cereal::base_class<InputConfig>(this),
-            CEREAL_NVP(fileName)
+            CEREAL_NVP(fileName),
+            CEREAL_NVP(shaderConfig)
         );
     }
 };
@@ -318,14 +319,6 @@ struct PlaneSettings
         BM_Multiply
     };
 
-    PlaneSettings() {
-        ShaderConfig colorCorrectionShaderConfig("ColorCorrection");
-        colorCorrectionShaderConfig.params["Brightness"] = FloatParameter("Brightness", 0.0f, -1.0f, 1.0f);
-        colorCorrectionShaderConfig.params["Contrast"] = FloatParameter("Contrast", 0.0f, -1.0f, 1.0f);
-        colorCorrectionShaderConfig.params["Saturation"] = FloatParameter("Saturation", 0.0f, -1.0f, 1.0f);
-        effects.push_back(colorCorrectionShaderConfig);
-    }
-    
     void resetMapping() {
         coords = { glm::vec2(-1.0f, -1.0f),   // bottom left
                    glm::vec2(1.0f, -1.0f),    // bottom right
@@ -341,7 +334,7 @@ struct PlaneSettings
     int hdmiId = 0;
     BlendMode blendMode = BlendMode::BM_None;
     float opacity = 1.0f;
-    std::vector<ShaderConfig> effects;
+    ShaderConfig shaderConfig;
 
     // Mapping
     std::vector<glm::vec2> coords = { glm::vec2(-1.0f, -1.0f),   // bottom left
@@ -361,7 +354,7 @@ struct PlaneSettings
             CEREAL_NVP(hdmiId),
             CEREAL_NVP(blendMode),
             CEREAL_NVP(opacity),
-            // CEREAL_NVP(effects),
+            CEREAL_NVP(shaderConfig),
             CEREAL_NVP(coords),
             // CEREAL_NVP(rotation),
             CEREAL_NVP(scale),

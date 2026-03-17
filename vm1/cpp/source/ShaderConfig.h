@@ -198,39 +198,41 @@ struct Vec3Parameter
     }    
 };
 
-// struct ColorParameter
-// {
-//     ColorParameter() = default;
-//     ColorParameter(const std::string& name, float r, float g, float b, float a = 1.0f) {
-//         this->name = name;
-//         this->r = r;
-//         this->g = g;
-//         this->b = b;
-//         this->a = a;
-//     }
-    
-//     std::string name;
-//     float r = 0.0f;
-//     float g = 0.0f;
-//     float b = 0.0f;
-//     float a = 1.0f;
-// };
-
 struct ShaderConfig
 {
     ShaderConfig() = default;
-    ShaderConfig(const std::string& name) {
-        this->name = name;
+    // ShaderConfig(const std::string& name) {
+    //     this->name = name;
+    // }
+
+    void update(const ShaderConfig& shaderConfig) {
+        std::vector<std::string> toDelete;
+        for (const auto& kv : params) {
+            const std::string& paramName = kv.first;
+            if (!shaderConfig.params.contains(paramName)) {
+                toDelete.push_back(paramName);
+            }
+        }
+        for (const auto& paramName : toDelete) {
+            params.erase(paramName);
+        }
+        for (const auto& kv : shaderConfig.params) {
+            const std::string& paramName = kv.first;
+            if (!params.contains(paramName)) {
+                params[paramName] = kv.second;
+            }
+        }
+
+        groups = shaderConfig.groups;
     }
 
-    std::string name;
     std::map<std::string, std::variant<IntParameter, FloatParameter, Vec2Parameter, Vec3Parameter>> params;
+    std::map<std::string, std::vector<std::string>> groups;
 
     template <class Archive>
     void serialize(Archive& ar)
     {
         ar(
-            CEREAL_NVP(name),
             CEREAL_NVP(params)
         );
     }

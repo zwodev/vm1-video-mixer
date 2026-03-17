@@ -346,8 +346,8 @@ void PlaybackOperator::showMedia(int mediaSlotId)
         }
 
         if (ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(m_mediaPlayers[playerId])) {
-            shaderInputConfig->shaderConfig = shaderPlayer->shaderConfig();
-            printf("####SIZE: %d\n", shaderInputConfig->shaderConfig.params.size());
+            //shaderInputConfig->shaderConfig = shaderPlayer->shaderConfig();
+            shaderInputConfig->shaderConfig.update(shaderPlayer->shaderConfig());
         }
         if (m_planeMixers[planeId].startFade(playerId))  {
             m_planeMixers[planeId].activate();
@@ -446,8 +446,6 @@ void PlaybackOperator::update(float deltaTime)
         else if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(inputConfig))
         {
             ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(mediaPlayer);
-            //shaderPlayer->setCurrentTime(m_registry.settings().currentTime);
-            //shaderPlayer->setAnalogValue(m_registry.settings().analog0);
             // TODO: Move to registry, maybe "Animation System"
             ShaderConfig& shaderConfig = shaderInputConfig->shaderConfig;
             if (shaderConfig.params.contains("iTime")) {

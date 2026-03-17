@@ -575,11 +575,12 @@ void MenuSystem::FxMenu()
     m_ui.pushTranslate(0, 100);
 
     m_ui.BeginList(&m_focusedIdx);
-    auto& effects = m_registry.planes()[m_planeIdx].effects;
-    for (int i = 0; i < effects.size(); ++i) {
-        bool isSelectedEffect = SubMenu(effects[i].name, [this](){ EffectControl(); });
+    const ShaderConfig& shaderConfig = m_registry.planes()[m_planeIdx].shaderConfig;
+    for (const auto& kv : shaderConfig.groups) {
+        const std::string& groupName = kv.first;
+        bool isSelectedEffect = SubMenu(groupName, [this](){ EffectControl(); });
         if (isSelectedEffect) {
-            m_effectIdx = i;
+            m_effectName = groupName;
         }
     }
     m_ui.EndList();
@@ -588,19 +589,19 @@ void MenuSystem::FxMenu()
 
 void MenuSystem::EffectControl()
 {
-    auto& effects = m_registry.planes()[m_planeIdx].effects;
-    if (effects.empty()) return;
+    auto& shaderConfig = m_registry.planes()[m_planeIdx].shaderConfig;
+    if (!shaderConfig.groups.contains(m_effectName)) return;
 
-    auto& effect = effects[m_effectIdx];
-    m_ui.ShowMenuTitle("FX/" + effect.name);
+    auto& group = shaderConfig.groups[m_effectName];
+    m_ui.ShowMenuTitle("FX/" + m_effectName);
     m_ui.Spacer(m_ui.getMenuTitleHeight());
 
     m_ui.pushTranslate(0, 100);
 
     m_ui.BeginList(&m_focusedIdx);
-    for (auto& kv : effect.params) {
-        const std::string& name = kv.first;
-        auto& param = kv.second;
+    for (const auto& paramName : group) {
+        if (!shaderConfig.params.contains(paramName)) continue;
+        auto& param = shaderConfig.params[paramName];
         if (std::holds_alternative<IntParameter>(param)) {
             auto& intParam = std::get<IntParameter>(param);  
             m_ui.SpinBoxInt(intParam.name, intParam.value, intParam.min, intParam.max, intParam.step);

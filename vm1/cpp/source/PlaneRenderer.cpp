@@ -115,7 +115,7 @@ bool PlaneRenderer::initialize()
 
 void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, PlaneSettings& planeSettings, ScreenRotation rotation)
 {   
-    std::vector<ShaderConfig>& effects = planeSettings.effects;
+    const ShaderConfig& shaderConfig = planeSettings.shaderConfig;
     updateVertexBuffers(rotation, planeSettings);
 
     m_shader.activate();
@@ -132,21 +132,18 @@ void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, Pla
     // Set mix value
     m_shader.setValue("mixValue", mixValue);
     m_shader.setValue("opacity", planeSettings.opacity);
-    for (auto& effect : effects) {
-        for (auto& kv : effect.params) {
-            const std::string& name = kv.first;
-            auto& param = kv.second;
-            if (std::holds_alternative<IntParameter>(param)) {
-                auto& intParam = std::get<IntParameter>(param);
-                std::string uniformName = effect.name + "_" + intParam.name;
-                m_shader.setValue(uniformName.c_str(), intParam.value);
-            } else if (std::holds_alternative<FloatParameter>(param)) {
-                auto& floatParam = std::get<FloatParameter>(param);
-                std::string uniformName = effect.name + "_" + floatParam.name;
-                m_shader.setValue(uniformName.c_str(), floatParam.value);
-            } 
-        }
+    for (auto& kv : shaderConfig.params) {
+        const std::string& uniformName = kv.first;
+        auto& param = kv.second;
+        if (std::holds_alternative<IntParameter>(param)) {
+            auto& intParam = std::get<IntParameter>(param);
+            m_shader.setValue(uniformName.c_str(), intParam.value);
+        } else if (std::holds_alternative<FloatParameter>(param)) {
+            auto& floatParam = std::get<FloatParameter>(param);
+            m_shader.setValue(uniformName.c_str(), floatParam.value);
+        } 
     }
+
 
     int isMultiplication = 0;
     switch (planeSettings.blendMode) {

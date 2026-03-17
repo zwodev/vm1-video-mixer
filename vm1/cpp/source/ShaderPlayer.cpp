@@ -36,8 +36,6 @@ ShaderPlayer::ShaderPlayer()
     loadShaders();
     createVertexBuffers();
     initializeFramebufferAndTextures();
-
-    //glGenTextures(1, &m_nonZeroCopyTextureId);
 }
 
 ShaderPlayer::~ShaderPlayer()
@@ -107,19 +105,15 @@ void ShaderPlayer::render()
 
     glBindVertexArray(m_vao);
 
-    //m_shader.bindUniformLocation("inputTexture", 0);
-    //m_shader.setValue("iTime", m_currentTime);
-    //m_shader.setValue("iAnalog0", m_analogValue);
-
     for (const auto& kv : m_shaderConfig.params) {
         const std::string& name = kv.first;
         const auto& param = kv.second;
         if (std::holds_alternative<IntParameter>(param)) {
             auto& intParam = std::get<IntParameter>(param);  
-            m_shader.setValue(intParam.name.c_str(), intParam.value);
+            m_shader.setValue(name.c_str(), intParam.value);
         } else if (std::holds_alternative<FloatParameter>(param)) {
             auto& floatParam = std::get<FloatParameter>(param); 
-            m_shader.setValue(floatParam.name.c_str(), floatParam.value);
+            m_shader.setValue(name.c_str(), floatParam.value);
         }
     }
     
