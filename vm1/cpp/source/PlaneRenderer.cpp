@@ -135,8 +135,6 @@ void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, Pla
     m_shader.bindUniformLocation("inputTexture1", 1);
 
     // Set mix value
-    m_shader.setValue("mixValue", mixValue);
-    m_shader.setValue("opacity", planeSettings.opacity);
     for (auto& kv : shaderConfig.params) {
         const std::string& uniformName = kv.first;
         auto& param = kv.second;
@@ -148,6 +146,11 @@ void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, Pla
             m_shader.setValue(uniformName.c_str(), floatParam.value);
         } 
     }
+
+    // TODO: Do not set internal shader parameters above. Filter by prefix "_"?
+    // EXAMPLE: "uniform float _mixValue"
+    m_shader.setValue("mixValue", mixValue);
+    m_shader.setValue("opacity", planeSettings.opacity);
 
 
     int isMultiplication = 0;
