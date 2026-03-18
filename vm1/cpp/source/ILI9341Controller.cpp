@@ -21,7 +21,8 @@ extern "C" {
     extern void ILI9341_DEV_ModuleExit(void);
 }
 
-ILI9341Controller::ILI9341Controller()
+ILI9341Controller::ILI9341Controller() :
+    m_imageBuffer(320, 240)
 {
 }
 
@@ -62,6 +63,12 @@ void ILI9341Controller::waitForReady()
     }
 }
 
+const Image& ILI9341Controller::getImageBuffer()
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_imageBuffer;
+}
+
 void ILI9341Controller::process()
 {
     if (!m_stbRenderer) return;
@@ -73,9 +80,11 @@ void ILI9341Controller::process()
 
     std::cout << "ILI9341: Starting render loop\n";
     while (m_isRunning) {
-        Image imageBuffer = m_stbRenderer->popImage();
+        m_mutex.lock();
+        m_imageBuffer = m_stbRenderer->popImage();
+        m_mutex.unlock();
         if (!m_isRunning) break;  // Check again after waking up
-        convertToRGB565(imageBuffer);
+        convertToRGB565(m_imageBuffer);
         render();
     }
     std::cout << "ILI9341: Render loop ended\n";

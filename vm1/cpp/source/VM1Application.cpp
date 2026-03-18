@@ -531,9 +531,17 @@ void VM1Application::updateMiniDisplayTexture()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     // Upload pixels into texture
-    const auto& imageBuffer = m_oledController.getImageBuffer();
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+    Image imageBuffer = m_ili9341Controller.getImageBuffer();
+    // printf("Image Buffer Size: %d\n", imageBuffer.pixels.size());
+    // for (const auto& byte : imageBuffer.pixels) {
+    //     if (byte > 0) {
+    //         printf("Size: %d, Greater Zero: %d\n", imageBuffer.pixels.size(), byte);
+    //     }
+    // }
+    //printf("Width: %d, Height: %d\n", imageBuffer.width, imageBuffer.height);
+    //glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageBuffer.width, imageBuffer.height, 0, GL_RGB, GL_UNSIGNED_BYTE, imageBuffer.pixels.data());
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void VM1Application::renderImGui()
@@ -570,7 +578,7 @@ void VM1Application::renderImGui()
         }
     }
 
-    m_fileAssignmentWidget.render();
+    //m_fileAssignmentWidget.render();
     ImGui::EndFrame();
 }
 

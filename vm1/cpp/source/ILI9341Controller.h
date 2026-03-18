@@ -33,6 +33,7 @@ public:
     void stop();
     void waitForReady();
 
+    const Image& getImageBuffer();
     void convertToRGB565(Image& imageBuffer);
     void render();
 
@@ -48,4 +49,7 @@ private:
     std::thread m_thread;
     StbRenderer* m_stbRenderer = nullptr;
     uint32_t m_bufferSize = 0;
+
+    std::mutex m_mutex;
+    Image m_imageBuffer;
 };

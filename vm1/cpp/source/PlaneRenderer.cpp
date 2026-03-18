@@ -134,7 +134,7 @@ void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, Pla
     glBindTexture(GL_TEXTURE_2D, texture1);
     m_shader.bindUniformLocation("inputTexture1", 1);
 
-    // Set mix value
+    // Set external shader parameters
     for (auto& kv : shaderConfig.params) {
         const std::string& uniformName = kv.first;
         auto& param = kv.second;
@@ -147,12 +147,7 @@ void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, Pla
         } 
     }
 
-    // TODO: Do not set internal shader parameters above. Filter by prefix "_"?
-    // EXAMPLE: "uniform float _mixValue"
-    m_shader.setValue("mixValue", mixValue);
-    m_shader.setValue("opacity", planeSettings.opacity);
-
-
+    // Set blend mode
     int isMultiplication = 0;
     switch (planeSettings.blendMode) {
         case PlaneSettings::BlendMode::BM_Alpha:
@@ -169,13 +164,16 @@ void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, Pla
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             break;
     }
+
+    // TODO: Do not set internal shader parameters above. Filter by prefix "_"?
+    // EXAMPLE: "uniform float _mixValue"
+    m_shader.setValue("mixValue", mixValue);
+    m_shader.setValue("opacity", planeSettings.opacity);
     m_shader.setValue("isMultiplication", isMultiplication);
 
-    //glDrawArrays(GL_TRIANGLES, 0, 6);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
     glDisable(GL_BLEND);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glBindVertexArray(0);
     m_shader.deactivate();
