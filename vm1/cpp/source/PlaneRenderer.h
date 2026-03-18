@@ -28,8 +28,9 @@ public:
 
 public:
     bool initialize();
-    // void update(GLuint texture0, GLuint texture1, float mixValue, std::vector<ShaderConfig>& effects, ScreenRotation rotation);
+    const ShaderConfig& shaderConfig();
     void update(GLuint texture0, GLuint texture1, float mixValue, PlaneSettings& planeSettings, ScreenRotation rotation);
+    
 
 private:
     void createVertexBuffers();

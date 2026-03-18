@@ -113,6 +113,11 @@ bool PlaneRenderer::initialize()
     return true;
 }
 
+const ShaderConfig& PlaneRenderer::shaderConfig()
+{
+    return m_shader.shaderConfig();
+}
+
 void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, PlaneSettings& planeSettings, ScreenRotation rotation)
 {   
     const ShaderConfig& shaderConfig = planeSettings.shaderConfig;

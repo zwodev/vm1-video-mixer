@@ -42,8 +42,13 @@ void PlaybackOperator::initialize()
         m_planeMixers.push_back(PlaneMixer());
     } 
 
+
     for (int i = 0; i < planeCount; ++i) {
-        m_planeRenderers.push_back(new PlaneRenderer());
+        PlaneRenderer* planeRenderer = new PlaneRenderer();
+        m_planeRenderers.push_back(planeRenderer);
+        // TODO: We need to be able to update this after custom shader has changed.
+        // MAYBE: Event that triggers this in VM1Application?
+        m_registry.planes()[i].shaderConfig.update(planeRenderer->shaderConfig());
     }
 
     for (int i = 0; i < videoPlayerCount; ++i) {
