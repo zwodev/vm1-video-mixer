@@ -300,7 +300,7 @@ void MenuSystem::render()
         m_ui.Spacer(40.0);
         m_ui.PlanePreview(m_registry.planes(), m_planeIdx, previewStyle);
     }
-
+    
 
     // Render dynamic content (if present)
     if (m_currentMenuFunc) {
@@ -310,6 +310,7 @@ void MenuSystem::render()
     // Render Overlay
     m_ui.ShowOverlay();
 
+    
     handlePopupMessage();
     handleStringInputDialog();
     handleMediaAndEditButtons();
@@ -317,7 +318,6 @@ void MenuSystem::render()
     handleBankSwitching();
     handleMenuHierachyNavigation();
     handlePlaneSwitching();
-
     
     // Take a screenshot
     if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::Screenshot)) 
@@ -485,7 +485,7 @@ void MenuSystem::ShaderSelection()
         *config = *currentConfig;
     } 
 
-    std::vector<std::string>& files = m_registry.mediaPool().getShaderFiles();
+    std::vector<std::string>& files = m_registry.mediaPool().getGenerativeShaderFiles();
     bool changed = false;
     m_ui.BeginList(&m_focusedIdx);
     for (int i = 0; i < files.size(); ++i) {
@@ -575,12 +575,41 @@ void MenuSystem::FxMenu()
     m_ui.pushTranslate(0, 100);
 
     m_ui.BeginList(&m_focusedIdx);
-    const ShaderConfig& shaderConfig = m_registry.planes()[m_planeIdx].shaderConfig;
+    PlaneSettings& plane = m_registry.planes()[m_planeIdx];
+    const ShaderConfig& shaderConfig = plane.shaderConfig;
     for (const auto& kv : shaderConfig.groups) {
         const std::string& groupName = kv.first;
         bool isSelectedEffect = SubMenu(groupName, [this](){ EffectControl(); });
         if (isSelectedEffect) {
             m_effectName = groupName;
+        }
+    }
+    SubMenu("Select Custom Shader", [this](){ CustomEffectShaderSelection(); });
+    if (m_ui.Action("Clear Custom Shader")) {
+        plane.extShaderFilename = "";
+        m_eventBus.publish(EffectShaderEvent(m_planeIdx));
+    }
+    m_ui.EndList();
+    m_ui.popTranslate();
+}
+
+void MenuSystem::CustomEffectShaderSelection()
+{
+    m_ui.ShowMenuTitle("CUSTOM EFFECTS");
+    m_ui.Spacer(m_ui.getMenuTitleHeight());
+    m_ui.pushTranslate(0, 100);
+
+    PlaneSettings& plane = m_registry.planes()[m_planeIdx];
+
+    std::vector<std::string>& files = m_registry.mediaPool().getEffectShaderFiles();
+    bool changed = false;
+    m_ui.BeginList(&m_focusedIdx);
+    for (int i = 0; i < files.size(); ++i) {
+        std::string fileName = files[i];
+        if (m_ui.RadioButton(fileName.c_str(), (plane.extShaderFilename == fileName))) {
+            plane.extShaderFilename = fileName;
+            changed = true;
+            m_eventBus.publish(EffectShaderEvent(m_planeIdx));
         }
     }
     m_ui.EndList();

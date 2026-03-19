@@ -68,6 +68,13 @@ struct BankChangeEvent
     int bankId;
 };
 
+struct EffectShaderEvent
+{
+    EffectShaderEvent() = delete;
+    EffectShaderEvent(int planeId) { this->planeId = planeId; }
+    int planeId;
+};
+
 struct ValueChangeEvent
 {
     enum Type {

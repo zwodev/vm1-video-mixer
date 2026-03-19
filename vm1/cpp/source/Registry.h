@@ -235,33 +235,62 @@ public:
         std::sort(m_videoFiles.begin(), m_videoFiles.end());
     }
 
-    std::vector<std::string>& getShaderFiles()
+    std::vector<std::string>& getGenerativeShaderFiles()
     {
         // TODO: Update only when new files are present.
-        updateShaderFiles();
-        return m_shaderFiles;
+        updateGenerativeShaderFiles();
+        return m_generativeShaderFiles;
     }
 
-    std::string getShaderFilePath(const std::string& fileName)
+    std::string getGenerativeShaderFilePath(const std::string& fileName)
     {
-        return m_shaderFilePath + fileName;
+        return m_generativeShaderPath + fileName;
     }
 
-    void updateShaderFiles()
+    void updateGenerativeShaderFiles()
     {
-        m_shaderFiles.clear();
-        for (const auto &entry : std::filesystem::directory_iterator(m_shaderFilePath))
+        m_generativeShaderFiles.clear();
+        for (const auto &entry : std::filesystem::directory_iterator(m_generativeShaderPath))
         {
             if (entry.is_regular_file())
             {
                 std::string filename = entry.path().filename().string();
                 std::string filePath = filename;
-                m_shaderFiles.push_back(filePath);
+                m_generativeShaderFiles.push_back(filePath);
             }
         }
 
         // sort the files by name
-        std::sort(m_shaderFiles.begin(), m_shaderFiles.end());
+        std::sort(m_generativeShaderFiles.begin(), m_generativeShaderFiles.end());
+    }
+
+    std::string getEffectShaderFilePath(const std::string& fileName)
+    {
+        return m_effectShaderPath + fileName;
+    }
+
+    std::vector<std::string>& getEffectShaderFiles()
+    {
+        // TODO: Update only when new files are present.
+        updateEffectShaderFiles();
+        return m_effectShaderFiles;
+    }
+
+    void updateEffectShaderFiles()
+    {
+        m_effectShaderFiles.clear();
+        for (const auto &entry : std::filesystem::directory_iterator(m_effectShaderPath))
+        {
+            if (entry.is_regular_file())
+            {
+                std::string filename = entry.path().filename().string();
+                std::string filePath = filename;
+                m_effectShaderFiles.push_back(filePath);
+            }
+        }
+
+        // sort the files by name
+        std::sort(m_effectShaderFiles.begin(), m_effectShaderFiles.end());
     }
 
     void loadQrCodeImageBuffer()
@@ -298,9 +327,11 @@ public:
 
 private:
     std::string m_videoFilePath = "../videos/";
-    std::string m_shaderFilePath = "../shaders/generative/";
+    std::string m_generativeShaderPath = "../shaders/generative/";
+    std::string m_effectShaderPath = "../shaders/effect/";
     std::vector<std::string> m_videoFiles;
-    std::vector<std::string> m_shaderFiles;
+    std::vector<std::string> m_generativeShaderFiles;
+    std::vector<std::string> m_effectShaderFiles;
     ImageBuffer m_qrCodeImageBuffer;
 };
 
@@ -335,6 +366,7 @@ struct PlaneSettings
     BlendMode blendMode = BlendMode::BM_None;
     float opacity = 1.0f;
     ShaderConfig shaderConfig;
+    std::string extShaderFilename;
 
     // Mapping
     std::vector<glm::vec2> coords = { glm::vec2(-1.0f, -1.0f),   // bottom left

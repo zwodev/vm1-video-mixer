@@ -102,15 +102,16 @@ void PlaneRenderer::updateVertexBuffers(ScreenRotation rotation, PlaneSettings& 
 
 bool PlaneRenderer::initialize()
 {
-    if (!m_shader.load("shaders/pass.vert", "shaders/plane_with_effects.frag"))
-        return false;
+    if (!loadShader()) return false;
     
-    //if (!m_shader.load("shaders/pass.vert", "shaders/plane.frag"))
-    //   return false;
-
     createVertexBuffers();
 
     return true;
+}
+
+bool PlaneRenderer::loadShader(const std::string& extFilename)
+{
+    return m_shader.load("shaders/pass.vert", "shaders/plane_with_effects.frag", extFilename);
 }
 
 const ShaderConfig& PlaneRenderer::shaderConfig()

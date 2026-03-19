@@ -16,6 +16,11 @@ in float offset;
 
 out vec4 fragColor;
 
+// constants
+const vec2 iResolution = vec2(1920.0f, 1080.0f);
+const float iAspect = iResolution.x / iResolution.y;
+
+
 // standard
 uniform sampler2D inputTexture0;
 uniform sampler2D inputTexture1;
@@ -24,9 +29,9 @@ uniform float opacity;
 uniform int isMultiplication;
 
 // effects
-uniform float ColorCorrection_Brightness; // { "name": "Brightness", "group": "Color Correction" }
-uniform float ColorCorrection_Contrast;	  // { "name": "Contrast", "group": "Color Correction" }
-uniform float ColorCorrection_Saturation; // { "name": "Saturation", "group": "Color Correction" }
+uniform float ColorCorrection_Brightness; // { "name": "Brightness", "group": "Color Correction", "min": -1.0, "max": 1.0 }
+uniform float ColorCorrection_Contrast;	  // { "name": "Contrast", "group": "Color Correction", "min": -1.0, "max": 1.0 }
+uniform float ColorCorrection_Saturation; // { "name": "Saturation", "group": "Color Correction", "min": -1.0, "max": 1.0 }
 
 vec3 adjustBrightness(vec3 color, float value) {
   return color + value;
@@ -55,6 +60,9 @@ vec3 adjustSaturation(vec3 color, float value) {
 // }
 // ### END CUSTOM
 
+//###EXT_MAIN_DEF###
+
+
 void main() {
 	// Mix images
 	vec2 coord = vec2(texCoord.x, (1.0f - texCoord.y));
@@ -62,7 +70,9 @@ void main() {
 	vec3 col1 = texture(inputTexture1, coord).rgb;
 	vec3 color = mix(col0, col1, mixValue);
 
-	// color = customShader(color);
+	
+	//###EXT_MAIN_USE###
+	// extMain(color, coord); 
 
 	color = adjustSaturation(color, ColorCorrection_Saturation);
 	color = adjustContrast(color, ColorCorrection_Contrast);

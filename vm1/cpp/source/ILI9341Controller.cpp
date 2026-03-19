@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <cstring>
 #include <chrono>
+#include <thread>
 
 #include "ILI9341Controller.h"
 
@@ -86,6 +87,7 @@ void ILI9341Controller::process()
         if (!m_isRunning) break;  // Check again after waking up
         convertToRGB565(m_imageBuffer);
         render();
+        //std::this_thread::sleep_for(std::chrono::milliseconds(16));
     }
     std::cout << "ILI9341: Render loop ended\n";
 

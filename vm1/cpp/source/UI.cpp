@@ -531,8 +531,9 @@ bool UI::RadioButton(const std::string& label, bool active)
     }
     
     bool focused = ((*m_focusedIdxPtr) == m_listSize);
+    bool wasTriggered = false;
     if (focused && !active && keyPressed) {
-        active = true;
+        wasTriggered = true;
     }
 
     if(active) m_stbRenderer.drawRect(m_x, m_y + 2, 7, 7, COLOR::WHITE);
@@ -540,7 +541,7 @@ bool UI::RadioButton(const std::string& label, bool active)
     Text(label);
     m_x = 0;
 
-    return focused && active;
+    return wasTriggered;
 }
 
 bool UI::SpinBoxInt(const std::string& label, int& value, int minValue, int maxValue, int step)

@@ -29,6 +29,17 @@ void PlaybackOperator::subscribeToEvents()
     m_eventBus.subscribe<EditModeEvent>([this](const EditModeEvent& event) {
         m_selectedEditButton = event.modeId;
     });
+
+    m_eventBus.subscribe<EffectShaderEvent>([this](const EffectShaderEvent& event) {
+        const std::string& extShaderFilename = m_registry.planes()[event.planeId].extShaderFilename;
+        std::string completeFilePath;
+        if (!extShaderFilename.empty()) {
+            completeFilePath = m_registry.mediaPool().getEffectShaderFilePath(extShaderFilename);
+        }
+        PlaneRenderer* planeRenderer = m_planeRenderers[event.planeId];
+        planeRenderer->loadShader(completeFilePath);
+        m_registry.planes()[event.planeId].shaderConfig.update(planeRenderer->shaderConfig());
+    });
 }
 
 void PlaybackOperator::initialize()
@@ -343,7 +354,7 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     {
         if (!getFreeShaderPlayerId(playerId, planeId)) return;
         fileName = shaderInputConfig->fileName;
-        filePath = m_registry.mediaPool().getShaderFilePath(fileName);
+        filePath = m_registry.mediaPool().getGenerativeShaderFilePath(fileName);
         if (!m_mediaPlayers[playerId]->openFile(filePath)) {
             printf("Could not open custom shader!!\n");
             m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::FileNotSupported, "File not supported"));

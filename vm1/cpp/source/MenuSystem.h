@@ -80,8 +80,10 @@ private:
 
     // FX
     void FxMenu();
+    void CustomEffectShaderSelection();
     void EffectSelection();
     void EffectControl();
+  
 
     // Output
     void OutputMenu();

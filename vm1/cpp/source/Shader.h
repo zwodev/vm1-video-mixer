@@ -18,25 +18,26 @@ public:
     ~Shader();
 
 public:
-    bool load(const char* vertFilename, const char* fragFilename);
-    bool load(const char* compFilename);
-    bool bindUniformLocation(const char* locName, GLint unit);
-    bool setValue(const char* locName, GLfloat value);
-    bool setValue(const char* locName, GLint value);
+    bool load(const std::string& vertFilename, const std::string& fragFilename, const std::string& extFilename = "");
+    bool load(const std::string& compFilename);
+    bool bindUniformLocation(const std::string& locName, GLint unit);
+    bool setValue(const std::string& locName, GLfloat value);
+    bool setValue(const std::string& locName, GLint value);
     void activate();
     void deactivate();
     const ShaderConfig& shaderConfig();
     
 private:
-    GLuint loadShaderByType(const char* filename, GLenum shaderType);
+    GLuint loadShaderByType(const std::string& filename, GLenum shaderType, const std::string& extFilename = "");
     bool link();
     void createShaderConfigFromUniforms();
     void parseUnifromJson(const std::string& uniformName, const std::string& uniformType, const std::string& uniformJson);
-    void extractUniformMetadata(const char* filename);
+    void extractUniformMetadata();
     void destroyShaderProg(GLuint shaderProg);
     
 
 private:
     GLuint m_shaderProgram = 0;
     ShaderConfig m_shaderConfig;
+    std::string m_shaderSrc;
 };

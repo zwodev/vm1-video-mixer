@@ -33,9 +33,13 @@ void Image::blendPixel(int x, int y, uint8_t r, uint8_t g, uint8_t b, uint8_t al
 
 void Image::clear(uint8_t r, uint8_t g, uint8_t b)
 {
-    for (int y = 0; y < height; ++y)
-        for (int x = 0; x < width; ++x)
-            setPixel(x, y, r, g, b);
+    // for (int y = 0; y < height; ++y)
+    //     for (int x = 0; x < width; ++x)
+    //         setPixel(x, y, r, g, b);
+
+    // TODO: How can we have different colors without impacting performance too much?
+    memset(pixels.data(), 0, pixels.size());
+    //std::fill(pixels.begin(), pixels.end(), 0);
 }
 
 StbRenderer::StbRenderer() : m_img(1, 1)  // Default: 1x1 placeholder

@@ -7,6 +7,7 @@
  */
 
 #include "Shader.h"
+#include "StringHelper.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -151,22 +152,11 @@ void Shader::parseUnifromJson(const std::string& uniformName, const std::string&
 	}
 }
 
-void Shader::extractUniformMetadata(const char* filename) 
+void Shader::extractUniformMetadata() 
 {
 	static std::regex uniform_regex(R"(^\s*uniform\s+(\w+)\s+(\w+)\s*;\s*//\s*(\{.*\}))", std::regex::multiline);
 
-	std::ifstream file(filename);
-    if (!file.is_open()) {
-        std::cerr << "Failed to open: " << filename << std::endl;
-		return;
-    }
-    
-    std::ostringstream buffer;
-    buffer << file.rdbuf();
-    std::string shaderCode(buffer.str());
-	file.close();
-    
-	std::sregex_iterator next(shaderCode.begin(), shaderCode.end(), uniform_regex);
+	std::sregex_iterator next(m_shaderSrc.begin(), m_shaderSrc.end(), uniform_regex);
   	std::sregex_iterator end;
 
 	//try {
@@ -273,17 +263,21 @@ bool Shader::link()
 	return true;
 }
 
-bool Shader::load(const char* vertFilename, const char* fragFilename){
+bool Shader::load(const std::string& vertFilename, const std::string& fragFilename, const std::string& extFilename) 
+{
+	if (!strhlpr::isFile(vertFilename) || !strhlpr::isFile(fragFilename)) return false;
 	
+	if (!extFilename.empty() && !strhlpr::isFile(extFilename)) return false;
+
 	GLuint vertShader = loadShaderByType(vertFilename, GL_VERTEX_SHADER);
 	if(!vertShader) {
-		SDL_Log("Couldn't load vertex shader: %s\n", vertFilename);
+		SDL_Log("Couldn't load vertex shader: %s\n", vertFilename.c_str());
 		return false;
 	}
 	
-	GLuint fragShader = loadShaderByType(fragFilename, GL_FRAGMENT_SHADER);
+	GLuint fragShader = loadShaderByType(fragFilename, GL_FRAGMENT_SHADER, extFilename);
 	if(!fragShader) {
-		SDL_Log("Couldn't load fragent shader: %s\n", fragFilename);
+		SDL_Log("Couldn't load fragent shader: %s\n", fragFilename.c_str());
 		return false;
 	}
 	
@@ -298,7 +292,7 @@ bool Shader::load(const char* vertFilename, const char* fragFilename){
 		activate();
 		m_shaderConfig = ShaderConfig();
 		createShaderConfigFromUniforms();
-		extractUniformMetadata(fragFilename);
+		extractUniformMetadata();
 		deactivate();
 	}
 	glBindAttribLocation(m_shaderProgram, 0, "in_Position");
@@ -310,11 +304,11 @@ bool Shader::load(const char* vertFilename, const char* fragFilename){
 	return true;
 }
 
-bool Shader::load(const char* compFilename)
+bool Shader::load(const std::string& compFilename)
 {
 	GLuint compShader = loadShaderByType(compFilename, GL_COMPUTE_SHADER);
 	if(!compShader) {
-		SDL_Log("Couldn't load compute shader: %s\n", compFilename);
+		SDL_Log("Couldn't load compute shader: %s\n", compFilename.c_str());
 		return false;
 	}
 	
@@ -331,38 +325,46 @@ bool Shader::load(const char* compFilename)
 	return true;
 }
 
-GLuint Shader::loadShaderByType(const char* filename, GLenum shaderType) 
+GLuint Shader::loadShaderByType(const std::string& filename, GLenum shaderType, const std::string& extFilename)
 {
+	m_shaderSrc = "";
+
 	GLuint shader;
-	FILE *file = fopen(filename, "r");
-	if(!file) {
-		SDL_Log("Can't open file: %s\n", filename);
-		return 0;
-	}
-	
-	size_t length = fileGetLength(file);
-	
-	// Alloc space for the file (plus '\0' termination)
-	GLchar *shaderSrc = (GLchar*)calloc(length + 1, 1);
-	if(!shaderSrc){
-		SDL_Log("Out of memory when reading file: %s\n", filename);
-		fclose(file);
-		file = NULL;
+
+	std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open: " << filename << std::endl;
+		return;
+    }
+    
+    std::ostringstream buffer;
+    buffer << file.rdbuf();
+    m_shaderSrc = std::string(buffer.str());
+	file.close();
+
+	// Load extension when existing
+	if (!extFilename.empty()) {
+		std::ifstream extFile(extFilename);
+		if (!extFile.is_open()) {
+			std::cerr << "Failed to open: " << extFilename << std::endl;
+			return;
+		}
 		
-		return 0;
+		std::ostringstream extBuffer;
+		extBuffer << extFile.rdbuf();
+		std::string extShaderSrc(extBuffer.str());
+		extFile.close();
+
+		strhlpr::searchAndReplace(m_shaderSrc, "//###EXT_MAIN_DEF###", extShaderSrc);
+		strhlpr::searchAndReplace(m_shaderSrc, "//###EXT_MAIN_USE###", "extMain(color, coord);");
+		printf("SOURCE:\n %s\n", m_shaderSrc.c_str());
+		printf("EXT SOURCE:\n %s\n", extShaderSrc.c_str());
 	}
-	
-	fread(shaderSrc, 1, length, file);
-	
-	// Done with the file
-	fclose(file);
-	file = nullptr;
 	
 	// Create the shader
 	shader = glCreateShader(shaderType);
-	glShaderSource(shader, 1, (const GLchar**)&shaderSrc, NULL);
-	free(shaderSrc);
-	shaderSrc = NULL;
+	const char* src = m_shaderSrc.c_str();
+	glShaderSource(shader, 1, &src, NULL);
 	
 	// Compile it
 	glCompileShader(shader);
@@ -370,7 +372,7 @@ GLuint Shader::loadShaderByType(const char* filename, GLenum shaderType)
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &compileSucceeded);
 	
 	if(!compileSucceeded) {
-		SDL_Log("Compilation of shader %s failed:\n", filename);
+		SDL_Log("Compilation of shader %s failed:\n", filename.c_str());
 		GLint logLength = 0;
 		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
 		GLchar *errLog = (GLchar*)malloc(logLength);
@@ -385,38 +387,39 @@ GLuint Shader::loadShaderByType(const char* filename, GLenum shaderType)
 		
 		glDeleteShader(shader);
 		shader = 0;
+		m_shaderSrc = "";
 	}
 	
 	return shader;
 }
 
-bool Shader::bindUniformLocation(const char* locName, GLint unit)
+bool Shader::bindUniformLocation(const std::string& locName, GLint unit)
 {
-	GLint texSamplerUniformLoc = glGetUniformLocation(m_shaderProgram, locName);
+	GLint texSamplerUniformLoc = glGetUniformLocation(m_shaderProgram, locName.c_str());
 	if (texSamplerUniformLoc < 0) {
-		SDL_Log("ERROR: Couldn't get uniform location with this name: %s", locName);
+		SDL_Log("ERROR: Couldn't get uniform location with this name: %s", locName.c_str());
 		return false;
 	}
 	glUniform1i(texSamplerUniformLoc, unit);
 	return true;
 }
 
-bool Shader::setValue(const char* locName, GLfloat value)
+bool Shader::setValue(const std::string& locName, GLfloat value)
 {
-	GLint uniformLoc = glGetUniformLocation(m_shaderProgram, locName);
+	GLint uniformLoc = glGetUniformLocation(m_shaderProgram, locName.c_str());
 	if (uniformLoc < 0) {
-		SDL_Log("ERROR: Couldn't get uniform location with this name: %s", locName);
+		SDL_Log("ERROR: Couldn't get uniform location with this name: %s", locName.c_str());
 		return false;
 	}
 	glUniform1f(uniformLoc, value);
 	return true;
 }
 
-bool Shader::setValue(const char* locName, GLint value)
+bool Shader::setValue(const std::string& locName, GLint value)
 {
-	GLint uniformLoc = glGetUniformLocation(m_shaderProgram, locName);
+	GLint uniformLoc = glGetUniformLocation(m_shaderProgram, locName.c_str());
 	if (uniformLoc < 0) {
-		SDL_Log("ERROR: Couldn't get uniform location with this name: %s", locName);
+		SDL_Log("ERROR: Couldn't get uniform location with this name: %s", locName.c_str());
 		return false;
 	}
 	glUniform1i(uniformLoc, value);

@@ -29,6 +29,7 @@ public:
 public:
     bool initialize();
     const ShaderConfig& shaderConfig();
+    bool loadShader(const std::string& extFilename = "");
     void update(GLuint texture0, GLuint texture1, float mixValue, PlaneSettings& planeSettings, ScreenRotation rotation);
     
 
