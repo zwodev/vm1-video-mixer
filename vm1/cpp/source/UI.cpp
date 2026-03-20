@@ -745,9 +745,11 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int
     m_stbRenderer.drawRectNEW(glm::vec2(rectCenterX[0], centerY), glm::vec2(rectWidth, rectHeight), drawStyle);
     m_stbRenderer.drawRectNEW(glm::vec2(rectCenterX[1], centerY), glm::vec2(rectWidth, rectHeight), drawStyle);
 
-
+    
     // draw planes
     Color colors[] = {COLOR::PLANE_0, COLOR::PLANE_1, COLOR::PLANE_2, COLOR::PLANE_3};
+    float opacity = style == PLANE_PREVIEW_VERTICES ? 0.3f : 0.0f;
+    
     if (style == PLANE_PREVIEW_LARGE || style == PLANE_PREVIEW_VERTICES)
     {
         // draw all planes but the selected
@@ -756,8 +758,8 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int
             if(p.vertices.size() >= 4){
                 if (i != selectedPlane) {
                     Color color = (i == selectedPlane) ? colors[i] : COLOR::GREY;
-                    float opacity = style == PLANE_PREVIEW_VERTICES ? 0.3f : 0.0f;
-                    // m_stbRenderer.setBoundingBox(glm::vec2(rectCenterX[p.hdmiId], centerY), glm::vec2(rectWidth, rectHeight), AnchorPoint::CENTER, opacity);
+                    opacity = style == PLANE_PREVIEW_VERTICES ? 0.3f : 0.0f;
+                    m_stbRenderer.setBoundingBox(glm::vec2(rectCenterX[p.hdmiId], centerY), glm::vec2(rectWidth, rectHeight), AnchorPoint::CENTER, opacity);
                     m_stbRenderer.drawPolygonNEW(p.vertices, DrawStyle{color, false, polygonThickness, AnchorPoint::TOP_LEFT});
                 }
                 i++;
@@ -769,7 +771,7 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int
     Color color = colors[selectedPlane];
     if(p.vertices.size() >= 4)
     {
-        // m_stbRenderer.setBoundingBox(glm::vec2(rectCenterX[p.hdmiId], centerY), glm::vec2(rectWidth, rectHeight), AnchorPoint::CENTER);
+        m_stbRenderer.setBoundingBox(glm::vec2(rectCenterX[p.hdmiId], centerY), glm::vec2(rectWidth, rectHeight), AnchorPoint::CENTER, opacity);
         m_stbRenderer.drawPolygonNEW(p.vertices, DrawStyle{color, false, polygonThickness, AnchorPoint::TOP_LEFT});
     }
     m_stbRenderer.resetBoundingBox();

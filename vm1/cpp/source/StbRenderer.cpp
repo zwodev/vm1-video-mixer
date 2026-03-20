@@ -551,6 +551,10 @@ void StbRenderer::setBoundingBox(glm::vec2 pos, glm::vec2 size, AnchorPoint anch
     roundVec2(m_boundingBox.first);
     roundVec2(m_boundingBox.second);
 
+    // extend bounding box by 1 pixel
+    m_boundingBox.first -= 1.0f;
+    m_boundingBox.second += 1.0f;
+
     // debug: draw bounding box
     // DrawStyle drawStyleBoundingBox = DrawStyle{COLOR::RED, false, 1, AnchorPoint::TOP_LEFT}; 
     // drawRectNEW(m_boundingBox.first, m_boundingBox.second - m_boundingBox.first, drawStyleBoundingBox);
