@@ -41,13 +41,14 @@ void MenuSystem::subscribeToEvents()
     });
 }
 
-bool MenuSystem::SubMenu(const std::string& label, std::function<void()> func)
+bool MenuSystem::SubMenu(const std::string& label, std::function<void()> func, SubMenuType subMenuType)
 {
     bool selected = m_ui.Text(label);
     if  (selected && m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationRight)) {
         m_currentMenuPath.push_back(MenuState(m_focusedIdx, m_currentMenuFunc));
         m_focusedIdx = 0;
         m_currentMenuFunc = func;
+        m_currentSubMenuType = subMenuType;
         return true;
     }
     return false;
@@ -97,6 +98,7 @@ void MenuSystem::setMenu(MenuType menuType)
         m_currentMenuType = menuType;
         m_focusedIdx = 0;
         m_currentMenuPath.clear();
+        m_currentSubMenuType = SMT_None;
     }
 }
 
@@ -260,6 +262,7 @@ void MenuSystem::goUpHierachy() {
         m_focusedIdx = menuState.fIdx;
         m_currentMenuFunc = menuState.func;
         m_currentMenuPath.pop_back();
+        m_currentSubMenuType = SMT_None; // ToDo: add a proper stack for submenutypes
     }
 }
 
@@ -296,7 +299,9 @@ void MenuSystem::render()
              m_currentMenuType == MT_OutputMenu)
     {
         UI::PlanePreviewStyle previewStyle = UI::PlanePreviewStyle::PLANE_PREVIEW_LARGE;
-        // ToDo: Check if we are in the mapping submenu and set the preview style to PLANE_PREVIEW_VERTICES
+        if(m_currentSubMenuType == SMT_Mapping) {
+            previewStyle = UI::PlanePreviewStyle::PLANE_PREVIEW_VERTICES;
+        }
         m_ui.Spacer(40.0);
         m_ui.PlanePreview(m_registry.planes(), m_planeIdx, previewStyle);
     }
@@ -652,7 +657,7 @@ void MenuSystem::OutputMenu()
     m_ui.pushTranslate(0, 100);
     m_ui.BeginList(&m_focusedIdx);
     SubMenu("Mrs. Mask", [this](){ Mask(); });
-    SubMenu("Mr. Mapping", [this](){ Mapping(); });
+    SubMenu("Mr. Mapping", [this](){ Mapping(); }, SMT_Mapping);
     m_ui.SpinBoxInt("Blend Mode", (int&)m_registry.planes()[m_planeIdx].blendMode, 0, 2);
     m_ui.SpinBoxFloat("Opacity", m_registry.planes()[m_planeIdx].opacity, 0.0f, 1.0f);
     m_ui.SpinBoxInt("HDMI Output", m_registry.planes()[m_planeIdx].hdmiId, 0, 1);

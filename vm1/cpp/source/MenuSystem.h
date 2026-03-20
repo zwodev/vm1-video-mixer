@@ -41,6 +41,14 @@ public:
         MT_ButtonMatrixMenu
     };
 
+    enum SubMenuType
+    {
+        SMT_None,
+        SMT_Mapping,
+        SMT_Mask
+    };
+
+
 public:
     MenuSystem() = delete;
     explicit MenuSystem(UI&  ui, Registry& registry, EventBus& eventBus);
@@ -61,7 +69,7 @@ private:
     void handleMenuHierachyNavigation();
 
 private:
-    bool SubMenu(const std::string& label, std::function<void()> func);
+    bool SubMenu(const std::string& label, std::function<void()> func, SubMenuType subMenuType = SMT_None);
     void ClearSlot();
 
     void StartupScreen();
@@ -117,6 +125,7 @@ private:
     int m_focusedIdx = 0;
 
     MenuType m_currentMenuType = MT_StartupScreen;
+    SubMenuType m_currentSubMenuType = SMT_None;
     std::function<void()> m_currentMenuFunc;
     std::vector<MenuState> m_currentMenuPath;
 
