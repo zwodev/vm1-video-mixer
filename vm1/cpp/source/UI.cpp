@@ -4,6 +4,8 @@
 
 #include <cmath>
 
+ImageBuffer UI::m_gizmoImageBuffer = ImageBuffer("media/gizmo.png");
+
 UI::UI(StbRenderer &stbRenderer, EventBus &eventBus) : 
     m_stbRenderer(stbRenderer), 
     m_eventBus(eventBus) 
@@ -916,8 +918,7 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int
         // highlight selected vertex
         PlaneShape p = correctedPlanes[selectedPlane];
         int i = p.vertices.size() - 1 - selectedVertex; // (vertices are in reverse order)
-        glm::vec2 vertex = p.vertices[i];
-        m_stbRenderer.drawRect(vertex.x, vertex.y, 5, 5, COLOR::RED);
+        m_stbRenderer.drawImageNEW(m_gizmoImageBuffer, p.vertices[i] - glm::vec2(9.0,9.0));
     }
 }
 

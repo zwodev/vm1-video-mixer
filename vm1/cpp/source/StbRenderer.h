@@ -145,6 +145,7 @@ public:
     // 
     void savePNG(const std::string& filename);
     void drawImage(const ImageBuffer& imageBuffer, int posX = 0, int posY = 0);
+    void drawImageNEW(const ImageBuffer& imageBuffer, glm::vec2 pos);
     
     // basic shapes:
     void drawLine(int x0, int y0, int x1, int y1, Color color = COLOR::WHITE, int thickness = 1);
@@ -167,6 +168,7 @@ public:
     void resetBoundingBox();
     bool insideBoundingBox(glm::vec2 pos) const;
     void setPixelClipped(glm::vec2 pos, Color c);
+    void blendPixelClipped(glm::vec2 pos, Color c, uint8_t srcAlpha);
     void roundVec2(glm::vec2& pos);
 
     // font functions:

@@ -350,6 +350,39 @@ void StbRenderer::drawImage(const ImageBuffer& imageBuffer, int posX, int posY)
     }
 }
 
+void StbRenderer::drawImageNEW(const ImageBuffer& imageBuffer, glm::vec2 pos)
+{
+    if (!m_isEnabled) return;
+    if (!imageBuffer.isValid || imageBuffer.data == nullptr) return;
+    if (imageBuffer.channels < 3) return; // need at least RGB
+
+    const int w = imageBuffer.width;
+    const int h = imageBuffer.height;
+    const int ch = imageBuffer.channels;
+
+    roundVec2(pos);
+
+    const auto* bytes = reinterpret_cast<const unsigned char*>(imageBuffer.data);
+
+    for (int y = 0; y < h; ++y)
+    {
+        for (int x = 0; x < w; ++x)
+        {
+            const int src = (y * w + x) * ch;
+
+            uint8_t r = bytes[src + 0];
+            uint8_t g = bytes[src + 1];
+            uint8_t b = bytes[src + 2];
+            uint8_t a = (ch >= 4) ? bytes[src + 3] : 255;
+
+            if (a == 0) continue;
+
+            blendPixelClipped(glm::vec2(pos.x + x, pos.y + y), Color{r, g, b}, a);
+        }
+    }
+}
+
+
 void StbRenderer::savePNG(const std::string& filename)
 {
     stbi_write_png(filename.c_str(), m_img.width, m_img.height, 3, m_img.pixels.data(), m_img.width * 3);
@@ -572,6 +605,7 @@ inline bool StbRenderer::insideBoundingBox(glm::vec2 pos) const {
            pos.y > m_boundingBox.first.y &&
            pos.y <  m_boundingBox.second.y;
 }
+
 inline void StbRenderer::setPixelClipped(glm::vec2 pos, Color c) {
     roundVec2(pos);
 
@@ -592,18 +626,44 @@ inline void StbRenderer::setPixelClipped(glm::vec2 pos, Color c) {
             m_img.setPixel(pos.x, pos.y, c.r, c.g, c.b);
         }
     }
+}
 
+inline void StbRenderer::blendPixelClipped(glm::vec2 pos, Color c, uint8_t srcAlpha)
+{
+    if (srcAlpha == 0) return;
 
+    roundVec2(pos);
 
-    // if (!insideBoundingBox(pos)) 
-    // {
-    //     if(opacity == 0.0f)
-    //         return;
-    //     else
-    //         opacityInt = std::round(opacity * 255.0f);
-    // }
-    // m_img.setPixel(pos.x, pos.y, c.r, c.g, c.b);
-    // m_img.blendPixel(pos.x, pos.y, c.r, c.g, c.b, opacity);
+    // boundingBoxOpacity:
+    // - 0.0f means "only draw inside the bounding box"
+    // - >0 means "outside the bounding box is dimmed" (we scale PNG alpha)
+    if (m_boundingBoxOpacity == 0.0f)
+    {
+        if (!insideBoundingBox(pos)) return;
+
+        // Inside: use PNG-provided alpha
+        if (srcAlpha == 255)
+            m_img.setPixel(pos.x, pos.y, c.r, c.g, c.b);
+        else
+            m_img.blendPixel(pos.x, pos.y, c.r, c.g, c.b, srcAlpha);
+    }
+    else
+    {
+        uint8_t effectiveAlpha = srcAlpha;
+
+        if (!insideBoundingBox(pos))
+        {
+            const uint8_t bboxAlpha255 = static_cast<uint8_t>(std::round(m_boundingBoxOpacity * 255.0f));
+            // Scale alpha outside the box by boundingBoxOpacity (integer math)
+            effectiveAlpha = static_cast<uint8_t>((static_cast<int>(srcAlpha) * bboxAlpha255 + 127) / 255);
+            if (effectiveAlpha == 0) return;
+        }
+
+        if (effectiveAlpha == 255)
+            m_img.setPixel(pos.x, pos.y, c.r, c.g, c.b);
+        else
+            m_img.blendPixel(pos.x, pos.y, c.r, c.g, c.b, effectiveAlpha);
+    }
 }
 
 inline void StbRenderer::roundVec2(glm::vec2& pos)
