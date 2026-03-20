@@ -2,6 +2,8 @@
 #include "VM1DeviceDefinitions.h"
 #include "StringHelper.h"
 
+#include <cmath>
+
 UI::UI(StbRenderer &stbRenderer, EventBus &eventBus) : 
     m_stbRenderer(stbRenderer), 
     m_eventBus(eventBus) 
@@ -342,8 +344,9 @@ void UI::ShowMenuTitle(std::string menuTitle, Color color)
     m_menuTitleWidth = std::max(m_menuTitleWidth, 54);
     m_stbRenderer.drawRectNEW(glm::vec2(m_x, m_y), glm::vec2(m_menuTitleWidth + 10, m_menuTitleHeight), DrawStyle{COLOR::WHITE, false, 2, AnchorPoint::TOP_LEFT});
     m_stbRenderer.drawText(menuTitle, 
-        m_x + 5, 
-        m_y, 
+        // m_x + 5, 
+        (m_menuTitleWidth + 10) / 2, 
+        m_y - 1, 
         FONT::TEXTSTYLE::MENU_TITLE, 
         COLOR::WHITE);
 }
@@ -355,10 +358,13 @@ void UI::ShowMediaSlotInfo(std::string menuInfo)
     int textWidth = m_stbRenderer.getTextWidth(menuInfo, FONT::TEXTSTYLE::MENU_TITLE);
 
     m_stbRenderer.drawRectNEW(glm::vec2(m_x, m_y), glm::vec2(textWidth + 10, m_menuTitleHeight), DrawStyle{COLOR::WHITE, false, 2, AnchorPoint::TOP_LEFT});
+    FONT::TextStyle textStyle = FONT::TEXTSTYLE::MENU_TITLE;
+    textStyle.align = FONT::TextStyle::Align::LEFT;
+    
     m_stbRenderer.drawText(menuInfo, 
                             m_x + 5, 
-                            m_y, 
-                            FONT::TEXTSTYLE::MENU_TITLE, 
+                            m_y - 1, 
+                            textStyle, 
                             COLOR::WHITE);
     m_x = 1;
 }
@@ -459,7 +465,7 @@ void UI::ShowBankInfo(int bank)
         int x = quadPadding / 2 + i * (quadSize + quadPadding);
         int y = height/2 - quadSize / 2;
         if(bank == i) {
-            m_stbRenderer.drawRect(x, y, quadSize, quadSize, COLOR::WHITE);
+            // m_stbRenderer.drawRect(x, y, quadSize, quadSize, COLOR::WHITE);
             m_stbRenderer.drawText(std::string(1, static_cast<char>(i + 65)), x + 4, y + 3, FONT::TEXTSTYLE::STANDARD, COLOR::BLACK);
         } else {
             // m_stbRenderer.drawEmptyRect(x, y, quadSize, quadSize, COLOR::WHITE);
@@ -647,29 +653,46 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, Pla
     float aspectRatio = 16.0/9.0f;                         // todo: get aspect ratio from screen(s)
     int polygonThickness = 2;
     
+
+    // for(int i = 0; i < planes.size(); i++)
+    // {
+    //     printf("plane[%d]", i);
+    //     for(int j = 0; j < planes[i].coords.size(); j++)
+    //     {
+    //         printf(" v[%d]", j);
+    //         printf("x:%f y:%f", planes[i].coords[j].x, planes[i].coords[j].y);
+    //     }
+    //     printf("\n");
+    // }
+    // printf("===\n");
+
     if (style == PLANE_PREVIEW_SMALL) 
     {
         m_y = m_screenPaddingTop;
-        // rectWidth = float(m_stbRenderer.width()) / 8.0f;
-        // rectHeight = int(float(rectWidth) / aspectRatio);
         rectHeight = m_menuTitleHeight;
-        rectWidth = int(float(rectHeight) * aspectRatio);
+        rectWidth = float(rectHeight) * aspectRatio;
         float spacing = 7.0f;
         float paddingRight = 15.0f;
         centerX = float(m_stbRenderer.width() - rectWidth - spacing * 2.0f - paddingRight);
-        rectCenterX[0] = centerX - rectWidth/1.75f - spacing;
-        rectCenterX[1] = centerX + rectWidth/1.75f + spacing;
-        centerY = m_y + rectHeight / 2;
+        rectCenterX[0] = centerX - rectWidth / 1.75f - spacing;
+        rectCenterX[1] = centerX + rectWidth / 1.75f + spacing;
+        centerY = m_y + rectHeight / 2.0f;
     }
     else if (style == PLANE_PREVIEW_LARGE || style == PLANE_PREVIEW_VERTICES) 
     {
         rectWidth = float(m_stbRenderer.width()) / 3.0f;
-        rectHeight = int(float(rectWidth) / aspectRatio);
+        rectHeight = float(rectWidth) / aspectRatio;
         centerX = float(m_stbRenderer.width()) / 2.0f;
-        rectCenterX[0] = centerX - rectWidth/1.75f;
-        rectCenterX[1] = centerX + rectWidth/1.75f;
-        centerY = m_y + rectHeight / 2;
+        rectCenterX[0] = centerX - rectWidth / 1.75f;
+        rectCenterX[1] = centerX + rectWidth / 1.75f;
+        centerY = m_y + rectHeight / 2.0f;
     }
+
+    rectWidth = std::round(rectWidth);
+    rectHeight = std::round(rectHeight);
+    centerY = std::round(centerY);
+    rectCenterX[0] = std::round(rectCenterX[0]);
+    rectCenterX[1] = std::round(rectCenterX[1]);
 
     // create preview scale plane shapes
     struct PlaneShape {
@@ -700,40 +723,39 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, Pla
 
     // draw screens outlines
     DrawStyle drawStyle = DrawStyle{COLOR::WHITE, false, 1, AnchorPoint::CENTER}; 
-    if (style == PLANE_PREVIEW_SMALL) 
-    {
-        drawStyle.strokeWidth = 2;
-    }
+    // if (style == PLANE_PREVIEW_SMALL) 
+    // {
+    //     drawStyle.strokeWidth = 2;
+    // }
     m_stbRenderer.drawRectNEW(glm::vec2(rectCenterX[0], centerY), glm::vec2(rectWidth, rectHeight), drawStyle);
     m_stbRenderer.drawRectNEW(glm::vec2(rectCenterX[1], centerY), glm::vec2(rectWidth, rectHeight), drawStyle);
 
 
     // draw planes
     Color colors[] = {COLOR::PLANE_0, COLOR::PLANE_1, COLOR::PLANE_2, COLOR::PLANE_3};
-    if (style == PLANE_PREVIEW_SMALL) 
+    if (style == PLANE_PREVIEW_LARGE || style == PLANE_PREVIEW_VERTICES)
     {
-        // draw only one plane 
-        PlaneShape p = correctedPlanes[selectedPlane];
-        Color color = colors[selectedPlane];
-        if(p.vertices.size() >= 4)
-        {
-            m_stbRenderer.setBoundingBox(glm::vec2(rectCenterX[p.hdmiId], centerY), glm::vec2(rectWidth, rectHeight), AnchorPoint::CENTER);
-            m_stbRenderer.drawPolygonNEW(p.vertices, DrawStyle{color, false, polygonThickness, AnchorPoint::TOP_LEFT});
-        }
-    }
-    else if (style == PLANE_PREVIEW_LARGE || style == PLANE_PREVIEW_VERTICES)
-    {
-        // draw all planes
+        // draw all planes but the selected
         int i = 0;
         for(PlaneShape p : correctedPlanes) {
             if(p.vertices.size() >= 4){
-                Color color = i == selectedPlane ? colors[i] : COLOR::GREY;
-                float opacity = style == PLANE_PREVIEW_VERTICES ? 0.3f : 0.0f;
-                m_stbRenderer.setBoundingBox(glm::vec2(rectCenterX[p.hdmiId], centerY), glm::vec2(rectWidth, rectHeight), AnchorPoint::CENTER, opacity);
-                m_stbRenderer.drawPolygonNEW(p.vertices, DrawStyle{color, false, polygonThickness, AnchorPoint::TOP_LEFT});
+                if (i != selectedPlane) {
+                    Color color = (i == selectedPlane) ? colors[i] : COLOR::GREY;
+                    float opacity = style == PLANE_PREVIEW_VERTICES ? 0.3f : 0.0f;
+                    // m_stbRenderer.setBoundingBox(glm::vec2(rectCenterX[p.hdmiId], centerY), glm::vec2(rectWidth, rectHeight), AnchorPoint::CENTER, opacity);
+                    m_stbRenderer.drawPolygonNEW(p.vertices, DrawStyle{color, false, polygonThickness, AnchorPoint::TOP_LEFT});
+                }
                 i++;
             }
         }
+    }
+    // draw selected plane on top
+    PlaneShape p = correctedPlanes[selectedPlane];
+    Color color = colors[selectedPlane];
+    if(p.vertices.size() >= 4)
+    {
+        // m_stbRenderer.setBoundingBox(glm::vec2(rectCenterX[p.hdmiId], centerY), glm::vec2(rectWidth, rectHeight), AnchorPoint::CENTER);
+        m_stbRenderer.drawPolygonNEW(p.vertices, DrawStyle{color, false, polygonThickness, AnchorPoint::TOP_LEFT});
     }
     m_stbRenderer.resetBoundingBox();
 
@@ -792,25 +814,68 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, Pla
     }
     else if (style == PLANE_PREVIEW_LARGE || style == PLANE_PREVIEW_VERTICES) 
     {
-        // draw plane indices in the center of the polygons
-        int i = 0;
-        for(PlaneShape p : correctedPlanes) 
+        // get positions of the texts/numbers to check if they are too close to each others
+        std::unordered_map<int, glm::vec2> textPositions;
+        textPositions.reserve(correctedPlanes.size());
+        for(int i = 0; i < correctedPlanes.size(); i++)
         {
+            PlaneShape p = correctedPlanes[i];
             glm::vec2 polygonCenter = {0.0f, 0.0f};
             for(std::size_t i = 0; i < p.vertices.size(); i++) {
                 polygonCenter += p.vertices[i];
             }
             polygonCenter /= p.vertices.size();
+            textPositions.insert({i, polygonCenter});
+        }
+
+        // check the positions and move if necessary
+        // (created by cursor)
         
+        // FONT::TextStyle textStyle = FONT::TEXTSTYLE::STANDARD;
+        // textStyle.size = 24.0f;
+        const int digitWidthPx = 16; //m_stbRenderer.getTextWidth("4", textStyle);
+        const int digitHeightPx = 24;
+        const int offsetX = digitWidthPx + 2;
+        const float offsetHalfX = offsetX / 2.0f;
+        bool changed = true;
+        int pass = 0;
+        while (changed && pass++ < 4)
+        {
+            changed = false;
+            const int n = static_cast<int>(correctedPlanes.size());
+            for (int a = 0; a < n; a++)
+            {
+                for (int b = a + 1; b < n; b++)
+                {
+                    const float dx = std::fabs(textPositions[a].x - textPositions[b].x);
+                    const float dy = std::fabs(textPositions[a].y - textPositions[b].y);
+                    if (dx < static_cast<float>(digitWidthPx) && dy < static_cast<float>(digitHeightPx))
+                    {
+                        // Move them symmetrically around their current midpoint
+                        if (textPositions[a].x <= textPositions[b].x) {
+                            textPositions[a].x -= offsetHalfX;
+                            textPositions[b].x += offsetHalfX;
+                        } else {
+                            textPositions[a].x += offsetHalfX;
+                            textPositions[b].x -= offsetHalfX;
+                        }
+                        changed = true;
+                    }
+                }
+            }
+        }
+
+        // draw plane indices in the center of the polygons
+        for(const auto& pos : textPositions) 
+        {        
             FONT::TextStyle textStyle = FONT::TEXTSTYLE::STANDARD;
             textStyle.size = 24.0f;
-            Color color = i == selectedPlane ? colors[i] : COLOR::GREY;
-            m_stbRenderer.drawText(std::to_string(i+1), 
-                                    polygonCenter.x, 
-                                    polygonCenter.y - textStyle.size/4, 
+            Color color = pos.first == selectedPlane ? colors[pos.first] : COLOR::GREY;
+            m_stbRenderer.drawText(std::to_string(pos.first + 1), 
+                                    pos.second.x, 
+                                    pos.second.y - textStyle.size / 1.75f, 
                                     textStyle, 
                                     color);
-            i++;
         }
     }
 

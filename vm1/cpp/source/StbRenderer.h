@@ -90,12 +90,19 @@ namespace FONT
     };
 
     struct TextStyle {
+        enum Align {
+            LEFT,
+            CENTER
+        };
+
         std::string fontName;
         float size;
+        Align align = Align::LEFT;
     };
+
     namespace TEXTSTYLE
     {
-        static TextStyle MENU_TITLE = {"CreatoDisplay-Regular.otf", 28.0f};
+        static TextStyle MENU_TITLE = {"CreatoDisplay-Regular.otf", 28.0f, TextStyle::Align::CENTER};
         static TextStyle ROOT_MENU_ITEM = {"CreatoDisplay-Regular.otf", 20.0f};
         static TextStyle STANDARD = {"CreatoDisplay-Regular.otf", 16.0f};
         static TextStyle LIST_ITEM = {"ProggyClean.ttf", 16.0f};

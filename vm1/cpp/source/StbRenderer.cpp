@@ -395,6 +395,11 @@ void StbRenderer::drawText(const std::string& text, int posX, int posY, FONT::Te
     //           << " baseLine: " << baseline
     //           << " lineGap: " << lineGap << std::endl;
 
+    if(textStyle.align == FONT::TextStyle::Align::CENTER) {
+        int textWidth = getTextWidth(text, textStyle);
+        posX -= textWidth / 2;
+    }
+
     for (char c : text)
     {
         int width, height, xoff, yoff;
