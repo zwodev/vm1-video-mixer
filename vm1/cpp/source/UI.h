@@ -70,6 +70,8 @@ public:
     
     void Image(const ImageBuffer& imageBuffer);
     void Spacer(float value = 15.0f);
+    void HideElements();
+    void ShowElements();
     
 
     bool Action(const std::string& label);
@@ -78,7 +80,7 @@ public:
     bool SpinBoxInt(const std::string& label, int& value, int minValue, int maxValue, int step = 1);
     bool SpinBoxFloat(const std::string& label, float& value, float minValue, float maxValue, float step = 0.01f);
     bool SpinBoxVec2(const std::string& label, glm::vec2& vec, float step = 0.1f);
-    void PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, PlanePreviewStyle style);
+    void PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int& selectedVertex, PlanePreviewStyle style);
 
     bool isValueChangeEventTriggered(ValueChangeEvent::Type eventType, int id);
     bool isNavigationEventTriggered(NavigationEvent::Type eventType);
@@ -90,17 +92,17 @@ public:
     int getMenuTitleHeight() const;
     std::vector<int> getTriggeredMediaSlotIds();
     std::vector<int> getTriggeredEditButtons();
-
     
-private:
+    
+    private:
     void subscribeToEvents();
-
+    
     std::vector<ValueChangeEvent> valueChangeEvents;
     std::vector<NavigationEvent> navigationEvents;
     std::vector<BankChangeEvent> bankChangeEvents;
     std::vector<MediaSlotEvent> mediaSlotEvents;
     std::vector<EditModeEvent> editModeEvents;
-
+    
     StbRenderer& m_stbRenderer;
     EventBus& m_eventBus;
     int m_x = 0;
@@ -113,6 +115,7 @@ private:
     int* m_focusedIdxPtr = 0;
     int m_firstLine = 0;
     int m_currentElementHeight = 0;
+    bool m_isHidden = false;
 
     // int m_titlePaddingBottom = 10;
     int m_textPaddingBottom = 2;

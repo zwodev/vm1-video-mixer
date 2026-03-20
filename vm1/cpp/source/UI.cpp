@@ -205,7 +205,7 @@ void UI::BeginList(int* focusedIdxPtr)
     if (!focusedIdxPtr) return;
     //int maxWidth = m_stbRenderer.width();
     int maxHeight = m_stbRenderer.height();
-    float fontSize = 16.0f;
+    // float fontSize = 16.0f;
     m_listSize = 0;
     m_focusedIdxPtr = focusedIdxPtr;
     m_lineHeight = m_stbRenderer.getFontLineHeight(m_currentTextStyle) + m_textPaddingBottom;
@@ -246,6 +246,8 @@ void UI::EndList()
 
 void UI::BeginListElement()
 {
+    if(m_isHidden) return;
+
     int halfVisibleElements = m_visibleListElements / 2;
     int firstElementId = std::max(0, *m_focusedIdxPtr - halfVisibleElements);
     int lastElementId = firstElementId + m_visibleListElements;
@@ -259,7 +261,7 @@ void UI::BeginListElement()
 void UI::EndListElement()
 {
     m_listSize++;
-    if (m_stbRenderer.isEnabled()) {
+    if (m_stbRenderer.isEnabled() && !m_isHidden) {
         m_y += m_currentElementHeight;
         m_y += m_textPaddingBottom;
     }
@@ -298,20 +300,21 @@ void UI::CenteredText(const std::string &label)
 bool UI::Text(const std::string &label)
 {
     UI::BeginListElement();
-    // float fontSize = m_currentTextStyle.size;
-    Color color = m_currentColor;
-    float textWidth = m_stbRenderer.getTextWidth(label, m_currentTextStyle);
     bool selected = (m_focusedIdxPtr && ((*m_focusedIdxPtr) == m_listSize));
-    if (selected) {
-            m_stbRenderer.drawRect(m_x, 
-                                   m_y - 1, 
-                                // m_stbRenderer.width() - m_x, 
-                                   textWidth, 
-                                   m_lineHeight, 
-                                   color);
-            color = COLOR::BLACK;
+    if(!m_isHidden){
+        Color color = m_currentColor;
+        float textWidth = m_stbRenderer.getTextWidth(label, m_currentTextStyle);
+        if (selected) {
+                m_stbRenderer.drawRect(m_x, 
+                                    m_y - 1, 
+                                    // m_stbRenderer.width() - m_x, 
+                                    textWidth, 
+                                    m_lineHeight, 
+                                    color);
+                color = COLOR::BLACK;
+        }
+        m_stbRenderer.drawText(label, m_x, m_y, m_currentTextStyle, color);
     }
-    m_stbRenderer.drawText(label, m_x, m_y, m_currentTextStyle, color);
     UI::EndListElement();
 
     return selected;
@@ -335,6 +338,17 @@ void UI::PlainText(const std::string &label)
 void UI::Spacer(float value) {
     m_y += value;
 }
+
+void UI::HideElements()
+{
+    m_isHidden = true;
+}
+
+void UI::ShowElements()
+{
+    m_isHidden = false;
+}
+
 
 void UI::ShowMenuTitle(std::string menuTitle, Color color)
 {
@@ -643,7 +657,7 @@ bool UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
     return hasChanged;
 }
 
-void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, PlanePreviewStyle style)
+void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int& selectedVertex, PlanePreviewStyle style)
 {
     float rectWidth;
     float rectHeight;
@@ -680,6 +694,7 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, Pla
     }
     else if (style == PLANE_PREVIEW_LARGE || style == PLANE_PREVIEW_VERTICES) 
     {
+        m_y += 10;
         rectWidth = float(m_stbRenderer.width()) / 3.0f;
         rectHeight = float(rectWidth) / aspectRatio;
         centerX = float(m_stbRenderer.width()) / 2.0f;
@@ -880,19 +895,21 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, Pla
     }
 
     // handle vertex selection and highlight selected vertex
-    static int selectedVertex = 0;
-    if(style == PLANE_PREVIEW_VERTICES)    
+    // static int selectedVertex = 0;
+    if(style == PLANE_PREVIEW_VERTICES && 
+        selectedVertex >= 0 &&
+        selectedVertex < correctedPlanes.size())    
     {
-        if(isNavigationEventTriggered(NavigationEvent::Type::NavigationDown))
-        {
-            selectedVertex += 1;
-            if (selectedVertex > planes[selectedPlane].coords.size()-1) selectedVertex = planes[selectedPlane].coords.size()-1;
-        }
-        else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationUp))
-        {
-            selectedVertex -= 1;
-            if (selectedVertex < 0) selectedVertex = 0;
-        }
+        // if(isNavigationEventTriggered(NavigationEvent::Type::NavigationDown))
+        // {
+        //     selectedVertex += 1;
+        //     if (selectedVertex > planes[selectedPlane].coords.size()-1) selectedVertex = planes[selectedPlane].coords.size()-1;
+        // }
+        // else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationUp))
+        // {
+        //     selectedVertex -= 1;
+        //     if (selectedVertex < 0) selectedVertex = 0;
+        // }
 
         // highlight selected vertex
         PlaneShape p = correctedPlanes[selectedPlane];

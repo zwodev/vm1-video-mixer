@@ -292,7 +292,7 @@ void MenuSystem::render()
             planeId =  inputConfig->planeId;
             // mediaSlotString += ">>" + std::to_string(planeId + 1);
         }
-        m_ui.PlanePreview(m_registry.planes(), planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
+        m_ui.PlanePreview(m_registry.planes(), planeId, m_selectedVertexId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
         m_ui.ShowMediaSlotInfo(mediaSlotString);
     } 
     else if (m_currentMenuType == MT_FxMenu ||
@@ -303,7 +303,7 @@ void MenuSystem::render()
             previewStyle = UI::PlanePreviewStyle::PLANE_PREVIEW_VERTICES;
         }
         m_ui.Spacer(40.0);
-        m_ui.PlanePreview(m_registry.planes(), m_planeIdx, previewStyle);
+        m_ui.PlanePreview(m_registry.planes(), m_planeIdx, m_selectedVertexId, previewStyle);
     }
     
 
@@ -682,13 +682,20 @@ void MenuSystem::Mapping()
     m_ui.ShowMenuTitle("OUT/Mapping");
     m_ui.Spacer(m_ui.getMenuTitleHeight());
     m_ui.pushTranslate(0, 100);
-
+    
     m_ui.BeginList(&m_focusedIdx);
+    // printf("%d\n", m_ui.m_y);
+
+    m_ui.HideElements();
+    // rendering of the upcoming elements is done in another element (PlanePreview()).
+    // PlanePreview() is also using m_selectedVertexId to visualize the selected vertex.
+    m_selectedVertexId = m_focusedIdx;
     m_ui.SpinBoxVec2("TopLeft", m_registry.planes()[m_planeIdx].coords[3]); 
     m_ui.SpinBoxVec2("TopRight", m_registry.planes()[m_planeIdx].coords[2]); 
     m_ui.SpinBoxVec2("BottomRight", m_registry.planes()[m_planeIdx].coords[1]); 
     m_ui.SpinBoxVec2("BottomLeft", m_registry.planes()[m_planeIdx].coords[0]); 
-    m_ui.Spacer();
+    m_ui.ShowElements();
+
     // m_ui.SpinBoxInt("Rotation", m_registry.planes()[m_planeIdx].rotation,0, 360, 1);
     m_ui.SpinBoxFloat("Scale", m_registry.planes()[m_planeIdx].scale, 0.0f, 10.0f, 0.1f);
     // m_ui.SpinBoxVec2("ScaleXY", m_registry.planes()[m_planeIdx].scaleXY);

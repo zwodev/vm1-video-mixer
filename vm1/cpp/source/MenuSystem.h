@@ -120,6 +120,8 @@ private:
     
     int m_id = 0;
     int m_planeIdx = 0;
+    int m_selectedVertexId = 0;
+
     //int m_effectIdx = 0;
     std::string m_effectName;
     int m_focusedIdx = 0;
