@@ -383,8 +383,8 @@ void MenuSystem::InfoMenu()
         m_ui.PlainText("Filename:   " + shaderInputConfig->fileName);
         m_ui.PlainText("Parameters: ");
     }
-    
     m_ui.EndList(); 
+    m_ui.MediaPreview("/home/vm1/Documents/coding/vm1-video-mixer/vm1/videos/oberbaum-01.preview.png");
 }
 
 // ##### SOURCE MENU #####
@@ -433,6 +433,9 @@ void MenuSystem::FileSelection()
     }
     else if(m_ui.Action("USB-Drive")) {
         printf("Enter USB-Drive\n");
+    }
+    else if(m_ui.Action("Generate Previews")) {
+        m_eventBus.publish(CreateMediaPreviewEvent());
     }
     m_ui.Spacer();
     m_ui.TextStyle(FONT::TEXTSTYLE::LIST_ITEM);
@@ -660,6 +663,10 @@ void MenuSystem::OutputMenu()
     SubMenu("Mr. Mapping", [this](){ Mapping(); }, SMT_Mapping);
     m_ui.SpinBoxInt("Blend Mode", (int&)m_registry.planes()[m_planeIdx].blendMode, 0, 2);
     m_ui.SpinBoxFloat("Opacity", m_registry.planes()[m_planeIdx].opacity, 0.0f, 1.0f);
+    if(m_ui.CheckBox("Use Fader For Opacity", m_registry.planes()[m_planeIdx].useFaderForOpacity))
+    {
+        m_registry.planes()[m_planeIdx].useFaderForOpacity = !m_registry.planes()[m_planeIdx].useFaderForOpacity;
+    }
     m_ui.SpinBoxInt("HDMI Output", m_registry.planes()[m_planeIdx].hdmiId, 0, 1);
     m_ui.EndList();
     m_ui.popTranslate();

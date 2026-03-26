@@ -365,6 +365,7 @@ struct PlaneSettings
     int hdmiId = 0;
     BlendMode blendMode = BlendMode::BM_None;
     float opacity = 1.0f;
+    bool useFaderForOpacity = false;
     ShaderConfig shaderConfig;
     std::string extShaderFilename;
 

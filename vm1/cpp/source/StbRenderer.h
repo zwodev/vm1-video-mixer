@@ -146,6 +146,7 @@ public:
     void savePNG(const std::string& filename);
     void drawImage(const ImageBuffer& imageBuffer, int posX = 0, int posY = 0);
     void drawImageNEW(const ImageBuffer& imageBuffer, glm::vec2 pos);
+    void drawAnimatedSprite(const ImageBuffer& imageBuffer, int frameIndex, glm::vec2 pos);
     
     // basic shapes:
     void drawLine(int x0, int y0, int x1, int y1, Color color = COLOR::WHITE, int thickness = 1);

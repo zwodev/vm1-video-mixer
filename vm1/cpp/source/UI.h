@@ -81,6 +81,7 @@ public:
     bool SpinBoxFloat(const std::string& label, float& value, float minValue, float maxValue, float step = 0.01f);
     bool SpinBoxVec2(const std::string& label, glm::vec2& vec, float step = 0.1f);
     void PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int& selectedVertex, PlanePreviewStyle style);
+    void MediaPreview(const std::string& filename);
 
     bool isValueChangeEventTriggered(ValueChangeEvent::Type eventType, int id);
     bool isNavigationEventTriggered(NavigationEvent::Type eventType);
@@ -116,6 +117,7 @@ public:
     int m_firstLine = 0;
     int m_currentElementHeight = 0;
     bool m_isHidden = false;
+    int m_mediaPreviewFrameIndex = 0;
 
     // int m_titlePaddingBottom = 10;
     int m_textPaddingBottom = 2;

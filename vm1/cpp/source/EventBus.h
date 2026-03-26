@@ -87,6 +87,9 @@ struct ValueChangeEvent
     Type type;
 };
 
+struct CreateMediaPreviewEvent
+{
+};
 
 // struct MappingButtonEvent
 // {

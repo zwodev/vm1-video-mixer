@@ -75,6 +75,13 @@ void VM1Application::subscribeToEvents()
             m_hadKeyDown = true;
         }
     });
+
+    m_eventBus.subscribe<CreateMediaPreviewEvent>([this](const CreateMediaPreviewEvent& event){
+        printf("Generate Previews\n");
+        std::vector<std::string>& files = m_registry.mediaPool().getVideoFiles();
+        // ffmpeg -i oberbaum-01.mov -vf "select='not(mod(n\,12))',scale=160:-1,tile=5x5" -frames:v 1 oberbaum-01-2.png
+        
+    });
 }
 
 bool VM1Application::initialize()

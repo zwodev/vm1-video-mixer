@@ -61,12 +61,12 @@ public:
 
     bool startFade(int toId)
     {
-        // if (m_isFading && m_isActive) return false;
+        if (m_isFading && m_isActive) return false;
 
         m_toId = toId;
         m_isFading = true;
         m_fadeDir = 1.0f;
-        // if (m_mixValue > 0.0f) m_fadeDir = -1.0f;
+        if (m_mixValue > 0.0f) m_fadeDir = -1.0f;
 
         return true;
     }
@@ -77,14 +77,13 @@ public:
         
         m_mixValue = m_mixValue + ((deltaTime / m_fadeTime) * m_fadeDir);
         
-        // if (m_mixValue <= 0.0f) {
-        //     m_mixValue = 0.0f;
-        //     m_isFading = false;
-        //     m_fromId = m_toId;
-        //     m_toId = -1;
-        // } 
-        // else 
-        if (m_mixValue >= 1.0f) {
+        if (m_mixValue <= 0.0f) {
+            m_mixValue = 0.0f;
+            m_isFading = false;
+            m_fromId = m_toId;
+            m_toId = -1;
+        } 
+        else if (m_mixValue >= 1.0f) {
             m_mixValue = 0.0f;
             m_isFading = false;
             m_isActive = false;

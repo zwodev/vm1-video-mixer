@@ -48,6 +48,14 @@ vec3 adjustSaturation(vec3 color, float value) {
   return mix(grayscale, color, 1.0 + value);
 }
 
+vec3 colorAtUV(vec2 coord)
+{
+	vec3 col0 = texture(inputTexture0, coord).rgb;
+	vec3 col1 = texture(inputTexture1, coord).rgb;
+	return mix(col0, col1, mixValue);
+}
+
+
 // ### BEGIN CUSTOM
 // // Internal
 // uniform vec2 iResolution;
@@ -66,10 +74,7 @@ vec3 adjustSaturation(vec3 color, float value) {
 void main() {
 	// Mix images
 	vec2 coord = vec2(texCoord.x, (1.0f - texCoord.y));
-	vec3 col0 = texture(inputTexture0, coord).rgb;
-	vec3 col1 = texture(inputTexture1, coord).rgb;
-	vec3 color = mix(col0, col1, mixValue);
-
+	vec3 color = colorAtUV(coord);
 	
 	//###EXT_MAIN_USE###
 	// extMain(color, coord); 

@@ -278,7 +278,7 @@ void PlaybackOperator::showMedia(int mediaSlotId)
 
         printf("start fade..");
         if (m_planeMixers[planeId].startFade(playerId)) {
-            m_mediaPlayers[playerId]->play(); 
+            m_mediaPlayers[playerId]->play();
             if (m_mediaSlotIdToPlayerId.find(mediaSlotId) != m_mediaSlotIdToPlayerId.end()) {
                 int oldPlayerId = m_mediaSlotIdToPlayerId[mediaSlotId];
                 m_recentlyUsedPlayerIds.push_back(oldPlayerId);
@@ -385,6 +385,10 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     //         }
     //     }
     // }
+
+    if (playerId >= 0) {
+        m_mediaPlayers[playerId]->setPlaneId(planeId);
+    }
 }
 
 void PlaybackOperator::update(float deltaTime)
@@ -511,19 +515,29 @@ void PlaybackOperator::renderPlane(int hdmiId)
     std::vector<int> activePlanesIds;
     for (auto iter = m_mediaSlotIdToPlayerId.begin(); iter != m_mediaSlotIdToPlayerId.end(); ++iter)
     {
-        InputConfig* currentConfig = m_registry.inputMappings().getInputConfig(iter->first);
-        if(currentConfig)
-        {
-            int planeId = currentConfig->planeId;
-            if(std::find(activePlanesIds.begin(), activePlanesIds.end(), planeId) == activePlanesIds.end()) {
-                activePlanesIds.push_back(planeId);
-            }
-        } 
+        // InputConfig* currentConfig = m_registry.inputMappings().getInputConfig(iter->first);
+        // if(currentConfig)
+        // {
+        //     int planeId = currentConfig->planeId;
+        //     if(std::find(activePlanesIds.begin(), activePlanesIds.end(), planeId) == activePlanesIds.end()) {
+        //         activePlanesIds.push_back(planeId);
+        //     }
+        // }
+        int playerId = iter->second;
+        int planeId = m_mediaPlayers[playerId]->planeId();
+        if(std::find(activePlanesIds.begin(), activePlanesIds.end(), planeId) == activePlanesIds.end()) {
+            activePlanesIds.push_back(planeId);
+        }
     }
     std::sort(activePlanesIds.begin(), activePlanesIds.end(), [](int x, int y){return x < y;});
 
     for (int i = 0; i < activePlanesIds.size(); ++i) {
         int currentPlaneId = activePlanesIds[i];
+        
+        if(m_registry.planes()[currentPlaneId].useFaderForOpacity) {
+            m_registry.planes()[currentPlaneId].opacity = m_registry.settings().analog0;    // todo: just for testing
+        }
+
         if (hdmiId == planes[currentPlaneId].hdmiId) {
             if (i >= m_planeRenderers.size()) return;
             
@@ -547,7 +561,6 @@ void PlaybackOperator::renderPlane(int hdmiId)
                 //if (audioStream) audioStream->setVolume(planeMixer.mixValue() * volume);
             }
 
-            //printf("Active Plane: %d", currentPlaneId);
             planeRenderer->update(texture0, texture1, planeMixer.mixValue(), m_registry.planes()[currentPlaneId], m_registry.settings().hdmiRotation0);
         }
     }

@@ -382,6 +382,12 @@ void StbRenderer::drawImageNEW(const ImageBuffer& imageBuffer, glm::vec2 pos)
     }
 }
 
+void StbRenderer::drawAnimatedSprite(const ImageBuffer& imageBuffer, int frameIndex, glm::vec2 pos)
+{
+
+}
+
+
 
 void StbRenderer::savePNG(const std::string& filename)
 {

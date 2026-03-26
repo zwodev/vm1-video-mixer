@@ -922,6 +922,13 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int
     }
 }
 
+void UI::MediaPreview(const std::string& filename)
+{
+    
+    m_mediaPreviewFrameIndex++;
+    m_mediaPreviewFrameIndex %= 25;
+}
+
 void UI::savePNG(const std::string& filename){
     m_stbRenderer.savePNG(filename);
 }
