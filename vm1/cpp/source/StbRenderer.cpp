@@ -350,7 +350,7 @@ void StbRenderer::drawImage(const ImageBuffer& imageBuffer, int posX, int posY)
     }
 }
 
-void StbRenderer::drawImageNEW(const ImageBuffer& imageBuffer, glm::vec2 pos)
+void StbRenderer::drawImageNEW(const ImageBuffer& imageBuffer, glm::vec2 pos)   // todo: use ivec2 or uvec2
 {
     if (!m_isEnabled) return;
     if (!imageBuffer.isValid || imageBuffer.data == nullptr) return;
@@ -382,9 +382,31 @@ void StbRenderer::drawImageNEW(const ImageBuffer& imageBuffer, glm::vec2 pos)
     }
 }
 
-void StbRenderer::drawAnimatedSprite(const ImageBuffer& imageBuffer, int frameIndex, glm::vec2 pos)
-{
+// void StbRenderer::drawAnimatedSprite(const ImageBuffer& imageBuffer, int frameIndex, glm::vec2 pos, glm::vec2 srcPos, glm::vec2 srcSize)
+// {
+// }
 
+void StbRenderer::drawSubImage(const ImageBuffer& imageBuffer, glm::uvec2 destPos, glm::uvec2 srcPos, glm::uvec2 srcSize)
+{
+    if (!m_isEnabled) return;
+    if (!imageBuffer.isValid || imageBuffer.data == nullptr) return;
+    if (imageBuffer.channels < 3) return; // need at least RGB
+
+    uint imageBufferBytesPerLine = imageBuffer.width * imageBuffer.channels;
+    uint srcBytesPerLine = srcSize.x * imageBuffer.channels;
+    uint srcByteOffset = srcPos.x * imageBuffer.channels + 
+                         srcPos.y * imageBufferBytesPerLine;
+    
+    uint destBytesPerLine = m_img.width * 3;
+    uint destByteOffset = destPos.x * 3 +
+                         destPos.y * destBytesPerLine;
+
+    for (uint y = 0; y < srcSize.y; y++ )
+    {
+        char* srcPtr = (char*)imageBuffer.data + srcByteOffset + y*imageBufferBytesPerLine;
+        uint8_t* destPtr = m_img.pixels.data() + destByteOffset + y*destBytesPerLine;
+        memcpy(destPtr, srcPtr, srcBytesPerLine);
+    }
 }
 
 

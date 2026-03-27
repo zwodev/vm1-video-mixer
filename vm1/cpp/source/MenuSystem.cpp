@@ -360,6 +360,7 @@ void MenuSystem::StartupScreen()
 void MenuSystem::InfoMenu()
 {
     m_ui.ShowMenuTitle("Info");
+    m_ui.Spacer(m_ui.getMenuTitleHeight());
     m_ui.BeginList(&m_focusedIdx);
     InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(m_id);
     if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
@@ -384,7 +385,7 @@ void MenuSystem::InfoMenu()
         m_ui.PlainText("Parameters: ");
     }
     m_ui.EndList(); 
-    m_ui.MediaPreview("/home/vm1/Documents/coding/vm1-video-mixer/vm1/videos/oberbaum-01.preview.png");
+    m_ui.MediaPreview("/home/vm1/Documents/coding/vm1-video-mixer/vm1/videos/oberbaum-01.preview2.png");
 }
 
 // ##### SOURCE MENU #####

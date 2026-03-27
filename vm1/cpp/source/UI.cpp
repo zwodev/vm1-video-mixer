@@ -924,9 +924,28 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int
 
 void UI::MediaPreview(const std::string& filename)
 {
+    static std::string filenameOld = "";
+    if(filenameOld != filename)
+    {
+        m_mediaPreviewImageBuffer = ImageBuffer(filename);
+        printf("New MediaPreview: %s\n", filename.c_str());
+        filenameOld = filename;
+        m_mediaPreviewFrameIndex = 0;
+    }
+
+    int tilesX = 10;
+    int tilesY = 10;
+    int srcPosX = 160 * (m_mediaPreviewFrameIndex % tilesX);
+    int srcPosY = 90 * (m_mediaPreviewFrameIndex / tilesY);
+    // printf("MediaPreview frame %d:  srcPosX: %d, srcPosY: %d\n",m_mediaPreviewFrameIndex, srcPosX, srcPosY);
+
+    m_stbRenderer.drawSubImage(m_mediaPreviewImageBuffer, 
+                              glm::uvec2(160, 75),    // destPos
+                              glm::uvec2(srcPosX, srcPosY),     // srcPos
+                              glm::uvec2(160, 90)); // srcSize
     
     m_mediaPreviewFrameIndex++;
-    m_mediaPreviewFrameIndex %= 25;
+    m_mediaPreviewFrameIndex %= (tilesX*tilesY);
 }
 
 void UI::savePNG(const std::string& filename){

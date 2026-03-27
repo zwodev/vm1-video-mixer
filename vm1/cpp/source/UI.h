@@ -134,4 +134,5 @@ public:
     int64_t m_overlayDurationMs = 600;
 
     static ImageBuffer m_gizmoImageBuffer;
+    ImageBuffer m_mediaPreviewImageBuffer;
 };
