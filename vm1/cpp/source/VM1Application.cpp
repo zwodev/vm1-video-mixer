@@ -77,10 +77,11 @@ void VM1Application::subscribeToEvents()
     });
 
     m_eventBus.subscribe<CreateMediaPreviewEvent>([this](const CreateMediaPreviewEvent& event){
-        printf("Generate Previews\n");
-        std::vector<std::string>& files = m_registry.mediaPool().getVideoFiles();
-        // ffmpeg -i oberbaum-01.mov -vf "select='not(mod(n\,12))',scale=160:-1,tile=1x5" -frames:v 1 oberbaum-01-2.png
-        
+        std::vector<std::string> mediaFilesPendingPreview = m_registry.mediaPool().GetMediaFilesPendingPreview();
+        printf("Media files pending preview:\n");
+        for(const auto& file : mediaFilesPendingPreview){
+            printf("%s\n", file.c_str());
+        }
     });
 }
 

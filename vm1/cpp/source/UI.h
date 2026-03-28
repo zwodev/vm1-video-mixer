@@ -117,22 +117,24 @@ public:
     int m_firstLine = 0;
     int m_currentElementHeight = 0;
     bool m_isHidden = false;
-    int m_mediaPreviewFrameIndex = 0;
-
+    
     // int m_titlePaddingBottom = 10;
     int m_textPaddingBottom = 2;
     int m_screenPaddingTop = 2;
     int m_listPaddingLeft = 10;
     int m_menuTitleHeight = 0;
     int m_menuTitleWidth = 0;
-
+    
     FONT::TextStyle m_currentTextStyle = FONT::TEXTSTYLE::STANDARD;
     Color m_currentColor = COLOR::WHITE;
-
+    
     std::function<void()> m_overlay;
     int64_t m_overlayStartTimeMs = 0;
     int64_t m_overlayDurationMs = 600;
-
+    
     static ImageBuffer m_gizmoImageBuffer;
     ImageBuffer m_mediaPreviewImageBuffer;
+    
+    int m_mediaPreviewFrameIndex = 0;
+    std::string m_previewMediaFileNameOld;
 };

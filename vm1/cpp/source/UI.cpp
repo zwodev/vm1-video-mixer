@@ -924,12 +924,11 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int
 
 void UI::MediaPreview(const std::string& filename)
 {
-    static std::string filenameOld = "";
-    if(filenameOld != filename)
+    if(m_previewMediaFileNameOld != filename)
     {
         m_mediaPreviewImageBuffer = ImageBuffer(filename);
         printf("New MediaPreview: %s\n", filename.c_str());
-        filenameOld = filename;
+        m_previewMediaFileNameOld = filename;
         m_mediaPreviewFrameIndex = 0;
     }
 

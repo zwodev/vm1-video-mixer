@@ -371,6 +371,8 @@ void MenuSystem::InfoMenu()
         m_ui.PlainText("In-Point:  ");
         m_ui.PlainText("Out-Point: ");
         m_ui.PlainText("Current Position:");
+        m_registry.mediaPool().getVideoFilePath(videoInputConfig->fileName);
+        m_ui.MediaPreview(m_registry.mediaPool().getVideoFilePath(videoInputConfig->fileName)+".preview");
     }
     else if (HdmiInputConfig*hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
     {
@@ -385,7 +387,6 @@ void MenuSystem::InfoMenu()
         m_ui.PlainText("Parameters: ");
     }
     m_ui.EndList(); 
-    m_ui.MediaPreview("/home/vm1/Documents/coding/vm1-video-mixer/vm1/videos/oberbaum-01.preview2.png");
 }
 
 // ##### SOURCE MENU #####
@@ -449,6 +450,14 @@ void MenuSystem::FileSelection()
     }
     m_ui.TextStyle(FONT::TEXTSTYLE::STANDARD);
     m_ui.EndList(); 
+
+    if(m_focusedIdx >=3)
+    {
+        if(files.size() > (m_focusedIdx-3) && (m_focusedIdx-3) >= 0){
+            std::string previewFilename = m_registry.mediaPool().getVideoFilePath(files[m_focusedIdx-3]) + ".preview";    
+            m_ui.MediaPreview(previewFilename);
+        }
+    }
 
     if (changed)
         m_registry.inputMappings().addInputConfig(m_id, std::move(config));

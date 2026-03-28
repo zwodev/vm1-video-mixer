@@ -1,7 +1,10 @@
 uniform int enabled;        // { "name": "Enabled", "group": "Shape Inverter", "default": 1, "min": 0, "max": 1 }
+uniform int shape;          // { "name": "Shape Type", "group": "Shape Inverter", "default": 0, "min": 0, "max": 2 }
 uniform float r;            // { "name": "Radius", "group": "Shape Inverter", "default": 0.2, "min": 0.0, "max": 1.0, "step": 0.01 }
 uniform float strokeWidth;  // { "name": "Stroke Width", "group": "Shape Inverter", "default": 0.2, "min": 0.01, "max": 1.0, "step": 0.01 }
-uniform int shape;          // { "name": "Shape Type", "group": "Shape Inverter", "default": 0, "min": 0, "max": 2 }
+//uniform vec2 pos;           // { "name": "Position", "group": "Shape Inverter", "default": [0.0, 0,0], "min": [-1.0, -1,0], "max":[1.0, 1,0], "step": [0.01, 0.01] }
+uniform float px;            // { "name": "pos x", "group": "Shape Inverter", "default": 0.0, "min": -1.0, "max": 1.0, "step": 0.01 }
+uniform float py;            // { "name": "pos y", "group": "Shape Inverter", "default": 0.0, "min": -1.0, "max": 1.0, "step": 0.01 }
 
 float sdCircle(vec2 p, float r) {
     return length(p) - r;
@@ -44,7 +47,14 @@ void extMain(inout vec3 color, in vec2 coord)
 {
     vec2 p = coord - 0.5;
     p.y /= iAspect;
+    // p += pos;
+    p.y += py;
+    p.x += px;
+    vec2 uvMirrored = coord;
+    uvMirrored.y = 1.0-uvMirrored.y;
+    vec3 colorMirrored = colorAtUV(uvMirrored);
     float maskValue = shapeMask(p, r, strokeWidth, shape);
 
-    color = mix(color, 1.0 - color, maskValue * float(enabled));
+    // color = mix(color, 1.0 - color, maskValue * float(enabled));
+    color = mix(color, colorMirrored, maskValue * float(enabled));
 }
