@@ -18,6 +18,11 @@ MediaPool::MediaPool()
     startDirectoryWatcher();
 }
 
+MediaPool::~MediaPool()
+{
+    stopDirectoryWatcher();
+}
+
 const ImageBuffer& MediaPool::getLogo()
 {
     return m_logo;
@@ -25,6 +30,7 @@ const ImageBuffer& MediaPool::getLogo()
 
 std::vector<std::string>& MediaPool::getVideoFiles()
 {
+    std::lock_guard<std::mutex> lock(m_videoMutex);
     return m_videoFiles;
 }
 
@@ -33,14 +39,9 @@ std::string MediaPool::getVideoFilePath(const std::string& fileName)
     return m_videoFilePath + fileName;
 }
 
-std::vector<std::string> MediaPool::getMediaFilesPendingPreview()
-{
-    return m_mediaFilesPendingPreview; 
-}
-
 void MediaPool::updateVideoFiles()
 {
-    m_videoFiles.clear();
+    std::vector<std::string> files;
     for (auto it = std::filesystem::recursive_directory_iterator(m_videoFilePath);
         it != std::filesystem::recursive_directory_iterator{}; ++it)
     {
@@ -53,25 +54,31 @@ void MediaPool::updateVideoFiles()
             }
         }
         if (entry.is_regular_file()) {
-            std::string filePath = entry.path().string();
+            std::filesystem::path relativePath = std::filesystem::relative(entry.path(), m_videoFilePath);
+            std::string filePath = relativePath.string();
             if (entry.path().extension() == ".preview")
             {
                 m_videoFilesPreviews.push_back(filePath);
             }
             else
             {
-                m_videoFiles.push_back(filePath);
+                files.push_back(filePath);
             }
         }
     }
 
     // sort the files by name
-    std::sort(m_videoFiles.begin(), m_videoFiles.end());
+    std::sort(files.begin(), files.end());
+
+    m_videoMutex.lock();
+    m_videoFiles = files;
+    m_videoMutex.unlock();
 }
 
 void MediaPool::updateVideoFilesPendingPreviews()
 {
     m_mediaFilesPendingPreview.clear();
+
     // compare m_videoFilesPreviews with m_videoFiles
     for(const auto& videoFile : m_videoFiles) 
     {
@@ -85,8 +92,7 @@ void MediaPool::updateVideoFilesPendingPreviews()
 
 std::vector<std::string>& MediaPool::getGenerativeShaderFiles()
 {
-    // TODO: Update only when new files are present.
-    updateGenerativeShaderFiles();
+    std::lock_guard<std::mutex> lock(m_generativeShaderMutex);
     return m_generativeShaderFiles;
 }
 
@@ -97,18 +103,23 @@ std::string MediaPool::getGenerativeShaderFilePath(const std::string& fileName)
 
 void MediaPool::updateGenerativeShaderFiles()
 {
-    m_generativeShaderFiles.clear();
+    std::vector<std::string> files;
     for (const auto &entry : std::filesystem::directory_iterator(m_generativeShaderPath))
     {
         if (entry.is_regular_file())
         {
-            std::string filePath = entry.path().string();
-            m_generativeShaderFiles.push_back(filePath);
+            std::filesystem::path relativePath = std::filesystem::relative(entry.path(), m_generativeShaderPath);
+            std::string filePath = relativePath.string();
+            files.push_back(filePath);
         }
     }
 
     // sort the files by name
-    std::sort(m_generativeShaderFiles.begin(), m_generativeShaderFiles.end());
+    std::sort(files.begin(), files.end());
+
+    m_generativeShaderMutex.lock();
+    m_generativeShaderFiles = files;
+    m_generativeShaderMutex.unlock();
 }
 
 std::string MediaPool::getEffectShaderFilePath(const std::string& fileName)
@@ -118,25 +129,29 @@ std::string MediaPool::getEffectShaderFilePath(const std::string& fileName)
 
 std::vector<std::string>& MediaPool::getEffectShaderFiles()
 {
-    // TODO: Update only when new files are present.
-    updateEffectShaderFiles();
+    std::lock_guard<std::mutex> lock(m_effectShaderMutex);
     return m_effectShaderFiles;
 }
 
 void MediaPool::updateEffectShaderFiles()
 {
-    m_effectShaderFiles.clear();
+    std::vector<std::string> files;
     for (const auto &entry : std::filesystem::directory_iterator(m_effectShaderPath))
     {
         if (entry.is_regular_file())
         {
-            std::string filePath = entry.path().string();
-            m_effectShaderFiles.push_back(filePath);
+            std::filesystem::path relativePath = std::filesystem::relative(entry.path(), m_effectShaderPath);
+            std::string filePath = relativePath.string();
+            files.push_back(filePath);
         }
     }
 
     // sort the files by name
-    std::sort(m_effectShaderFiles.begin(), m_effectShaderFiles.end());
+    std::sort(files.begin(), files.end());
+
+    m_effectShaderMutex.lock();
+    m_effectShaderFiles = files;
+    m_effectShaderMutex.unlock();
 }
 
 void MediaPool::loadQrCodeImageBuffer()
@@ -175,6 +190,8 @@ void MediaPool::runMediaDirectoryWatcher()
 {
     while(m_isWatcherRunning)
     {
+        updateEffectShaderFiles();
+        updateGenerativeShaderFiles();
         updateVideoFiles();
         updateVideoFilesPendingPreviews();
         for(const auto& file : m_mediaFilesPendingPreview){
@@ -199,9 +216,9 @@ void MediaPool::generateVideoFilePreview(std::string filename)
         sprintf(execCommand, "mv %s.png %s.preview", filename.c_str(), filename.c_str());
         printf("EXEC: %s\n", execCommand);
         std::system(execCommand);
-        sprintf(execCommand, "rm -rf %s.hist", m_videoFilePath.c_str());
-        printf("EXEC: %s\n", execCommand);
-        std::system(execCommand);
+        // sprintf(execCommand, "rm -rf %s.hist", m_videoFilePath.c_str());
+        // printf("EXEC: %s\n", execCommand);
+        // std::system(execCommand);
     }
 }
 

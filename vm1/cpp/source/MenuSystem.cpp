@@ -432,11 +432,10 @@ void MenuSystem::FileSelection()
     else if(m_ui.Action("USB-Drive")) {
         printf("Enter USB-Drive\n");
     }
-    else if(m_ui.Action("Generate Previews")) {
-        m_eventBus.publish(CreateMediaPreviewEvent());
-    }
+
     m_ui.Spacer();
     m_ui.TextStyle(FONT::TEXTSTYLE::LIST_ITEM);
+    int fileListStartIdx = m_ui.currentListSize();
     for (size_t i = 0; i < files.size(); ++i) {
         std::string fileName = files[i];
         if (m_ui.RadioButton(fileName.c_str(), (config->fileName == fileName))) {
@@ -447,10 +446,12 @@ void MenuSystem::FileSelection()
     m_ui.TextStyle(FONT::TEXTSTYLE::STANDARD);
     m_ui.EndList(); 
 
-    if(m_focusedIdx >=3)
+
+    if(m_focusedIdx >= fileListStartIdx)
     {
-        if(int(files.size()) > (m_focusedIdx-3) && (m_focusedIdx-3) >= 0){
-            std::string previewFilename = m_registry.mediaPool().getVideoFilePath(files[m_focusedIdx-3]) + ".preview";    
+        int fileIndex = m_focusedIdx-fileListStartIdx;
+        if(int(files.size()) > fileIndex && fileIndex >= 0){
+            std::string previewFilename = m_registry.mediaPool().getVideoFilePath(files[fileIndex]) + ".preview";    
             m_ui.MediaPreview(previewFilename);
         }
     }

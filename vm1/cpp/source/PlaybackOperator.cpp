@@ -61,7 +61,6 @@ void PlaybackOperator::initialize()
         m_planeMixers.push_back(PlaneMixer());
     } 
 
-
     for (size_t i = 0; i < planeCount; ++i) {
         PlaneRenderer* planeRenderer = new PlaneRenderer();
         m_planeRenderers.push_back(planeRenderer);
@@ -226,9 +225,7 @@ void PlaybackOperator::showMedia(int mediaSlotId)
         return;
     }
 
-
     float fadeTime = float(m_registry.settings().fadeTime); 
-    //int planeId = (mediaSlotId / (MEDIA_BUTTON_COUNT / 2)) % 2;
     int planeId = inputConfig->planeId;
     int hdmiId = m_registry.planes()[planeId].hdmiId;
     m_planeMixers[planeId].setFadeTime(fadeTime);

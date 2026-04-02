@@ -55,6 +55,7 @@ public:
     void TextColor(Color color);
     void pushTranslate(int x, int y);
     void popTranslate();
+    int currentListSize();
 
     void ShowMenuTitle(std::string menuTitle, Color color = COLOR::WHITE);
     void ShowMediaSlotInfo(std::string menuInfo);

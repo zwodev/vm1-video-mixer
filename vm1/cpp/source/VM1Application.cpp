@@ -72,14 +72,6 @@ void VM1Application::subscribeToEvents()
             m_hadKeyDown = true;
         }
     });
-
-    m_eventBus.subscribe<CreateMediaPreviewEvent>([this](const CreateMediaPreviewEvent& event){
-        std::vector<std::string> mediaFilesPendingPreview = m_registry.mediaPool().getMediaFilesPendingPreview();
-        printf("Media files pending preview:\n");
-        for(const auto& file : mediaFilesPendingPreview){
-            printf("%s\n", file.c_str());
-        }
-    });
 }
 
 bool VM1Application::initialize()

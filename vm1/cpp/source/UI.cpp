@@ -210,6 +210,10 @@ void UI::popTranslate()
     m_y = translate.y;
 }
 
+int UI::currentListSize() {
+    return m_listSize;
+}
+
 void UI::BeginList(int* focusedIdxPtr) 
 {   
     if (!focusedIdxPtr) return;

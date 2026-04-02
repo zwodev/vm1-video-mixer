@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2023-2026 Nils Zweiling & Julian Jungel
+ *
+ * This file is part of VM-1 which is released under the MIT license.
+ * See file LICENSE or go to https://github.com/zwodev/vm1-video-mixer/tree/master/LICENSE
+ * for full license details.
+ */
+
 #pragma once
 
 #include <functional>
@@ -87,37 +95,8 @@ struct ValueChangeEvent
     Type type;
 };
 
-struct CreateMediaPreviewEvent
-{
-};
-
-// struct MappingButtonEvent
-// {
-//     MappingButtonEvent() = delete;
-//     MappingButtonEvent(int vertexId, float x, float y) {
-//         this->vertexId = vertexId;
-//         this->x = x;
-//         this->y = y;
-//     }
-//     int vertexId;
-//     float x;
-//     float y;
-// };
-
-
 struct NavigationEvent {
     enum Type {
-        // FocusPrevious,
-        // FocusNext,
-        // SelectItem,
-        // DecreaseValue,
-        // IncreaseValue,
-        // DecreaseAuxValue,
-        // IncreaseAuxValue,
-        // HierarchyUp,
-        // HierarchyDown,
-        // BankUp,
-        // BankDown,
         NavigationUp,
         NavigationDown,
         NavigationRight,

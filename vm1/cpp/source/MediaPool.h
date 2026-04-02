@@ -11,33 +11,38 @@
 #include <vector>
 #include <string>
 #include <thread>
+#include <mutex>
 #include "ImageBuffer.h"
 
 class MediaPool
 {
 public:
     MediaPool();
-    ~MediaPool() = default;
+    ~MediaPool();
 
     const ImageBuffer& getLogo();
+
     std::vector<std::string>& getVideoFiles();
     std::string getVideoFilePath(const std::string& fileName);
-    std::vector<std::string> getMediaFilesPendingPreview();
-    void updateVideoFiles();
-    void updateVideoFilesPendingPreviews();
-    void generateVideoFilePreview(std::string filename);
 
-    std::vector<std::string>& getGenerativeShaderFiles();
     std::string getGenerativeShaderFilePath(const std::string& fileName);
-    void updateGenerativeShaderFiles();
+    std::vector<std::string>& getGenerativeShaderFiles();
+    
     std::string getEffectShaderFilePath(const std::string& fileName);
     std::vector<std::string>& getEffectShaderFiles();
-    void updateEffectShaderFiles();
+
     void loadQrCodeImageBuffer();
     const ImageBuffer& getQrCodeImageBuffer();
+
+private:
     void runMediaDirectoryWatcher();
     void startDirectoryWatcher();
     void stopDirectoryWatcher();
+    void updateGenerativeShaderFiles();
+    void updateEffectShaderFiles();
+    void updateVideoFiles();
+    void updateVideoFilesPendingPreviews();
+    void generateVideoFilePreview(std::string filename);
 
 private:
     ImageBuffer m_logo = ImageBuffer("media/splash-screen.png");
@@ -51,6 +56,9 @@ private:
     std::vector<std::string> m_effectShaderFiles;
     ImageBuffer m_qrCodeImageBuffer;
     std::thread m_thread;
+    std::mutex m_videoMutex;
+    std::mutex m_generativeShaderMutex;
+    std::mutex m_effectShaderMutex;
     bool m_isWatcherRunning;
 
 };
