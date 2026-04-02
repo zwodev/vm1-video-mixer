@@ -19,6 +19,7 @@ public:
     MediaPool();
     ~MediaPool() = default;
 
+    const ImageBuffer& getLogo();
     std::vector<std::string>& getVideoFiles();
     std::string getVideoFilePath(const std::string& fileName);
     std::vector<std::string> getMediaFilesPendingPreview();
@@ -39,6 +40,7 @@ public:
     void stopDirectoryWatcher();
 
 private:
+    ImageBuffer m_logo = ImageBuffer("media/splash-screen.png");
     std::string m_videoFilePath = "../videos/";
     std::string m_generativeShaderPath = "../shaders/generative/";
     std::string m_effectShaderPath = "../shaders/effect/";

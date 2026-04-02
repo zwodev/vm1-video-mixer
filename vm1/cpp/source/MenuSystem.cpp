@@ -349,11 +349,7 @@ void MenuSystem::ClearSlot() {
 // ##### STARTUP SCREEN #####
 void MenuSystem::StartupScreen()
 {
-    if(m_registry.settings().displayType == DisplayType::SSD1351_OLED) { 
-        m_ui.startUpLogo();
-    } else if(m_registry.settings().displayType == DisplayType::ILI9341_IPS_LCD) {
-        m_ui.Image(ImageBuffer("media/splash-screen.png"));
-    }
+    m_ui.Image(m_registry.mediaPool().getLogo());
 }
 
 // ##### INFO MENU #####

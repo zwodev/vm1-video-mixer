@@ -277,18 +277,10 @@ void UI::EndListElement()
     }
 }
 
-void UI::startUpLogo() {
-    int centerX = m_stbRenderer.width() / 2;
-    int centerY = m_stbRenderer.height() / 2;
-    int quadSize = 60;
-    // m_stbRenderer.drawEmptyRect(centerX - quadSize / 2, centerY - quadSize /2, quadSize, quadSize, COLOR::WHITE);
-    m_stbRenderer.drawRectNEW(glm::vec2(centerX, centerY), glm::vec2(quadSize, quadSize), DrawStyle{COLOR::WHITE, false, 1, AnchorPoint::CENTER});
-    CenteredText("VM-1");
-}
-
 void UI::Image(const ImageBuffer& imageBuffer)
 {
-    m_stbRenderer.drawImage(imageBuffer, m_x, m_y);
+    //m_stbRenderer.drawImage(imageBuffer);
+    m_stbRenderer.drawSubImage(imageBuffer, glm::uvec2(0, 0), glm::uvec2(0, 0), glm::uvec2(imageBuffer.width, imageBuffer.height));
 }
 
 void UI::CenteredText(const std::string &label)

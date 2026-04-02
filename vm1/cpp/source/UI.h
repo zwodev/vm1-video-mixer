@@ -72,7 +72,6 @@ public:
     void EndListElement();
     void EndList();
     
-    void startUpLogo();
     void InfoScreen(int bank, int id, std::string filename);
     void ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts);
     

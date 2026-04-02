@@ -18,6 +18,11 @@ MediaPool::MediaPool()
     startDirectoryWatcher();
 }
 
+const ImageBuffer& MediaPool::getLogo()
+{
+    return m_logo;
+}
+
 std::vector<std::string>& MediaPool::getVideoFiles()
 {
     return m_videoFiles;

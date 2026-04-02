@@ -347,9 +347,10 @@ void StbRenderer::drawImage(const ImageBuffer& imageBuffer, int posX, int posY)
 
     for (int y = 0; y < imageBuffer.height; ++y)
     {
+        int row_start = y * imageBuffer.width * imageBuffer.channels;
         for (int x = 0; x < imageBuffer.width; ++x)
         {
-            int pixel_index = (y * imageBuffer.width + x) * imageBuffer.channels;
+            int pixel_index = row_start + x * imageBuffer.channels;
             unsigned char r = imageBuffer.data[pixel_index + 0];
             unsigned char g = imageBuffer.data[pixel_index + 1];
             unsigned char b = imageBuffer.data[pixel_index + 2];
@@ -416,8 +417,6 @@ void StbRenderer::drawSubImage(const ImageBuffer& imageBuffer, glm::uvec2 destPo
         memcpy(destPtr, srcPtr, srcBytesPerLine);
     }
 }
-
-
 
 void StbRenderer::savePNG(const std::string& filename)
 {

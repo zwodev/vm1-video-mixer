@@ -37,11 +37,6 @@
 
 const int PLANE_COUNT = 4;
 
-enum class DisplayType {
-    SSD1351_OLED = 0,      // Original 1.5" OLED display
-    ILI9341_IPS_LCD = 1    // New 2.8" IPS LCD display
-};
-
 class InputConfig
 {
 public:
@@ -298,9 +293,6 @@ struct Settings
     ScreenRotation hdmiRotation0 = ScreenRotation::SR_Rotate_0;
     ScreenRotation hdmiRotation1 = ScreenRotation::SR_Rotate_0;
 
-    // DisplayType displayType = DisplayType::SSD1351_OLED;
-    DisplayType displayType = DisplayType::ILI9341_IPS_LCD;
-
     // Volatile
     bool isProVersion = false;
     bool isHdmiOutputReady = false;
@@ -329,7 +321,6 @@ struct Settings
             CEREAL_NVP(autoPlayOnHDMI0),
             CEREAL_NVP(autoPlayOnHDMI1),
             CEREAL_NVP(kiosk),
-            CEREAL_NVP(displayType),
             CEREAL_NVP(hdmiRotation0),
             CEREAL_NVP(hdmiRotation1)
         );

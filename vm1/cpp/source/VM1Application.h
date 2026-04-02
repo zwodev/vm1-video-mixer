@@ -20,9 +20,7 @@
 #include "GLHelper.h"
 #include "Registry.h"
 #include "PlaybackOperator.h"
-#include "FileAssignmentWidget.h"
 #include "CameraController.h"
-#include "OledController.h"
 #include "ILI9341Controller.h"
 #include "StbRenderer.h"
 #include "MenuSystem.h"
@@ -82,7 +80,6 @@ private:
     Registry m_registry;
     EventBus m_eventBus;
     
-    OledController m_oledController;
     ILI9341Controller m_ili9341Controller;
     GLuint m_miniDisplayTexture;
 
@@ -90,7 +87,6 @@ private:
     KeyboardControllerSDL m_keyboardControllerSdl;
     KeyboardControllerLinux m_keyboardControllerLinux;
     PlaybackOperator m_playbackOperator;
-    FileAssignmentWidget m_fileAssignmentWidget;
     StbRenderer m_stbRenderer;
     UI m_ui;
     MenuSystem m_menuSystem;
