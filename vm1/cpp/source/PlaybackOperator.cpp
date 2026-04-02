@@ -77,12 +77,6 @@ void PlaybackOperator::initialize()
     }
 
     for (size_t i = 0; i < cameraPlayerCount; ++i) {
-        m_cameraPlayers.push_back(new CameraPlayer());
-        MediaPlayer* mediaPlayer = m_cameraPlayers[i];
-        m_mediaPlayers.push_back(mediaPlayer);
-    }
-
-    for (size_t i = 0; i < cameraPlayerCount; ++i) {
         m_webcamPlayers.push_back(new WebcamPlayer());
         MediaPlayer* mediaPlayer = m_webcamPlayers[i];
         m_mediaPlayers.push_back(mediaPlayer);
@@ -116,11 +110,6 @@ void PlaybackOperator::finalize()
     }
     m_videoPlayers.clear();
 
-    for (auto cameraPlayer : m_cameraPlayers) {
-        delete cameraPlayer;
-    } 
-    m_cameraPlayers.clear();
-
     for (auto webcamPlayer : m_webcamPlayers) {
         delete webcamPlayer;
     } 
@@ -149,10 +138,6 @@ bool PlaybackOperator::getFreeVideoPlayerId(int& id, int planeId)
 {
     if(m_registry.settings().useFader) {
         auto activeIds = m_planeMixers[planeId].activeIds();
-        //printf("activeIds size: %d\n", activeIds.size());
-        // for (auto i : activeIds) {
-        //     printf("%d\n", i);
-        // }
         if(activeIds.size() > 1) {
             if(m_planeMixers[planeId].mixValue() > 0.5) {
                 id = activeIds[0];
@@ -182,20 +167,6 @@ bool PlaybackOperator::getFreeVideoPlayerId(int& id, int planeId)
             }
         }
     }
-    return false;
-}
-
-bool PlaybackOperator::getCameraPlayerIdFromPort(int port, int& id)
-{
-    for (size_t i = 0; i < m_mediaPlayers.size(); ++i) {     
-        if(CameraPlayer* cameraPlayer = dynamic_cast<CameraPlayer *>(m_mediaPlayers[i])) {
-            if (cameraPlayer->getPort() == port) {
-                id = int(i);
-                return true;
-            }
-        }
-    }
-
     return false;
 }
 
@@ -293,32 +264,6 @@ void PlaybackOperator::showMedia(int mediaSlotId)
         } 
     
     }
-    // else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
-    // {
-    //     if (!m_registry.settings().isHdmiInputReady) {
-    //         m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::InputNotReady, "Still scanning"));
-    //         return;
-    //     }
-
-    //     if (m_registry.settings().hdmiInputs[hdmiInputConfig->hdmiPort] != "1920x1080/30Hz") {
-    //         std::string message = "No HDMI-IN" + std::to_string(hdmiInputConfig->hdmiPort+1);
-    //         m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::NoDisplay, message));
-    //         return;
-    //     }
-
-    //     if (hdmiInputConfig->hdmiPort == 0)
-    //     {
-    //         if (!getCameraPlayerIdFromPort(hdmiInputConfig->hdmiPort, playerId)) return;
-
-    //         if (!m_mediaPlayers[playerId]->isPlaying()) {
-    //             m_mediaPlayers[playerId]->play(); 
-    //         }
-            
-    //         if (m_planeMixers[planeId].startFade(playerId))  {
-    //             m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
-    //         }
-    //     }
-    // }
     else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
     {
         if (!m_registry.settings().isHdmiInputReady) {
@@ -376,21 +321,6 @@ void PlaybackOperator::showMedia(int mediaSlotId)
             m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
         }
     }
-    // else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
-    // {
-    //     if (hdmiInputConfig->hdmiPort == 0)
-    //     {
-    //         if (!getWebcamPlayerIdFromPort(hdmiInputConfig->hdmiPort, playerId)) return;
-
-    //         if (!m_mediaPlayers[playerId]->isPlaying()) {
-    //             m_mediaPlayers[playerId]->play(); 
-    //         }
-            
-    //         if (m_planeMixers[planeId].startFade(playerId))  {
-    //             m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
-    //         }
-    //     }
-    // }
 
     if (playerId >= 0) {
         m_mediaPlayers[playerId]->setPlaneId(planeId);
@@ -461,14 +391,6 @@ void PlaybackOperator::update(float deltaTime)
                 }
             }
         }
-        // else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(inputConfig))
-        // {
-        //     CameraPlayer* cameraPlayer = dynamic_cast<CameraPlayer*>(mediaPlayer);
-        //     if (cameraPlayer && cameraPlayer->isPlaying())
-        //     {
-        //          cameraPlayer->update();
-        //     }
-        // }
         else if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(inputConfig))
         {
             ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(mediaPlayer);
@@ -521,14 +443,6 @@ void PlaybackOperator::renderPlane(int hdmiId)
     std::vector<int> activePlanesIds;
     for (auto iter = m_mediaSlotIdToPlayerId.begin(); iter != m_mediaSlotIdToPlayerId.end(); ++iter)
     {
-        // InputConfig* currentConfig = m_registry.inputMappings().getInputConfig(iter->first);
-        // if(currentConfig)
-        // {
-        //     int planeId = currentConfig->planeId;
-        //     if(std::find(activePlanesIds.begin(), activePlanesIds.end(), planeId) == activePlanesIds.end()) {
-        //         activePlanesIds.push_back(planeId);
-        //     }
-        // }
         int playerId = iter->second;
         int planeId = m_mediaPlayers[playerId]->planeId();
         if(std::find(activePlanesIds.begin(), activePlanesIds.end(), planeId) == activePlanesIds.end()) {
@@ -572,65 +486,6 @@ void PlaybackOperator::renderPlane(int hdmiId)
         }
     }
 }
-
-// void PlaybackOperator::updateDeviceController()
-// {
-//     InputMappings &inputMappings = m_registry.inputMappings();
-//     VM1DeviceState vm1DeviceState;
-//     vm1DeviceState.bank = static_cast<uint8_t>(inputMappings.bank);
-//     vm1DeviceState.rotarySensitivity = static_cast<uint8_t>(m_registry.settings().rotarySensitivity);
-    
-    
-//     for (int i = 0; i < EDIT_BUTTON_COUNT; ++i)
-//     {
-//         if (i == m_selectedEditButton) {
-//             vm1DeviceState.editButtons[i] = ButtonState::EMPTY; // "EMPTY" is simply white color. todo: rename
-//         } else {
-//             vm1DeviceState.editButtons[i] = ButtonState::NONE;
-//         }
-//     }
-    
-//     for (int i = 0; i < MEDIA_BUTTON_COUNT; ++i)
-//     {
-//         int mediaSlotId = (inputMappings.bank * MEDIA_BUTTON_COUNT) + i;
-//         InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
-//         if (!inputConfig)
-//         {
-//             vm1DeviceState.mediaButtons[i] = ButtonState::NONE;
-//         }
-//         else if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
-//         {
-//             if (m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
-//                 vm1DeviceState.mediaButtons[i] = ButtonState::FILE_ASSET_ACTIVE;
-//             }
-//             else
-//                 vm1DeviceState.mediaButtons[i] = ButtonState::FILE_ASSET;
-//         }
-//         else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
-//         {
-//             // TODO: How to handle active HDMI or IMAGE, etc.
-//             if (m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
-//                 vm1DeviceState.mediaButtons[i] = ButtonState::LIVECAM_ACTIVE;
-//             }
-//             else
-//                 vm1DeviceState.mediaButtons[i] = ButtonState::LIVECAM;
-//         }
-//         else if (ShaderInputConfig *shaderInputConfig = dynamic_cast<ShaderInputConfig *>(inputConfig))
-//         {
-//             // TODO: How to handle active HDMI or IMAGE, etc.
-//             if (m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
-//                 vm1DeviceState.mediaButtons[i] = ButtonState::SHADER_ACTIVE;
-//             }
-//             else
-//                 vm1DeviceState.mediaButtons[i] = ButtonState::SHADER;
-//         }
-
-//         if(m_selectedMediaButton > -1) {
-//             vm1DeviceState.mediaButtons[m_selectedMediaButton] = ButtonState::MEDIABUTTON_SELECTED;
-//         }
-//     }
-//     m_deviceController.send(vm1DeviceState);
-// }
 
 void PlaybackOperator::updateDeviceController()
 {

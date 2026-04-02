@@ -9,7 +9,6 @@
 #pragma once
 
 #include "PlaneRenderer.h"
-#include "CameraPlayer.h"
 #include "WebcamPlayer.h"
 #include "VideoPlayer.h"
 #include "ShaderPlayer.h"
@@ -122,7 +121,6 @@ public:
     
 private:
     void subscribeToEvents();
-    bool getCameraPlayerIdFromPort(int port, int& id);
     bool getWebcamPlayerIdFromPort(int port, int& id);
     bool getFreeVideoPlayerId(int& id, int planeId);
     bool getFreeShaderPlayerId(int& id, int planeId);
@@ -140,7 +138,6 @@ private:
     std::vector<AudioStream*> m_audioStreams;
 
     std::vector<VideoPlayer*> m_videoPlayers;
-    std::vector<CameraPlayer*> m_cameraPlayers;
     std::vector<WebcamPlayer*> m_webcamPlayers;
     std::vector<ShaderPlayer*> m_shaderPlayers;
     std::vector<MediaPlayer*> m_mediaPlayers;
