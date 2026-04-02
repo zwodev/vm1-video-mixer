@@ -21,9 +21,8 @@ public:
 
     std::vector<std::string>& getVideoFiles();
     std::string getVideoFilePath(const std::string& fileName);
-    std::vector<std::string> GetMediaFilesPendingPreview();
+    std::vector<std::string> getMediaFilesPendingPreview();
     void updateVideoFiles();
-    void updateVideoPreviewFiles();
     void updateVideoFilesPendingPreviews();
     void generateVideoFilePreview(std::string filename);
 

@@ -371,8 +371,8 @@ void MenuSystem::InfoMenu()
         m_ui.PlainText("In-Point:  ");
         m_ui.PlainText("Out-Point: ");
         m_ui.PlainText("Current Position:");
-        m_registry.mediaPool().getVideoFilePath(videoInputConfig->fileName);
-        m_ui.MediaPreview(m_registry.mediaPool().getVideoFilePath(videoInputConfig->fileName)+".preview");
+        std::string previewFilename = m_registry.mediaPool().getVideoFilePath(videoInputConfig->fileName) + ".preview";
+        m_ui.MediaPreview(previewFilename);
     }
     else if (HdmiInputConfig*hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
     {

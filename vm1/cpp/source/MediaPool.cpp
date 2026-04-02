@@ -28,7 +28,7 @@ std::string MediaPool::getVideoFilePath(const std::string& fileName)
     return m_videoFilePath + fileName;
 }
 
-std::vector<std::string> MediaPool::GetMediaFilesPendingPreview()
+std::vector<std::string> MediaPool::getMediaFilesPendingPreview()
 {
     return m_mediaFilesPendingPreview; 
 }
@@ -36,33 +36,32 @@ std::vector<std::string> MediaPool::GetMediaFilesPendingPreview()
 void MediaPool::updateVideoFiles()
 {
     m_videoFiles.clear();
-    for (const auto &entry : std::filesystem::recursive_directory_iterator(m_videoFilePath))
+    for (auto it = std::filesystem::recursive_directory_iterator(m_videoFilePath);
+        it != std::filesystem::recursive_directory_iterator{}; ++it)
     {
-
-        if (entry.is_regular_file() && entry.path().extension() != ".preview")
-        {
-            std::string filename = entry.path().filename().string();
-            std::string filePath = filename;
-            m_videoFiles.push_back(filePath);
+        auto &entry = *it;
+        if (entry.is_directory()) {
+            auto name = entry.path().filename().string();
+            if (!name.empty() && name[0] == '.') {
+                it.disable_recursion_pending();
+                continue;
+            }
+        }
+        if (entry.is_regular_file()) {
+            std::string filePath = entry.path().string();
+            if (entry.path().extension() == ".preview")
+            {
+                m_videoFilesPreviews.push_back(filePath);
+            }
+            else
+            {
+                m_videoFiles.push_back(filePath);
+            }
         }
     }
 
     // sort the files by name
     std::sort(m_videoFiles.begin(), m_videoFiles.end());
-}
-
-void MediaPool::updateVideoPreviewFiles()
-{
-    m_videoFilesPreviews.clear();
-    for (const auto &entry : std::filesystem::recursive_directory_iterator(m_videoFilePath))
-    {
-        if (entry.is_regular_file() && entry.path().extension() == ".preview")
-        {
-            std::string filename = entry.path().filename().string();
-            std::string filePath = filename;
-            m_videoFilesPreviews.push_back(filePath);
-        }
-    }
 }
 
 void MediaPool::updateVideoFilesPendingPreviews()
@@ -74,7 +73,7 @@ void MediaPool::updateVideoFilesPendingPreviews()
         std::string previewFileName = videoFile + ".preview";
         if(std::find(m_videoFilesPreviews.begin(), m_videoFilesPreviews.end(), previewFileName) == m_videoFilesPreviews.end()) 
         {
-            m_mediaFilesPendingPreview.push_back(m_videoFilePath + videoFile);
+            m_mediaFilesPendingPreview.push_back(videoFile);
         }
     }
 }
@@ -98,8 +97,7 @@ void MediaPool::updateGenerativeShaderFiles()
     {
         if (entry.is_regular_file())
         {
-            std::string filename = entry.path().filename().string();
-            std::string filePath = filename;
+            std::string filePath = entry.path().string();
             m_generativeShaderFiles.push_back(filePath);
         }
     }
@@ -127,8 +125,7 @@ void MediaPool::updateEffectShaderFiles()
     {
         if (entry.is_regular_file())
         {
-            std::string filename = entry.path().filename().string();
-            std::string filePath = filename;
+            std::string filePath = entry.path().string();
             m_effectShaderFiles.push_back(filePath);
         }
     }
@@ -174,7 +171,6 @@ void MediaPool::runMediaDirectoryWatcher()
     while(m_isWatcherRunning)
     {
         updateVideoFiles();
-        updateVideoPreviewFiles();
         updateVideoFilesPendingPreviews();
         for(const auto& file : m_mediaFilesPendingPreview){
             generateVideoFilePreview(file);
@@ -196,6 +192,9 @@ void MediaPool::generateVideoFilePreview(std::string filename)
     {
         printf("ffmpeg successful\n");
         sprintf(execCommand, "mv %s.png %s.preview", filename.c_str(), filename.c_str());
+        printf("EXEC: %s\n", execCommand);
+        std::system(execCommand);
+        sprintf(execCommand, "rm -rf %s.hist", m_videoFilePath.c_str());
         printf("EXEC: %s\n", execCommand);
         std::system(execCommand);
     }
