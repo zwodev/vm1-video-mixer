@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2023-2026 Nils Zweiling & Julian Jungel
+ *
+ * This file is part of VM-1 which is released under the MIT license.
+ * See file LICENSE or go to https://github.com/zwodev/vm1-video-mixer/tree/master/LICENSE
+ * for full license details.
+ */
+
 #include "PlaybackOperator.h"
 #include "VM1DeviceDefinitions.h"
 
@@ -44,17 +52,17 @@ void PlaybackOperator::subscribeToEvents()
 
 void PlaybackOperator::initialize()
 {
-    int planeCount = m_registry.planes().size();
-    int videoPlayerCount = planeCount * 2;
-    int cameraPlayerCount = 1;
-    int shaderPlayerCount = planeCount * 2;
+    size_t planeCount = m_registry.planes().size();
+    size_t videoPlayerCount = planeCount * 2;
+    size_t cameraPlayerCount = 1;
+    size_t shaderPlayerCount = planeCount * 2;
 
-    for (int i = 0; i < planeCount; ++i) {
+    for (size_t i = 0; i < planeCount; ++i) {
         m_planeMixers.push_back(PlaneMixer());
     } 
 
 
-    for (int i = 0; i < planeCount; ++i) {
+    for (size_t i = 0; i < planeCount; ++i) {
         PlaneRenderer* planeRenderer = new PlaneRenderer();
         m_planeRenderers.push_back(planeRenderer);
         // TODO: We need to be able to update this after custom shader has changed.
@@ -62,32 +70,32 @@ void PlaybackOperator::initialize()
         m_registry.planes()[i].shaderConfig.update(planeRenderer->shaderConfig());
     }
 
-    for (int i = 0; i < videoPlayerCount; ++i) {
+    for (size_t i = 0; i < videoPlayerCount; ++i) {
         m_videoPlayers.push_back(new VideoPlayer());
         MediaPlayer* mediaPlayer = m_videoPlayers[i];
         m_mediaPlayers.push_back(mediaPlayer);
     }
 
-    for (int i = 0; i < cameraPlayerCount; ++i) {
+    for (size_t i = 0; i < cameraPlayerCount; ++i) {
         m_cameraPlayers.push_back(new CameraPlayer());
         MediaPlayer* mediaPlayer = m_cameraPlayers[i];
         m_mediaPlayers.push_back(mediaPlayer);
     }
 
-    for (int i = 0; i < cameraPlayerCount; ++i) {
+    for (size_t i = 0; i < cameraPlayerCount; ++i) {
         m_webcamPlayers.push_back(new WebcamPlayer());
         MediaPlayer* mediaPlayer = m_webcamPlayers[i];
         m_mediaPlayers.push_back(mediaPlayer);
     }
 
-    for (int i = 0; i < shaderPlayerCount; ++i) {
+    for (size_t i = 0; i < shaderPlayerCount; ++i) {
         m_shaderPlayers.push_back(new ShaderPlayer());
         MediaPlayer* mediaPlayer = m_shaderPlayers[i];
         m_mediaPlayers.push_back(mediaPlayer);
     }
 
     m_audioSystem.initialize();
-    for (int i = 0; i < m_mediaPlayers.size(); ++i) {
+    for (size_t i = 0; i < m_mediaPlayers.size(); ++i) {
         AudioDevice* audioDevice = m_audioSystem.audioDevice(0);
         AudioStream* audioStream = nullptr;
         if (audioDevice) {
@@ -167,7 +175,7 @@ bool PlaybackOperator::getFreeVideoPlayerId(int& id, int planeId)
         return false;
     }
     else {        
-        for (int i = 0; i < m_videoPlayers.size(); ++i) {
+        for (size_t i = 0; i < m_videoPlayers.size(); ++i) {
             if(!isPlayerIdActive(i) && dynamic_cast<VideoPlayer *>(m_mediaPlayers[i])) {
                 id = i;
                 return true;
@@ -179,10 +187,10 @@ bool PlaybackOperator::getFreeVideoPlayerId(int& id, int planeId)
 
 bool PlaybackOperator::getCameraPlayerIdFromPort(int port, int& id)
 {
-    for (int i = 0; i < m_mediaPlayers.size(); ++i) {     
+    for (size_t i = 0; i < m_mediaPlayers.size(); ++i) {     
         if(CameraPlayer* cameraPlayer = dynamic_cast<CameraPlayer *>(m_mediaPlayers[i])) {
             if (cameraPlayer->getPort() == port) {
-                id = i;
+                id = int(i);
                 return true;
             }
         }
@@ -193,10 +201,10 @@ bool PlaybackOperator::getCameraPlayerIdFromPort(int port, int& id)
 
 bool PlaybackOperator::getWebcamPlayerIdFromPort(int port, int& id)
 {
-    for (int i = 0; i < m_mediaPlayers.size(); ++i) {     
+    for (size_t i = 0; i < m_mediaPlayers.size(); ++i) {     
         if(WebcamPlayer* webcamPlayer = dynamic_cast<WebcamPlayer *>(m_mediaPlayers[i])) {
             if (webcamPlayer->getPort() == port) {
-                id = i;
+                id = int(i);
                 return true;
             }
         }
@@ -207,9 +215,9 @@ bool PlaybackOperator::getWebcamPlayerIdFromPort(int port, int& id)
 
 bool PlaybackOperator::getFreeShaderPlayerId(int& id, int planeId)
 {
-    for (int i = 0; i < m_mediaPlayers.size(); ++i) {     
+    for (size_t i = 0; i < m_mediaPlayers.size(); ++i) {     
         if(!isPlayerIdActive(i) && dynamic_cast<ShaderPlayer *>(m_mediaPlayers[i])) {
-            id = i;
+            id = int(i);
             return true;
         }
     }

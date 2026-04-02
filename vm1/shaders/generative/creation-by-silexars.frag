@@ -1,12 +1,4 @@
 /*
- * Copyright (c) 2023-2025 Nils Zweiling
- *
- * This file is part of VM-1 which is released under the MIT license.
- * See file LICENSE or go to https://github.com/zwodev/vm1-video-mixer/tree/master/LICENSE
- * for full license details.
- */
-
-/*
  * http://www.pouet.net/prod.php?which=57245
  * If you intend to reuse this shader, please add credits to 'Danilo Guanabara'
  * https://www.shadertoy.com/view/XsXXDn

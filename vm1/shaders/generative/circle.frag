@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2023-2026 Nils Zweiling & Julian Jungel
+ *
+ * This file is part of VM-1 which is released under the MIT license.
+ * See file LICENSE or go to https://github.com/zwodev/vm1-video-mixer/tree/master/LICENSE
+ * for full license details.
+ */
+ 
 #version 310 es
 
 precision mediump float;
@@ -13,7 +21,7 @@ uniform float offsetY;  // { "name": "Offset Y", "default": 0.0, "min": -2.0, "m
 uniform float scale;    // { "name": "Scale", "default": 1.0, "min": 0.0, "max": 10.0, "step": 0.01 }
 // uniform vec2 pos;    // { "name": "Local Position", "default": [0.0, 0.0], "min": [-0.0, -0.0], "max": [1.0, 2.0], "step": [0.1, 0.01] }
 
-float sdCircle( in vec2 p, in float r ) 
+float circle( in vec2 p, in float r ) 
 {
     return length(p)-r;
 }
@@ -27,7 +35,7 @@ void main() {
     p.y += offsetY;
 	float effectiveScale = scale + 0.1;
 
-    float d = sdCircle(p, abs(sin(iTime)) * effectiveScale);
+    float d = circle(p, abs(sin(iTime)) * effectiveScale);
 	vec3 col = mix(vec3(0.9, 0.6, 0.3), vec3(0.65, 0.85, 1.0), 1.0-smoothstep(0.0, 0.001, d));
 
 	fragColor = vec4(col,1.0);

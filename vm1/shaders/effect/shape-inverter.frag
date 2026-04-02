@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2023-2026 Nils Zweiling & Julian Jungel
+ *
+ * This file is part of VM-1 which is released under the MIT license.
+ * See file LICENSE or go to https://github.com/zwodev/vm1-video-mixer/tree/master/LICENSE
+ * for full license details.
+ */
+ 
 uniform int enabled;        // { "name": "Enabled", "group": "Shape Inverter", "default": 1, "min": 0, "max": 1 }
 uniform int shape;          // { "name": "Shape Type", "group": "Shape Inverter", "default": 0, "min": 0, "max": 2 }
 uniform float r;            // { "name": "Radius", "group": "Shape Inverter", "default": 0.2, "min": 0.0, "max": 1.0, "step": 0.01 }

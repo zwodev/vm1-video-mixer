@@ -1,9 +1,12 @@
-// uniform int enabled;        // { "name": "Enabled", "group": "Shape Inverter", "default": 1, "min": 0, "max": 1 }
-// uniform int shape;          // { "name": "Shape Type", "group": "Shape Inverter", "default": 0, "min": 0, "max": 2 }
-// uniform float px;            // { "name": "pos x", "group": "Shape Inverter", "default": 0.0, "min": -1.0, "max": 1.0, "step": 0.01 }
+/*
+ * Copyright (c) 2023-2026 Nils Zweiling & Julian Jungel
+ *
+ * This file is part of VM-1 which is released under the MIT license.
+ * See file LICENSE or go to https://github.com/zwodev/vm1-video-mixer/tree/master/LICENSE
+ * for full license details.
+ */
+
 uniform float xAxis;            // { "name": "horizontal axis", "group": "Mirror", "default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01 }
-
-
 
 void extMain(inout vec3 color, in vec2 coord)
 {
