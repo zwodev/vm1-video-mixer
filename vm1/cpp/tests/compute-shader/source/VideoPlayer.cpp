@@ -259,7 +259,7 @@ void VideoPlayer::render()
     m_shader.setValue("stripWidthNDC", 2.0f/15.0f);
 
     glBindVertexArray(m_vao);
-    for (int i = 0; i < m_yuvTextures.size(); ++i) {
+    for (size_t i = 0; i < m_yuvTextures.size(); ++i) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, m_yuvTextures[i]);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -273,7 +273,7 @@ void VideoPlayer::render()
             m_shader.bindUniformLocation("inputTexture", 0);
         }
 
-        m_shader.setValue("stripId", i);
+        m_shader.setValue("stripId", int(i));
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 

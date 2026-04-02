@@ -209,7 +209,7 @@ std::vector<DisplayConf> VM1Application::getBestDisplaysConfigs()
             std::cout << displayName << std::endl;
         }
 
-        SDL_DisplayMode* defaultDisplayMode = SDL_GetCurrentDisplayMode(displays[i]);
+        const SDL_DisplayMode* defaultDisplayMode = SDL_GetCurrentDisplayMode(displays[i]);
         if (!defaultDisplayMode) {
             SDL_Log("Could not get default display mode!");
             return bestDisplayConfigs;
@@ -308,9 +308,9 @@ bool VM1Application::initSDL(bool withVideo)
 
     int xOffset = 0;
     m_windows.resize(m_displayConfigs.size(), nullptr);
-    for (int i = 0; i < m_displayConfigs.size(); ++i)
+    for (size_t i = 0; i < m_displayConfigs.size(); ++i)
     {
-        int index = i;
+        int index = int(i);
         SDL_DisplayMode mode = m_displayConfigs[index].bestMode;
 
         // This is the way to associate the second window with the second screen
@@ -332,7 +332,7 @@ bool VM1Application::initSDL(bool withVideo)
         m_windows[index] = window;
     }
 
-    for (int i = 0; i < m_windows.size(); ++i) {
+    for (size_t i = 0; i < m_windows.size(); ++i) {
         if (!SDL_SetWindowFullscreenMode(m_windows[i], &(m_displayConfigs[i].bestMode))) {
             SDL_Log("Unable to set fullscreen mode!");
         }
@@ -358,7 +358,7 @@ bool VM1Application::initSDL(bool withVideo)
 
     // Enable vsync and activate all windows
     SDL_GL_SetSwapInterval(1);
-    for (int i = 0; i < m_windows.size(); ++i)
+    for (size_t i = 0; i < m_windows.size(); ++i)
     {
         SDL_ShowWindow(m_windows[i]);
     }
@@ -403,7 +403,7 @@ void VM1Application::finalizeImGui()
 
 void VM1Application::finalizeSDL()
 {
-    for (int i = 0; i < m_windows.size(); ++i)
+    for (size_t i = 0; i < m_windows.size(); ++i)
     {
         if (m_windows[i]) {
             SDL_DestroyWindow(m_windows[i]);
@@ -499,7 +499,7 @@ bool VM1Application::exec()
             if (!m_isHeadless) { 
                 renderImGui();
 
-                for (int i = 0; i < m_windows.size(); ++i) {
+                for (size_t i = 0; i < m_windows.size(); ++i) {
                     renderWindow(i);
                 }
             }

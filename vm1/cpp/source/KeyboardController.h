@@ -13,6 +13,6 @@ public:
     virtual ~KeyboardController() = 0;
 
 protected:
-    EventBus& m_eventBus;
     Registry& m_registry;
+    EventBus& m_eventBus;
 };

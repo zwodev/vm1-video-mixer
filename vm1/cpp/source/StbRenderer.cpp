@@ -524,7 +524,6 @@ int StbRenderer::getTextWidth(const std::string& text, FONT::TextStyle textStyle
     int textWidth = 0;
     for (char c : text)
     {
-        int width, height, xoff, yoff;
         int advanceWidth, leftSideBearing;
         stbtt_GetCodepointHMetrics(&fontData.font, c, &advanceWidth, &leftSideBearing);
         textWidth += advanceWidth * scale;
@@ -600,7 +599,7 @@ void StbRenderer::drawTriangleNEW(glm::vec2 p1, glm::vec2 p2, glm::vec2 p3, Draw
 void StbRenderer::drawPolygonNEW(std::vector<glm::vec2> pos, DrawStyle drawStyle)
 {
     if (!m_isEnabled) return;
-    for (int i = 0; i < pos.size(); i++) {
+    for (size_t i = 0; i < pos.size(); i++) {
         roundVec2(pos[i]);
         drawLineNEW(pos[i], pos[(i + 1) % pos.size()], drawStyle);
     }

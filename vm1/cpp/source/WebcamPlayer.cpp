@@ -79,6 +79,7 @@ void WebcamPlayer::finalize()
 
     // 2. Release each exported buffer (close fd)
     for (auto& buffer : m_buffers) {
+        (void)buffer;
         dequeueBuffer(m_fd);
     }
     for (auto& buffer : m_buffers) {
@@ -189,7 +190,7 @@ bool WebcamPlayer::initBuffers(int fd)
         return false;
     }
 
-    for (int i = 0; i < req.count; i++) {
+    for (unsigned int i = 0; i < req.count; i++) {
         struct v4l2_buffer buf = {0};
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buf.memory = V4L2_MEMORY_MMAP;
@@ -430,9 +431,9 @@ void WebcamPlayer::run()
     }
     else {
         auto availableFormats = listCameraModes(fd);
-        printf("Number of formats: %d\n", availableFormats.size());
+        printf("Number of formats: %ld\n", availableFormats.size());
         auto filteredFormats = filterModes(availableFormats, 1920, 1080, V4L2_PIX_FMT_YUYV, 60);
-        printf("Number of filtered formats: %d\n", filteredFormats.size());
+        printf("Number of filtered formats: %ld\n", filteredFormats.size());
         if(filteredFormats.size() <= 0) {
             printf("Could not find suitable capture mode.\n");
             ::close(fd);
@@ -455,8 +456,8 @@ void WebcamPlayer::run()
     printf("CameraPlayer run(): buffer init ok.\n");
     
     // Queue all buffers
-    for (int i = 0; i < m_buffers.size(); i++) {
-        if (!queueBuffer(fd, i)) return;
+    for (size_t i = 0; i < m_buffers.size(); i++) {
+        if (!queueBuffer(fd, int(i))) return;
     }
 
     printf("CameraPlayer run(): queue all buffers ok.\n");
@@ -615,7 +616,7 @@ void WebcamPlayer::update()
                 if(image == EGL_NO_IMAGE_KHR)
                 {
                     printf("error: eglCreateImageKHR failed: %d\n", eglGetError());
-                    return false;
+                    return;
                 }
                 m_yuvImages[0] = image;
             }

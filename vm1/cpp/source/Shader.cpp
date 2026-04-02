@@ -26,17 +26,6 @@
 
 using json = nlohmann::json;
 
-static size_t fileGetLength(FILE* file) {
-	
-	size_t length;
-	size_t currPos = ftell(file);
-	fseek(file, 0, SEEK_END);
-	length = ftell(file);
-	fseek(file, currPos, SEEK_SET);
-	
-	return length;
-}
-
 Shader::Shader()
 {
 	
@@ -84,7 +73,7 @@ void fetchVec2ParameterFromJson(const std::string& name, Vec2Parameter& param, c
 		const json& value = jsonData[name];
 		if (value.is_array() && value.size() == 2) {
 			Vec2 vec;
-			for (int i = 0; i < value.size(); ++i) {
+			for (size_t i = 0; i < value.size(); ++i) {
 				const json& component = value[i];
 				if (component.is_number_float()) {
 					vec[i] = component.get<float>();
@@ -334,7 +323,7 @@ GLuint Shader::loadShaderByType(const std::string& filename, GLenum shaderType, 
 	std::ifstream file(filename);
     if (!file.is_open()) {
         std::cerr << "Failed to open: " << filename << std::endl;
-		return;
+		return -1;
     }
     
     std::ostringstream buffer;
@@ -347,7 +336,7 @@ GLuint Shader::loadShaderByType(const std::string& filename, GLenum shaderType, 
 		std::ifstream extFile(extFilename);
 		if (!extFile.is_open()) {
 			std::cerr << "Failed to open: " << extFilename << std::endl;
-			return;
+			return -1;
 		}
 		
 		std::ostringstream extBuffer;

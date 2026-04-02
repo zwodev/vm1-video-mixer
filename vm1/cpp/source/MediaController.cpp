@@ -175,8 +175,8 @@ bool MediaController::setupLink(const std::string& source, const std::string& si
         return false;
     }
 
-    auto& source_entity = m_idToEntity[source_entity_id];
-    auto& sink_entity = m_idToEntity[sink_entity_id];
+    //auto& source_entity = m_idToEntity[source_entity_id];
+    //auto& sink_entity = m_idToEntity[sink_entity_id];
     
     struct media_link_desc link_desc = {0};
     link_desc.source.entity = source_entity_id;

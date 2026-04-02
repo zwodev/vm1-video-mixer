@@ -85,7 +85,7 @@ void PlaneRenderer::updateVertexBuffers(ScreenRotation rotation, PlaneSettings& 
     
     glm::mat2x2 screenRotationMatrix(cos(angle), -sin(angle), sin(angle),  cos(angle));
     glm::mat2x2 scaleMatrix(scale * scaleXY.x, 0.0f, 0.0f, scale * scaleXY.y);
-    for (int i = 0; i < m_plane.size(); ++i) {
+    for (size_t i = 0; i < m_plane.size(); ++i) {
         // const glm::vec2& vertex = m_plane[i];
         // m_rotatedPlane[i] = screenRotationMatrix * (vertex + (planeSettings.coords[i] - m_plane[i]));
         glm::vec2 v = planeSettings.coords[i];

@@ -15,11 +15,11 @@ void AudioSystem::initialize()
     SDL_AudioDeviceID *devices = SDL_GetAudioPlaybackDevices(&count);
     if (devices && count > 0) {
         SDL_AudioDeviceID deviceId = devices[0];
-        char *name = SDL_GetAudioDeviceName(deviceId);
+        const char *name = SDL_GetAudioDeviceName(deviceId);
         printf("Device %u: %s\n", deviceId, name);
         SDL_free(devices);
 
-        SDL_AudioSpec spec = {0};
+        SDL_AudioSpec spec{};
         spec.freq = 48000;
         spec.format = SDL_AUDIO_F32;
         spec.channels = 2;
@@ -45,7 +45,7 @@ void AudioSystem::finalize()
 AudioDevice* AudioSystem::audioDevice(int index)
 {
     AudioDevice* audioDevice = nullptr;
-    if (index < m_audioDevices.size()) {
+    if (index >= 0 && index < int(m_audioDevices.size())) {
         audioDevice = m_audioDevices[index].get();
     }
 

@@ -405,7 +405,6 @@ void UI::InfoScreen(int bank, int id, std::string filename)
 
 void UI::ShowPopupMessage(std::string message)
 {
-    int width = m_stbRenderer.width();
     int height = m_stbRenderer.height();
     m_stbRenderer.clear();
 
@@ -418,7 +417,7 @@ void UI::ShowPopupMessage(std::string message)
 
 void UI::ShowStringInputDialog(std::string title, int& cursorIdx, std::string& input)
 {
-    if (cursorIdx >= input.size()) return;
+    if (cursorIdx >= int(input.size())) return;
 
     int width = m_stbRenderer.width();
     int height = m_stbRenderer.height();
@@ -433,7 +432,7 @@ void UI::ShowStringInputDialog(std::string title, int& cursorIdx, std::string& i
     }
     else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationRight)) {
         cursorIdx++;
-        if (cursorIdx >= input.size()) {
+        if (cursorIdx >= int(input.size())) {
             input.push_back('a');
             currentChar = input.at(cursorIdx);
         } 
@@ -457,7 +456,7 @@ void UI::ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts)
     int quadPadding = 2;
     int quadSize = (width / (buttonTexts.size() / 2)) - quadPadding;
     // int fontSize = 16;
-    for(int i = 0; i < buttonTexts.size(); i++)
+    for(size_t i = 0; i < buttonTexts.size(); i++)
     {
         int x = (quadPadding / 2) + (i % 8) * (quadSize + quadPadding);
         int y = (height/2 - quadSize / 2) + (i / 8) * (quadSize + quadPadding + 2);
@@ -484,11 +483,11 @@ void UI::ShowBankInfo(int bank)
     int quadPadding = 5;
     int quadSize = (width / BANK_COUNT) - quadPadding;
     // int fontSize = 16;
-    for(int i = 0; i < BANK_COUNT; i++)
+    for(size_t i = 0; i < BANK_COUNT; i++)
     {
         int x = quadPadding / 2 + i * (quadSize + quadPadding);
         int y = height/2 - quadSize / 2;
-        if(bank == i) {
+        if(bank == int(i)) {
             // m_stbRenderer.drawRect(x, y, quadSize, quadSize, COLOR::WHITE);
             m_stbRenderer.drawText(std::string(1, static_cast<char>(i + 65)), x + 4, y + 3, FONT::TEXTSTYLE::STANDARD, COLOR::BLACK);
         } else {
@@ -570,7 +569,7 @@ bool UI::RadioButton(const std::string& label, bool active)
 bool UI::SpinBoxInt(const std::string& label, int& value, int minValue, int maxValue, int step)
 {
     bool hasChanged = false;
-    if (!m_focusedIdxPtr) return;
+    if (!m_focusedIdxPtr) return false;
     int diff = 0;
     if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0))
     {
@@ -598,7 +597,7 @@ bool UI::SpinBoxInt(const std::string& label, int& value, int minValue, int maxV
 bool UI::SpinBoxFloat(const std::string& label, float& value, float minValue, float maxValue, float step)
 {
     bool hasChanged = false;
-    if (!m_focusedIdxPtr) return;
+    if (!m_focusedIdxPtr) return false;
     float diff = 0;
     if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0))
     {
@@ -626,7 +625,7 @@ bool UI::SpinBoxFloat(const std::string& label, float& value, float minValue, fl
 bool UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
 {
     bool hasChanged = false;
-    if (!m_focusedIdxPtr) return;
+    if (!m_focusedIdxPtr) return false;
     float diffX = 0;
     float diffY = 0;
     if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0))
@@ -844,15 +843,15 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int
         // get positions of the texts/numbers to check if they are too close to each others
         std::unordered_map<int, glm::vec2> textPositions;
         textPositions.reserve(correctedPlanes.size());
-        for(int i = 0; i < correctedPlanes.size(); i++)
+        for(size_t i = 0; i < correctedPlanes.size(); i++)
         {
             PlaneShape p = correctedPlanes[i];
             glm::vec2 polygonCenter = {0.0f, 0.0f};
-            for(std::size_t i = 0; i < p.vertices.size(); i++) {
-                polygonCenter += p.vertices[i];
+            for(std::size_t j = 0; j < p.vertices.size(); j++) {
+                polygonCenter += p.vertices[j];
             }
             polygonCenter /= p.vertices.size();
-            textPositions.insert({i, polygonCenter});
+            textPositions.insert({int(i), polygonCenter});
         }
 
         // check the positions and move if necessary
@@ -910,7 +909,7 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int
     // static int selectedVertex = 0;
     if(style == PLANE_PREVIEW_VERTICES && 
         selectedVertex >= 0 &&
-        selectedVertex < correctedPlanes.size())    
+        selectedVertex < int(correctedPlanes.size()))    
     {
         // if(isNavigationEventTriggered(NavigationEvent::Type::NavigationDown))
         // {

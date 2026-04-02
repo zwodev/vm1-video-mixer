@@ -97,6 +97,8 @@ int OledController::initializeOled()
 
     OLED_1in5_rgb_Init();
     DEV_Delay_ms(50);
+
+    return 0;
 }
 
 int OledController::initializeImageBuffer()
@@ -113,6 +115,8 @@ int OledController::initializeImageBuffer()
     printf("OLED buffer initialized with %u Bytes.\n", m_imagesize + 300);
 
     OLED_1in5_rgb_Clear();
+
+    return 0;
 }
 
 void OledController::render()

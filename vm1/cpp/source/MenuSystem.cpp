@@ -441,7 +441,7 @@ void MenuSystem::FileSelection()
     }
     m_ui.Spacer();
     m_ui.TextStyle(FONT::TEXTSTYLE::LIST_ITEM);
-    for (int i = 0; i < files.size(); ++i) {
+    for (size_t i = 0; i < files.size(); ++i) {
         std::string fileName = files[i];
         if (m_ui.RadioButton(fileName.c_str(), (config->fileName == fileName))) {
             config->fileName = fileName;
@@ -453,7 +453,7 @@ void MenuSystem::FileSelection()
 
     if(m_focusedIdx >=3)
     {
-        if(files.size() > (m_focusedIdx-3) && (m_focusedIdx-3) >= 0){
+        if(int(files.size()) > (m_focusedIdx-3) && (m_focusedIdx-3) >= 0){
             std::string previewFilename = m_registry.mediaPool().getVideoFilePath(files[m_focusedIdx-3]) + ".preview";    
             m_ui.MediaPreview(previewFilename);
         }
@@ -506,7 +506,7 @@ void MenuSystem::ShaderSelection()
     std::vector<std::string>& files = m_registry.mediaPool().getGenerativeShaderFiles();
     bool changed = false;
     m_ui.BeginList(&m_focusedIdx);
-    for (int i = 0; i < files.size(); ++i) {
+    for (size_t i = 0; i < files.size(); ++i) {
         std::string fileName = files[i];
         if (m_ui.RadioButton(fileName.c_str(), (config->fileName == fileName))) {
             config->fileName = fileName;
@@ -620,13 +620,11 @@ void MenuSystem::CustomEffectShaderSelection()
     PlaneSettings& plane = m_registry.planes()[m_planeIdx];
 
     std::vector<std::string>& files = m_registry.mediaPool().getEffectShaderFiles();
-    bool changed = false;
     m_ui.BeginList(&m_focusedIdx);
-    for (int i = 0; i < files.size(); ++i) {
+    for (size_t i = 0; i < files.size(); ++i) {
         std::string fileName = files[i];
         if (m_ui.RadioButton(fileName.c_str(), (plane.extShaderFilename == fileName))) {
             plane.extShaderFilename = fileName;
-            changed = true;
             m_eventBus.publish(EffectShaderEvent(m_planeIdx));
         }
     }
@@ -733,7 +731,6 @@ void MenuSystem::NetworkMenu()
     m_ui.ShowMenuTitle("Network");
     m_ui.Spacer(m_ui.getMenuTitleHeight());
 
-    Settings& settings = m_registry.settings();
     std::string eth0;
     std::string wlan0;
     NetworkTools::getIPAddress("eth0", eth0);
@@ -782,8 +779,6 @@ void MenuSystem::DeviceSettingsMenu()
     m_ui.ShowMenuTitle("Hdmi Settings");
     m_ui.Spacer(m_ui.getMenuTitleHeight());
 
-    Settings& settings = m_registry.settings();
-
     m_ui.BeginList(&m_focusedIdx);
     if (m_registry.settings().isHdmiOutputReady && m_registry.settings().isHdmiInputReady) {
         if (m_ui.Action("Scan for new")) {
@@ -818,8 +813,8 @@ void MenuSystem::ButtonMatrixMenu()
     m_ui.Spacer(m_ui.getMenuTitleHeight());
 
     int bank = m_registry.inputMappings().bank;
-    for (int i = 0; i < m_buttonTexts.size(); ++i) {
-        int mediaSlot = bank * 16 + i;
+    for (size_t i = 0; i < m_buttonTexts.size(); ++i) {
+        int mediaSlot = bank * 16 + int(i);
         InputConfig* currentConfig = m_registry.inputMappings().getInputConfig(mediaSlot);
         if (!currentConfig) {
             m_buttonTexts[i].second = COLOR::BLACK;

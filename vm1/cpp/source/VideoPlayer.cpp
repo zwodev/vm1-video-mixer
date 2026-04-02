@@ -559,7 +559,7 @@ bool VideoPlayer::getTextureForDRMFrame(AVFrame* frame, VideoFrame& dstFrame)
     return true;
 }
 
-static SDL_PixelFormat getTextureFormat(enum AVPixelFormat format)
+SDL_PixelFormat getTextureFormat(enum AVPixelFormat format)
 {
     switch (format) {
     case AV_PIX_FMT_RGB8:
@@ -611,7 +611,7 @@ static SDL_PixelFormat getTextureFormat(enum AVPixelFormat format)
     }
 }
 
-static bool isSupportedPixelFormat(enum AVPixelFormat format)
+bool isSupportedPixelFormat(enum AVPixelFormat format)
 {
     if (/* m_hasEglCreateImage && */
         (format == AV_PIX_FMT_VAAPI || format == AV_PIX_FMT_DRM_PRIME)) {
@@ -626,7 +626,7 @@ static bool isSupportedPixelFormat(enum AVPixelFormat format)
     return false;
 }
 
-static enum AVPixelFormat getSupportedPixelFormat(AVCodecContext* s, const enum AVPixelFormat* pix_fmts)
+enum AVPixelFormat getSupportedPixelFormat(AVCodecContext* s, const enum AVPixelFormat* pix_fmts)
 {
     const enum AVPixelFormat *p;
 

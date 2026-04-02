@@ -54,7 +54,7 @@ CameraPlayer::~CameraPlayer()
 
 bool CameraPlayer::openFile(const std::string& fileName, AudioStream* audioStream)
 {
-
+    return true;
 }
 
 void CameraPlayer::close()
@@ -76,6 +76,7 @@ void CameraPlayer::finalize()
 
     // 2. Release each exported buffer (close fd)
     for (auto& buffer : m_buffers) {
+        (void)buffer;
         dequeueBuffer(m_fd);
     }
     for (auto& buffer : m_buffers) {
@@ -186,7 +187,7 @@ bool CameraPlayer::initBuffers(int fd)
         return false;
     }
 
-    for (int i = 0; i < req.count; i++) {
+    for (unsigned int i = 0; i < req.count; i++) {
         struct v4l2_buffer buf = {0};
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buf.memory = V4L2_MEMORY_MMAP;
@@ -274,8 +275,8 @@ void CameraPlayer::run()
     printf("CameraPlayer run(): buffer init ok.\n");
     
     // Queue all buffers
-    for (int i = 0; i < m_buffers.size(); i++) {
-        if (!queueBuffer(fd, i)) return;
+    for (size_t i = 0; i < m_buffers.size(); i++) {
+        if (!queueBuffer(fd, int(i))) return;
     }
 
     printf("CameraPlayer run(): queue all buffers ok.\n");
@@ -377,7 +378,7 @@ void CameraPlayer::update()
             if(image == EGL_NO_IMAGE_KHR)
             {
                 printf("error: eglCreateImageKHR failed: %d\n", eglGetError());
-                return false;
+                return;
             }
             m_yuvImages[0] = image;
         }

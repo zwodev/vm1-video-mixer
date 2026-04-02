@@ -163,11 +163,11 @@ bool PlaybackOperator::getFreeVideoPlayerId(int& id, int planeId)
         }
         else {
             //printf("looking for empty videoplayerId...\n");
-            for (int i = 0; i < m_videoPlayers.size(); ++i) {
+            for (size_t i = 0; i < m_videoPlayers.size(); ++i) {
                 //printf("videoplayerId: %d isPlayerIdActive: %d \n", i, isPlayerIdActive(i));
                 if(!isPlayerIdActive(i) && dynamic_cast<VideoPlayer *>(m_mediaPlayers[i])) {
                     //printf("id = %d\n", i);
-                    id = i;
+                    id = int(i);
                     return true;
                 }
             }
@@ -248,7 +248,6 @@ void PlaybackOperator::showMedia(int mediaSlotId)
 
     std::string fileName;
     std::string filePath;
-    bool looping = false;
 
     InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
     if (!inputConfig) {
@@ -273,7 +272,6 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
     {
         fileName = videoInputConfig->fileName;
-        looping = videoInputConfig->looping;
         filePath = m_registry.mediaPool().getVideoFilePath(fileName);
 
         if (!getFreeVideoPlayerId(playerId, planeId)) return;
@@ -463,14 +461,14 @@ void PlaybackOperator::update(float deltaTime)
                 }
             }
         }
-        else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(inputConfig))
-        {
-            CameraPlayer* cameraPlayer = dynamic_cast<CameraPlayer*>(mediaPlayer);
-            // if (cameraPlayer && cameraPlayer->isPlaying())
-            // {
-            //     cameraPlayer->update();
-            // }
-        }
+        // else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(inputConfig))
+        // {
+        //     CameraPlayer* cameraPlayer = dynamic_cast<CameraPlayer*>(mediaPlayer);
+        //     if (cameraPlayer && cameraPlayer->isPlaying())
+        //     {
+        //          cameraPlayer->update();
+        //     }
+        // }
         else if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(inputConfig))
         {
             ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(mediaPlayer);
@@ -539,7 +537,7 @@ void PlaybackOperator::renderPlane(int hdmiId)
     }
     std::sort(activePlanesIds.begin(), activePlanesIds.end(), [](int x, int y){return x < y;});
 
-    for (int i = 0; i < activePlanesIds.size(); ++i) {
+    for (size_t i = 0; i < activePlanesIds.size(); ++i) {
         int currentPlaneId = activePlanesIds[i];
         
         if(m_registry.planes()[currentPlaneId].useFaderForOpacity) {
@@ -549,13 +547,14 @@ void PlaybackOperator::renderPlane(int hdmiId)
         if (hdmiId == planes[currentPlaneId].hdmiId) {
             if (i >= m_planeRenderers.size()) return;
             
-            float volume = float(m_registry.settings().volume) / 10.0f;
+            
             PlaneRenderer* planeRenderer = m_planeRenderers[currentPlaneId];
             PlaneMixer& planeMixer = m_planeMixers[currentPlaneId];
             
             int fromId = planeMixer.fromId();
             int toId = planeMixer.toId();
 
+            //float volume = float(m_registry.settings().volume) / 10.0f;
             GLuint texture0 = 0;
             if (fromId >= 0) {
                 texture0 = m_mediaPlayers[fromId]->texture();

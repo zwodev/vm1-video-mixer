@@ -155,10 +155,8 @@ struct IQueuedEvent {
 template<typename T>
 struct QueuedEvent : IQueuedEvent {
     T event;
-    explicit QueuedEvent(const T& e) : event(e) {}
-    void dispatch(class EventBus& bus) override {
-        bus.publish(event);
-    }
+    explicit QueuedEvent(const T& e);
+    void dispatch(class EventBus& bus) override;
 };
 
 class EventBus
@@ -229,3 +227,11 @@ private:
     std::mutex m_queueMutex;
     std::queue<std::unique_ptr<IQueuedEvent>> m_eventQueue;
 };
+
+template<typename T>
+QueuedEvent<T>::QueuedEvent(const T& e) : event(e) {}
+
+template<typename T>
+void QueuedEvent<T>::dispatch(EventBus& bus) {
+    bus.publish(event);
+}

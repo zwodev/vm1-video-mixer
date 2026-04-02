@@ -81,19 +81,21 @@ private:
     
     Registry m_registry;
     EventBus m_eventBus;
-    KeyboardControllerSDL m_keyboardControllerSdl;
-    KeyboardControllerLinux m_keyboardControllerLinux;
-    KeyboardHotplug m_keyboardHotplug;
-    PlaybackOperator m_playbackOperator;
-    CameraController m_cameraController;
-    FileAssignmentWidget m_fileAssignmentWidget;
-    StbRenderer m_stbRenderer;
-    UI m_ui;
-
+    
     OledController m_oledController;
     ILI9341Controller m_ili9341Controller;
     GLuint m_miniDisplayTexture;
 
+    KeyboardHotplug m_keyboardHotplug;
+    KeyboardControllerSDL m_keyboardControllerSdl;
+    KeyboardControllerLinux m_keyboardControllerLinux;
+    PlaybackOperator m_playbackOperator;
+    FileAssignmentWidget m_fileAssignmentWidget;
+    StbRenderer m_stbRenderer;
+    UI m_ui;
     MenuSystem m_menuSystem;
     DeviceController m_deviceController;
+    CameraController m_cameraController;
+    
+
 };

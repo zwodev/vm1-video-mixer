@@ -101,22 +101,22 @@ void KeyboardControllerLinux::update(input_event& event)
             break;
         }
 
-        for(int i = 0; i < m_editKeys.size(); ++i) 
+        for(size_t i = 0; i < m_editKeys.size(); ++i) 
         {
             if (event.code == m_editKeys[i]) {
                 if(m_isShiftPressed){
-                    m_eventBus.publish(BankChangeEvent(i));
+                    m_eventBus.publish(BankChangeEvent(int(i)));
                 }
                 else {
-                    m_eventBus.publish(EditModeEvent(i));
+                    m_eventBus.publish(EditModeEvent(int(i)));
                 }                
                 return;
             }
         }
 
-        for(int i = 0; i < m_mediaKeys.size(); ++i) 
+        for(size_t i = 0; i < m_mediaKeys.size(); ++i) 
         {
-            int mediaSlotId = (m_registry.inputMappings().bank * MEDIA_BUTTON_COUNT) + i;
+            int mediaSlotId = (m_registry.inputMappings().bank * MEDIA_BUTTON_COUNT) + int(i);
             if (event.code == m_mediaKeys[i]) {
                 if(m_isShiftPressed){
                     m_eventBus.publish(MediaSlotEvent(mediaSlotId, false)); // do not trigger playback

@@ -114,9 +114,9 @@ private:
 
 
 private:
+    UI &m_ui;
     Registry &m_registry;
     EventBus &m_eventBus;
-    UI &m_ui;
     
     int m_id = 0;
     int m_planeIdx = 0;

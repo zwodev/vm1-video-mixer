@@ -139,7 +139,7 @@ bool CameraPlayer::initBuffers(int fd)
         return false;
     }
 
-    for (int i = 0; i < req.count; i++) {
+    for (unsigned int i = 0; i < req.count; i++) {
         struct v4l2_buffer buf = {0};
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buf.memory = V4L2_MEMORY_MMAP;
@@ -219,8 +219,8 @@ void CameraPlayer::run()
     if (!initBuffers(fd)) return false;
 
     // Queue all buffers
-    for (int i = 0; i < m_buffers.size(); i++) {
-        if (!queueBuffer(fd, i)) return false;
+    for (size_t i = 0; i < m_buffers.size(); i++) {
+        if (!queueBuffer(fd, int(i))) return;
     }
 
     v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
