@@ -23,6 +23,9 @@
 #include "stb/stb_image_write.h"
 #include "stb/stb_truetype.h"
 
+#include "fonts/bdfont-support.h"
+#include "fonts/font-knxt.h"
+
 #include "ImageBuffer.h"
 
 
@@ -35,6 +38,7 @@ struct Image
     void setPixel(int x, int y, uint8_t r, uint8_t g, uint8_t b);
     void blendPixel(int x, int y, uint8_t r, uint8_t g, uint8_t b, uint8_t alpha);
     void clear(uint8_t r = 0, uint8_t g = 0, uint8_t b = 0);
+
 };
 
 struct Color
@@ -89,7 +93,7 @@ struct DrawStyle
 
 namespace FONT  
 {
-    struct FontData {
+    struct FontDataTTF {
         std::vector<unsigned char> fontBuffer;
         stbtt_fontinfo font;
         std::string filename;
@@ -111,11 +115,46 @@ namespace FONT
     namespace TEXTSTYLE
     {
         static TextStyle MENU_TITLE = {"CreatoDisplay-Regular.otf", 28.0f, TextStyle::Align::CENTER};
-        static TextStyle ROOT_MENU_ITEM = {"CreatoDisplay-Regular.otf", 20.0f};
-        static TextStyle STANDARD = {"CreatoDisplay-Regular.otf", 16.0f};
-        static TextStyle LIST_ITEM = {"ProggyClean.ttf", 16.0f};
+        // static TextStyle ROOT_MENU_ITEM = {"CreatoDisplay-Regular.otf", 20.0f};
+        static TextStyle ROOT_MENU_ITEM = {"Mecha.ttf", 32.0f};
+        // static TextStyle MENU_ITEM = {"CreatoDisplay-Regular.otf", 16.0f};
+        // static TextStyle MENU_ITEM = {"vhs-gothic.ttf", 16.0f};
+        // static TextStyle MENU_ITEM_MONOSPACED = {"ProggyClean.ttf", 16.0f};
+        // static TextStyle MENU_TITLE = {"Mecha_Bold.ttf", 32.0f, TextStyle::Align::CENTER};
+        static TextStyle MENU_ITEM = {"Mecha.ttf", 32.0f};
+        static TextStyle MENU_ITEM_MONOSPACED = {"Mecha.ttf", 16.0f};
     };
 };
+
+namespace BDF {
+    struct BdfEmitCtx {
+        Image* img = nullptr;
+        int baseX = 0;
+        int baseY = 0;
+        uint8_t stripe = 0;
+        Color color = COLOR::WHITE;
+    };
+    extern "C" void bdf_on_stripe(uint8_t stripe, uint8_t width, void* userdata);
+    extern "C" void bdf_on_emit(uint8_t x, uint8_t bits, void* userdata);
+
+    struct TextStyle {
+        enum Align {
+            LEFT,
+            CENTER
+        };
+        const ::FontData& font;
+        Color color = COLOR::WHITE;
+        Align align = Align::LEFT;
+    };
+
+    namespace TEXTSTYLE
+    {
+        static TextStyle MENU_TITLE = {font_knxt, TextStyle::Align::CENTER};
+        static TextStyle ROOT_MENU_ITEM = {font_knxt};
+        static TextStyle MENU_ITEM = {font_knxt};
+        static TextStyle MENU_ITEM_MONOSPACED = {font_knxt};
+    };    
+} 
 
 class StbRenderer
 {
@@ -128,8 +167,14 @@ private:
     std::pair<glm::vec2, glm::vec2> m_boundingBox;   // two points: top left, bottom right
     float m_boundingBoxOpacity;
 
-    const std::vector<std::string> m_fontFilenames = {"ProggyClean.ttf", "CreatoDisplay-Regular.otf"};
-    std::unordered_map<std::string, FONT::FontData> m_fontData; // filename, FontData
+    const std::vector<std::string> m_fontFilenames = {
+        "ProggyClean.ttf", 
+        "CreatoDisplay-Regular.otf",
+        "Mecha.ttf",
+        "Mecha_Bold.ttf",
+        "vhs-gothic.ttf"
+    };
+    std::unordered_map<std::string, FONT::FontDataTTF> m_fontData; // filename, FontData
 
     void queueCurrentImage();
 
@@ -183,8 +228,9 @@ public:
     void roundVec2(glm::vec2& pos);
 
     // font functions:
-    bool loadFont(FONT::FontData& fontData);
+    bool loadFont(FONT::FontDataTTF& fontData);
     void drawText(const std::string& text, int posX, int posY, FONT::TextStyle textStyle, Color color = COLOR::WHITE);
+    void drawTextBdf(const std::string& text, glm::uvec2 pos, BDF::TextStyle textStyle);
     int getFontLineHeight(FONT::TextStyle textStyle);
     int getTextWidth(const std::string& text, FONT::TextStyle textStyle);
 };

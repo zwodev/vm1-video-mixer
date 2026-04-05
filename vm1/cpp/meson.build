@@ -64,7 +64,9 @@ sources = [ 'main.cpp',
             'source/DirectoryCache.cpp',
             'source/ILI9341Controller.cpp',
             'source/ili9341/DEV_Config.c',
-            'source/ili9341/ILI9341.c'
+            'source/ili9341/ILI9341.c',
+            'source/fonts/font-knxt.c',
+            'source/fonts/bdfont-support.c'
           ]
 
 incdir = include_directories('source')

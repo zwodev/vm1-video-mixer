@@ -50,6 +50,24 @@ void Image::clear(uint8_t r, uint8_t g, uint8_t b)
     //std::fill(pixels.begin(), pixels.end(), 0);
 }
 
+extern "C" void BDF::bdf_on_stripe(uint8_t stripe, uint8_t width, void* userdata)
+{
+    (void)width;
+    static_cast<BDF::BdfEmitCtx*>(userdata)->stripe = stripe;
+}
+extern "C" void BDF::bdf_on_emit(uint8_t x, uint8_t bits, void* userdata)
+{
+    if (!bits)
+        return;
+    auto* ctx = static_cast<BDF::BdfEmitCtx*>(userdata);
+    const int px = ctx->baseX + static_cast<int>(x);
+    const int py = ctx->baseY + static_cast<int>(ctx->stripe) * 8;
+    for (int row = 0; row < 8; ++row) {
+        if (bits & (1u << row))
+            ctx->img->setPixel(px, py + row, ctx->color.r, ctx->color.g, ctx->color.b);
+    }
+}
+
 StbRenderer::StbRenderer() : m_img(1, 1)  // Default: 1x1 placeholder
 {
     // Font loading will happen in init()
@@ -501,6 +519,28 @@ void StbRenderer::drawText(const std::string& text, int posX, int posY, FONT::Te
         posX += advanceWidth * scale;
 
         stbtt_FreeBitmap(bitmap, nullptr);
+    }
+}
+
+void StbRenderer::drawTextBdf(const std::string& text, glm::uvec2 pos, BDF::TextStyle textStyle)
+{
+    if (!m_isEnabled) return;
+
+    BDF::BdfEmitCtx ctx;
+    ctx.img = &m_img;
+    ctx.color = textStyle.color;
+    ctx.baseY = static_cast<int>(pos.y);
+    int penX = static_cast<int>(pos.x);
+    for (char c : text)
+    {
+        ctx.baseX = penX;
+        uint8_t gw = bdfont_emit_glyph(
+            &textStyle.font,
+            static_cast<uint16_t>(static_cast<uint8_t>(c)),
+            BDF::bdf_on_stripe,
+            BDF::bdf_on_emit,
+            &ctx);
+        penX += gw;  // or penX += gw ? gw : spaceWidth if you want gaps for missing chars
     }
 }
 

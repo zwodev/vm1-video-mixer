@@ -337,7 +337,8 @@ void UI::PlainText(const std::string &label)
     //         color = COLOR::BLACK;
     //     } 
     // }
-    m_stbRenderer.drawText(label, m_x, m_y, m_currentTextStyle, m_currentColor);
+    // m_stbRenderer.drawText(label, m_x, m_y, m_currentTextStyle, m_currentColor);
+    m_stbRenderer.drawTextBdf(label, glm::uvec2(m_x, m_y));
     UI::EndListElement();
 }
 
@@ -404,11 +405,11 @@ void UI::ShowPopupMessage(std::string message)
     int height = m_stbRenderer.height();
     m_stbRenderer.clear();
 
-    int fontSize = FONT::TEXTSTYLE::STANDARD.size;
+    int fontSize = FONT::TEXTSTYLE::MENU_ITEM.size;
     int x = 4;
     int y = height/2 - fontSize/2;
 
-    m_stbRenderer.drawText(message, x, y, FONT::TEXTSTYLE::STANDARD, COLOR::WHITE);
+    m_stbRenderer.drawText(message, x, y, FONT::TEXTSTYLE::MENU_ITEM, COLOR::WHITE);
 }
 
 void UI::ShowStringInputDialog(std::string title, int& cursorIdx, std::string& input)
@@ -439,8 +440,8 @@ void UI::ShowStringInputDialog(std::string title, int& cursorIdx, std::string& i
     input.at(cursorIdx) = currentChar;
     m_stbRenderer.drawRect(width/10, height/10, width - (width/10*2), height - (height/10*2), COLOR::BLACK);
     m_stbRenderer.drawEmptyRect(width/10, height/10, width - (width/10*2), height - (height/10*2), COLOR::WHITE);
-    m_stbRenderer.drawText(title, width/10+10, height/10+10, FONT::TEXTSTYLE::STANDARD, COLOR::WHITE);
-    m_stbRenderer.drawText(input, width/10+10, height/10+70, FONT::TEXTSTYLE::STANDARD, COLOR::WHITE);
+    m_stbRenderer.drawText(title, width/10+10, height/10+10, FONT::TEXTSTYLE::MENU_ITEM, COLOR::WHITE);
+    m_stbRenderer.drawText(input, width/10+10, height/10+70, FONT::TEXTSTYLE::MENU_ITEM, COLOR::WHITE);
 }
 
 void UI::ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts)
@@ -459,11 +460,11 @@ void UI::ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts)
 
         if (buttonTexts[i].second == COLOR::BLACK) {
             m_stbRenderer.drawRect(x, y, quadSize, quadSize, Color(30, 30, 30));
-            m_stbRenderer.drawText(std::string(1, static_cast<char>(buttonTexts[i].first)), x + 4, y + 3, FONT::TEXTSTYLE::STANDARD, Color(120, 120, 120));
+            m_stbRenderer.drawText(std::string(1, static_cast<char>(buttonTexts[i].first)), x + 4, y + 3, FONT::TEXTSTYLE::MENU_ITEM, Color(120, 120, 120));
         }
         else {
             m_stbRenderer.drawRect(x, y, quadSize, quadSize, buttonTexts[i].second);
-            m_stbRenderer.drawText(std::string(1, static_cast<char>(buttonTexts[i].first)), x + 4, y + 3, FONT::TEXTSTYLE::STANDARD, COLOR::WHITE);
+            m_stbRenderer.drawText(std::string(1, static_cast<char>(buttonTexts[i].first)), x + 4, y + 3, FONT::TEXTSTYLE::MENU_ITEM, COLOR::WHITE);
             // m_stbRenderer.drawEmptyRect(x, y, quadSize, quadSize, Color(30, 30, 30));
             m_stbRenderer.drawRectNEW(glm::vec2(x, y), glm::vec2(quadSize, quadSize), DrawStyle{Color(30, 30, 30), false, 2, AnchorPoint::TOP_LEFT});
         }
@@ -485,11 +486,11 @@ void UI::ShowBankInfo(int bank)
         int y = height/2 - quadSize / 2;
         if(bank == int(i)) {
             // m_stbRenderer.drawRect(x, y, quadSize, quadSize, COLOR::WHITE);
-            m_stbRenderer.drawText(std::string(1, static_cast<char>(i + 65)), x + 4, y + 3, FONT::TEXTSTYLE::STANDARD, COLOR::BLACK);
+            m_stbRenderer.drawText(std::string(1, static_cast<char>(i + 65)), x + 4, y + 3, FONT::TEXTSTYLE::MENU_ITEM, COLOR::BLACK);
         } else {
             // m_stbRenderer.drawEmptyRect(x, y, quadSize, quadSize, COLOR::WHITE);
             m_stbRenderer.drawRectNEW(glm::vec2(x, y), glm::vec2(quadSize, quadSize), DrawStyle{COLOR::WHITE, false, 1, AnchorPoint::TOP_LEFT});
-            m_stbRenderer.drawText(std::string(1, static_cast<char>(i + 65)), x + 4, y + 3, FONT::TEXTSTYLE::STANDARD, COLOR::WHITE);
+            m_stbRenderer.drawText(std::string(1, static_cast<char>(i + 65)), x + 4, y + 3, FONT::TEXTSTYLE::MENU_ITEM, COLOR::WHITE);
         }
     }
 }
@@ -826,7 +827,7 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int
     {
         // draw only currently selected plane index between the two rectangles
         Color color = colors[selectedPlane];
-        FONT::TextStyle textStyle = FONT::TEXTSTYLE::STANDARD;
+        FONT::TextStyle textStyle = FONT::TEXTSTYLE::MENU_ITEM;
         textStyle.size = 24.0f;
         m_stbRenderer.drawText(std::to_string(selectedPlane + 1), 
                                 centerX - textStyle.size / 4, 
@@ -890,7 +891,7 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int
         // draw plane indices in the center of the polygons
         for(const auto& pos : textPositions) 
         {        
-            FONT::TextStyle textStyle = FONT::TEXTSTYLE::STANDARD;
+            FONT::TextStyle textStyle = FONT::TEXTSTYLE::MENU_ITEM;
             textStyle.size = 24.0f;
             Color color = pos.first == selectedPlane ? colors[pos.first] : COLOR::GREY;
             m_stbRenderer.drawText(std::to_string(pos.first + 1), 

@@ -394,6 +394,7 @@ void MenuSystem::SourceMenu()
 
     m_ui.TextStyle(FONT::TEXTSTYLE::ROOT_MENU_ITEM);
     m_ui.BeginList(&m_focusedIdx);
+    m_ui.PlainText("Hallo BDF Font!");
     m_ui.TextColor(COLOR::YELLOW);
     SubMenu("MEDIA", [this](){ FileSelection(); });
     m_ui.TextColor(COLOR::MAGENTA);
@@ -405,7 +406,7 @@ void MenuSystem::SourceMenu()
     SubMenu("CLEAR SLOT", [this](){ ClearSlot(); }); // TODO: Use Action.
     m_ui.EndList();
     m_ui.popTranslate();
-    m_ui.TextStyle(FONT::TEXTSTYLE::STANDARD);
+    m_ui.TextStyle(FONT::TEXTSTYLE::MENU_ITEM);
 }
 
 void MenuSystem::FileSelection()
@@ -434,7 +435,7 @@ void MenuSystem::FileSelection()
     }
 
     m_ui.Spacer();
-    m_ui.TextStyle(FONT::TEXTSTYLE::LIST_ITEM);
+    m_ui.TextStyle(FONT::TEXTSTYLE::MENU_ITEM_MONOSPACED);
     int fileListStartIdx = m_ui.currentListSize();
     for (size_t i = 0; i < files.size(); ++i) {
         std::string fileName = files[i];
@@ -443,7 +444,7 @@ void MenuSystem::FileSelection()
             changed = true;
         }
     }
-    m_ui.TextStyle(FONT::TEXTSTYLE::STANDARD);
+    m_ui.TextStyle(FONT::TEXTSTYLE::MENU_ITEM);
     m_ui.EndList(); 
 
 

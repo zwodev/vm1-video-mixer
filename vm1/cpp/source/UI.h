@@ -133,7 +133,7 @@ public:
     int m_menuTitleHeight = 0;
     int m_menuTitleWidth = 0;
     
-    FONT::TextStyle m_currentTextStyle = FONT::TEXTSTYLE::STANDARD;
+    FONT::TextStyle m_currentTextStyle = FONT::TEXTSTYLE::MENU_ITEM;
     Color m_currentColor = COLOR::WHITE;
     
     std::function<void()> m_overlay;

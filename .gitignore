@@ -1,9 +1,10 @@
 .vscode
 vm1/videos
+vm1/cpp/screenshots
 imgui.ini
 vm1-registry.json
 ffmpeg_log.txt
 build
 rpi-image-gen
 *.mov
-
+ffmpeg_log.txt
