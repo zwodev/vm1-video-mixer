@@ -61,6 +61,7 @@ sources = [ 'main.cpp',
             'source/KeyboardControllerSDL.cpp',
             'source/KeyboardControllerLinux.cpp',
             'source/MediaPool.cpp',
+            'source/DirectoryCache.cpp',
             'source/ILI9341Controller.cpp',
             'source/ili9341/DEV_Config.c',
             'source/ili9341/ILI9341.c'
