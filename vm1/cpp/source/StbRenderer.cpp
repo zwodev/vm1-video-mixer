@@ -41,10 +41,6 @@ void Image::blendPixel(int x, int y, uint8_t r, uint8_t g, uint8_t b, uint8_t al
 
 void Image::clear(uint8_t r, uint8_t g, uint8_t b)
 {
-    // for (int y = 0; y < height; ++y)
-    //     for (int x = 0; x < width; ++x)
-    //         setPixel(x, y, r, g, b);
-
     // TODO: How can we have different colors without impacting performance too much?
     memset(pixels.data(), 0, pixels.size());
     //std::fill(pixels.begin(), pixels.end(), 0);
@@ -70,18 +66,7 @@ extern "C" void BDF::bdf_on_emit(uint8_t x, uint8_t bits, void* userdata)
 
 StbRenderer::StbRenderer() : m_img(1, 1)  // Default: 1x1 placeholder
 {
-    // Font loading will happen in init()
 }
-
-// StbRenderer::StbRenderer(int width, int height) : m_img(width, height)
-// {
-//     clear();
-//     if (!loadFont("fonts/" + fontNameMonospaced))
-//     {
-//         std::cerr << "Font load failed" << std::endl;
-//     }
-//     std::cout << "StbRenderer Constructor: Renderer initialized with " << width << "x" << height << std::endl;
-// }
 
 void StbRenderer::init(int width, int height)
 {
@@ -90,17 +75,6 @@ void StbRenderer::init(int width, int height)
     
     clear();
 
-    for (const std::string& filename : m_fontFilenames)
-    {
-        FONT::FontData fontData;
-        fontData.filename = filename;
-        m_fontData.emplace(filename, std::move(fontData));
-    }
-    for (auto& filenameDataPair : m_fontData)
-    {
-        if (!loadFont(filenameDataPair.second))
-            std::cerr << "Font load failed: fonts/" + filenameDataPair.first << std::endl;
-    }
     resetBoundingBox();
     std::cout << "StbRenderer Init: Renderer initialized with " << width << "x" << height << std::endl;
 }
@@ -161,35 +135,6 @@ Image StbRenderer::popImage()
     return imageBuffer;
 }
 
-// void StbRenderer::drawLine(int x0, int y0, int x1, int y1, Color color, int thickness) 
-// {
-//     // Clamp endpoints first
-//     x0 = std::max(0, std::min(x0, m_img.width-1));
-//     y0 = std::max(0, std::min(y0, m_img.height-1));
-//     x1 = std::max(0, std::min(x1, m_img.width-1));
-//     y1 = std::max(0, std::min(y1, m_img.height-1));
-    
-//     int dx = abs(x1 - x0);
-//     int dy = abs(y1 - y0);
-//     int sx = x0 < x1 ? 1 : -1;
-//     int sy = y0 < y1 ? 1 : -1;
-//     int err = dx - dy;
-    
-//     while (true) {
-//         m_img.setPixel(x0, y0, color.r, color.g, color.b);
-//         if (x0 == x1 && y0 == y1) break;
-        
-//         int e2 = 2 * err;
-//         if (e2 > -dy) {
-//             err -= dy;
-//             x0 += sx;
-//         }
-//         if (e2 < dx) {
-//             err += dx;
-//             y0 += sy;
-//         }
-//     }
-// }
 void StbRenderer::drawLine(int x0, int y0, int x1, int y1, Color color, int thickness)
 {
     if (!m_isEnabled) return;
@@ -237,35 +182,6 @@ void StbRenderer::drawRect(int x0, int y0, int w, int h, Color color)
         for (int x = x0; x <= x0 + w; ++x)
             m_img.setPixel(x, y, color.r, color.g, color.b);
 }
-
-// void StbRenderer::drawArrow(int x0, int y0, int s, int direction, Color color)
-// {
-//     if (!m_isEnabled) return;
-//     switch (direction){
-//         case 0: // up
-//             drawLine(x0, y0 - s/2, x0, y0 + s/2);
-//             drawLine(x0, y0 - s/2, x0 + s/2/3, y0 - s/2/3);
-//             drawLine(x0, y0 - s/2, x0 - s/2/3, y0 - s/2/3);
-//         break;
-//         case 1: // right
-//             drawLine(x0 - s/2, y0, x0 + s/2, y0);
-//             drawLine(x0 + s/2, y0, x0 + s/2/3, y0 + s/2/3);
-//             drawLine(x0 + s/2, y0, x0 + s/2/3, y0 - s/2/3);
-//         break;
-//         case 2: // down
-//             drawLine(x0, y0 - s/2, x0, y0 + s/2);
-//             drawLine(x0, y0 + s/2, x0 + s/2/3, y0 + s/2/3);
-//             drawLine(x0, y0 + s/2, x0 - s/2/3, y0 + s/2/3);
-//         break;
-//         case 3: // left
-//             drawLine(x0 - s/2, y0, x0 + s/2, y0);
-//             drawLine(x0 - s/2, y0, x0 - s/2/3, y0 + s/2/3);
-//             drawLine(x0 - s/2, y0, x0 - s/2/3, y0 - s/2/3);
-//         break;
-//         default:
-//         break;
-//     }
-// }
 
 void StbRenderer::drawEmptyRect(int x0, int y0, int w, int h, Color color, int thickness)
 {
@@ -409,10 +325,6 @@ void StbRenderer::drawImageNEW(const ImageBuffer& imageBuffer, glm::vec2 pos)   
     }
 }
 
-// void StbRenderer::drawAnimatedSprite(const ImageBuffer& imageBuffer, int frameIndex, glm::vec2 pos, glm::vec2 srcPos, glm::vec2 srcSize)
-// {
-// }
-
 void StbRenderer::drawSubImage(const ImageBuffer& imageBuffer, glm::uvec2 destPos, glm::uvec2 srcPos, glm::uvec2 srcSize)
 {
     if (!m_isEnabled) return;
@@ -441,101 +353,26 @@ void StbRenderer::savePNG(const std::string& filename)
     stbi_write_png(filename.c_str(), m_img.width, m_img.height, 3, m_img.pixels.data(), m_img.width * 3);
 }
 
-bool StbRenderer::loadFont(FONT::FontData& fontData)
-{
-    std::string path = "fonts/" + fontData.filename;
-    std::ifstream file(path, std::ios::binary);
-    if (!file)
-    {
-        std::cerr << "Error: Cannot open font file: " << path << "\n";
-        return false;
-    }
-
-    file.seekg(0, std::ios::end);
-    size_t size = file.tellg();
-    file.seekg(0);
-    fontData.fontBuffer.resize(size);
-    file.read((char *)fontData.fontBuffer.data(), size);
-
-    if (!stbtt_InitFont(&fontData.font, fontData.fontBuffer.data(), 0))
-    {
-        std::cerr << "Error: stbtt_InitFont failed\n";
-        return false;
-    }
-    return true;
-}
-
-void StbRenderer::drawText(const std::string& text, int posX, int posY, FONT::TextStyle textStyle, Color color)
-{
-    if (!m_isEnabled) return;
-    FONT::FontData& fontData = m_fontData[textStyle.fontName];  
-    float scale = stbtt_ScaleForMappingEmToPixels(&fontData.font, textStyle.size);
-
-    // Get font metrics
-    int ascent, descent, lineGap;
-    stbtt_GetFontVMetrics(&fontData.font, &ascent, &descent, &lineGap);
-    int baseline = (int)(ascent * scale);
-    // std::cout << "scale: " << scale
-    //           << " ascent: " << ascent
-    //           << " descent: " << descent
-    //           << " baseLine: " << baseline
-    //           << " lineGap: " << lineGap << std::endl;
-
-    if(textStyle.align == FONT::TextStyle::Align::CENTER) {
-        int textWidth = getTextWidth(text, textStyle);
-        posX -= textWidth / 2;
-    }
-
-    for (char c : text)
-    {
-        int width, height, xoff, yoff;
-        // TODO: We need some caching eg. create a character map with these bitmaps.
-        unsigned char *bitmap = stbtt_GetCodepointBitmap(&fontData.font, 0, scale, c, &width, &height, &xoff, &yoff);
-
-        //std::cout << "Codepoint: " << c << " width: " << width << " height: " << height << " xoff: " << xoff << " yoff: " << yoff;
-
-        for (int y = 0; y < height; ++y)
-        {
-            for (int x = 0; x < width; ++x)
-            {
-                uint8_t value = bitmap[y * width + x]; // 0..255
-                if (value == 0)
-                    continue;
-                m_img.blendPixel(
-                    x + posX + xoff,
-                    y + posY + yoff + baseline,
-                    color.r,
-                    color.g,
-                    color.b,
-                    value
-                );                
-            }
-        }
-
-        int advanceWidth, leftSideBearing;
-        stbtt_GetCodepointHMetrics(&fontData.font, c, &advanceWidth, &leftSideBearing);
-        // std::cout << " advanceWidth: " << (float)advanceWidth * scale
-        //           << " leftSideBearing: " << (float)leftSideBearing * scale << std::endl;
-        posX += advanceWidth * scale;
-
-        stbtt_FreeBitmap(bitmap, nullptr);
-    }
-}
-
 void StbRenderer::drawTextBdf(const std::string& text, glm::uvec2 pos, BDF::TextStyle textStyle)
 {
     if (!m_isEnabled) return;
+
+    int offsetX = 0;
+    if(textStyle.align == TextAlign::CENTER)
+    {
+        offsetX -= getTextWidth(text, textStyle) / 2;
+    }
 
     BDF::BdfEmitCtx ctx;
     ctx.img = &m_img;
     ctx.color = textStyle.color;
     ctx.baseY = static_cast<int>(pos.y);
-    int penX = static_cast<int>(pos.x);
+    int penX = static_cast<int>(pos.x) + offsetX;
     for (char c : text)
     {
         ctx.baseX = penX;
         uint8_t gw = bdfont_emit_glyph(
-            &textStyle.font,
+            textStyle.font,
             static_cast<uint16_t>(static_cast<uint8_t>(c)),
             BDF::bdf_on_stripe,
             BDF::bdf_on_emit,
@@ -544,28 +381,22 @@ void StbRenderer::drawTextBdf(const std::string& text, glm::uvec2 pos, BDF::Text
     }
 }
 
-int StbRenderer::getFontLineHeight(FONT::TextStyle textStyle)
+int StbRenderer::getFontLineHeight(BDF::TextStyle textStyle)
 {
-    FONT::FontData& fontData = m_fontData[textStyle.fontName];  
-
-    float scale = stbtt_ScaleForMappingEmToPixels(&fontData.font, textStyle.size);
-    int ascent, descent, lineGap;
-    stbtt_GetFontVMetrics(&fontData.font, &ascent, &descent, &lineGap);
-    int baseline = (int)(ascent * scale);
-    return baseline + 3; // '+3' is just a 'random' value for aesthetic purpose
+    return textStyle.lineHeight;
 }
 
-int StbRenderer::getTextWidth(const std::string& text, FONT::TextStyle textStyle)
+int StbRenderer::getTextWidth(const std::string& text, const BDF::TextStyle& textStyle)
 {
-    FONT::FontData& fontData = m_fontData[textStyle.fontName];  
-
-    float scale = stbtt_ScaleForMappingEmToPixels(&fontData.font, textStyle.size);
     int textWidth = 0;
     for (char c : text)
     {
-        int advanceWidth, leftSideBearing;
-        stbtt_GetCodepointHMetrics(&fontData.font, c, &advanceWidth, &leftSideBearing);
-        textWidth += advanceWidth * scale;
+        // int advanceWidth, leftSideBearing;
+        int charWidth = 0;
+        const GlyphData* data = bdfont_find_glyph(textStyle.font, c);
+        if(data) 
+            charWidth = data->width;
+        textWidth += charWidth;
     }
 
     return textWidth;
@@ -612,8 +443,11 @@ void StbRenderer::drawRectNEW(glm::vec2 pos, glm::vec2 size, DrawStyle drawStyle
     roundVec2(size);
     if (!m_isEnabled) return;
     glm::vec2 topLeft = pos;
-    if (drawStyle.anchorPoint == AnchorPoint::CENTER) {
-        topLeft = pos - size * 0.5f;
+    if (drawStyle.anchorPoint == AnchorPoint::CENTER_CENTER) {
+        topLeft = pos - size / 2.0f;
+    } else if (drawStyle.anchorPoint == AnchorPoint::CENTER_TOP) {
+        topLeft.x = pos.x - size.x / 2.0f;
+        topLeft.y = pos.y;
     }
 
     if (drawStyle.isFilled) {
@@ -647,10 +481,10 @@ void StbRenderer::drawPolygonNEW(std::vector<glm::vec2> pos, DrawStyle drawStyle
 void StbRenderer::setBoundingBox(glm::vec2 pos, glm::vec2 size, AnchorPoint anchorPoint, float opacity)
 {
     m_boundingBoxOpacity = opacity;
-    if (anchorPoint == AnchorPoint::TOP_LEFT) {
+    if (anchorPoint == AnchorPoint::LEFT_TOP) {
         m_boundingBox.first = pos;
         m_boundingBox.second = pos + size;
-    } else if (anchorPoint == AnchorPoint::CENTER) {
+    } else if (anchorPoint == AnchorPoint::CENTER_CENTER) {
         m_boundingBox.first = glm::vec2(pos.x - size.x / 2, pos.y - size.y / 2);
         m_boundingBox.second = glm::vec2(pos.x + size.x / 2, pos.y + size.y / 2);
     }
@@ -663,7 +497,7 @@ void StbRenderer::setBoundingBox(glm::vec2 pos, glm::vec2 size, AnchorPoint anch
     m_boundingBox.second += 1.0f;
 
     // debug: draw bounding box
-    // DrawStyle drawStyleBoundingBox = DrawStyle{COLOR::RED, false, 1, AnchorPoint::TOP_LEFT}; 
+    // DrawStyle drawStyleBoundingBox = DrawStyle{COLOR::RED, false, 1, AnchorPoint::LEFT_TOP}; 
     // drawRectNEW(m_boundingBox.first, m_boundingBox.second - m_boundingBox.first, drawStyleBoundingBox);
 }
 

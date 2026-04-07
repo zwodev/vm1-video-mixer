@@ -65,8 +65,22 @@ sources = [ 'main.cpp',
             'source/ILI9341Controller.cpp',
             'source/ili9341/DEV_Config.c',
             'source/ili9341/ILI9341.c',
-            'source/fonts/font-knxt.c',
-            'source/fonts/bdfont-support.c'
+
+            'source/fonts/bdfont-support.c',
+
+            'source/fonts/font-terminus_12n.c',
+            'source/fonts/font-terminus_14n.c',
+            'source/fonts/font-terminus_16n.c',
+            'source/fonts/font-terminus_18n.c',
+            'source/fonts/font-terminus_20n.c',
+            'source/fonts/font-terminus_22n.c',
+            'source/fonts/font-terminus_24n.c',
+            'source/fonts/font-terminus_28n.c',
+            'source/fonts/font-terminus_32n.c',
+
+            'source/fonts/font-terminus_16b.c',
+            'source/fonts/font-terminus_24b.c',
+            'source/fonts/font-terminus_28b.c'
           ]
 
 incdir = include_directories('source')

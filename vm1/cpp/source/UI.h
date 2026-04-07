@@ -45,42 +45,40 @@ public:
     UI(StbRenderer &stbRenderer, EventBus &eventBus);
     void NewFrame();
     void EndFrame();
+    
+    // Specialized Screen Items
+    void ShowPlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int& selectedVertex, PlanePreviewStyle style);
+    void ShowMediaPreview(const std::string& filename);
+    
+    // Overlays
     void StartOverlay(std::function<void()> overlay);
     void ShowOverlay();
     void StopOverlay();
-    void FocusNextElement();
-    void FocusPreviousElement();
-
-    void TextStyle(FONT::TextStyle textStyle);
-    void TextColor(Color color);
-    void pushTranslate(int x, int y);
-    void popTranslate();
-    int currentListSize();
-
-    void ShowMenuTitle(std::string menuTitle, Color color = COLOR::WHITE);
-    void ShowMediaSlotInfo(std::string menuInfo);
-    void ShowBankInfo(int bank);
     void ShowPopupMessage(std::string message);
     void ShowStringInputDialog(std::string title, int& cursorIdx, std::string& input);
-
+    
+    // obsolete
     // void DrawTitle(const std::string& label);
-    bool Text(const std::string &label);
-    void CenteredText(const std::string &label);
-    void PlainText(const std::string &label);
-
+    // void CenteredText(const std::string &label);
+    
+    // List
     void BeginList(int* focusedIdxPtr);
     void BeginListElement();
     void EndListElement();
     void EndList();
+    int CurrentListSize();
     
+    // Screens and Widgets
     void InfoScreen(int bank, int id, std::string filename);
     void ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts);
+    void ShowBankInfo(int bank);
     
+    // Generic UI Items
     void Image(const ImageBuffer& imageBuffer);
-    void Spacer(float value = 15.0f);
-    void HideElements();
-    void ShowElements();
     
+    bool Text(const std::string &label);
+    void PlainText(const std::string &label);
+    void MenuTitle(std::string menuTitle, TextAlign textAlign = TextAlign::LEFT, Color color = COLOR::WHITE);
 
     bool Action(const std::string& label);
     bool CheckBox(const std::string& label, bool checked);
@@ -88,22 +86,33 @@ public:
     bool SpinBoxInt(const std::string& label, int& value, int minValue, int maxValue, int step = 1);
     bool SpinBoxFloat(const std::string& label, float& value, float minValue, float maxValue, float step = 0.01f);
     bool SpinBoxVec2(const std::string& label, glm::vec2& vec, float step = 0.1f);
-    void PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int& selectedVertex, PlanePreviewStyle style);
-    void MediaPreview(const std::string& filename);
 
+    // Style and Layout
+    void TextStyle(BDF::TextStyle textStyle);
+    void TextColor(Color color);
+    void pushTranslate(int x, int y);
+    void popTranslate();
+    void Spacer(float value = 15.0f);
+    void NewLine();
+    void HideElements();
+    void ShowElements();
+    void SetElementLineHeight(int height);
+
+    // Navigation & Events
+    void FocusNextElement();
+    void FocusPreviousElement();
     bool isValueChangeEventTriggered(ValueChangeEvent::Type eventType, int id);
     bool isNavigationEventTriggered(NavigationEvent::Type eventType);
     bool isBankChangeEventTriggered(int& bankId);
     bool isMediaSlotEventTriggered(int mediaSlotId);
     bool isEditModeEventTriggered(int modeId);
-
-    void savePNG(const std::string& filename);
-    int getMenuTitleHeight() const;
     std::vector<int> getTriggeredMediaSlotIds();
     std::vector<int> getTriggeredEditButtons();
     
+    // Helpers
+    void savePNG(const std::string& filename);
     
-    private:
+private:
     void subscribeToEvents();
     
     std::vector<ValueChangeEvent> valueChangeEvents;
@@ -126,14 +135,15 @@ public:
     int m_currentElementHeight = 0;
     bool m_isHidden = false;
     
-    // int m_titlePaddingBottom = 10;
     int m_textPaddingBottom = 2;
     int m_screenPaddingTop = 2;
     int m_listPaddingLeft = 10;
-    int m_menuTitleHeight = 0;
-    int m_menuTitleWidth = 0;
+    int m_menuTitlePaddingTop = 4;
+    int m_elementPadding = 2;
+    int m_currentElementLineHeight = 0;
+    int m_horizontalMargin = 4;
     
-    FONT::TextStyle m_currentTextStyle = FONT::TEXTSTYLE::MENU_ITEM;
+    BDF::TextStyle m_currentTextStyle = BDF::TEXTSTYLE::MENU_ITEM;
     Color m_currentColor = COLOR::WHITE;
     
     std::function<void()> m_overlay;

@@ -97,7 +97,7 @@ private:
     void OutputMenu();
     void Mask();
     void Mapping();
-    void HdmiSelection();
+    // void HdmiSelection();
 
     // Network
     void NetworkMenu();
@@ -119,9 +119,10 @@ private:
     EventBus &m_eventBus;
     
     int m_id = 0;
-    int m_planeIdx = 0;
+    int m_outputPlaneId = 0;
     int m_selectedVertexId = 0;
-
+    std::string m_currentMediaSlotId = "";
+    int m_currentMediaSlotPlaneId = 0;
     //int m_effectIdx = 0;
     std::string m_effectName;
     int m_focusedIdx = 0;
@@ -130,6 +131,7 @@ private:
     SubMenuType m_currentSubMenuType = SMT_None;
     std::function<void()> m_currentMenuFunc;
     std::vector<MenuState> m_currentMenuPath;
+    
 
     bool m_launchPopup = false;
     std::string m_lastPopupMessage;

@@ -8,3 +8,6 @@ build
 rpi-image-gen
 *.mov
 ffmpeg_log.txt
+*.bdf
+*.ttf
+*.otf

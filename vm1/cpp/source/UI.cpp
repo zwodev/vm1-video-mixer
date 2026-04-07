@@ -127,9 +127,9 @@ void UI::NewFrame()
 {
     m_stbRenderer.clear();
     m_focusedIdxPtr = nullptr;
-    m_x = 0;
-    m_y = 0;
-    m_menuTitleHeight = m_stbRenderer.getFontLineHeight(FONT::TEXTSTYLE::MENU_TITLE);
+    // m_x = 0;
+    NewLine();
+    m_y = m_screenPaddingTop;
 }
 
 void UI::EndFrame()
@@ -183,7 +183,7 @@ void UI::FocusPreviousElement()
     }
 }
 
-void UI::TextStyle(FONT::TextStyle textStyle)
+void UI::TextStyle(BDF::TextStyle textStyle)
 {
     m_currentTextStyle = textStyle;
     m_lineHeight = m_stbRenderer.getFontLineHeight(m_currentTextStyle) + m_textPaddingBottom;
@@ -210,7 +210,7 @@ void UI::popTranslate()
     m_y = translate.y;
 }
 
-int UI::currentListSize() {
+int UI::CurrentListSize() {
     return m_listSize;
 }
 
@@ -287,39 +287,30 @@ void UI::Image(const ImageBuffer& imageBuffer)
     m_stbRenderer.drawSubImage(imageBuffer, glm::uvec2(0, 0), glm::uvec2(0, 0), glm::uvec2(imageBuffer.width, imageBuffer.height));
 }
 
-void UI::CenteredText(const std::string &label)
-{
-    // float fontSize = 16.0f;
-    float fontWidth = m_stbRenderer.getTextWidth(label, m_currentTextStyle);
-    float fontHeight = m_stbRenderer.getFontLineHeight(m_currentTextStyle);
-
-    int centerX = m_stbRenderer.width() / 2;
-    int centerY = m_stbRenderer.height() / 2;
-
-    m_stbRenderer.drawText(label, 
-                           centerX - fontWidth / 2, 
-                           centerY - fontHeight / 2, 
-                           m_currentTextStyle, 
-                           m_currentColor);
-}
-
 bool UI::Text(const std::string &label)
 {
     UI::BeginListElement();
     bool selected = (m_focusedIdxPtr && ((*m_focusedIdxPtr) == m_listSize));
     if(!m_isHidden){
         Color color = m_currentColor;
-        float textWidth = m_stbRenderer.getTextWidth(label, m_currentTextStyle);
-        if (selected) {
-                m_stbRenderer.drawRect(m_x, 
-                                    m_y - 1, 
-                                    // m_stbRenderer.width() - m_x, 
-                                    textWidth, 
-                                    m_lineHeight, 
-                                    color);
-                color = COLOR::BLACK;
+        int textWidth = m_stbRenderer.getTextWidth(label, m_currentTextStyle);
+
+        DrawStyle drawStyle;
+        if (m_currentTextStyle.align == TextAlign::CENTER) {
+            m_x = m_stbRenderer.width() / 2;
+            drawStyle.anchorPoint = AnchorPoint::CENTER_TOP;
         }
-        m_stbRenderer.drawText(label, m_x, m_y, m_currentTextStyle, color);
+        if (selected) {           
+            drawStyle.color = m_currentColor;
+            drawStyle.isFilled = true;
+            m_stbRenderer.drawRectNEW(glm::vec2(m_x, m_y - 1), glm::vec2(
+                    textWidth, 
+                    m_lineHeight), 
+                    drawStyle);
+            color = COLOR::BLACK;
+        }
+        m_currentTextStyle.color = color;
+        m_stbRenderer.drawTextBdf(label, glm::uvec2(m_x, m_y), m_currentTextStyle);
     }
     UI::EndListElement();
 
@@ -329,21 +320,24 @@ bool UI::Text(const std::string &label)
 void UI::PlainText(const std::string &label)
 {
     UI::BeginListElement();
-    // float fontSize = 16.0f;
-    // Color color = COLOR::WHITE;
-    // if (m_focusedIdxPtr) {
-    //     if ((*m_focusedIdxPtr) == m_listSize){            
-    //         m_stbRenderer.drawRect(m_x, m_y - 1, m_stbRenderer.width() - m_x, fontSize - 2, COLOR::WHITE);
-    //         color = COLOR::BLACK;
-    //     } 
-    // }
-    // m_stbRenderer.drawText(label, m_x, m_y, m_currentTextStyle, m_currentColor);
-    m_stbRenderer.drawTextBdf(label, glm::uvec2(m_x, m_y));
+    m_stbRenderer.drawTextBdf(label, glm::uvec2(m_x, m_y), m_currentTextStyle );
     UI::EndListElement();
 }
 
-void UI::Spacer(float value) {
+void UI::Spacer(float value)
+{
     m_y += value;
+}
+
+void UI::NewLine()
+{
+    if(m_translateStack.size() > 0)
+        m_x = m_translateStack.back().x;
+    else 
+        m_x = 1;
+
+    m_y += m_currentElementLineHeight;
+    m_currentElementLineHeight = 0;
 }
 
 void UI::HideElements()
@@ -356,38 +350,43 @@ void UI::ShowElements()
     m_isHidden = false;
 }
 
-
-void UI::ShowMenuTitle(std::string menuTitle, Color color)
+void UI::SetElementLineHeight(int height)
 {
-    m_x = 1;
-    m_y = m_screenPaddingTop;
-    m_menuTitleWidth = m_stbRenderer.getTextWidth(menuTitle, FONT::TEXTSTYLE::MENU_TITLE);
-    m_menuTitleWidth = std::max(m_menuTitleWidth, 54);
-    m_stbRenderer.drawRectNEW(glm::vec2(m_x, m_y), glm::vec2(m_menuTitleWidth + 10, m_menuTitleHeight), DrawStyle{COLOR::WHITE, false, 2, AnchorPoint::TOP_LEFT});
-    m_stbRenderer.drawText(menuTitle, 
-        // m_x + 5, 
-        (m_menuTitleWidth + 10) / 2, 
-        m_y - 1, 
-        FONT::TEXTSTYLE::MENU_TITLE, 
-        COLOR::WHITE);
+    if(height > m_currentElementHeight)
+        m_currentElementLineHeight = height;
 }
 
-void UI::ShowMediaSlotInfo(std::string menuInfo)
+void UI::MenuTitle(std::string label, TextAlign textAlign, Color color)
 {
-    m_y = m_screenPaddingTop;
-    m_x = 70;
-    int textWidth = m_stbRenderer.getTextWidth(menuInfo, FONT::TEXTSTYLE::MENU_TITLE);
+    int textWidth = m_stbRenderer.getTextWidth(label, BDF::TEXTSTYLE::MENU_TITLE);
+    int minBoxWidth = 48;
+    int boxWidth = std::max(textWidth + m_horizontalMargin * 2, minBoxWidth);
+    int boxHeight = m_stbRenderer.getFontLineHeight(BDF::TEXTSTYLE::MENU_TITLE) + 8;
+    int xBox = m_x;
+    int xText = m_x;
+    BDF::TextStyle textStyle = BDF::TEXTSTYLE::MENU_TITLE;
+    textStyle.align = textAlign;
+    AnchorPoint anchorPoint;
 
-    m_stbRenderer.drawRectNEW(glm::vec2(m_x, m_y), glm::vec2(textWidth + 10, m_menuTitleHeight), DrawStyle{COLOR::WHITE, false, 2, AnchorPoint::TOP_LEFT});
-    FONT::TextStyle textStyle = FONT::TEXTSTYLE::MENU_TITLE;
-    textStyle.align = FONT::TextStyle::Align::LEFT;
-    
-    m_stbRenderer.drawText(menuInfo, 
-                            m_x + 5, 
-                            m_y - 1, 
-                            textStyle, 
-                            COLOR::WHITE);
-    m_x = 1;
+    if(textAlign == TextAlign::CENTER)
+    {
+        anchorPoint = AnchorPoint::CENTER_TOP;
+        xBox += boxWidth / 2;
+        xText = xBox;
+    }
+    else
+    {
+        anchorPoint = AnchorPoint::LEFT_TOP;    // todo: TextAlign::RIGHT not needed right now
+        xBox += m_elementPadding;
+        xText = xBox + m_horizontalMargin;
+    }
+    m_stbRenderer.drawRectNEW(glm::vec2(xBox, m_y), glm::vec2(boxWidth, boxHeight), DrawStyle{COLOR::WHITE, false, 2, anchorPoint});
+    m_stbRenderer.drawTextBdf(label, 
+                            glm::uvec2(xText, m_y + m_menuTitlePaddingTop),
+                            textStyle);
+
+    m_x += boxWidth + m_elementPadding;
+    SetElementLineHeight(boxHeight);
 }
 
 void UI::InfoScreen(int bank, int id, std::string filename)
@@ -402,14 +401,14 @@ void UI::InfoScreen(int bank, int id, std::string filename)
 
 void UI::ShowPopupMessage(std::string message)
 {
-    int height = m_stbRenderer.height();
     m_stbRenderer.clear();
-
-    int fontSize = FONT::TEXTSTYLE::MENU_ITEM.size;
+    
+    int height = m_stbRenderer.height();
+    int fontHeight = m_stbRenderer.getFontLineHeight(BDF::TEXTSTYLE::MENU_ITEM);
     int x = 4;
-    int y = height/2 - fontSize/2;
+    int y = height/2 - fontHeight/2;
 
-    m_stbRenderer.drawText(message, x, y, FONT::TEXTSTYLE::MENU_ITEM, COLOR::WHITE);
+    m_stbRenderer.drawTextBdf(message, glm::vec2(x, y), BDF::TEXTSTYLE::MENU_ITEM);
 }
 
 void UI::ShowStringInputDialog(std::string title, int& cursorIdx, std::string& input)
@@ -440,8 +439,8 @@ void UI::ShowStringInputDialog(std::string title, int& cursorIdx, std::string& i
     input.at(cursorIdx) = currentChar;
     m_stbRenderer.drawRect(width/10, height/10, width - (width/10*2), height - (height/10*2), COLOR::BLACK);
     m_stbRenderer.drawEmptyRect(width/10, height/10, width - (width/10*2), height - (height/10*2), COLOR::WHITE);
-    m_stbRenderer.drawText(title, width/10+10, height/10+10, FONT::TEXTSTYLE::MENU_ITEM, COLOR::WHITE);
-    m_stbRenderer.drawText(input, width/10+10, height/10+70, FONT::TEXTSTYLE::MENU_ITEM, COLOR::WHITE);
+    m_stbRenderer.drawTextBdf(title, glm::vec2(width/10+10, height/10+10), BDF::TEXTSTYLE::MENU_ITEM);
+    m_stbRenderer.drawTextBdf(input, glm::vec2(width/10+10, height/10+70), BDF::TEXTSTYLE::MENU_ITEM);
 }
 
 void UI::ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts)
@@ -460,13 +459,13 @@ void UI::ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts)
 
         if (buttonTexts[i].second == COLOR::BLACK) {
             m_stbRenderer.drawRect(x, y, quadSize, quadSize, Color(30, 30, 30));
-            m_stbRenderer.drawText(std::string(1, static_cast<char>(buttonTexts[i].first)), x + 4, y + 3, FONT::TEXTSTYLE::MENU_ITEM, Color(120, 120, 120));
+            m_stbRenderer.drawTextBdf(std::string(1, static_cast<char>(buttonTexts[i].first)), glm::vec2(x + 4, y + 3), BDF::TEXTSTYLE::MENU_ITEM);
         }
         else {
             m_stbRenderer.drawRect(x, y, quadSize, quadSize, buttonTexts[i].second);
-            m_stbRenderer.drawText(std::string(1, static_cast<char>(buttonTexts[i].first)), x + 4, y + 3, FONT::TEXTSTYLE::MENU_ITEM, COLOR::WHITE);
+            m_stbRenderer.drawTextBdf(std::string(1, static_cast<char>(buttonTexts[i].first)), glm::vec2(x + 4, y + 3), BDF::TEXTSTYLE::MENU_ITEM);
             // m_stbRenderer.drawEmptyRect(x, y, quadSize, quadSize, Color(30, 30, 30));
-            m_stbRenderer.drawRectNEW(glm::vec2(x, y), glm::vec2(quadSize, quadSize), DrawStyle{Color(30, 30, 30), false, 2, AnchorPoint::TOP_LEFT});
+            m_stbRenderer.drawRectNEW(glm::vec2(x, y), glm::vec2(quadSize, quadSize), DrawStyle{Color(30, 30, 30), false, 2, AnchorPoint::LEFT_TOP});
         }
     }
 }
@@ -486,11 +485,11 @@ void UI::ShowBankInfo(int bank)
         int y = height/2 - quadSize / 2;
         if(bank == int(i)) {
             // m_stbRenderer.drawRect(x, y, quadSize, quadSize, COLOR::WHITE);
-            m_stbRenderer.drawText(std::string(1, static_cast<char>(i + 65)), x + 4, y + 3, FONT::TEXTSTYLE::MENU_ITEM, COLOR::BLACK);
+            m_stbRenderer.drawTextBdf(std::string(1, static_cast<char>(i + 65)),  glm::vec2(x + 4, y + 3), BDF::TEXTSTYLE::MENU_ITEM);
         } else {
             // m_stbRenderer.drawEmptyRect(x, y, quadSize, quadSize, COLOR::WHITE);
-            m_stbRenderer.drawRectNEW(glm::vec2(x, y), glm::vec2(quadSize, quadSize), DrawStyle{COLOR::WHITE, false, 1, AnchorPoint::TOP_LEFT});
-            m_stbRenderer.drawText(std::string(1, static_cast<char>(i + 65)), x + 4, y + 3, FONT::TEXTSTYLE::MENU_ITEM, COLOR::WHITE);
+            m_stbRenderer.drawRectNEW(glm::vec2(x, y), glm::vec2(quadSize, quadSize), DrawStyle{COLOR::WHITE, false, 1, AnchorPoint::LEFT_TOP});
+            m_stbRenderer.drawTextBdf(std::string(1, static_cast<char>(i + 65)),  glm::vec2(x + 4, y + 3), BDF::TEXTSTYLE::MENU_ITEM);
         }
     }
 }
@@ -502,7 +501,7 @@ bool UI::Action(const std::string& label)
                       isNavigationEventTriggered(NavigationEvent::Type::NavigationRight);
     bool focused = ((*m_focusedIdxPtr) == m_listSize);
 
-    Text(label + " ->");
+    Text(label);
     return (focused && keyPressed);
 }
 
@@ -530,12 +529,12 @@ bool UI::CheckBox(const std::string& label, bool checked)
         m_stbRenderer.drawRect(m_x, m_y + 2, 7, 7, COLOR::WHITE);
     }
     else {
-        // m_stbRenderer.drawEmptyRect(m_x, m_y + 2, 7, 7, COLOR::WHITE);
-        m_stbRenderer.drawRectNEW(glm::vec2(m_x, m_y + 2), glm::vec2(7, 7), DrawStyle{COLOR::WHITE, false, 1, AnchorPoint::TOP_LEFT});
+        m_stbRenderer.drawRectNEW(glm::vec2(m_x, m_y + 2), glm::vec2(7, 7), DrawStyle{COLOR::WHITE, false, 1, AnchorPoint::LEFT_TOP});
     }
-    m_x = 10;
+    m_x += m_listPaddingLeft;
     Text(label);
-    m_x = 0;
+    m_x -= m_listPaddingLeft;
+
     return checked != oldChecked;
 }
 
@@ -556,9 +555,9 @@ bool UI::RadioButton(const std::string& label, bool active)
     }
 
     if(active) m_stbRenderer.drawRect(m_x, m_y + 2, 7, 7, COLOR::WHITE);
-    m_x = m_listPaddingLeft;
+    m_x += m_listPaddingLeft;
     Text(label);
-    m_x = 0;
+    m_x -= m_listPaddingLeft;
 
     return wasTriggered;
 }
@@ -663,7 +662,7 @@ bool UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
     return hasChanged;
 }
 
-void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int& selectedVertex, PlanePreviewStyle style)
+void UI::ShowPlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int& selectedVertex, PlanePreviewStyle style)
 {
     float rectWidth;
     float rectHeight;
@@ -672,24 +671,12 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int
     float rectCenterX[2];
     float aspectRatio = 16.0/9.0f;                         // todo: get aspect ratio from screen(s)
     int polygonThickness = 2;
-    
-
-    // for(int i = 0; i < planes.size(); i++)
-    // {
-    //     printf("plane[%d]", i);
-    //     for(int j = 0; j < planes[i].coords.size(); j++)
-    //     {
-    //         printf(" v[%d]", j);
-    //         printf("x:%f y:%f", planes[i].coords[j].x, planes[i].coords[j].y);
-    //     }
-    //     printf("\n");
-    // }
-    // printf("===\n");
 
     if (style == PLANE_PREVIEW_SMALL) 
     {
         m_y = m_screenPaddingTop;
-        rectHeight = m_menuTitleHeight;
+        int boxHeight =  m_stbRenderer.getFontLineHeight(BDF::TEXTSTYLE::MENU_TITLE) + 8;
+        rectHeight = boxHeight;
         rectWidth = float(rectHeight) * aspectRatio;
         float spacing = 7.0f;
         float paddingRight = 15.0f;
@@ -743,7 +730,7 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int
     }
 
     // draw screens outlines
-    DrawStyle drawStyle = DrawStyle{COLOR::WHITE, false, 1, AnchorPoint::CENTER}; 
+    DrawStyle drawStyle = DrawStyle{COLOR::WHITE, false, 1, AnchorPoint::CENTER_CENTER}; 
     // if (style == PLANE_PREVIEW_SMALL) 
     // {
     //     drawStyle.strokeWidth = 2;
@@ -765,8 +752,8 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int
                 if (i != selectedPlane) {
                     Color color = (i == selectedPlane) ? colors[i] : COLOR::GREY;
                     opacity = style == PLANE_PREVIEW_VERTICES ? 0.3f : 0.0f;
-                    m_stbRenderer.setBoundingBox(glm::vec2(rectCenterX[p.hdmiId], centerY), glm::vec2(rectWidth, rectHeight), AnchorPoint::CENTER, opacity);
-                    m_stbRenderer.drawPolygonNEW(p.vertices, DrawStyle{color, false, polygonThickness, AnchorPoint::TOP_LEFT});
+                    m_stbRenderer.setBoundingBox(glm::vec2(rectCenterX[p.hdmiId], centerY), glm::vec2(rectWidth, rectHeight), AnchorPoint::CENTER_CENTER, opacity);
+                    m_stbRenderer.drawPolygonNEW(p.vertices, DrawStyle{color, false, polygonThickness, AnchorPoint::LEFT_TOP});
                 }
                 i++;
             }
@@ -777,8 +764,8 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int
     Color color = colors[selectedPlane];
     if(p.vertices.size() >= 4)
     {
-        m_stbRenderer.setBoundingBox(glm::vec2(rectCenterX[p.hdmiId], centerY), glm::vec2(rectWidth, rectHeight), AnchorPoint::CENTER, opacity);
-        m_stbRenderer.drawPolygonNEW(p.vertices, DrawStyle{color, false, polygonThickness, AnchorPoint::TOP_LEFT});
+        m_stbRenderer.setBoundingBox(glm::vec2(rectCenterX[p.hdmiId], centerY), glm::vec2(rectWidth, rectHeight), AnchorPoint::CENTER_CENTER, opacity);
+        m_stbRenderer.drawPolygonNEW(p.vertices, DrawStyle{color, false, polygonThickness, AnchorPoint::LEFT_TOP});
     }
     m_stbRenderer.resetBoundingBox();
 
@@ -826,14 +813,16 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int
     if (style == PLANE_PREVIEW_SMALL) 
     {
         // draw only currently selected plane index between the two rectangles
-        Color color = colors[selectedPlane];
-        FONT::TextStyle textStyle = FONT::TEXTSTYLE::MENU_ITEM;
-        textStyle.size = 24.0f;
-        m_stbRenderer.drawText(std::to_string(selectedPlane + 1), 
-                                centerX - textStyle.size / 4, 
-                                centerY - textStyle.size / 2, 
-                                textStyle,
-                                color);
+        
+        BDF::TextStyle textStyle = BDF::TEXTSTYLE::MENU_ITEM;
+        uint textHeight = m_stbRenderer.getFontLineHeight(textStyle);
+        uint textWidth = m_stbRenderer.getTextWidth(std::to_string(selectedPlane + 1), textStyle);
+        textStyle.color = colors[selectedPlane];
+        // todo: use icons instead of text numbers?
+        m_stbRenderer.drawTextBdf(std::to_string(selectedPlane + 1), 
+                                glm::vec2(centerX - textWidth / 4, 
+                                          centerY - textHeight / 2), 
+                                textStyle);
     }
     else if (style == PLANE_PREVIEW_LARGE || style == PLANE_PREVIEW_VERTICES) 
     {
@@ -891,14 +880,14 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int
         // draw plane indices in the center of the polygons
         for(const auto& pos : textPositions) 
         {        
-            FONT::TextStyle textStyle = FONT::TEXTSTYLE::MENU_ITEM;
-            textStyle.size = 24.0f;
-            Color color = pos.first == selectedPlane ? colors[pos.first] : COLOR::GREY;
-            m_stbRenderer.drawText(std::to_string(pos.first + 1), 
-                                    pos.second.x, 
-                                    pos.second.y - textStyle.size / 1.75f, 
-                                    textStyle, 
-                                    color);
+            BDF::TextStyle textStyle = BDF::TEXTSTYLE::MENU_ITEM;
+            uint textHeight = m_stbRenderer.getFontLineHeight(BDF::TEXTSTYLE::MENU_ITEM);
+            // uint textWidth = m_stbRenderer.getTextWidth(std::to_string(selectedPlane + 1), BDF::TEXTSTYLE::MENU_ITEM);
+            textStyle.color = pos.first == selectedPlane ? colors[pos.first] : COLOR::GREY;
+            m_stbRenderer.drawTextBdf(std::to_string(pos.first + 1), 
+                                    glm::vec2(pos.second.x, 
+                                    pos.second.y - textHeight / 1.75f), 
+                                    textStyle);
         }
     }
 
@@ -924,14 +913,15 @@ void UI::PlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int
         int i = p.vertices.size() - 1 - selectedVertex; // (vertices are in reverse order)
         m_stbRenderer.drawImageNEW(m_gizmoImageBuffer, p.vertices[i] - glm::vec2(9.0,9.0));
     }
+    SetElementLineHeight(rectHeight);
 }
 
-void UI::MediaPreview(const std::string& filename)
+void UI::ShowMediaPreview(const std::string& filename)
 {
     if(m_previewMediaFileNameOld != filename)
     {
         m_mediaPreviewImageBuffer = ImageBuffer(filename);
-        printf("New MediaPreview: %s\n", filename.c_str());
+        // printf("New MediaPreview: %s\n", filename.c_str());
         m_previewMediaFileNameOld = filename;
         m_mediaPreviewFrameIndex = 0;
     }
@@ -953,9 +943,4 @@ void UI::MediaPreview(const std::string& filename)
 
 void UI::savePNG(const std::string& filename){
     m_stbRenderer.savePNG(filename);
-}
-
-int UI::getMenuTitleHeight() const
-{
-    return m_menuTitleHeight;
 }

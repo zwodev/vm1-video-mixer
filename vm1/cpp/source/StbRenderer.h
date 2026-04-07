@@ -21,10 +21,20 @@
 
 #include "stb/stb_image.h"
 #include "stb/stb_image_write.h"
-#include "stb/stb_truetype.h"
 
 #include "fonts/bdfont-support.h"
-#include "fonts/font-knxt.h"
+#include "fonts/font-terminus_12n.h" // menu item monospaced 
+#include "fonts/font-terminus_14n.h"
+#include "fonts/font-terminus_16n.h" 
+#include "fonts/font-terminus_16b.h"
+#include "fonts/font-terminus_18n.h" // menu item
+#include "fonts/font-terminus_20n.h"
+#include "fonts/font-terminus_22n.h" 
+#include "fonts/font-terminus_24n.h"
+#include "fonts/font-terminus_24b.h" // menu item 
+#include "fonts/font-terminus_28n.h"
+#include "fonts/font-terminus_28b.h"
+#include "fonts/font-terminus_32n.h" // root menu item
 
 #include "ImageBuffer.h"
 
@@ -78,52 +88,32 @@ namespace COLOR
     static Color PLANE_3 = {138, 105, 212};
 };
 
-enum AnchorPoint {
-    TOP_LEFT,
-    CENTER
+enum class AnchorPoint {    
+    LEFT_TOP,           // X_Y
+    CENTER_TOP,
+    // RIGHT_TOP,
+
+    // LEFT_CENTER,
+    CENTER_CENTER //,
+    // RIGHT_CENTER,
+
+    // LEFT_BOTTOM,
+    // CENTER_BOTTOM,
+    // RIGHT_BOTTOM
 };
+
+enum class TextAlign {
+    LEFT,
+    CENTER //,
+    // RIGHT
+};
+
 struct DrawStyle
 {
     Color color = COLOR::WHITE;
     bool isFilled = false;
     int strokeWidth = 1;
-    AnchorPoint anchorPoint = TOP_LEFT;
-};
-
-
-namespace FONT  
-{
-    struct FontDataTTF {
-        std::vector<unsigned char> fontBuffer;
-        stbtt_fontinfo font;
-        std::string filename;
-        // stbtt_bakedchar cdata[96];            // not needed at the moment,
-        // unsigned char fontBitmap[512 * 512];  // but maybe we chache the font later...
-    };
-
-    struct TextStyle {
-        enum Align {
-            LEFT,
-            CENTER
-        };
-
-        std::string fontName;
-        float size;
-        Align align = Align::LEFT;
-    };
-
-    namespace TEXTSTYLE
-    {
-        static TextStyle MENU_TITLE = {"CreatoDisplay-Regular.otf", 28.0f, TextStyle::Align::CENTER};
-        // static TextStyle ROOT_MENU_ITEM = {"CreatoDisplay-Regular.otf", 20.0f};
-        static TextStyle ROOT_MENU_ITEM = {"Mecha.ttf", 32.0f};
-        // static TextStyle MENU_ITEM = {"CreatoDisplay-Regular.otf", 16.0f};
-        // static TextStyle MENU_ITEM = {"vhs-gothic.ttf", 16.0f};
-        // static TextStyle MENU_ITEM_MONOSPACED = {"ProggyClean.ttf", 16.0f};
-        // static TextStyle MENU_TITLE = {"Mecha_Bold.ttf", 32.0f, TextStyle::Align::CENTER};
-        static TextStyle MENU_ITEM = {"Mecha.ttf", 32.0f};
-        static TextStyle MENU_ITEM_MONOSPACED = {"Mecha.ttf", 16.0f};
-    };
+    AnchorPoint anchorPoint = AnchorPoint::LEFT_TOP;
 };
 
 namespace BDF {
@@ -138,21 +128,19 @@ namespace BDF {
     extern "C" void bdf_on_emit(uint8_t x, uint8_t bits, void* userdata);
 
     struct TextStyle {
-        enum Align {
-            LEFT,
-            CENTER
-        };
-        const ::FontData& font;
+        const ::FontData* font;
+        TextAlign align = TextAlign::LEFT;
         Color color = COLOR::WHITE;
-        Align align = Align::LEFT;
+        int lineHeight = 16;
+
     };
 
     namespace TEXTSTYLE
     {
-        static TextStyle MENU_TITLE = {font_knxt, TextStyle::Align::CENTER};
-        static TextStyle ROOT_MENU_ITEM = {font_knxt};
-        static TextStyle MENU_ITEM = {font_knxt};
-        static TextStyle MENU_ITEM_MONOSPACED = {font_knxt};
+        static TextStyle MENU_TITLE =           { .font = &font_terminus_24b, .align = TextAlign::CENTER, .lineHeight = 16 };
+        static TextStyle ROOT_MENU_ITEM =       { .font = &font_terminus_32n, .align = TextAlign::CENTER, .lineHeight = 20 };
+        static TextStyle MENU_ITEM =            { .font = &font_terminus_18n,                             .lineHeight = 14 };
+        static TextStyle MENU_ITEM_MONOSPACED = { .font = &font_terminus_12n,                             .lineHeight = 11 };
     };    
 } 
 
@@ -167,20 +155,10 @@ private:
     std::pair<glm::vec2, glm::vec2> m_boundingBox;   // two points: top left, bottom right
     float m_boundingBoxOpacity;
 
-    const std::vector<std::string> m_fontFilenames = {
-        "ProggyClean.ttf", 
-        "CreatoDisplay-Regular.otf",
-        "Mecha.ttf",
-        "Mecha_Bold.ttf",
-        "vhs-gothic.ttf"
-    };
-    std::unordered_map<std::string, FONT::FontDataTTF> m_fontData; // filename, FontData
-
     void queueCurrentImage();
 
 public:
     StbRenderer();  // call init() after use
-    // StbRenderer(int width, int height);
     ~StbRenderer();
     
     void init(int width, int height);
@@ -195,21 +173,19 @@ public:
     void update();
     Image popImage();
 
-    // 
+    // image handling
     void savePNG(const std::string& filename);
     void drawImage(const ImageBuffer& imageBuffer, int posX = 0, int posY = 0);
     void drawImageNEW(const ImageBuffer& imageBuffer, glm::vec2 pos);
-    // void drawAnimatedSprite(const ImageBuffer& imageBuffer, int frameIndex, glm::vec2 pos, glm::vec2 srcPos, glm::vec2 srcSize);
     void drawSubImage(const ImageBuffer& imageBuffer, glm::uvec2 destPos, glm::uvec2 srcPos, glm::uvec2 srcSize);
 
-    
-    // basic shapes:
+    // basic shapes, old->delete:
     void drawLine(int x0, int y0, int x1, int y1, Color color = COLOR::WHITE, int thickness = 1);
     void drawRect(int x0, int y0, int w, int h, Color color = COLOR::WHITE);
     void drawEmptyRect(int x0, int y0, int w, int h, Color color = COLOR::WHITE, int thickness = 1);
     void drawEmptyCenteredRect(int x0, int y0, int w, int h, Color color = COLOR::WHITE, float thickness = 1.0f);
-    // void drawPolygon(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3, Color c = COLOR::WHITE);
     void drawEmptyPolygon(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3, Color c = COLOR::WHITE, float thickness = 1.0f);
+    // void drawPolygon(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3, Color c = COLOR::WHITE);
     // void drawFilledTriangle(int x0, int y0, int x1, int y1, int x2, int y2,Color c = COLOR::WHITE);
     // void drawArrow(int x0, int y0, int size, int direction, Color color = COLOR::WHITE);
     
@@ -228,9 +204,7 @@ public:
     void roundVec2(glm::vec2& pos);
 
     // font functions:
-    bool loadFont(FONT::FontDataTTF& fontData);
-    void drawText(const std::string& text, int posX, int posY, FONT::TextStyle textStyle, Color color = COLOR::WHITE);
-    void drawTextBdf(const std::string& text, glm::uvec2 pos, BDF::TextStyle textStyle);
-    int getFontLineHeight(FONT::TextStyle textStyle);
-    int getTextWidth(const std::string& text, FONT::TextStyle textStyle);
+    void drawTextBdf(const std::string& text, glm::uvec2 pos,BDF::TextStyle textStyle);
+    int getFontLineHeight(BDF::TextStyle textStyle);
+    int getTextWidth(const std::string& text, const BDF::TextStyle& textStyle);
 };
