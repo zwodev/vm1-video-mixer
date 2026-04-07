@@ -2,6 +2,8 @@
 vm1/videos
 imgui.ini
 vm1-registry.json
+ffmpeg_log.txt
 build
 rpi-image-gen
 *.mov
+
