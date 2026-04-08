@@ -257,7 +257,10 @@ void MenuSystem::handlePlaneSwitching()
 }
 
 void MenuSystem::goUpHierachy() {
-    if (!m_currentMenuPath.empty()) {
+    if (m_currentMenuType == MT_SourceMenu && !m_currentVideoFilePath.empty()) {
+        m_currentVideoFilePath.pop_back();
+    }
+    else if (!m_currentMenuPath.empty()) {
         MenuState menuState = m_currentMenuPath.back();
         m_focusedIdx = menuState.fIdx;
         m_currentMenuFunc = menuState.func;
@@ -424,7 +427,14 @@ void MenuSystem::FileSelection()
         *config = *currentConfig;
     } 
 
-    std::vector<std::string>& files = m_registry.mediaPool().getVideoFiles();
+    //std::vector<std::string>& files = m_registry.mediaPool().getVideoFiles();
+    std::string videoPath;
+    for (const std::string& pathSection : m_currentVideoFilePath) {
+        videoPath += pathSection + "/";
+    }
+
+    std::vector<DirectoryEntry> entries = m_registry.mediaPool().getVideoDirectoryEntries(videoPath);
+    //printf("VideoPath: %s Entries: %ld\n", videoPath.c_str(), entries.size());
     bool changed = false;
     m_ui.BeginList(&m_focusedIdx);
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
@@ -440,23 +450,35 @@ void MenuSystem::FileSelection()
     m_ui.Spacer();
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM_MONOSPACED);
     int fileListStartIdx = m_ui.CurrentListSize();
-    for (size_t i = 0; i < files.size(); ++i) {
-        std::string fileName = files[i];
-        if (m_ui.RadioButton(fileName.c_str(), (config->fileName == fileName))) {
-            config->fileName = fileName;
-            changed = true;
+    for (size_t i = 0; i < entries.size(); ++i) {
+        const DirectoryEntry& entry = entries[i];
+        if (entry.isDir) {
+            if (m_ui.Action(entry.name)) {
+                m_currentVideoFilePath.push_back(entry.name);
+            }
         }
+        else {
+            std::string fileName = videoPath + entry.name;
+            if (m_ui.RadioButton(fileName.c_str(), (config->fileName == fileName))) {
+                config->fileName = fileName;
+                changed = true;
+            }
+        }
+
     }
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
     m_ui.EndList(); 
 
-
     if(m_focusedIdx >= fileListStartIdx)
     {
         int fileIndex = m_focusedIdx-fileListStartIdx;
-        if(int(files.size()) > fileIndex && fileIndex >= 0){
-            std::string previewFilename = m_registry.mediaPool().getVideoFilePath(files[fileIndex]) + ".preview";    
-            m_ui.ShowMediaPreview(previewFilename);
+        if(int(entries.size()) > fileIndex && fileIndex >= 0) {
+            const DirectoryEntry& entry = entries[fileIndex];
+            if (!entry.isDir) {
+                std::string videoFilePath = videoPath + entry.name;
+                std::string previewFilename = m_registry.mediaPool().getVideoFilePath(videoFilePath) + ".preview";    
+                m_ui.ShowMediaPreview(previewFilename);
+            }
         }
     }
 

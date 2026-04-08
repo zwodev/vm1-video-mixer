@@ -28,10 +28,11 @@ const ImageBuffer& MediaPool::getLogo()
     return m_logo;
 }
 
-std::vector<std::string>& MediaPool::getVideoFiles()
+std::vector<DirectoryEntry> MediaPool::getVideoDirectoryEntries(const std::string& path)
 {
-    std::lock_guard<std::mutex> lock(m_videoMutex);
-    return m_videoFiles;
+    return m_directoryCache.getEntries(getVideoFilePath(path));
+    //std::lock_guard<std::mutex> lock(m_videoMutex);
+    //return m_videoFiles;
 }
 
 std::string MediaPool::getVideoFilePath(const std::string& fileName)
@@ -39,9 +40,11 @@ std::string MediaPool::getVideoFilePath(const std::string& fileName)
     return m_videoFilePath + fileName;
 }
 
-void MediaPool::updateVideoFiles()
+void MediaPool::updateVideoFilePreviews()
 {
     std::vector<std::string> files;
+    std::vector<std::string> previewFiles;
+
     for (auto it = std::filesystem::recursive_directory_iterator(m_videoFilePath);
         it != std::filesystem::recursive_directory_iterator{}; ++it)
     {
@@ -54,11 +57,10 @@ void MediaPool::updateVideoFiles()
             }
         }
         if (entry.is_regular_file()) {
-            std::filesystem::path relativePath = std::filesystem::relative(entry.path(), m_videoFilePath);
-            std::string filePath = relativePath.string();
+            std::string filePath = entry.path().string();
             if (entry.path().extension() == ".preview")
             {
-                m_videoFilesPreviews.push_back(filePath);
+                previewFiles.push_back(filePath);
             }
             else
             {
@@ -67,28 +69,23 @@ void MediaPool::updateVideoFiles()
         }
     }
 
-    // sort the files by name
-    std::sort(files.begin(), files.end());
-
-    m_videoMutex.lock();
-    m_videoFiles = files;
-    m_videoMutex.unlock();
-}
-
-void MediaPool::updateVideoFilesPendingPreviews()
-{
-    m_mediaFilesPendingPreview.clear();
-
     // compare m_videoFilesPreviews with m_videoFiles
-    for(const auto& videoFile : m_videoFiles) 
+    std::vector<std::string> pendingPreviewFiles;
+    for(const auto& videoFile : files) 
     {
         std::string previewFileName = videoFile + ".preview";
-        if(std::find(m_videoFilesPreviews.begin(), m_videoFilesPreviews.end(), previewFileName) == m_videoFilesPreviews.end()) 
+        if(std::find(previewFiles.begin(), previewFiles.end(), previewFileName) == previewFiles.end()) 
         {
-            m_mediaFilesPendingPreview.push_back(videoFile);
+            pendingPreviewFiles.push_back(videoFile);
         }
     }
+
+    // finally create missing previews
+    for(const auto& file : pendingPreviewFiles){
+        generateVideoFilePreview(file);
+    }
 }
+
 
 std::vector<std::string>& MediaPool::getGenerativeShaderFiles()
 {
@@ -192,11 +189,7 @@ void MediaPool::runMediaDirectoryWatcher()
     {
         updateEffectShaderFiles();
         updateGenerativeShaderFiles();
-        updateVideoFiles();
-        updateVideoFilesPendingPreviews();
-        for(const auto& file : m_mediaFilesPendingPreview){
-            generateVideoFilePreview(file);
-        }
+        updateVideoFilePreviews();
         std::this_thread::sleep_for(std::chrono::seconds(10));
     }
 }

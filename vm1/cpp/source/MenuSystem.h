@@ -123,7 +123,7 @@ private:
     int m_selectedVertexId = 0;
     std::string m_currentMediaSlotId = "";
     int m_currentMediaSlotPlaneId = 0;
-    //int m_effectIdx = 0;
+
     std::string m_effectName;
     int m_focusedIdx = 0;
 
@@ -131,6 +131,7 @@ private:
     SubMenuType m_currentSubMenuType = SMT_None;
     std::function<void()> m_currentMenuFunc;
     std::vector<MenuState> m_currentMenuPath;
+    std::vector<std::string> m_currentVideoFilePath;
     
 
     bool m_launchPopup = false;

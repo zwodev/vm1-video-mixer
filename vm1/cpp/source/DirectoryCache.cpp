@@ -8,6 +8,8 @@
 
 #include "DirectoryCache.h"
 
+#include <algorithm>
+
 DirectoryCache::DirectoryCache(size_t maxEntries, std::chrono::seconds ttl)
     : m_maxEntries(maxEntries), m_ttl(ttl) 
 {
@@ -82,10 +84,14 @@ void DirectoryCache::startAsyncLoad(const std::string& path, std::shared_ptr<Dir
     std::string p = path;
     m_future = std::async(std::launch::async, [this, p, weakNode]() {
         std::vector<DirectoryEntry> entries;
+        std::vector<DirectoryEntry> fileEntries;
+        
         try {
             for (auto &it : fs::directory_iterator(p)) {
+                std::string fileName = it.path().filename().string();
+                if (fileName.ends_with(".preview")) continue;
                 DirectoryEntry entry;
-                entry.name = it.path().filename().string();
+                entry.name = fileName;
                 entry.isDir = it.is_directory();
                 if (!entry.isDir) {
                     std::error_code errorCode;
@@ -94,13 +100,20 @@ void DirectoryCache::startAsyncLoad(const std::string& path, std::shared_ptr<Dir
                     if (!errorCode) {
                         entry.mtime = std::chrono::duration_cast<std::chrono::seconds>(ftime.time_since_epoch()).count();
                     }
+                    fileEntries.push_back(std::move(entry));
                 }
-                entries.push_back(std::move(entry));
+                else {
+                    entries.push_back(std::move(entry));
+                }
+                
             }
         } catch (...) {
             // No entry if error occurs.
         }
         if (auto node = weakNode.lock()) {
+            std::sort(entries.begin(), entries.end(), [](const DirectoryEntry& a, const DirectoryEntry b){ return a.name > b.name; });
+            std::sort(fileEntries.begin(), fileEntries.end(), [](const DirectoryEntry& a, const DirectoryEntry b){ return a.name > b.name; });
+            std::move(fileEntries.begin(), fileEntries.end(), back_inserter(entries));
             node->entries = std::move(entries);
             node->loadedAt = Clock::now();
             node->loading.store(false);

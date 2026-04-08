@@ -12,7 +12,9 @@
 #include <string>
 #include <thread>
 #include <mutex>
+
 #include "ImageBuffer.h"
+#include "DirectoryCache.h"
 
 class MediaPool
 {
@@ -22,14 +24,14 @@ public:
 
     const ImageBuffer& getLogo();
 
-    std::vector<std::string>& getVideoFiles();
     std::string getVideoFilePath(const std::string& fileName);
+    std::vector<DirectoryEntry> getVideoDirectoryEntries(const std::string& path = "");
 
     std::string getGenerativeShaderFilePath(const std::string& fileName);
-    std::vector<std::string>& getGenerativeShaderFiles();
+    std::vector<std::string>& getGenerativeShaderFiles(/*const std::string& path = ""*/);
     
     std::string getEffectShaderFilePath(const std::string& fileName);
-    std::vector<std::string>& getEffectShaderFiles();
+    std::vector<std::string>& getEffectShaderFiles(/*const std::string& path = ""*/);
 
     void loadQrCodeImageBuffer();
     const ImageBuffer& getQrCodeImageBuffer();
@@ -40,8 +42,7 @@ private:
     void stopDirectoryWatcher();
     void updateGenerativeShaderFiles();
     void updateEffectShaderFiles();
-    void updateVideoFiles();
-    void updateVideoFilesPendingPreviews();
+    void updateVideoFilePreviews();
     void generateVideoFilePreview(std::string filename);
 
 private:
@@ -54,6 +55,8 @@ private:
     std::vector<std::string> m_mediaFilesPendingPreview;
     std::vector<std::string> m_generativeShaderFiles;
     std::vector<std::string> m_effectShaderFiles;
+
+    DirectoryCache m_directoryCache;
     ImageBuffer m_qrCodeImageBuffer;
     std::thread m_thread;
     std::mutex m_videoMutex;
