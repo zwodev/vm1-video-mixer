@@ -15,13 +15,15 @@
 #include "UI.h"
 
 struct MenuState {
-    MenuState(int fIdx, std::function<void()> func) {
+    MenuState(int fIdx, std::function<void()> func, std::string name = "") {
         this->fIdx = fIdx;
         this->func = func; 
+        this->name = name;
     }
 
     int fIdx = 0;
     std::function<void()> func;
+    std::string name;
 };
 
 class MenuSystem
@@ -41,6 +43,7 @@ public:
         MT_ButtonMatrixMenu
     };
 
+    // TODO: Why do we have this? It is never used at the moment.
     enum SubMenuType
     {
         SMT_None,
@@ -67,9 +70,11 @@ private:
     void handlePlaneSwitching();
     void goUpHierachy();
     void handleMenuHierachyNavigation();
+    std::string currentDirectoryPath();
 
-private:
+
     bool SubMenu(const std::string& label, std::function<void()> func, SubMenuType subMenuType = SMT_None);
+    bool SubDir(const std::string& label, std::function<void()> func, SubMenuType subMenuType = SMT_None);
     void ClearSlot();
 
     void StartupScreen();
@@ -129,11 +134,10 @@ private:
 
     MenuType m_currentMenuType = MT_StartupScreen;
     SubMenuType m_currentSubMenuType = SMT_None;
+    std::string m_currentMenuName;
     std::function<void()> m_currentMenuFunc;
     std::vector<MenuState> m_currentMenuPath;
-    std::vector<std::string> m_currentVideoFilePath;
     
-
     bool m_launchPopup = false;
     std::string m_lastPopupMessage;
 

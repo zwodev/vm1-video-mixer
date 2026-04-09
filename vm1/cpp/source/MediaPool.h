@@ -28,10 +28,10 @@ public:
     std::vector<DirectoryEntry> getVideoDirectoryEntries(const std::string& path = "");
 
     std::string getGenerativeShaderFilePath(const std::string& fileName);
-    std::vector<std::string>& getGenerativeShaderFiles(/*const std::string& path = ""*/);
+    std::vector<DirectoryEntry> getGenerativeShaderFiles(const std::string& path = "");
     
     std::string getEffectShaderFilePath(const std::string& fileName);
-    std::vector<std::string>& getEffectShaderFiles(/*const std::string& path = ""*/);
+    std::vector<DirectoryEntry> getEffectShaderFiles(const std::string& path = "");
 
     void loadQrCodeImageBuffer();
     const ImageBuffer& getQrCodeImageBuffer();
@@ -40,8 +40,6 @@ private:
     void runMediaDirectoryWatcher();
     void startDirectoryWatcher();
     void stopDirectoryWatcher();
-    void updateGenerativeShaderFiles();
-    void updateEffectShaderFiles();
     void updateVideoFilePreviews();
     void generateVideoFilePreview(std::string filename);
 
@@ -50,18 +48,10 @@ private:
     std::string m_videoFilePath = "../videos/";
     std::string m_generativeShaderPath = "../shaders/generative/";
     std::string m_effectShaderPath = "../shaders/effect/";
-    std::vector<std::string> m_videoFiles;
-    std::vector<std::string> m_videoFilesPreviews;
-    std::vector<std::string> m_mediaFilesPendingPreview;
-    std::vector<std::string> m_generativeShaderFiles;
-    std::vector<std::string> m_effectShaderFiles;
 
     DirectoryCache m_directoryCache;
     ImageBuffer m_qrCodeImageBuffer;
     std::thread m_thread;
-    std::mutex m_videoMutex;
-    std::mutex m_generativeShaderMutex;
-    std::mutex m_effectShaderMutex;
     bool m_isWatcherRunning;
 
 };
