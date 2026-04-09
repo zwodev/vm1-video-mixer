@@ -365,8 +365,8 @@ void MenuSystem::InfoMenu()
         m_ui.PlainText("In-Point:  ");
         m_ui.PlainText("Out-Point: ");
         m_ui.PlainText("Current Position:");
-        std::string previewFilename = m_registry.mediaPool().getVideoFilePath(videoInputConfig->fileName) + ".preview";
-        m_ui.ShowMediaPreview(previewFilename);
+        std::string previewFilename = videoInputConfig->fileName + ".preview";
+        MediaPreview(previewFilename);
     }
     else if (HdmiInputConfig*hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
     {
@@ -435,6 +435,18 @@ std::string MenuSystem::currentDirectoryPath()
     return path;
 }
 
+void MenuSystem::MediaPreview(const std::string& filename)
+{
+    if(m_previewMediaFileNameOld != filename)
+    {
+        m_mediaPreviewImageBuffer = m_registry.mediaPool().getPreview(filename);
+        m_previewMediaFileNameOld = filename;
+        m_mediaPreviewFrameIndex = 0;
+    }
+
+    m_ui.ShowAnimationFrame(m_mediaPreviewImageBuffer, m_mediaPreviewFrameIndex);
+}
+
 void MenuSystem::FileSelection()
 {
     m_ui.MenuTitle("MEDIA", TextAlign::CENTER);
@@ -475,9 +487,8 @@ void MenuSystem::FileSelection()
             SubDir(entry.name, [this]() { FileSelection(); });
         }
         else {
-            std::string fileName = videoPath + entry.name;
-            if (m_ui.RadioButton(fileName.c_str(), (config->fileName == fileName))) {
-                config->fileName = fileName;
+            if (m_ui.RadioButton(entry.name.c_str(), (config->fileName == entry.absolutePath))) {
+                config->fileName = entry.absolutePath;
                 changed = true;
             }
         }
@@ -491,9 +502,9 @@ void MenuSystem::FileSelection()
         if(int(entries.size()) > fileIndex && fileIndex >= 0) {
             const DirectoryEntry& entry = entries[fileIndex];
             if (!entry.isDir) {
-                std::string videoFilePath = videoPath + entry.name;
-                std::string previewFilename = m_registry.mediaPool().getVideoFilePath(videoFilePath) + ".preview";    
-                m_ui.ShowMediaPreview(previewFilename);
+                std::string videoFilePath = entry.absolutePath;
+                std::string previewFilename = videoFilePath + ".preview";    
+                MediaPreview(previewFilename);
             }
         }
     }
@@ -563,8 +574,8 @@ void MenuSystem::ShaderSelection()
         if (entry.isDir) {
             SubDir(entry.name, [this]() { ShaderSelection(); });
         }
-        else if (m_ui.RadioButton(entry.name.c_str(), (config->fileName == entry.name))) {
-            config->fileName = entry.name;
+        else if (m_ui.RadioButton(entry.name.c_str(), (config->fileName == entry.absolutePath))) {
+            config->fileName = entry.absolutePath;
             changed = true;
         }
     }
@@ -688,8 +699,8 @@ void MenuSystem::CustomEffectShaderSelection()
         if (entry.isDir) {
             SubDir(entry.name, [this]() { CustomEffectShaderSelection(); });
         }
-        else if (m_ui.RadioButton(entry.name.c_str(), (plane.extShaderFilename == entry.name))) {
-            plane.extShaderFilename = entry.name;
+        else if (m_ui.RadioButton(entry.name.c_str(), (plane.extShaderFilename == entry.absolutePath))) {
+            plane.extShaderFilename = entry.absolutePath;
             m_eventBus.publish(EffectShaderEvent(m_outputPlaneId));
         }
     }

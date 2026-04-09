@@ -916,29 +916,23 @@ void UI::ShowPlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane,
     SetElementLineHeight(rectHeight);
 }
 
-void UI::ShowMediaPreview(const std::string& filename)
+void UI::ShowAnimationFrame(const ImageBuffer& image, int& frameIndex)
 {
-    if(m_previewMediaFileNameOld != filename)
-    {
-        m_mediaPreviewImageBuffer = ImageBuffer(filename);
-        // printf("New MediaPreview: %s\n", filename.c_str());
-        m_previewMediaFileNameOld = filename;
-        m_mediaPreviewFrameIndex = 0;
-    }
+    if (!image.isValid) return;
 
     int tilesX = 10;
     int tilesY = 10;
-    int srcPosX = 160 * (m_mediaPreviewFrameIndex % tilesX);
-    int srcPosY = 90 * (m_mediaPreviewFrameIndex / tilesY);
+    int srcPosX = 160 * (frameIndex % tilesX);
+    int srcPosY = 90 * (frameIndex / tilesY);
     // printf("MediaPreview frame %d:  srcPosX: %d, srcPosY: %d\n",m_mediaPreviewFrameIndex, srcPosX, srcPosY);
 
-    m_stbRenderer.drawSubImage(m_mediaPreviewImageBuffer, 
+    m_stbRenderer.drawSubImage(image, 
                               glm::uvec2(160, 75),    // destPos
                               glm::uvec2(srcPosX, srcPosY),     // srcPos
                               glm::uvec2(160, 90)); // srcSize
     
-    m_mediaPreviewFrameIndex++;
-    m_mediaPreviewFrameIndex %= (tilesX*tilesY);
+    frameIndex++;
+    frameIndex %= (tilesX*tilesY);
 }
 
 void UI::savePNG(const std::string& filename){

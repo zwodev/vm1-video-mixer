@@ -15,6 +15,7 @@
 
 #include "ImageBuffer.h"
 #include "DirectoryCache.h"
+#include "PreviewCache.h"
 
 class MediaPool
 {
@@ -33,6 +34,8 @@ public:
     std::string getEffectShaderFilePath(const std::string& fileName);
     std::vector<DirectoryEntry> getEffectShaderFiles(const std::string& path = "");
 
+    ImageBuffer getPreview(const std::string& path);
+
     void loadQrCodeImageBuffer();
     const ImageBuffer& getQrCodeImageBuffer();
 
@@ -50,6 +53,8 @@ private:
     std::string m_effectShaderPath = "../shaders/effect/";
 
     DirectoryCache m_directoryCache;
+    PreviewCache m_previewCache;
+
     ImageBuffer m_qrCodeImageBuffer;
     std::thread m_thread;
     bool m_isWatcherRunning;

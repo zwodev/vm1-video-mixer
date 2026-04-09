@@ -42,7 +42,7 @@ void PlaybackOperator::subscribeToEvents()
         const std::string& extShaderFilename = m_registry.planes()[event.planeId].extShaderFilename;
         std::string completeFilePath;
         if (!extShaderFilename.empty()) {
-            completeFilePath = m_registry.mediaPool().getEffectShaderFilePath(extShaderFilename);
+            completeFilePath = extShaderFilename;
         }
         PlaneRenderer* planeRenderer = m_planeRenderers[event.planeId];
         planeRenderer->loadShader(completeFilePath);
@@ -216,7 +216,7 @@ void PlaybackOperator::showMedia(int mediaSlotId)
         return;
     }
 
-    std::string fileName;
+    //std::string fileName;
     std::string filePath;
 
     InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
@@ -239,8 +239,9 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     int playerId = -1;
     if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
     {
-        fileName = videoInputConfig->fileName;
-        filePath = m_registry.mediaPool().getVideoFilePath(fileName);
+        filePath = videoInputConfig->fileName;
+        //fileName = videoInputConfig->fileName;
+        //filePath = fileName;
 
         if (!getFreeVideoPlayerId(playerId, planeId)) return;
         AudioStream* audioStream = m_audioStreams[playerId];
@@ -301,8 +302,8 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     else if (ShaderInputConfig *shaderInputConfig = dynamic_cast<ShaderInputConfig *>(inputConfig))
     {
         if (!getFreeShaderPlayerId(playerId, planeId)) return;
-        fileName = shaderInputConfig->fileName;
-        filePath = m_registry.mediaPool().getGenerativeShaderFilePath(fileName);
+        filePath = shaderInputConfig->fileName;
+        //filePath = m_registry.mediaPool().getGenerativeShaderFilePath(fileName);
         if (!m_mediaPlayers[playerId]->openFile(filePath)) {
             printf("Could not open custom shader!!\n");
             m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::FileNotSupported, "File not supported"));

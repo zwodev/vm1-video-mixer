@@ -75,6 +75,7 @@ private:
 
     bool SubMenu(const std::string& label, std::function<void()> func, SubMenuType subMenuType = SMT_None);
     bool SubDir(const std::string& label, std::function<void()> func, SubMenuType subMenuType = SMT_None);
+    void MediaPreview(const std::string& filename);
     void ClearSlot();
 
     void StartupScreen();
@@ -132,11 +133,18 @@ private:
     std::string m_effectName;
     int m_focusedIdx = 0;
 
+    // TODO: Save all this in a MenuState instance and only use m_currentMenuPath
     MenuType m_currentMenuType = MT_StartupScreen;
     SubMenuType m_currentSubMenuType = SMT_None;
     std::string m_currentMenuName;
     std::function<void()> m_currentMenuFunc;
     std::vector<MenuState> m_currentMenuPath;
+
+    // TODO: Put all this into a media preview struct.
+    // Media Preview
+    ImageBuffer m_mediaPreviewImageBuffer;
+    std::string m_previewMediaFileNameOld;
+    int m_mediaPreviewFrameIndex = 0;
     
     bool m_launchPopup = false;
     std::string m_lastPopupMessage;

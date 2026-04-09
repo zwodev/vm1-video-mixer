@@ -48,7 +48,7 @@ public:
     
     // Specialized Screen Items
     void ShowPlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int& selectedVertex, PlanePreviewStyle style);
-    void ShowMediaPreview(const std::string& filename);
+    void ShowAnimationFrame(const ImageBuffer& image, int& frameIndex);
     
     // Overlays
     void StartOverlay(std::function<void()> overlay);

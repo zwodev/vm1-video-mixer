@@ -10,6 +10,7 @@
 
 #include <cstdlib>  // for free()
 #include <utility>  // for std::move
+#include <string.h>
 #include <string>
 #include "stb/stb_image.h"  // For stbi_load function declaration
 
@@ -85,6 +86,22 @@ struct ImageBuffer
             // Data comes from stbi_load which uses malloc, so use free()
             free(data);
         }
+    }
+
+    ImageBuffer copy() {
+        ImageBuffer imageBuffer;
+
+        if (isValid) {
+            imageBuffer.isValid = isValid;
+            imageBuffer.width = width;
+            imageBuffer.height = height;
+            imageBuffer.channels = channels;
+        }
+        size_t bufferSize = width * height * channels;
+        imageBuffer.data = (char*) malloc(bufferSize);
+        memcpy(imageBuffer.data, data, bufferSize);
+
+        return imageBuffer;
     }
 
     bool isValid = false;

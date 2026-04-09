@@ -17,43 +17,37 @@
 #include <atomic>
 #include <optional>
 
+#include "ImageBuffer.h"
+
 namespace fs = std::filesystem;
 using Clock = std::chrono::steady_clock;
 
-struct DirectoryEntry {
-    std::string name;
-    std::string absolutePath;
-    bool isDir = false;
-    uint64_t size = 0;
-    std::uint64_t mtime = 0;
-};
-
-struct DirectoryNode {
+struct PreviewNode {
     bool isValid = false;
-    std::vector<DirectoryEntry> entries;
+    ImageBuffer image;
     Clock::time_point loadedAt{};
     std::atomic<bool> loading{false};
+    //std::atomic<bool> locked{false};
     uint64_t version = 0;
 };
 
-class DirectoryCache {
+class PreviewCache {
 public:
-    DirectoryCache(size_t maxEntries = 256, std::chrono::seconds ttl = std::chrono::seconds(5));
+    PreviewCache(size_t maxEntries = 10, std::chrono::seconds ttl = std::chrono::seconds(5));
 
-    std::vector<DirectoryEntry> getEntries(const std::string& path);
-    void ensureLoaded(const std::string& path);
+    ImageBuffer getEntry(const std::string& path);
     void invalidate(const std::string& path);
-    bool isStale(const std::shared_ptr<DirectoryNode>& node) const;
+    bool isStale(const std::shared_ptr<PreviewNode>& node) const;
 
 private:
     void touchLRU(std::list<std::string>::iterator it);
     void enforceCapacity();
-    void startLoadIfNeeded(const std::string& path, std::shared_ptr<DirectoryNode> node);
-    void startAsyncLoad(const std::string& path, std::shared_ptr<DirectoryNode> node);
+    void startLoadIfNeeded(const std::string& path, std::shared_ptr<PreviewNode> node);
+    void startAsyncLoad(const std::string& path, std::shared_ptr<PreviewNode> node);
 
 private:
     struct MapEntry {
-        std::shared_ptr<DirectoryNode> node;
+        std::shared_ptr<PreviewNode> node;
         std::list<std::string>::iterator lruIt;
     };
 
