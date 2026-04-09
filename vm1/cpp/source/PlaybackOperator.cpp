@@ -390,18 +390,18 @@ void PlaybackOperator::update(float deltaTime)
         }
         else if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(inputConfig))
         {
-            ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(mediaPlayer);
-            // TODO: Move to registry, maybe "Animation System"
-            ShaderConfig& shaderConfig = shaderInputConfig->shaderConfig;
-            if (shaderConfig.params.contains("iTime")) {
-                auto& param = shaderConfig.params["iTime"];
-                if (std::holds_alternative<FloatParameter>(param)) {
-                    auto& intParam = std::get<FloatParameter>(param);
-                    intParam.value = m_registry.settings().currentTime;
-                }
+            if (ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(mediaPlayer)) {
+                // TODO: Move to registry, maybe "Animation System"
+                ShaderConfig& shaderConfig = shaderInputConfig->shaderConfig;
+                if (shaderConfig.params.contains("iTime")) {
+                    auto& param = shaderConfig.params["iTime"];
+                    if (std::holds_alternative<FloatParameter>(param)) {
+                        auto& intParam = std::get<FloatParameter>(param);
+                        intParam.value = m_registry.settings().currentTime;
+                    }
+                } 
+                shaderPlayer->setShaderUniforms(shaderConfig);
             } 
-
-            shaderPlayer->setShaderUniforms(shaderConfig);
         }
     }
 
