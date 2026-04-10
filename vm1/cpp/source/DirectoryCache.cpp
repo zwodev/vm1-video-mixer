@@ -112,8 +112,8 @@ void DirectoryCache::startAsyncLoad(const std::string& path, std::shared_ptr<Dir
             // No entry if error occurs.
         }
         if (auto node = weakNode.lock()) {
-            std::sort(entries.begin(), entries.end(), [](const DirectoryEntry& a, const DirectoryEntry b){ return a.name > b.name; });
-            std::sort(fileEntries.begin(), fileEntries.end(), [](const DirectoryEntry& a, const DirectoryEntry b){ return a.name > b.name; });
+            std::sort(entries.begin(), entries.end(), [](const DirectoryEntry& a, const DirectoryEntry b){ return a.name < b.name; });
+            std::sort(fileEntries.begin(), fileEntries.end(), [](const DirectoryEntry& a, const DirectoryEntry b){ return a.name < b.name; });
             std::move(fileEntries.begin(), fileEntries.end(), back_inserter(entries));
             node->entries = std::move(entries);
             node->loadedAt = Clock::now();

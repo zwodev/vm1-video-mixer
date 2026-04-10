@@ -143,6 +143,7 @@ void MenuSystem::handleMediaAndEditButtons()
     for (int mediaSlotId : m_ui.getTriggeredMediaSlotIds())
     {
         m_id = mediaSlotId;
+        // Shortcut (set selected Plane in FX/OUT for convenience)
         InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_id);
         if (inputConfig)
         {
@@ -438,9 +439,12 @@ void MenuSystem::MediaPreview(const std::string& filename)
 {
     if(m_previewMediaFileNameOld != filename)
     {
-        m_mediaPreviewImageBuffer = m_registry.mediaPool().getPreview(filename);
-        m_previewMediaFileNameOld = filename;
-        m_mediaPreviewFrameIndex = 0;
+        ImageBuffer imageBuffer = m_registry.mediaPool().getPreview(filename);
+        if (imageBuffer.isValid) {
+            m_mediaPreviewImageBuffer = m_registry.mediaPool().getPreview(filename);
+            m_previewMediaFileNameOld = filename;
+            m_mediaPreviewFrameIndex = 0;
+        }
     }
 
     m_ui.ShowAnimationFrame(m_mediaPreviewImageBuffer, m_mediaPreviewFrameIndex);
@@ -460,7 +464,7 @@ void MenuSystem::FileSelection()
     VideoInputConfig* currentConfig = m_registry.inputMappings().getVideoInputConfig(m_id, true);
     if (currentConfig) {
         *config = *currentConfig;
-    } 
+    }
 
     std::string videoPath = currentDirectoryPath();
     std::vector<DirectoryEntry> entries = m_registry.mediaPool().getVideoDirectoryEntries(videoPath);
