@@ -664,6 +664,8 @@ bool UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
 
 void UI::ShowPlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int& selectedVertex, PlanePreviewStyle style)
 {
+    if (selectedPlane < 0) return;
+    
     float rectWidth;
     float rectHeight;
     float centerX;

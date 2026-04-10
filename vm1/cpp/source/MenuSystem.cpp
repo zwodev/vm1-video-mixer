@@ -240,7 +240,7 @@ void MenuSystem::handlePlaneSwitching()
         m_currentMenuType == MT_ControlMenu ) 
     {
         // change output plane for the currently selected media slot
-        InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_id);
+        InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_id, true);
         if (inputConfig) {
             id = &inputConfig->planeId;
         } 
@@ -295,10 +295,9 @@ void MenuSystem::render()
     int id16 = (m_id % MEDIA_BUTTON_COUNT) + 1;
     char bank = m_id / MEDIA_BUTTON_COUNT + 65; // "+65" to get ASCII code
     m_currentMediaSlotId = std::string(1, bank) + std::to_string(id16);
-    InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_id);
-    if (inputConfig) {
-        m_currentMediaSlotPlaneId =  inputConfig->planeId;
-    }
+    InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_id, true);
+    if (inputConfig) m_currentMediaSlotPlaneId =  inputConfig->planeId;
+    else m_currentMediaSlotPlaneId = -1;   
 
     // Render dynamic content (if present)
     if (m_currentMenuFunc) {

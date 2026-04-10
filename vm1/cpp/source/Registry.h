@@ -136,18 +136,21 @@ public:
     {
         //m_idsToValue[id] = std::move(inputConfig);
         m_stagedSlots[id] = std::move(inputConfig);
+        if (m_activeSlots.contains(id)) {
+            m_stagedSlots[id]->planeId = m_activeSlots[id]->planeId;
+        }
     }
 
     void activateInputConfig(int id)
     {      
         if (m_stagedSlots.contains(id)) {
             //m_idsToValue[id] = std::move(inputConfig);
-            int planeId = 0;
-            if (m_activeSlots.contains(id)) {
-                planeId = m_activeSlots[id]->planeId;
-            }
+            // int planeId = 0;
+            // if (m_activeSlots.contains(id)) {
+            //     planeId = m_activeSlots[id]->planeId;
+            // }
             m_activeSlots[id] = std::move(m_stagedSlots[id]);
-            m_activeSlots[id]->planeId = planeId;
+            //m_activeSlots[id]->planeId = planeId;
             m_stagedSlots.erase(id);
         }
     }
@@ -156,21 +159,37 @@ public:
     {
         InputConfig *inputConfig = nullptr;
 
-        if (staged) {
-            if (m_stagedSlots.find(id) != m_stagedSlots.end())
-            {
-                inputConfig = m_stagedSlots[id].get();
-            }
+        if (staged && m_stagedSlots.find(id) != m_stagedSlots.end())
+        {
+            inputConfig = m_stagedSlots[id].get();
         }
-        else {
-            if (m_activeSlots.find(id) != m_activeSlots.end())
-            {
-                inputConfig = m_activeSlots[id].get();
-            }
+        else if (m_activeSlots.find(id) != m_activeSlots.end())
+        {
+            inputConfig = m_activeSlots[id].get();
         }
 
         return inputConfig;
     }
+
+    // InputConfig* getInputConfig(int id, bool staged = false)
+    // {
+    //     InputConfig *inputConfig = nullptr;
+
+    //     if (staged) {
+    //         if (m_stagedSlots.find(id) != m_stagedSlots.end())
+    //         {
+    //             inputConfig = m_stagedSlots[id].get();
+    //         }
+    //     }
+    //     else {
+    //         if (m_activeSlots.find(id) != m_activeSlots.end())
+    //         {
+    //             inputConfig = m_activeSlots[id].get();
+    //         }
+    //     }
+
+    //     return inputConfig;
+    // }
 
     VideoInputConfig* getVideoInputConfig(int id, bool staged = false)
     {
