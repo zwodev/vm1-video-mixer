@@ -441,7 +441,7 @@ void MenuSystem::MediaPreview(const std::string& filename)
     {
         ImageBuffer imageBuffer = m_registry.mediaPool().getPreview(filename);
         if (imageBuffer.isValid) {
-            m_mediaPreviewImageBuffer = m_registry.mediaPool().getPreview(filename);
+            m_mediaPreviewImageBuffer = std::move(imageBuffer);
             m_previewMediaFileNameOld = filename;
             m_mediaPreviewFrameIndex = 0;
         }
