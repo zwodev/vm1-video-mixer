@@ -13,7 +13,7 @@ PreviewCache::PreviewCache(size_t maxEntries, std::chrono::seconds ttl)
 {
 }
 
-ImageBuffer PreviewCache::getEntry(const std::string& path) {
+std::shared_ptr<PreviewNode> PreviewCache::getEntry(const std::string& path) {
     std::unique_lock lock(m_mutex);
     MapEntry& entry = m_map[path];
     if (!entry.node) {
@@ -24,9 +24,9 @@ ImageBuffer PreviewCache::getEntry(const std::string& path) {
         touchLRU(entry.lruIt);
     }
 
-    if (!entry.node->loading.load() || isStale(entry.node)) startAsyncLoad(path, entry.node);
+    if (!entry.node->loading.load() && isStale(entry.node)) startAsyncLoad(path, entry.node);
     
-    return entry.node->image.copy();
+    return entry.node;
 }
 
 // ImageBuffer* PreviewCache::lock(const std::string& path) {
@@ -90,6 +90,8 @@ void PreviewCache::startLoadIfNeeded(const std::string& path, std::shared_ptr<Pr
 }
 
 void PreviewCache::startAsyncLoad(const std::string& path, std::shared_ptr<PreviewNode> node) {
+    if (m_loading.load()) return;
+    m_loading.store(true);
     node->loading.store(true);
 
     // Load directory content in separate thread
@@ -106,5 +108,6 @@ void PreviewCache::startAsyncLoad(const std::string& path, std::shared_ptr<Previ
             node->loading.store(false);
             node->version++;
         }
+        m_loading.store(false);
     });
 }

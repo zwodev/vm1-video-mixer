@@ -104,7 +104,7 @@ std::vector<DirectoryEntry> MediaPool::getEffectShaderFiles(const std::string& p
     return m_directoryCache.getEntries(getEffectShaderFilePath(path));
 }
 
-ImageBuffer MediaPool::getPreview(const std::string& path)
+std::shared_ptr<PreviewNode> MediaPool::getPreview(const std::string& path)
 {
     return m_previewCache.getEntry(getVideoFilePath(path));
 }

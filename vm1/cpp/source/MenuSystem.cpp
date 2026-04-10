@@ -437,17 +437,19 @@ std::string MenuSystem::currentDirectoryPath()
 
 void MenuSystem::MediaPreview(const std::string& filename)
 {
+    std::shared_ptr<PreviewNode> previewNode = m_registry.mediaPool().getPreview(filename);
     if(m_previewMediaFileNameOld != filename)
     {
-        ImageBuffer imageBuffer = m_registry.mediaPool().getPreview(filename);
-        if (imageBuffer.isValid) {
-            m_mediaPreviewImageBuffer = std::move(imageBuffer);
+        if (previewNode->image.isValid) {
+            //m_mediaPreviewImageBuffer = std::move(imageBuffer);
             m_previewMediaFileNameOld = filename;
             m_mediaPreviewFrameIndex = 0;
         }
     }
 
-    m_ui.ShowAnimationFrame(m_mediaPreviewImageBuffer, m_mediaPreviewFrameIndex);
+    if (previewNode->image.isValid) {
+        m_ui.ShowAnimationFrame(previewNode->image, m_mediaPreviewFrameIndex);
+    }
 }
 
 void MenuSystem::FileSelection()

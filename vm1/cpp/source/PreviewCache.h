@@ -27,15 +27,14 @@ struct PreviewNode {
     ImageBuffer image;
     Clock::time_point loadedAt{};
     std::atomic<bool> loading{false};
-    //std::atomic<bool> locked{false};
     uint64_t version = 0;
 };
 
 class PreviewCache {
 public:
-    PreviewCache(size_t maxEntries = 10, std::chrono::seconds ttl = std::chrono::seconds(5));
+    PreviewCache(size_t maxEntries = 30, std::chrono::seconds ttl = std::chrono::seconds(200));
 
-    ImageBuffer getEntry(const std::string& path);
+    std::shared_ptr<PreviewNode> getEntry(const std::string& path);
     void invalidate(const std::string& path);
     bool isStale(const std::shared_ptr<PreviewNode>& node) const;
 
@@ -55,6 +54,7 @@ private:
     std::list<std::string> m_lru;
     size_t m_maxEntries;
     std::chrono::seconds m_ttl;
+    std::atomic<bool> m_loading{false};
     mutable std::shared_mutex m_mutex;
     std::future<void> m_future;
 };
