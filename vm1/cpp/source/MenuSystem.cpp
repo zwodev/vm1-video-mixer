@@ -458,7 +458,7 @@ void MenuSystem::FileSelection()
     auto config = std::make_unique<VideoInputConfig>();
     config->looping = m_registry.settings().defaultLooping;
 
-    VideoInputConfig* currentConfig = m_registry.inputMappings().getVideoInputConfig(m_id);
+    VideoInputConfig* currentConfig = m_registry.inputMappings().getVideoInputConfig(m_id, true);
     if (currentConfig) {
         *config = *currentConfig;
     } 
@@ -510,7 +510,7 @@ void MenuSystem::FileSelection()
     }
 
     if (changed)
-        m_registry.inputMappings().addInputConfig(m_id, std::move(config));
+        m_registry.inputMappings().stageInputConfig(m_id, std::move(config));
     
     m_ui.popTranslate();
 }
@@ -524,7 +524,7 @@ void MenuSystem::LiveInputSelection()
     
     m_ui.pushTranslate(4, 20);
     auto config = std::make_unique<HdmiInputConfig>();
-    HdmiInputConfig* currentConfig = m_registry.inputMappings().getHdmiInputConfig(m_id);
+    HdmiInputConfig* currentConfig = m_registry.inputMappings().getHdmiInputConfig(m_id, true);
     if (currentConfig) { *config = *currentConfig; }
 
     bool changed = false;
@@ -543,7 +543,7 @@ void MenuSystem::LiveInputSelection()
 
     if (changed)  {
         //printf("ID: %d, PORT: %d\n", id, config->hdmiPort);
-        m_registry.inputMappings().addInputConfig(m_id, std::move(config));
+        m_registry.inputMappings().stageInputConfig(m_id, std::move(config));
     }
     m_ui.popTranslate();
 }
@@ -558,7 +558,7 @@ void MenuSystem::ShaderSelection()
     m_ui.pushTranslate(4, 20);
     auto config = std::make_unique<ShaderInputConfig>();
 
-    ShaderInputConfig* currentConfig = m_registry.inputMappings().getShaderInputConfig(m_id);
+    ShaderInputConfig* currentConfig = m_registry.inputMappings().getShaderInputConfig(m_id, true);
     if (currentConfig) {
         *config = *currentConfig;
     } 
@@ -582,7 +582,7 @@ void MenuSystem::ShaderSelection()
     m_ui.EndList(); 
 
     if (changed)
-        m_registry.inputMappings().addInputConfig(m_id, std::move(config));
+        m_registry.inputMappings().stageInputConfig(m_id, std::move(config));
 
     m_ui.popTranslate();
 }

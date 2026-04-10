@@ -219,7 +219,8 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     //std::string fileName;
     std::string filePath;
 
-    InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
+    InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId, true);
+    m_registry.inputMappings().activateInputConfig(mediaSlotId);
     if (!inputConfig) {
         m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::NoMedia, "No media"));
         return;

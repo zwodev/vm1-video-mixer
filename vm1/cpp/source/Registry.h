@@ -129,30 +129,52 @@ public:
 
     void removeConfig(int id)
     {
-        m_idsToValue.erase(id);
+        m_activeSlots.erase(id);
     }
 
-    void addInputConfig(int id, std::unique_ptr<InputConfig> inputConfig)
+    void stageInputConfig(int id, std::unique_ptr<InputConfig> inputConfig)
     {
-        m_idsToValue[id] = std::move(inputConfig);
+        //m_idsToValue[id] = std::move(inputConfig);
+        m_stagedSlots[id] = std::move(inputConfig);
     }
 
-    InputConfig* getInputConfig(int id)
+    void activateInputConfig(int id)
+    {      
+        if (m_stagedSlots.contains(id)) {
+            //m_idsToValue[id] = std::move(inputConfig);
+            int planeId = 0;
+            if (m_activeSlots.contains(id)) {
+                planeId = m_activeSlots[id]->planeId;
+            }
+            m_activeSlots[id] = std::move(m_stagedSlots[id]);
+            m_activeSlots[id]->planeId = planeId;
+            m_stagedSlots.erase(id);
+        }
+    }
+
+    InputConfig* getInputConfig(int id, bool staged = false)
     {
         InputConfig *inputConfig = nullptr;
 
-        if (m_idsToValue.find(id) != m_idsToValue.end())
-        {
-            inputConfig = m_idsToValue[id].get();
-            // printf("Get -> ID: %d, Value: %s\n", id, value.c_str());
+        if (staged) {
+            if (m_stagedSlots.find(id) != m_stagedSlots.end())
+            {
+                inputConfig = m_stagedSlots[id].get();
+            }
+        }
+        else {
+            if (m_activeSlots.find(id) != m_activeSlots.end())
+            {
+                inputConfig = m_activeSlots[id].get();
+            }
         }
 
         return inputConfig;
     }
 
-    VideoInputConfig* getVideoInputConfig(int id)
+    VideoInputConfig* getVideoInputConfig(int id, bool staged = false)
     {
-        InputConfig *inputConfig = getInputConfig(id);
+        InputConfig *inputConfig = getInputConfig(id, staged);
         if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
         {
             return videoInputConfig;
@@ -161,9 +183,9 @@ public:
         return nullptr;
     }
 
-    HdmiInputConfig* getHdmiInputConfig(int id)
+    HdmiInputConfig* getHdmiInputConfig(int id, bool staged = false)
     {
-        InputConfig *inputConfig = getInputConfig(id);
+        InputConfig *inputConfig = getInputConfig(id, staged);
         if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
         {
             return hdmiInputConfig;
@@ -172,9 +194,9 @@ public:
         return nullptr;
     }
 
-    ShaderInputConfig* getShaderInputConfig(int id)
+    ShaderInputConfig* getShaderInputConfig(int id, bool staged = false)
     {
-        InputConfig *inputConfig = getInputConfig(id);
+        InputConfig *inputConfig = getInputConfig(id, staged);
         if (ShaderInputConfig *shaderInputConfig = dynamic_cast<ShaderInputConfig *>(inputConfig))
         {
             return shaderInputConfig;
@@ -188,7 +210,7 @@ public:
     {
         ar(
             CEREAL_NVP(bank),
-            cereal::make_nvp("media_slots", m_idsToValue)
+            cereal::make_nvp("media_slots", m_activeSlots)
         );
     }
 
@@ -196,7 +218,8 @@ public:
     int bank = 0;
 
 private:
-    std::map<int, std::unique_ptr<InputConfig>> m_idsToValue;
+    std::map<int, std::unique_ptr<InputConfig>> m_stagedSlots;
+    std::map<int, std::unique_ptr<InputConfig>> m_activeSlots;
 };
 
 
