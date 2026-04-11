@@ -1,0 +1,37 @@
+/*
+ * http://www.pouet.net/prod.php?which=57245
+ * If you intend to reuse this shader, please add credits to 'Danilo Guanabara'
+ * https://www.shadertoy.com/view/XsXXDn
+ */
+
+#version 310 es
+
+precision mediump float;
+
+in vec2 texCoord;
+out vec4 fragColor;
+
+const vec2 OUT_TEX_SIZE = vec2(1920.0f, 1080.0f);
+uniform float iTime;
+uniform float speed;    // { "name": "Speed", "default": 1.0, "min": 0.01, "max": 10.0, "step": 0.01 }
+
+void main() {
+	vec2 fragCoord = gl_FragCoord.xy;
+	vec2 r = OUT_TEX_SIZE;
+
+	vec3 c;
+	float l,z = iTime * speed;
+	for(int i=0; i<3; i++) {
+		vec2 uv, p = fragCoord.xy / r;
+		uv = p;
+		p-=.5;
+		p.x *= r.x / r.y;
+		z+=.07;
+		l=length(p);
+		uv+=p/l*(sin(z)+1.)*abs(sin(l*9.-z-z));
+		c[i]=.01/length(mod(uv,1.)-.5);
+	}
+	fragColor = vec4(c/l, iTime);
+}
+
+

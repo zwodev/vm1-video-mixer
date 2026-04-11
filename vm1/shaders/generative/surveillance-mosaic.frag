@@ -13,6 +13,11 @@ out vec4 fragColor;
 
 const vec2 OUT_TEX_SIZE = vec2(1920.0f, 1080.0f);
 uniform float iTime;
+uniform float speed;    // { "name": "Speed", "default": 1.0, "min": 0.01, "max": 10.0, "step": 0.01 }
+uniform float offsetX;  // { "name": "Offset X", "default": 0.0, "min": -2.0, "max": 2.0, "step": 0.01 }
+uniform float offsetY;  // { "name": "Offset Y", "default": 0.0, "min": -2.0, "max": 2.0, "step": 0.01 }
+uniform float eyeOpen;    // { "name": "Open", "default": 1.0, "min": 1.0, "max": 2.0, "step": 0.1 }
+uniform float scale;    // { "name": "Scale", "default": 1.0, "min": 0.1, "max": 10.0, "step": 0.1 }
 
 #define PI 3.14159265359
 #define TWO_PI 6.28318530718
@@ -41,7 +46,7 @@ vec2 rotate2D(in vec2 vUV, in float theta) {
     return vUV * mat2(cos(theta), -sin(theta), sin(theta), cos(theta));
 }
 
-float scale(in float x, in float inmin, in float inmax, in float outmin, in float outmax) {
+float lidScale(in float x, in float inmin, in float inmax, in float outmin, in float outmax) {
     return ((x-inmin)/(inmax-inmin))*(outmax-outmin)+outmin;
 }
 
@@ -175,13 +180,15 @@ vec4 mk_eye(in vec2 vUV, in float b, in float t) {
 
 
 void main() {
-	vec2 fragCoord = gl_FragCoord.xy;
+	vec2 fragCoord = gl_FragCoord.xy * scale;
 	vec2 iResolution = OUT_TEX_SIZE;
 
     vec2 vUV = fragCoord.xy / iResolution.xy;
     vUV.x *= iResolution.x / iResolution.y;
     float scl = 1.75;
-    vec2 pUV = vUV * scl + vec2(iTime * 0.01, iTime * -0.0107);
+    float t = iTime * speed;
+//    vec2 pUV = vUV * scl + vec2(t * 0.01, t * -0.0107);
+    vec2 pUV = vUV * scl + vec2(offsetX, offsetY);
     vec4 color = vec4(0.0);
     float sdf = 1.0;
 
@@ -190,15 +197,15 @@ void main() {
         vec2 iUV = floor(vUV);
         vUV = fract(vUV)-0.5;
         float rand = value_noise(iUV, int(vUV.x*vUV.y));
-        float t = (iTime + 100.0*(i+0.5)) * (rand + 1.0);
+        float t = (t + 100.0*(i+0.5)) * (rand + 1.0);
         vUV = rotate2D(vUV, t*0.01);
-        float b = scale(pow(fold(t * 0.1), 100.0), 0.0, 1.0, 2.0, 10.0);
+        float b = lidScale(pow(fold(t * 0.1), 100.0), 0.0, 1.0, 2.0, 10.0) * eyeOpen;
         vec4 eye = mk_eye(vUV*pow(2.0, rand), b, t * 0.5);
         sdf = min(sdf, eyeSDF(vUV*scl, b));
         color = mix(color, eye, eye.a);
     }
     
-    sdf = camel_ramp(fold(sdf*(16. + sin(iTime*0.25)*2.0) - iTime*0.1), 1.0);
+    sdf = camel_ramp(fold(sdf*(16. + sin(t*0.25)*2.0) - t*0.1), 1.0);
     sdf *= sdf;
     color = mix(color, sdf*vec4(0.6824, 0.6824, 0.6824, 1.0), sdf*(1.0-color.a));
     fragColor = color;

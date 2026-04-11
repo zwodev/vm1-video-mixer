@@ -6,17 +6,32 @@
  * for full license details.
  */
 
-uniform float xAxis;            // { "name": "horizontal axis", "group": "Mirror", "default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01 }
+uniform int enabled;        // { "name": "Enabled", "group": "Mirror", "default": 1, "min": 0, "max": 1 }
+uniform int axis;           // { "name": "Horizontal/Vertical", "group": "Mirror", "default": 0, "min": 0, "max": 1, "step": 1 }
+uniform float axisPos;      // { "name": "Axis Position", "group": "Mirror", "default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01 }
+
 
 void extMain(inout vec3 color, in vec2 coord)
 {
-    float s = min(floor(1.0 + xAxis - coord.y), 1.0);
     vec2 uv = coord;
-    
-    if(xAxis < 0.5)
-        uv.y = mix(coord.y, xAxis*2.0 - coord.y, s);
-    else
-        uv.y = mix(xAxis*2.0 - coord.y, coord.y, s);
+    if(axis == 0)
+    {
+        float s = min(floor(1.0 + axisPos - coord.y), 1.0);
+        
+        if(axisPos < 0.5)
+            uv.y = mix(coord.y, axisPos*2.0 - coord.y, s);
+        else
+            uv.y = mix(axisPos*2.0 - coord.y, coord.y, s);
+    }
+    else 
+    {
+        float s = min(floor(1.0 + axisPos - coord.x), 1.0);
+        
+        if(axisPos < 0.5)
+            uv.x = mix(coord.x, axisPos*2.0 - coord.x, s);
+        else
+            uv.x = mix(axisPos*2.0 - coord.x, coord.x, s);
+    }
 
-    color = colorAtUV(uv);
+    color = enabled == 1 ? colorAtUV(uv) : color;
 }
