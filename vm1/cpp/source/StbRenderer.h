@@ -153,7 +153,7 @@ private:
     std::condition_variable m_cv;
     bool m_isEnabled = true;
     std::pair<glm::vec2, glm::vec2> m_boundingBox;   // two points: top left, bottom right
-    float m_boundingBoxOpacity;
+    float m_boundingBoxOpacity = 1.0f;
 
     void queueCurrentImage();
 

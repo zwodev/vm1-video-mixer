@@ -72,9 +72,8 @@ private:
     void handleMenuHierachyNavigation();
     std::string currentDirectoryPath();
 
-
-    bool SubMenu(const std::string& label, std::function<void()> func, SubMenuType subMenuType = SMT_None);
-    bool SubDir(const std::string& label, std::function<void()> func, SubMenuType subMenuType = SMT_None);
+    bool SubMenu(const std::string& label, std::function<void()> func);
+    bool SubDir(const std::string& label, std::function<void()> func);
     void MediaPreview(const std::string& filename);
     void ClearSlot();
 
@@ -123,35 +122,43 @@ private:
     UI &m_ui;
     Registry &m_registry;
     EventBus &m_eventBus;
-    
-    int m_id = 0;
-    int m_outputPlaneId = 0;
-    int m_selectedVertexId = 0;
-    std::string m_currentMediaSlotId = "";
-    int m_currentMediaSlotPlaneId = 0;
 
-    std::string m_effectName;
-    int m_focusedIdx = 0;
-
-    // TODO: Save all this in a MenuState instance and only use m_currentMenuPath
     MenuType m_currentMenuType = MT_StartupScreen;
-    SubMenuType m_currentSubMenuType = SMT_None;
-    std::string m_currentMenuName;
-    std::function<void()> m_currentMenuFunc;
     std::vector<MenuState> m_currentMenuPath;
+    std::string m_effectName;
 
-    // TODO: Put all this into a media preview struct.
-    // Media Preview
-    ImageBuffer m_mediaPreviewImageBuffer;
-    std::string m_previewMediaFileNameOld;
-    int m_mediaPreviewFrameIndex = 0;
-    
-    bool m_launchPopup = false;
-    std::string m_lastPopupMessage;
+    struct MediaSlotData {
+        int slotId = 0;
+        int planeId = 0;
+        std::string slotName;
+    };
+    MediaSlotData m_activeMediaSlot;
 
-    bool m_showStringInputDialog = false;
-    int m_stringInputDialogCursorIdx = 0;
-    std::string m_stringInputDialogString = "";
+    struct OutputPlaneData {
+        int planeId = 0;
+        int selectedVertexId = 0;
+    };
+    OutputPlaneData m_activeOutputPlane;
+
+    struct PreviewData {
+        std::string imageFileName;
+        int frameIndex = 0;
+    };
+    PreviewData m_preview;
+
+    struct PopUpData {
+        bool show = false;
+        std::string message;
+    };
+    PopUpData m_popUp;
+
+    struct InputDialogData {
+        bool show = false;
+        int cursorIdx = 0;
+        std::string title;
+        std::string text;
+    };
+    InputDialogData m_inputDialog;
 
     std::vector<std::pair<char, Color>> m_buttonTexts = {{'Q', Color()}, {'W', Color()}, {'E', Color()}, {'R', Color()}, {'T', Color()}, {'Y', Color()}, {'U', Color()}, {'I',Color()},
                                                          {'A', Color()}, {'S', Color()}, {'D', Color()}, {'F', Color()}, {'G', Color()}, {'H', Color()}, {'J', Color()}, {'K',Color()}};
