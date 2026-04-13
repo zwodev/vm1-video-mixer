@@ -194,14 +194,14 @@ void UI::TextColor(Color color)
     m_currentColor = color;
 }
 
-void UI::pushTranslate(int x, int y)
+void UI::PushTranslate(int x, int y)
 {
     m_translateStack.push_back(glm::vec2(m_x, m_y));
     m_x += x;
     m_y += y;
 }
 
-void UI::popTranslate()
+void UI::PopTranslate()
 {
     if (m_translateStack.empty()) return;
     glm::vec2 translate = m_translateStack.back();
@@ -272,9 +272,9 @@ void UI::BeginListElement()
     m_currentElementHeight = m_lineHeight;
 }
 
-void UI::EndListElement()
+void UI::EndListElement(int elementSize)
 {
-    m_listSize++;
+    m_listSize += elementSize;
     if (m_stbRenderer.isEnabled() && !m_isHidden) {
         m_y += m_currentElementHeight;
         m_y += m_textPaddingBottom;
@@ -290,7 +290,7 @@ void UI::Image(const ImageBuffer& imageBuffer)
 bool UI::Text(const std::string &label)
 {
     UI::BeginListElement();
-    bool selected = (m_focusedIdxPtr && ((*m_focusedIdxPtr) == m_listSize));
+    bool focused = (m_focusedIdxPtr && ((*m_focusedIdxPtr) == m_listSize));
     if(!m_isHidden){
         Color color = m_currentColor;
         int textWidth = m_stbRenderer.getTextWidth(label, m_currentTextStyle);
@@ -300,7 +300,7 @@ bool UI::Text(const std::string &label)
             m_x = m_stbRenderer.width() / 2;
             drawStyle.anchorPoint = AnchorPoint::CENTER_TOP;
         }
-        if (selected) {           
+        if (focused) {           
             drawStyle.color = m_currentColor;
             drawStyle.isFilled = true;
             m_stbRenderer.drawRectNEW(glm::vec2(m_x, m_y - 1), glm::vec2(
@@ -314,10 +314,10 @@ bool UI::Text(const std::string &label)
     }
     UI::EndListElement();
 
-    return selected;
+    return focused;
 }
 
-void UI::PlainText(const std::string &label)
+void UI::Label(const std::string &label)
 {
     UI::BeginListElement();
     m_stbRenderer.drawTextBdf(label, glm::uvec2(m_x, m_y), m_currentTextStyle );
@@ -356,7 +356,7 @@ void UI::SetElementLineHeight(int height)
         m_currentElementLineHeight = height;
 }
 
-void UI::MenuTitle(std::string label, TextAlign textAlign, Color color)
+void UI::MenuTitleWidget(std::string label, TextAlign textAlign, Color color)
 {
     int textWidth = m_stbRenderer.getTextWidth(label, BDF::TEXTSTYLE::MENU_TITLE);
     int minBoxWidth = 48;
@@ -389,16 +389,6 @@ void UI::MenuTitle(std::string label, TextAlign textAlign, Color color)
     SetElementLineHeight(boxHeight);
 }
 
-void UI::InfoScreen(int bank, int id, std::string filename)
-{
-    // ImGui::SetCursorPosY(25);
-    // ImGui::Text("Information:");
-    // ImGui::Text("%s", filename.c_str());
-    // ImGui::Text("Currrent Pos/Duration");
-    // ImGui::Text("Loop yes or no");
-    // ImGui::Text("%d/%d", bank, id);
-}
-
 void UI::ShowPopupMessage(std::string message)
 {
     m_stbRenderer.clear();
@@ -411,7 +401,7 @@ void UI::ShowPopupMessage(std::string message)
     m_stbRenderer.drawTextBdf(message, glm::vec2(x, y), BDF::TEXTSTYLE::MENU_ITEM);
 }
 
-void UI::ShowStringInputDialog(std::string title, int& cursorIdx, std::string& input)
+void UI::ShowInputDialog(std::string title, int& cursorIdx, std::string& input)
 {
     if (cursorIdx >= int(input.size())) return;
 
@@ -420,11 +410,17 @@ void UI::ShowStringInputDialog(std::string title, int& cursorIdx, std::string& i
 
     char currentChar = input.at(cursorIdx);
     // printf("%c\n", currentChar);
-    if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0)) {
-        currentChar++;
+    if(isNavigationEventTriggered(NavigationEvent::Type::NavigationUp)) {
+        if(currentChar < 'z')
+            currentChar++;
+        else 
+            currentChar = 'a';
     }
-    else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0)) {
-        currentChar--;
+    else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationDown)) {
+        if(currentChar > 'a')
+            currentChar--;
+        else 
+            currentChar = 'z';
     }
     else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationRight)) {
         cursorIdx++;
@@ -434,7 +430,8 @@ void UI::ShowStringInputDialog(std::string title, int& cursorIdx, std::string& i
         } 
     }
     else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationLeft)) {
-        cursorIdx--;
+        if(cursorIdx > 0)
+            cursorIdx--;
     }
     input.at(cursorIdx) = currentChar;
     m_stbRenderer.drawRect(width/10, height/10, width - (width/10*2), height - (height/10*2), COLOR::BLACK);
@@ -443,7 +440,7 @@ void UI::ShowStringInputDialog(std::string title, int& cursorIdx, std::string& i
     m_stbRenderer.drawTextBdf(input, glm::vec2(width/10+10, height/10+70), BDF::TEXTSTYLE::MENU_ITEM);
 }
 
-void UI::ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts)
+void UI::ButtonMatrixWidget(std::vector<std::pair<char, Color>> buttonTexts)
 {
     int width = m_stbRenderer.width();
     int height = m_stbRenderer.height();
@@ -470,7 +467,7 @@ void UI::ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts)
     }
 }
 
-void UI::ShowBankInfo(int bank)
+void UI::BankInfoWidget(int bank)
 {
     int width = m_stbRenderer.width();
     int height = m_stbRenderer.height();
@@ -662,7 +659,7 @@ bool UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
     return hasChanged;
 }
 
-void UI::ShowPlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int& selectedVertex, PlanePreviewStyle style)
+void UI::PlanePreviewWidget(std::vector<PlaneSettings>& planes, int& selectedPlane, PlanePreviewStyle style)
 {
     if (selectedPlane < 0) return;
     
@@ -671,7 +668,7 @@ void UI::ShowPlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane,
     float centerX;
     float centerY;
     float rectCenterX[2];
-    float aspectRatio = 16.0/9.0f;                         // todo: get aspect ratio from screen(s)
+    float aspectRatio = 16.0/9.0f; // todo: get aspect ratio from screen(s)
     int polygonThickness = 2;
 
     if (style == PLANE_PREVIEW_SMALL) 
@@ -733,10 +730,6 @@ void UI::ShowPlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane,
 
     // draw screens outlines
     DrawStyle drawStyle = DrawStyle{COLOR::WHITE, false, 1, AnchorPoint::CENTER_CENTER}; 
-    // if (style == PLANE_PREVIEW_SMALL) 
-    // {
-    //     drawStyle.strokeWidth = 2;
-    // }
     m_stbRenderer.drawRectNEW(glm::vec2(rectCenterX[0], centerY), glm::vec2(rectWidth, rectHeight), drawStyle);
     m_stbRenderer.drawRectNEW(glm::vec2(rectCenterX[1], centerY), glm::vec2(rectWidth, rectHeight), drawStyle);
 
@@ -798,13 +791,11 @@ void UI::ShowPlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane,
         if(p.hdmiId == 0)
         {
             int x = rectCenterX[0] - rectWidth/2 - 5;
-            // m_stbRenderer.drawLine(x, y, x - layerlineLength, y, color, 2);
             m_stbRenderer.drawLineNEW(glm::vec2(x, y), glm::vec2(x - layerlineLength, y), drawStyle);
         }
         else if(p.hdmiId == 1)
         {
             int x = rectCenterX[1] + rectWidth/2 + 5;
-            // m_stbRenderer.drawLine(x, y, x + layerlineLength, y, color, 2);
             m_stbRenderer.drawLineNEW(glm::vec2(x, y), glm::vec2(x + layerlineLength, y), drawStyle);
         }
         i++;
@@ -843,10 +834,6 @@ void UI::ShowPlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane,
         }
 
         // check the positions and move if necessary
-        // (created by cursor)
-        
-        // FONT::TextStyle textStyle = FONT::TEXTSTYLE::STANDARD;
-        // textStyle.size = 24.0f;
         const int digitWidthPx = 16; //m_stbRenderer.getTextWidth("4", textStyle);
         const int digitHeightPx = 24;
         const int offsetX = digitWidthPx + 2;
@@ -893,32 +880,60 @@ void UI::ShowPlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane,
         }
     }
 
-    // handle vertex selection and highlight selected vertex
-    // static int selectedVertex = 0;
-    if(style == PLANE_PREVIEW_VERTICES && 
-        selectedVertex >= 0 &&
-        selectedVertex < int(correctedPlanes.size()))    
+    // handle vertex selection and highlight selected vertex    
+    if(style == PLANE_PREVIEW_VERTICES)
     {
-        // if(isNavigationEventTriggered(NavigationEvent::Type::NavigationDown))
-        // {
-        //     selectedVertex += 1;
-        //     if (selectedVertex > planes[selectedPlane].coords.size()-1) selectedVertex = planes[selectedPlane].coords.size()-1;
-        // }
-        // else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationUp))
-        // {
-        //     selectedVertex -= 1;
-        //     if (selectedVertex < 0) selectedVertex = 0;
-        // }
+        BeginListElement();
 
-        // highlight selected vertex
-        PlaneShape p = correctedPlanes[selectedPlane];
-        int i = p.vertices.size() - 1 - selectedVertex; // (vertices are in reverse order)
-        m_stbRenderer.drawImageNEW(m_gizmoImageBuffer, p.vertices[i] - glm::vec2(9.0,9.0));
+        int selectedVertex = *m_focusedIdxPtr - CurrentListSize();
+        if( selectedVertex >= 0 && selectedVertex < int(correctedPlanes.size()))    
+        {
+            // highlight selected vertex
+            PlaneShape p = correctedPlanes[selectedPlane];
+            int i = p.vertices.size() - selectedVertex - 1; // (vertices are in reverse order)
+            m_stbRenderer.drawImageNEW(m_gizmoImageBuffer, p.vertices[i] - glm::vec2(9.0,9.0));
+
+            // change vertex position on plane
+            bool hasChanged = false;
+            float diffX = 0;
+            float diffY = 0;
+            float step = 0.01f;
+            if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0))
+            {
+                hasChanged = true;
+                diffX = step;    
+            }
+            else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0))
+            {
+                hasChanged = true;
+                diffX = -step;
+            }
+            else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 1))
+            {
+                hasChanged = true;
+                diffY = step;    
+            }
+            else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 1))
+            {
+                hasChanged = true;
+                diffY = -step;
+            }
+            if(hasChanged)
+            {
+                int vertexCount = planes[selectedPlane].coords.size() - 1;
+                if(vertexCount > 0 ) {
+                    planes[selectedPlane].coords[vertexCount - selectedVertex].x += diffX;
+                    planes[selectedPlane].coords[vertexCount - selectedVertex].y += diffY;
+                }
+            }
+        }
+        EndListElement(4);
     }
+
     SetElementLineHeight(rectHeight);
 }
 
-void UI::ShowAnimationFrame(const ImageBuffer& image, int& frameIndex)
+void UI::AnimationFrameWidget(const ImageBuffer& image, int& frameIndex)
 {
     if (!image.isValid) return;
 

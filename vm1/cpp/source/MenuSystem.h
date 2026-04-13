@@ -63,7 +63,7 @@ private:
     void setMenu(MenuType menuType);
     void showPopupMessage(const std::string& message);
     void handlePopupMessage();
-    void handleStringInputDialog();
+    void handleInputDialog();
     void handleMediaAndEditButtons();
     void handleUpAndDownKeys();
     void handleBankSwitching();

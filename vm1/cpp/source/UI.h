@@ -46,40 +46,18 @@ public:
     void NewFrame();
     void EndFrame();
     
-    // Specialized Screen Items
-    void ShowPlanePreview(std::vector<PlaneSettings> planes, int& selectedPlane, int& selectedVertex, PlanePreviewStyle style);
-    void ShowAnimationFrame(const ImageBuffer& image, int& frameIndex);
-    
-    // Overlays
-    void StartOverlay(std::function<void()> overlay);
-    void ShowOverlay();
-    void StopOverlay();
-    void ShowPopupMessage(std::string message);
-    void ShowStringInputDialog(std::string title, int& cursorIdx, std::string& input);
-    
-    // obsolete
-    // void DrawTitle(const std::string& label);
-    // void CenteredText(const std::string &label);
-    
-    // List
-    void BeginList(int* focusedIdxPtr);
-    void BeginListElement();
-    void EndListElement();
-    void EndList();
-    int CurrentListSize();
-    
-    // Screens and Widgets
-    void InfoScreen(int bank, int id, std::string filename);
-    void ShowButtonMatrix(std::vector<std::pair<char, Color>> buttonTexts);
-    void ShowBankInfo(int bank);
+    // Specialized Widgets
+    void PlanePreviewWidget(std::vector<PlaneSettings>& planes, int& selectedPlane, PlanePreviewStyle style);
+    void AnimationFrameWidget(const ImageBuffer& image, int& frameIndex);
+    void ButtonMatrixWidget(std::vector<std::pair<char, Color>> buttonTexts);
+    void BankInfoWidget(int bank);
+    void MenuTitleWidget(std::string menuTitle, TextAlign textAlign = TextAlign::LEFT, Color color = COLOR::WHITE);
     
     // Generic UI Items
     void Image(const ImageBuffer& imageBuffer);
     
-    bool Text(const std::string &label);
-    void PlainText(const std::string &label);
-    void MenuTitle(std::string menuTitle, TextAlign textAlign = TextAlign::LEFT, Color color = COLOR::WHITE);
-
+    void Label(const std::string &label);
+    bool Text(const std::string &label);    // TODO: rename
     bool Action(const std::string& label);
     bool CheckBox(const std::string& label, bool checked);
     bool RadioButton(const std::string& label, bool active);
@@ -87,11 +65,26 @@ public:
     bool SpinBoxFloat(const std::string& label, float& value, float minValue, float maxValue, float step = 0.01f);
     bool SpinBoxVec2(const std::string& label, glm::vec2& vec, float step = 0.1f);
 
+    // Overlays
+    void StartOverlay(std::function<void()> overlay);
+    void ShowOverlay();
+    void StopOverlay();
+    void ShowPopupMessage(std::string message);
+    void ShowInputDialog(std::string title, int& cursorIdx, std::string& input);
+      
+    // List
+    void BeginList(int* focusedIdxPtr);
+    void EndList();
+    void BeginListElement();
+    void EndListElement(int elementSize = 1);
+    int CurrentListSize();
+
+
     // Style and Layout
     void TextStyle(BDF::TextStyle textStyle);
     void TextColor(Color color);
-    void pushTranslate(int x, int y);
-    void popTranslate();
+    void PushTranslate(int x, int y);
+    void PopTranslate();
     void Spacer(float value = 15.0f);
     void NewLine();
     void HideElements();
