@@ -123,9 +123,9 @@ std::vector<int> UI::getTriggeredEditButtons()
     return ids;
 }
 
-void UI::NewFrame()
+void UI::NewFrame(bool clear)
 {
-    m_stbRenderer.clear();
+    if(clear) m_stbRenderer.clear();
     m_focusedIdxPtr = nullptr;
     // m_x = 0;
     NewLine();
@@ -191,7 +191,9 @@ void UI::TextStyle(BDF::TextStyle textStyle)
 
 void UI::TextColor(Color color)
 {
+    m_currentTextStyle.color = color;
     m_currentColor = color;
+
 }
 
 void UI::PushTranslate(int x, int y)
@@ -403,41 +405,83 @@ void UI::ShowPopupMessage(std::string message)
 
 void UI::ShowInputDialog(std::string title, int& cursorIdx, std::string& input)
 {
+    if (!m_focusedIdxPtr) return;
     if (cursorIdx >= int(input.size())) return;
 
-    int width = m_stbRenderer.width();
-    int height = m_stbRenderer.height();
-
     char currentChar = input.at(cursorIdx);
-    // printf("%c\n", currentChar);
-    if(isNavigationEventTriggered(NavigationEvent::Type::NavigationUp)) {
+    if(isValueChangeEventTriggered(ValueChangeEvent::Up, 1)) 
+    {
         if(currentChar < 'z')
             currentChar++;
         else 
             currentChar = 'a';
+        input.at(cursorIdx) = currentChar;
     }
-    else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationDown)) {
+    else if(isValueChangeEventTriggered(ValueChangeEvent::Down, 1)) 
+    {
         if(currentChar > 'a')
             currentChar--;
         else 
             currentChar = 'z';
+        input.at(cursorIdx) = currentChar;
     }
-    else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationRight)) {
+    else if(isValueChangeEventTriggered(ValueChangeEvent::Up, 0)) 
+    {
         cursorIdx++;
         if (cursorIdx >= int(input.size())) {
             input.push_back('a');
-            currentChar = input.at(cursorIdx);
         } 
+        currentChar = input.at(cursorIdx);
     }
-    else if(isNavigationEventTriggered(NavigationEvent::Type::NavigationLeft)) {
+    else if(isValueChangeEventTriggered(ValueChangeEvent::Down, 0)) 
+    {
         if(cursorIdx > 0)
             cursorIdx--;
+        currentChar = input.at(cursorIdx);
     }
-    input.at(cursorIdx) = currentChar;
-    m_stbRenderer.drawRect(width/10, height/10, width - (width/10*2), height - (height/10*2), COLOR::BLACK);
-    m_stbRenderer.drawEmptyRect(width/10, height/10, width - (width/10*2), height - (height/10*2), COLOR::WHITE);
-    m_stbRenderer.drawTextBdf(title, glm::vec2(width/10+10, height/10+10), BDF::TEXTSTYLE::MENU_ITEM);
-    m_stbRenderer.drawTextBdf(input, glm::vec2(width/10+10, height/10+70), BDF::TEXTSTYLE::MENU_ITEM);
+    else if (isNavigationEventTriggered(NavigationEvent::FnNavigationLeft))
+    {
+        if(cursorIdx > 0) {
+            input.erase(cursorIdx, 1);
+            cursorIdx--;
+            currentChar = input.at(cursorIdx);
+        }
+    }
+
+
+    int padding = 30;
+    int margin = 10;
+    glm::uvec2 dialogPos = glm::uvec2(padding, padding);
+    glm::uvec2 dialogSize = glm::uvec2(m_stbRenderer.width()  - padding * 2, 
+                                       m_stbRenderer.height() - padding * 2);
+
+    m_stbRenderer.drawRectNEW(dialogPos, dialogSize, {.color = COLOR::BLACK, .isFilled = true});
+    m_stbRenderer.drawRectNEW(dialogPos, dialogSize, {.color = COLOR::WHITE, .isFilled = false});
+    
+    m_x = dialogPos.x + margin;
+    m_y = dialogPos.y + margin;
+    
+    BDF::TextStyle titleStyle = BDF::TEXTSTYLE::MENU_TITLE;
+    titleStyle.align = TextAlign::LEFT;
+    m_stbRenderer.drawTextBdf(title, glm::vec2(m_x, m_y), titleStyle);
+    Spacer(50);
+
+    UI::BeginListElement();
+    bool focused = (*m_focusedIdxPtr) == m_listSize;
+    glm::uvec2 inputTextPos = glm::vec2(m_x, m_y);
+    m_stbRenderer.drawTextBdf(input, inputTextPos, m_currentTextStyle );
+    UI::EndListElement();
+    
+    if(focused)
+    {
+        // draw a rect at the position of cursorIdx:
+        glm::uvec2 cursorPosPx = glm::uvec2(inputTextPos.x + m_stbRenderer.getTextWidth(input.substr(0, cursorIdx), m_currentTextStyle), 
+                                            inputTextPos.y - 2);
+        glm::uvec2 cursorSizePx= glm::uvec2(m_stbRenderer.getTextWidth(std::string(1, currentChar), m_currentTextStyle),
+                                            m_currentTextStyle.lineHeight * 1.7);
+        m_stbRenderer.drawRectNEW(cursorPosPx, cursorSizePx, {.isInverted=true});
+    }
+
 }
 
 void UI::ButtonMatrixWidget(std::vector<std::pair<char, Color>> buttonTexts)

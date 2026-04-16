@@ -43,7 +43,7 @@ public:
     UI() = delete;
     ~UI() = default;
     UI(StbRenderer &stbRenderer, EventBus &eventBus);
-    void NewFrame();
+    void NewFrame(bool clear=true);
     void EndFrame();
     
     // Specialized Widgets

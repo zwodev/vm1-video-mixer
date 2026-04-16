@@ -131,11 +131,13 @@ void DeviceController::requestVM1DeviceBuffer()
                 case NAVIGATION_BUTTON_EVENT:
                     if(buttonId == NAVIGATION_BUTTON_LEFT)
                     {
-                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationLeft));
+                        isFnPressed ?  m_eventBus.publish(NavigationEvent(NavigationEvent::Type::FnNavigationLeft))
+                                     : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationLeft));
                     }
                     else if (buttonId == NAVIGATION_BUTTON_RIGHT)
                     {
-                        m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationRight));
+                        isFnPressed ?  m_eventBus.publish(NavigationEvent(NavigationEvent::Type::FnNavigationRight))
+                                     : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationRight));
                     }
                     else 
                     {

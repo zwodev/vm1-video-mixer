@@ -47,6 +47,7 @@ struct Image
     Image(int w, int h) : width(w), height(h), pixels(w * h * 3, 0) {}
     void setPixel(int x, int y, uint8_t r, uint8_t g, uint8_t b);
     void blendPixel(int x, int y, uint8_t r, uint8_t g, uint8_t b, uint8_t alpha);
+    void invertPixel(int x, int y);
     void clear(uint8_t r = 0, uint8_t g = 0, uint8_t b = 0);
 
 };
@@ -114,6 +115,7 @@ struct DrawStyle
     bool isFilled = false;
     int strokeWidth = 1;
     AnchorPoint anchorPoint = AnchorPoint::LEFT_TOP;
+    bool isInverted = false;
 };
 
 namespace BDF {
@@ -132,7 +134,6 @@ namespace BDF {
         TextAlign align = TextAlign::LEFT;
         Color color = COLOR::WHITE;
         int lineHeight = 16;
-
     };
 
     namespace TEXTSTYLE
@@ -201,6 +202,7 @@ public:
     bool insideBoundingBox(glm::vec2 pos) const;
     void setPixelClipped(glm::vec2 pos, Color c);
     void blendPixelClipped(glm::vec2 pos, Color c, uint8_t srcAlpha);
+    void invertPixel(glm::uvec2 pos);
     void roundVec2(glm::vec2& pos);
 
     // font functions:

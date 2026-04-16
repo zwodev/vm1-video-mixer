@@ -39,6 +39,16 @@ void Image::blendPixel(int x, int y, uint8_t r, uint8_t g, uint8_t b, uint8_t al
     pixels[idx + 2] = static_cast<uint8_t>(pixels[idx + 2] * (1 - a) + b * a);
 }
 
+void Image::invertPixel(int x, int y)
+{
+    if (x < 0 || x >= width || y < 0 || y >= height)
+        return;
+    size_t idx = 3 * (y * width + x);
+    pixels[idx]     ^= 0xFF;
+    pixels[idx + 1] ^= 0xFF;
+    pixels[idx + 2] ^= 0xFF;
+}
+
 void Image::clear(uint8_t r, uint8_t g, uint8_t b)
 {
     // TODO: How can we have different colors without impacting performance too much?
@@ -455,6 +465,11 @@ void StbRenderer::drawRectNEW(glm::vec2 pos, glm::vec2 size, DrawStyle drawStyle
             for (int x = topLeft.x; x < topLeft.x + size.x; ++x)
                 setPixelClipped(glm::vec2(x, y), drawStyle.color);
     } 
+    else if (drawStyle.isInverted) {
+        for (int y = topLeft.y; y < topLeft.y + size.y; ++y)
+            for (int x = topLeft.x; x < topLeft.x + size.x; ++x)
+                invertPixel(glm::vec2(x, y));
+    } 
     else 
     {  
         drawLineNEW(topLeft, topLeft + glm::vec2(size.x, 0), drawStyle);
@@ -571,6 +586,13 @@ inline void StbRenderer::blendPixelClipped(glm::vec2 pos, Color c, uint8_t srcAl
             m_img.setPixel(pos.x, pos.y, c.r, c.g, c.b);
         else
             m_img.blendPixel(pos.x, pos.y, c.r, c.g, c.b, effectiveAlpha);
+    }
+}
+
+inline void StbRenderer::invertPixel(glm::uvec2 pos) {
+    if(insideBoundingBox(pos))
+    {
+        m_img.invertPixel(pos.x, pos.y);
     }
 }
 

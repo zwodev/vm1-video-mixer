@@ -97,12 +97,18 @@ struct ValueChangeEvent
 
 struct NavigationEvent {
     enum Type {
+        NavigationLeft,
+        NavigationRight,
+
+        FnNavigationLeft,
+        FnNavigationRight,
+
         NavigationUp,
         NavigationDown,
-        NavigationRight,
-        NavigationLeft,
+
         NavigationAuxUp,
         NavigationAuxDown,
+
         Screenshot
     };
 

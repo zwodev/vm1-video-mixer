@@ -125,7 +125,32 @@ void MenuSystem::handlePopupMessage()
 void MenuSystem::handleInputDialog()
 {
     if(m_inputDialog.show) {
+        if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationLeft)) 
+        {
+            m_currentMenuPath.back().fIdx = 0;  // todo: restore previous cursor position
+            m_inputDialog.show = false;
+        }
+
+        BDF::TextStyle inputStyle = BDF::TEXTSTYLE::ROOT_MENU_ITEM;
+        inputStyle.align = TextAlign::LEFT;
+        inputStyle.color = COLOR::YELLOW;
+        m_ui.TextStyle(inputStyle);
+        m_ui.BeginList(&m_currentMenuPath.back().fIdx);
+        //m_ui.PushTranslate(40, 80);
         m_ui.ShowInputDialog("Create Folder", m_inputDialog.cursorIdx, m_inputDialog.text);
+        m_ui.Spacer();
+        m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
+        if(m_ui.Action("OK"))
+        {
+            printf("OK\n");
+        }
+        else if(m_ui.Action("Cancel"))
+        {
+            m_currentMenuPath.back().fIdx = 0; // todo: restore previous cursor position
+            m_inputDialog.show = false;
+        }
+        // m_ui.PopTranslate();
+        m_ui.EndList();
     }
 }
 
@@ -281,7 +306,9 @@ void MenuSystem::render()
 {
     if (m_inputDialog.show)
     {
+        m_ui.NewFrame(false);
         handleInputDialog();
+        handleUpAndDownKeys();
         m_ui.EndFrame();
         return;
     }
@@ -468,11 +495,11 @@ void MenuSystem::FileSelection()
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
     if(m_ui.Action("New Folder") && !m_inputDialog.show) {
-        printf("Create New Folder\n");
-        m_inputDialog.text = "neu";
+        m_inputDialog.cursorIdx = 0;
+        m_inputDialog.text = "noname";
         m_inputDialog.show = true;
     }
-    else if(m_ui.Action("USB-Drive")) {
+    if(m_ui.Action("USB-Drive")) {
         printf("Enter USB-Drive\n");
     }
 
