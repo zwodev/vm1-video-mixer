@@ -15,6 +15,7 @@
 #include <imgui.h>
 #include <vector>
 #include <string>
+#include <filesystem>
 
 #include <chrono>   // only needed for screenshot timestamp
 #include <iomanip>  // only needed for screenshot timestamp
@@ -124,11 +125,11 @@ void MenuSystem::handlePopupMessage()
 
 void MenuSystem::handleInputDialog()
 {
+    bool isClosing = false;
     if(m_inputDialog.show) {
         if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationLeft)) 
         {
-            m_currentMenuPath.back().fIdx = 0;  // todo: restore previous cursor position
-            m_inputDialog.show = false;
+            isClosing = true;
         }
 
         BDF::TextStyle inputStyle = BDF::TEXTSTYLE::ROOT_MENU_ITEM;
@@ -136,21 +137,26 @@ void MenuSystem::handleInputDialog()
         inputStyle.color = COLOR::YELLOW;
         m_ui.TextStyle(inputStyle);
         m_ui.BeginList(&m_currentMenuPath.back().fIdx);
-        //m_ui.PushTranslate(40, 80);
         m_ui.ShowInputDialog("Create Folder", m_inputDialog.cursorIdx, m_inputDialog.text);
         m_ui.Spacer();
         m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
         if(m_ui.Action("OK"))
         {
-            printf("OK\n");
+            std::string videoPath = m_registry.mediaPool().getVideoFilesPath();
+            std::filesystem::create_directory(videoPath + m_inputDialog.text);
+            isClosing = true;
         }
         else if(m_ui.Action("Cancel"))
         {
-            m_currentMenuPath.back().fIdx = 0; // todo: restore previous cursor position
-            m_inputDialog.show = false;
+            isClosing = true;
         }
-        // m_ui.PopTranslate();
         m_ui.EndList();
+    }
+
+    if(isClosing)
+    {
+        m_currentMenuPath.back().fIdx = 0; // todo: restore previous cursor position
+        m_inputDialog.show = false;
     }
 }
 

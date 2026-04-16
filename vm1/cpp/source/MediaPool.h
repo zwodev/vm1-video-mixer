@@ -26,6 +26,7 @@ public:
     const ImageBuffer& getLogo();
 
     std::string getVideoFilePath(const std::string& fileName);
+    std::string getVideoFilesPath();
     std::vector<DirectoryEntry> getVideoDirectoryEntries(const std::string& path = "");
 
     std::string getGenerativeShaderFilePath(const std::string& fileName);

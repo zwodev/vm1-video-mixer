@@ -425,7 +425,8 @@ void UI::ShowInputDialog(std::string title, int& cursorIdx, std::string& input)
             currentChar = 'z';
         input.at(cursorIdx) = currentChar;
     }
-    else if(isValueChangeEventTriggered(ValueChangeEvent::Up, 0)) 
+    else if(isValueChangeEventTriggered(ValueChangeEvent::Up, 0) || 
+            isNavigationEventTriggered(NavigationEvent::FnNavigationRight)) 
     {
         cursorIdx++;
         if (cursorIdx >= int(input.size())) {
