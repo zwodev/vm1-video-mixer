@@ -409,7 +409,7 @@ void UI::ShowInputDialog(std::string title, int& cursorIdx, std::string& input)
     if (cursorIdx >= int(input.size())) return;
 
     char currentChar = input.at(cursorIdx);
-    if(isValueChangeEventTriggered(ValueChangeEvent::Up, 1)) 
+    if(isValueChangeEventTriggered(ValueChangeEvent::Up, 0)) 
     {
         if(currentChar < 'z')
             currentChar++;
@@ -417,7 +417,7 @@ void UI::ShowInputDialog(std::string title, int& cursorIdx, std::string& input)
             currentChar = 'a';
         input.at(cursorIdx) = currentChar;
     }
-    else if(isValueChangeEventTriggered(ValueChangeEvent::Down, 1)) 
+    else if(isValueChangeEventTriggered(ValueChangeEvent::Down, 0)) 
     {
         if(currentChar > 'a')
             currentChar--;
@@ -425,7 +425,7 @@ void UI::ShowInputDialog(std::string title, int& cursorIdx, std::string& input)
             currentChar = 'z';
         input.at(cursorIdx) = currentChar;
     }
-    else if(isValueChangeEventTriggered(ValueChangeEvent::Up, 0) || 
+    else if(isValueChangeEventTriggered(ValueChangeEvent::Up, 1) || 
             isNavigationEventTriggered(NavigationEvent::FnNavigationRight)) 
     {
         cursorIdx++;
@@ -434,7 +434,7 @@ void UI::ShowInputDialog(std::string title, int& cursorIdx, std::string& input)
         } 
         currentChar = input.at(cursorIdx);
     }
-    else if(isValueChangeEventTriggered(ValueChangeEvent::Down, 0)) 
+    else if(isValueChangeEventTriggered(ValueChangeEvent::Down, 1)) 
     {
         if(cursorIdx > 0)
             cursorIdx--;
@@ -450,7 +450,7 @@ void UI::ShowInputDialog(std::string title, int& cursorIdx, std::string& input)
     }
 
 
-    int padding = 30;
+    int padding = 20;
     int margin = 10;
     glm::uvec2 dialogPos = glm::uvec2(padding, padding);
     glm::uvec2 dialogSize = glm::uvec2(m_stbRenderer.width()  - padding * 2, 
@@ -989,7 +989,7 @@ void UI::AnimationFrameWidget(const ImageBuffer& image, int& frameIndex)
     // printf("MediaPreview frame %d:  srcPosX: %d, srcPosY: %d\n",m_mediaPreviewFrameIndex, srcPosX, srcPosY);
 
     m_stbRenderer.drawSubImage(image, 
-                              glm::uvec2(160, 75),    // destPos
+                              glm::uvec2(160, 60),    // destPos
                               glm::uvec2(srcPosX, srcPosY),     // srcPos
                               glm::uvec2(160, 90)); // srcSize
     
