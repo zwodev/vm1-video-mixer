@@ -146,9 +146,21 @@ void MenuSystem::handleFileDialog()
 {
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
     m_ui.ShowFileDialog(m_fileDialog.filename);
-    if(m_ui.Action("Rename")) 
+    if(SubMenu("Rename", [this](){handleInputDialog();})) 
     {
-
+        m_inputDialog.cursorIdx = 0;
+        m_inputDialog.title = "Rename";
+        m_inputDialog.text = m_fileDialog.filename;
+        m_inputDialog.func = [this](){
+            std::string filename = currentDirectoryPath() + m_fileDialog.filename;
+            std::string oldPath = m_registry.mediaPool().getVideoFilePath(filename);
+            std::string newPath = m_registry.mediaPool().getVideoFilePath() + currentDirectoryPath() + m_inputDialog.text;
+            printf("Renaming: %s to %s\n", oldPath.c_str(), newPath.c_str());
+            // todo: make sure no preview-creating-process starts here?
+            std::filesystem::rename(oldPath, newPath);
+            std::filesystem::rename(oldPath + ".preview", newPath + ".preview");
+            m_fileDialog.filename = m_inputDialog.text;
+        };
     }
     else if(m_ui.Action("Move")) 
     {
@@ -511,8 +523,9 @@ void MenuSystem::FileSelection()
         m_inputDialog.title = "New Folder";
         m_inputDialog.text = "noname";
         m_inputDialog.func = [this](){
-            std::string videoPath = m_registry.mediaPool().getVideoFilePath();
-            std::filesystem::create_directory(videoPath + m_inputDialog.text);
+            std::string newDirectoryPath = m_registry.mediaPool().getVideoFilePath() + currentDirectoryPath() + m_inputDialog.text;
+            printf("Creating new Folder: %s\n", newDirectoryPath.c_str());
+            std::filesystem::create_directory(newDirectoryPath);
         };
         m_ui.setClearFrame(false);
     }
@@ -521,7 +534,7 @@ void MenuSystem::FileSelection()
     }
 
     m_ui.Spacer();
-    m_ui.Text(videoPath);
+    if(videoPath!="") m_ui.Text(videoPath);
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM_MONOSPACED);
     int fileListStartIdx = m_ui.CurrentListSize();
     for (size_t i = 0; i < entries.size(); ++i) {
