@@ -123,9 +123,11 @@ std::vector<int> UI::getTriggeredEditButtons()
     return ids;
 }
 
-void UI::NewFrame(bool clear)
+void UI::NewFrame()
 {
-    if(clear) m_stbRenderer.clear();
+    if(m_clearFrame) 
+        m_stbRenderer.clear();
+
     m_focusedIdxPtr = nullptr;
     // m_x = 0;
     NewLine();
@@ -140,6 +142,12 @@ void UI::EndFrame()
     bankChangeEvents.clear();
     valueChangeEvents.clear();
 }
+
+void UI::setClearFrame(bool clear)
+{
+    m_clearFrame = clear;
+}
+
 
 void UI::StartOverlay(std::function<void()> overlay)
 {
@@ -409,7 +417,7 @@ void UI::ShowInputDialog(std::string title, int& cursorIdx, std::string& input)
     if (cursorIdx >= int(input.size())) return;
 
     char currentChar = input.at(cursorIdx);
-    if(isValueChangeEventTriggered(ValueChangeEvent::Up, 0)) 
+    if(isValueChangeEventTriggered(ValueChangeEvent::Up, 1)) 
     {
         if(currentChar < 'z')
             currentChar++;
@@ -417,7 +425,7 @@ void UI::ShowInputDialog(std::string title, int& cursorIdx, std::string& input)
             currentChar = 'a';
         input.at(cursorIdx) = currentChar;
     }
-    else if(isValueChangeEventTriggered(ValueChangeEvent::Down, 0)) 
+    else if(isValueChangeEventTriggered(ValueChangeEvent::Down, 1)) 
     {
         if(currentChar > 'a')
             currentChar--;
@@ -425,7 +433,7 @@ void UI::ShowInputDialog(std::string title, int& cursorIdx, std::string& input)
             currentChar = 'z';
         input.at(cursorIdx) = currentChar;
     }
-    else if(isValueChangeEventTriggered(ValueChangeEvent::Up, 1) || 
+    else if(isValueChangeEventTriggered(ValueChangeEvent::Up, 0) || 
             isNavigationEventTriggered(NavigationEvent::FnNavigationRight)) 
     {
         cursorIdx++;
@@ -434,7 +442,7 @@ void UI::ShowInputDialog(std::string title, int& cursorIdx, std::string& input)
         } 
         currentChar = input.at(cursorIdx);
     }
-    else if(isValueChangeEventTriggered(ValueChangeEvent::Down, 1)) 
+    else if(isValueChangeEventTriggered(ValueChangeEvent::Down, 0)) 
     {
         if(cursorIdx > 0)
             cursorIdx--;
@@ -469,6 +477,12 @@ void UI::ShowInputDialog(std::string title, int& cursorIdx, std::string& input)
 
     UI::BeginListElement();
     bool focused = (*m_focusedIdxPtr) == m_listSize;
+
+    BDF::TextStyle inputStyle = BDF::TEXTSTYLE::ROOT_MENU_ITEM;
+    inputStyle.align = TextAlign::LEFT;
+    inputStyle.color = COLOR::YELLOW;
+    TextStyle(inputStyle);
+
     glm::uvec2 inputTextPos = glm::vec2(m_x, m_y);
     m_stbRenderer.drawTextBdf(input, inputTextPos, m_currentTextStyle );
     UI::EndListElement();
@@ -483,6 +497,29 @@ void UI::ShowInputDialog(std::string title, int& cursorIdx, std::string& input)
         m_stbRenderer.drawRectNEW(cursorPosPx, cursorSizePx, {.isInverted=true});
     }
 
+}
+
+void UI::ShowFileDialog(std::string title)
+{
+    if (!m_focusedIdxPtr) return;
+
+    int padding = 20;
+    int margin = 10;
+    glm::uvec2 dialogPos = glm::uvec2(padding, padding);
+    glm::uvec2 dialogSize = glm::uvec2(m_stbRenderer.width()  - padding * 2, 
+                                       m_stbRenderer.height() - padding * 2);
+
+    m_stbRenderer.drawRectNEW(dialogPos, dialogSize, {.color = COLOR::BLACK, .isFilled = true});
+    m_stbRenderer.drawRectNEW(dialogPos, dialogSize, {.color = COLOR::WHITE, .isFilled = false});
+    
+    m_x = dialogPos.x + margin;
+    m_y = dialogPos.y + margin;
+    
+    BDF::TextStyle titleStyle = BDF::TEXTSTYLE::MENU_TITLE;
+    titleStyle.align = TextAlign::LEFT;
+    m_stbRenderer.drawTextBdf(title, glm::vec2(m_x, m_y), titleStyle);
+    Spacer(50);
+   
 }
 
 void UI::ButtonMatrixWidget(std::vector<std::pair<char, Color>> buttonTexts)
@@ -580,7 +617,7 @@ bool UI::CheckBox(const std::string& label, bool checked)
     return checked != oldChecked;
 }
 
-bool UI::RadioButton(const std::string& label, bool active)
+bool UI::RadioButton(const std::string& label, bool active, bool* auxFunctionTriggered)
 {
     if (!m_focusedIdxPtr) return false;
     bool keyPressed = false;
@@ -589,8 +626,14 @@ bool UI::RadioButton(const std::string& label, bool active)
         isNavigationEventTriggered(NavigationEvent::Type::NavigationRight)) {
         keyPressed = true;
     }
-    
+
     bool focused = ((*m_focusedIdxPtr) == m_listSize);
+
+    if(focused && isNavigationEventTriggered(NavigationEvent::Type::FnNavigationRight)) {
+        if(auxFunctionTriggered != nullptr)
+            *auxFunctionTriggered = true;
+    }
+    
     bool wasTriggered = false;
     if (focused && !active && keyPressed) {
         wasTriggered = true;

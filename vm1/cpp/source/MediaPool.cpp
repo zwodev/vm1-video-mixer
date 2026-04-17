@@ -38,11 +38,6 @@ std::string MediaPool::getVideoFilePath(const std::string& fileName)
     return m_videoFilePath + fileName;
 }
 
-std::string MediaPool::getVideoFilesPath()
-{
-    return m_videoFilePath;
-}
-
 void MediaPool::updateVideoFilePreviews()
 {
     std::vector<std::string> files;

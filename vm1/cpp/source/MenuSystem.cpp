@@ -125,39 +125,52 @@ void MenuSystem::handlePopupMessage()
 
 void MenuSystem::handleInputDialog()
 {
-    bool isClosing = false;
-    if(m_inputDialog.show) {
-        if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationLeft)) 
-        {
-            isClosing = true;
-        }
-
-        BDF::TextStyle inputStyle = BDF::TEXTSTYLE::ROOT_MENU_ITEM;
-        inputStyle.align = TextAlign::LEFT;
-        inputStyle.color = COLOR::YELLOW;
-        m_ui.TextStyle(inputStyle);
-        m_ui.BeginList(&m_currentMenuPath.back().fIdx);
-        m_ui.ShowInputDialog("Create Folder", m_inputDialog.cursorIdx, m_inputDialog.text);
-        m_ui.Spacer();
-        m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
-        if(m_ui.Action("OK"))
-        {
-            std::string videoPath = m_registry.mediaPool().getVideoFilesPath();
-            std::filesystem::create_directory(videoPath + m_inputDialog.text);
-            isClosing = true;
-        }
-        else if(m_ui.Action("Cancel"))
-        {
-            isClosing = true;
-        }
-        m_ui.EndList();
-    }
-
-    if(isClosing)
+    m_ui.BeginList(&m_currentMenuPath.back().fIdx);
+    m_ui.ShowInputDialog(m_inputDialog.title, m_inputDialog.cursorIdx, m_inputDialog.text);
+    m_ui.Spacer();
+    
+    m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
+    if(m_ui.Action("OK"))
     {
-        m_currentMenuPath.back().fIdx = 0; // todo: restore previous cursor position
-        m_inputDialog.show = false;
+        m_inputDialog.func();
+        goUpHierachy();
     }
+    else if(m_ui.Action("Cancel"))
+    {
+        goUpHierachy();
+    }
+    m_ui.EndList();
+}
+
+void MenuSystem::handleFileDialog()
+{
+    m_ui.BeginList(&m_currentMenuPath.back().fIdx);
+    m_ui.ShowFileDialog(m_fileDialog.filename);
+    if(m_ui.Action("Rename")) 
+    {
+
+    }
+    else if(m_ui.Action("Move")) 
+    {
+
+    }
+    else if(m_ui.Action("Copy")) 
+    {
+
+    }
+    else if(m_ui.Action("Delete")) 
+    {
+
+    }
+    else if(m_ui.Action("Convert to Clip")) 
+    {
+
+    }
+    else if(m_ui.Action("Cancel"))
+    {
+        goUpHierachy();
+    }
+    m_ui.EndList();
 }
 
 void MenuSystem::handleMediaAndEditButtons()
@@ -297,6 +310,7 @@ void MenuSystem::handlePlaneSwitching()
 void MenuSystem::goUpHierachy() {
     if (m_currentMenuPath.size() > 1) {
         m_currentMenuPath.pop_back();
+        m_ui.setClearFrame(true);
     }
 }
 
@@ -310,15 +324,6 @@ void MenuSystem::handleMenuHierachyNavigation()
 
 void MenuSystem::render()
 {
-    if (m_inputDialog.show)
-    {
-        m_ui.NewFrame(false);
-        handleInputDialog();
-        handleUpAndDownKeys();
-        m_ui.EndFrame();
-        return;
-    }
-
     m_ui.NewFrame();
 
     // get infos for top menu titles
@@ -456,9 +461,9 @@ std::string MenuSystem::currentDirectoryPath()
             path += menuState.name + "/";
         }
     }
-    if (!m_currentMenuPath.back().name.empty()) {
-        path += m_currentMenuPath.back().name + "/";
-    }
+    // if (!m_currentMenuPath.back().name.empty()) {
+    //     path += m_currentMenuPath.back().name + "/";
+    // }
     return path;
 }
 
@@ -500,16 +505,23 @@ void MenuSystem::FileSelection()
     bool changed = false;
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
-    if(m_ui.Action("New Folder") && !m_inputDialog.show) {
+    if(SubMenu("New Folder", [this](){handleInputDialog();}))
+    {
         m_inputDialog.cursorIdx = 0;
+        m_inputDialog.title = "New Folder";
         m_inputDialog.text = "noname";
-        m_inputDialog.show = true;
+        m_inputDialog.func = [this](){
+            std::string videoPath = m_registry.mediaPool().getVideoFilePath();
+            std::filesystem::create_directory(videoPath + m_inputDialog.text);
+        };
+        m_ui.setClearFrame(false);
     }
     if(m_ui.Action("USB-Drive")) {
         printf("Enter USB-Drive\n");
     }
 
     m_ui.Spacer();
+    m_ui.Text(videoPath);
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM_MONOSPACED);
     int fileListStartIdx = m_ui.CurrentListSize();
     for (size_t i = 0; i < entries.size(); ++i) {
@@ -518,9 +530,15 @@ void MenuSystem::FileSelection()
             SubDir(entry.name, [this]() { FileSelection(); });
         }
         else {
-            if (m_ui.RadioButton(entry.name.c_str(), (config->fileName == entry.absolutePath))) {
+            bool openFileMenu = false;
+            if (m_ui.RadioButton(entry.name.c_str(), (config->fileName == entry.absolutePath), &openFileMenu)) {
                 config->fileName = entry.absolutePath;
                 changed = true;
+            }
+            if(openFileMenu) {
+                m_fileDialog.filename = entry.name;
+                m_ui.setClearFrame(false);
+                m_currentMenuPath.push_back(MenuState(0, [this](){handleFileDialog();}));
             }
         }
     }
