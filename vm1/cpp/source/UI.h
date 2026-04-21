@@ -71,8 +71,8 @@ public:
     void ShowOverlay();
     void StopOverlay();
     void ShowPopupMessage(std::string message);
-    void ShowInputDialog(std::string title, int& cursorIdx, std::string& input);
-    void ShowFileDialog(std::string title);
+    void ShowTextInputDialog(std::string title, int& cursorIdx, std::string& input);
+    void ShowDialog(std::string title, std::string subtitle = "");
       
     // List
     void BeginList(int* focusedIdxPtr);

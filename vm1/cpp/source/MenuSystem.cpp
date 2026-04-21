@@ -123,16 +123,16 @@ void MenuSystem::handlePopupMessage()
     }
 }
 
-void MenuSystem::handleInputDialog()
+void MenuSystem::TextInputDialog()
 {
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
-    m_ui.ShowInputDialog(m_inputDialog.title, m_inputDialog.cursorIdx, m_inputDialog.text);
+    m_ui.ShowTextInputDialog(m_textInputDialog.title, m_textInputDialog.cursorIdx, m_textInputDialog.text);
     m_ui.Spacer();
     
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
     if(m_ui.Action("OK"))
     {
-        m_inputDialog.func();
+        m_textInputDialog.func();
         goUpHierachy();
     }
     else if(m_ui.Action("Cancel"))
@@ -142,39 +142,76 @@ void MenuSystem::handleInputDialog()
     m_ui.EndList();
 }
 
-void MenuSystem::handleFileDialog()
+void MenuSystem::FolderSelectionDialog()
 {
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
-    m_ui.ShowFileDialog(m_fileDialog.filename);
-    if(SubMenu("Rename", [this](){handleInputDialog();})) 
+    m_ui.ShowDialog(m_folderSelectionDialog.title, m_folderSelectionDialog.subtitle);
+    m_ui.Spacer();
+    m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM_MONOSPACED);
+
+    for(const auto& folder : m_folderSelectionDialog.subFolders)
     {
-        m_inputDialog.cursorIdx = 0;
-        m_inputDialog.title = "Rename";
-        m_inputDialog.text = m_fileDialog.filename;
-        m_inputDialog.func = [this](){
-            std::string filename = currentDirectoryPath() + m_fileDialog.filename;
-            std::string oldPath = m_registry.mediaPool().getVideoFilePath(filename);
-            std::string newPath = m_registry.mediaPool().getVideoFilePath() + currentDirectoryPath() + m_inputDialog.text;
-            printf("Renaming: %s to %s\n", oldPath.c_str(), newPath.c_str());
+        m_ui.Text(std::string(folder).replace(0, 9, "")); // remove "../videos" prefix
+    }
+    m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
+    if(m_ui.Action("OK"))
+    {
+        m_folderSelectionDialog.func();
+        goUpHierachy();
+    }
+    else if(m_ui.Action("Cancel"))
+    {
+        goUpHierachy();
+    }
+    m_ui.EndList();
+}
+
+void MenuSystem::FileManagerDialog()
+{
+    m_ui.BeginList(&m_currentMenuPath.back().fIdx);
+    m_ui.ShowDialog(m_fileManagerDialog.filename);
+    if(SubMenu("Rename", [this](){TextInputDialog();})) 
+    {
+        m_textInputDialog.cursorIdx = 0;
+        m_textInputDialog.title = "Rename";
+        m_textInputDialog.text = m_fileManagerDialog.filename;
+        m_textInputDialog.func = [this](){
+            std::string oldFilename = m_registry.mediaPool().getVideoFilePath(currentDirectoryPath() + m_fileManagerDialog.filename);
+            std::string newFilename = m_registry.mediaPool().getVideoFilePath() + currentDirectoryPath() + m_textInputDialog.text;
+            printf("Renaming: %s to %s\n", oldFilename.c_str(), newFilename.c_str());
             // todo: make sure no preview-creating-process starts here?
-            std::filesystem::rename(oldPath, newPath);
-            std::filesystem::rename(oldPath + ".preview", newPath + ".preview");
-            m_fileDialog.filename = m_inputDialog.text;
+            std::filesystem::rename(oldFilename, newFilename);
+            std::filesystem::rename(oldFilename + ".preview", newFilename + ".preview");
+            m_fileManagerDialog.filename = m_textInputDialog.text;
         };
     }
-    else if(m_ui.Action("Move")) 
+    if(SubMenu("Move (wip)", [this](){FolderSelectionDialog();})) 
+    {
+        m_folderSelectionDialog.title = "Select Destination";
+        m_folderSelectionDialog.subtitle = "for " + m_fileManagerDialog.filename;
+        m_folderSelectionDialog.foldername = m_registry.mediaPool().getVideoFilePath() + currentDirectoryPath();
+        m_folderSelectionDialog.subFolders.clear();
+        m_folderSelectionDialog.subFolders.push_back(std::filesystem::path(m_folderSelectionDialog.foldername));
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(m_folderSelectionDialog.foldername))
+        {
+            if (entry.is_directory())
+                m_folderSelectionDialog.subFolders.push_back(entry.path());
+        }
+        m_folderSelectionDialog.func = [this](){
+            std::string sourceFile = m_registry.mediaPool().getVideoFilePath(currentDirectoryPath() + m_fileManagerDialog.filename);
+            std::string destinationDirectory = m_folderSelectionDialog.foldername;
+            printf("Move: %s to %s\n", sourceFile.c_str(), destinationDirectory.c_str());
+        };
+    }
+    else if(m_ui.Action("Copy (n/a)")) 
     {
 
     }
-    else if(m_ui.Action("Copy")) 
+    else if(m_ui.Action("Delete (n/a)")) 
     {
 
     }
-    else if(m_ui.Action("Delete")) 
-    {
-
-    }
-    else if(m_ui.Action("Convert to Clip")) 
+    else if(m_ui.Action("Convert to Clip (n/a)")) 
     {
 
     }
@@ -517,13 +554,13 @@ void MenuSystem::FileSelection()
     bool changed = false;
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
-    if(SubMenu("New Folder", [this](){handleInputDialog();}))
+    if(SubMenu("New Folder", [this](){TextInputDialog();}))
     {
-        m_inputDialog.cursorIdx = 0;
-        m_inputDialog.title = "New Folder";
-        m_inputDialog.text = "noname";
-        m_inputDialog.func = [this](){
-            std::string newDirectoryPath = m_registry.mediaPool().getVideoFilePath() + currentDirectoryPath() + m_inputDialog.text;
+        m_textInputDialog.cursorIdx = 0;
+        m_textInputDialog.title = "New Folder";
+        m_textInputDialog.text = "noname";
+        m_textInputDialog.func = [this](){
+            std::string newDirectoryPath = m_registry.mediaPool().getVideoFilePath() + currentDirectoryPath() + m_textInputDialog.text;
             printf("Creating new Folder: %s\n", newDirectoryPath.c_str());
             std::filesystem::create_directory(newDirectoryPath);
         };
@@ -549,9 +586,9 @@ void MenuSystem::FileSelection()
                 changed = true;
             }
             if(openFileMenu) {
-                m_fileDialog.filename = entry.name;
+                m_fileManagerDialog.filename = entry.name;
                 m_ui.setClearFrame(false);
-                m_currentMenuPath.push_back(MenuState(0, [this](){handleFileDialog();}));
+                m_currentMenuPath.push_back(MenuState(0, [this](){FileManagerDialog();}));
             }
         }
     }

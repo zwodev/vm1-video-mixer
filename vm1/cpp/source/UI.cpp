@@ -416,7 +416,7 @@ void UI::ShowPopupMessage(std::string message)
     m_stbRenderer.drawTextBdf(message, glm::vec2(x, y), BDF::TEXTSTYLE::MENU_ITEM);
 }
 
-void UI::ShowInputDialog(std::string title, int& cursorIdx, std::string& input)
+void UI::ShowTextInputDialog(std::string title, int& cursorIdx, std::string& input)
 {
     if (!m_focusedIdxPtr) return;
     if (cursorIdx >= int(input.size())) return;
@@ -504,7 +504,7 @@ void UI::ShowInputDialog(std::string title, int& cursorIdx, std::string& input)
 
 }
 
-void UI::ShowFileDialog(std::string title)
+void UI::ShowDialog(std::string title, std::string subtitle)
 {
     if (!m_focusedIdxPtr) return;
 
@@ -523,9 +523,16 @@ void UI::ShowFileDialog(std::string title)
     BDF::TextStyle titleStyle = BDF::TEXTSTYLE::MENU_TITLE;
     titleStyle.align = TextAlign::LEFT;
     m_stbRenderer.drawTextBdf(title, glm::vec2(m_x, m_y), titleStyle);
-    Spacer(50);
-   
+    if(subtitle != "") {
+        m_y += m_lineHeight * 1.5;
+        titleStyle.font = BDF::TEXTSTYLE::MENU_ITEM.font;
+        m_stbRenderer.drawTextBdf(subtitle, glm::vec2(m_x, m_y), titleStyle);
+        Spacer(20);  
+    } else {
+        Spacer(50);  
+    }
 }
+
 
 void UI::ButtonMatrixWidget(std::vector<std::pair<char, Color>> buttonTexts)
 {
