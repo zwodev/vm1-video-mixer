@@ -64,9 +64,10 @@ private:
     // Popups and Overlays
     void showPopupMessage(const std::string& message);
     void handlePopupMessage();
-    void handleInputDialog();
-    void handleFileDialog();
-
+    void TextInputDialog();
+    void FileManagerDialog();
+    void FolderSelectionDialog();
+    
     // Widgets
     void MediaPreview(const std::string& filename);
     
@@ -159,18 +160,27 @@ private:
     };
     PopUpData m_popUp;
 
-    struct InputDialogData {
+    struct TextInputDialogData {
         int cursorIdx = 0;
         std::string title;
         std::string text;
         std::function<void()> func;
     };
-    InputDialogData m_inputDialog;
+    TextInputDialogData m_textInputDialog;
 
-    struct FileDialogData {
+    struct FileManagerDialogData {
         std::string filename;
     };
-    FileDialogData m_fileDialog;
+    FileManagerDialogData m_fileManagerDialog;
+
+    struct FolderSelectionDialogData {
+        std::string title;
+        std::string subtitle;
+        std::string foldername;
+        std::vector<std::filesystem::path> subFolders;
+        std::function<void()> func;
+    };
+    FolderSelectionDialogData m_folderSelectionDialog;
 
     std::vector<std::pair<char, Color>> m_buttonTexts = {{'Q', Color()}, {'W', Color()}, {'E', Color()}, {'R', Color()}, {'T', Color()}, {'Y', Color()}, {'U', Color()}, {'I',Color()},
                                                          {'A', Color()}, {'S', Color()}, {'D', Color()}, {'F', Color()}, {'G', Color()}, {'H', Color()}, {'J', Color()}, {'K',Color()}};
