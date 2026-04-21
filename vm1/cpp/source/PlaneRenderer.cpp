@@ -119,7 +119,7 @@ const ShaderConfig& PlaneRenderer::shaderConfig()
     return m_shader.shaderConfig();
 }
 
-void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, PlaneSettings& planeSettings, ScreenRotation rotation)
+void PlaneRenderer::update(PlaneSettings& planeSettings, ScreenRotation rotation, InternalShaderParams internalShaderParams)
 {   
     const ShaderConfig& shaderConfig = planeSettings.shaderConfig;
     updateVertexBuffers(rotation, planeSettings);
@@ -127,13 +127,17 @@ void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, Pla
     m_shader.activate();
     glBindVertexArray(m_vao);
 
+    // Set internal shader parameters
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture0);
+    glBindTexture(GL_TEXTURE_2D, internalShaderParams.texture0);
     m_shader.bindUniformLocation("inputTexture0", 0);
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, texture1);
+    glBindTexture(GL_TEXTURE_2D, internalShaderParams.texture1);
     m_shader.bindUniformLocation("inputTexture1", 1);
+
+    m_shader.setValue("mixValue", internalShaderParams.mixValue);
+    m_shader.setValue("iTime", internalShaderParams.iTime);
 
     // Set external shader parameters
     for (auto& kv : shaderConfig.params) {
@@ -165,12 +169,9 @@ void PlaneRenderer::update(GLuint texture0, GLuint texture1, float mixValue, Pla
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             break;
     }
-
-    // TODO: Do not set internal shader parameters above. Filter by prefix "_"?
-    // EXAMPLE: "uniform float _mixValue"
-    m_shader.setValue("mixValue", mixValue);
     m_shader.setValue("opacity", planeSettings.opacity);
     m_shader.setValue("isMultiplication", isMultiplication);
+
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 

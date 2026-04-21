@@ -481,7 +481,12 @@ void PlaybackOperator::renderPlane(int hdmiId)
                 //if (audioStream) audioStream->setVolume(planeMixer.mixValue() * volume);
             }
 
-            planeRenderer->update(texture0, texture1, planeMixer.mixValue(), m_registry.planes()[currentPlaneId], m_registry.settings().hdmiRotation0);
+            PlaneRenderer::InternalShaderParams internalShaderParams;
+            internalShaderParams.texture0 = texture0;
+            internalShaderParams.texture1 = texture1;
+            internalShaderParams.mixValue = planeMixer.mixValue();
+            internalShaderParams.iTime = m_registry.settings().currentTime;
+            planeRenderer->update(m_registry.planes()[currentPlaneId], m_registry.settings().hdmiRotation0, internalShaderParams);
         }
     }
 }

@@ -21,6 +21,14 @@
 
 class PlaneRenderer {
 
+public:
+    struct InternalShaderParams {
+        GLuint texture0 = 0;
+        GLuint texture1 = 0;
+        float mixValue = 0.0f;
+        float iTime = 0.0f;
+    };
+
 public: 
     PlaneRenderer();
     ~PlaneRenderer();
@@ -29,7 +37,8 @@ public:
     bool initialize();
     const ShaderConfig& shaderConfig();
     bool loadShader(const std::string& extFilename = "");
-    void update(GLuint texture0, GLuint texture1, float mixValue, PlaneSettings& planeSettings, ScreenRotation rotation);
+    //void update(GLuint texture0, GLuint texture1, float mixValue, PlaneSettings& planeSettings, ScreenRotation rotation);
+    void update(PlaneSettings& planeSettings, ScreenRotation rotation, InternalShaderParams internalShaderParams);
     
 
 private:

@@ -27,6 +27,7 @@ uniform sampler2D inputTexture1;
 uniform float mixValue;
 uniform float opacity;
 uniform int isMultiplication;
+uniform float iTime;
 
 // effects
 uniform float ColorCorrection_Brightness; // { "name": "Brightness", "group": "Color Correction", "min": -1.0, "max": 1.0 }

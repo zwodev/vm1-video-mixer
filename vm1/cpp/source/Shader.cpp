@@ -386,7 +386,7 @@ bool Shader::bindUniformLocation(const std::string& locName, GLint unit)
 {
 	GLint texSamplerUniformLoc = glGetUniformLocation(m_shaderProgram, locName.c_str());
 	if (texSamplerUniformLoc < 0) {
-		SDL_Log("ERROR: Couldn't get uniform location with this name: %s", locName.c_str());
+		//SDL_Log("ERROR: Couldn't get uniform location with this name: %s", locName.c_str());
 		return false;
 	}
 	glUniform1i(texSamplerUniformLoc, unit);
@@ -397,7 +397,7 @@ bool Shader::setValue(const std::string& locName, GLfloat value)
 {
 	GLint uniformLoc = glGetUniformLocation(m_shaderProgram, locName.c_str());
 	if (uniformLoc < 0) {
-		SDL_Log("ERROR: Couldn't get uniform location with this name: %s", locName.c_str());
+		//SDL_Log("ERROR: Couldn't get uniform location with this name: %s", locName.c_str());
 		return false;
 	}
 	glUniform1f(uniformLoc, value);
@@ -408,7 +408,7 @@ bool Shader::setValue(const std::string& locName, GLint value)
 {
 	GLint uniformLoc = glGetUniformLocation(m_shaderProgram, locName.c_str());
 	if (uniformLoc < 0) {
-		SDL_Log("ERROR: Couldn't get uniform location with this name: %s", locName.c_str());
+		//SDL_Log("ERROR: Couldn't get uniform location with this name: %s", locName.c_str());
 		return false;
 	}
 	glUniform1i(uniformLoc, value);
