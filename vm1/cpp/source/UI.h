@@ -125,7 +125,7 @@ private:
     int m_lineHeight = 0;
     int m_menuHeight = 0;
     int m_visibleListElements = 0;
-    int* m_focusedIdxPtr = 0;
+    int* m_focusedIdxPtr = nullptr;
     int m_firstLine = 0;
     int m_currentElementHeight = 0;
     bool m_isHidden = false;

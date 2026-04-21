@@ -266,6 +266,11 @@ void UI::BeginList(int* focusedIdxPtr)
 void UI::EndList()
 {
     m_stbRenderer.setEnabled(true);
+
+    // TODO: Why is *m_focusedIdxPtr a large integer? Is it the pointer address? Or uninitialized?
+    // if (m_focusedIdxPtr && m_listSize >= 1 && *m_focusedIdxPtr >= m_listSize) {
+    //     printf("Focused Index: %d\n", *m_focusedIdxPtr);
+    // }
 }
 
 void UI::BeginListElement()
