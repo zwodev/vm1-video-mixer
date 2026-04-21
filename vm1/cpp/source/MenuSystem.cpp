@@ -106,6 +106,7 @@ void MenuSystem::setMenu(MenuType menuType)
         m_currentMenuType = menuType;
         m_currentMenuPath.clear();
         m_currentMenuPath.push_back(MenuState(0, menuFunc));
+        m_ui.setClearFrame(true);
     }
 }
 

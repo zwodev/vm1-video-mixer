@@ -55,7 +55,9 @@ void KeyboardControllerSDL::update(SDL_Event& event)
         case SDLK_LEFT:
             if (isShiftPressed)
             {
+                // TODO: How to deal with FnNavigation with keyboard control?
                 m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 0));
+                //m_eventBus.publish(NavigationEvent(NavigationEvent::Type::FnNavigationLeft));
             }
             else
             {
@@ -67,6 +69,7 @@ void KeyboardControllerSDL::update(SDL_Event& event)
             if (isShiftPressed)
             {
                 m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 0));
+                //m_eventBus.publish(NavigationEvent(NavigationEvent::Type::FnNavigationRight));
             }
             else
             {
