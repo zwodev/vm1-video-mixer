@@ -120,7 +120,9 @@ public:
     void renderPlane(int hdmiId);
     
 private:
+
     void subscribeToEvents();
+    void reloadPlaneShader(int planeId);
     bool getWebcamPlayerIdFromPort(int port, int& id);
     bool getFreeVideoPlayerId(int& id, int planeId);
     bool getFreeShaderPlayerId(int& id, int planeId);

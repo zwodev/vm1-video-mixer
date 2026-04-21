@@ -127,18 +127,6 @@ void PlaneRenderer::update(PlaneSettings& planeSettings, ScreenRotation rotation
     m_shader.activate();
     glBindVertexArray(m_vao);
 
-    // Set internal shader parameters
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, internalShaderParams.texture0);
-    m_shader.bindUniformLocation("inputTexture0", 0);
-
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, internalShaderParams.texture1);
-    m_shader.bindUniformLocation("inputTexture1", 1);
-
-    m_shader.setValue("mixValue", internalShaderParams.mixValue);
-    m_shader.setValue("iTime", internalShaderParams.iTime);
-
     // Set external shader parameters
     for (auto& kv : shaderConfig.params) {
         const std::string& uniformName = kv.first;
@@ -151,6 +139,18 @@ void PlaneRenderer::update(PlaneSettings& planeSettings, ScreenRotation rotation
             m_shader.setValue(uniformName.c_str(), floatParam.value);
         } 
     }
+
+    // Set internal shader parameters
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, internalShaderParams.texture0);
+    m_shader.bindUniformLocation("inputTexture0", 0);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, internalShaderParams.texture1);
+    m_shader.bindUniformLocation("inputTexture1", 1);
+    
+    m_shader.setValue("mixValue", internalShaderParams.mixValue);
+    m_shader.setValue("iTime", internalShaderParams.iTime);
 
     // Set blend mode
     int isMultiplication = 0;

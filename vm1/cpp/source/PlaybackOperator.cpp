@@ -22,6 +22,18 @@ PlaybackOperator::~PlaybackOperator()
     finalize();
 }
 
+void PlaybackOperator::reloadPlaneShader(int planeId)
+{
+    const std::string& extShaderFilename = m_registry.planes()[planeId].extShaderFilename;
+    std::string completeFilePath;
+    if (!extShaderFilename.empty()) {
+        completeFilePath = extShaderFilename;
+    }
+    PlaneRenderer* planeRenderer = m_planeRenderers[planeId];
+    planeRenderer->loadShader(completeFilePath);
+    m_registry.planes()[planeId].shaderConfig.update(planeRenderer->shaderConfig());
+}
+
 void PlaybackOperator::subscribeToEvents()
 {
     m_eventBus.subscribe<MediaSlotEvent>([this](const MediaSlotEvent& event) {
@@ -39,14 +51,7 @@ void PlaybackOperator::subscribeToEvents()
     });
 
     m_eventBus.subscribe<EffectShaderEvent>([this](const EffectShaderEvent& event) {
-        const std::string& extShaderFilename = m_registry.planes()[event.planeId].extShaderFilename;
-        std::string completeFilePath;
-        if (!extShaderFilename.empty()) {
-            completeFilePath = extShaderFilename;
-        }
-        PlaneRenderer* planeRenderer = m_planeRenderers[event.planeId];
-        planeRenderer->loadShader(completeFilePath);
-        m_registry.planes()[event.planeId].shaderConfig.update(planeRenderer->shaderConfig());
+        reloadPlaneShader(event.planeId);
     });
 }
 
@@ -66,7 +71,8 @@ void PlaybackOperator::initialize()
         m_planeRenderers.push_back(planeRenderer);
         // TODO: We need to be able to update this after custom shader has changed.
         // MAYBE: Event that triggers this in VM1Application?
-        m_registry.planes()[i].shaderConfig.update(planeRenderer->shaderConfig());
+        //m_registry.planes()[i].shaderConfig.update(planeRenderer->shaderConfig());
+        reloadPlaneShader(i);
     }
 
     for (size_t i = 0; i < videoPlayerCount; ++i) {

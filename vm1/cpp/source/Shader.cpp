@@ -346,8 +346,8 @@ GLuint Shader::loadShaderByType(const std::string& filename, GLenum shaderType, 
 
 		strhlpr::searchAndReplace(m_shaderSrc, "//###EXT_MAIN_DEF###", extShaderSrc);
 		strhlpr::searchAndReplace(m_shaderSrc, "//###EXT_MAIN_USE###", "extMain(color, coord);");
-		printf("SOURCE:\n %s\n", m_shaderSrc.c_str());
-		printf("EXT SOURCE:\n %s\n", extShaderSrc.c_str());
+		//printf("SOURCE:\n %s\n", m_shaderSrc.c_str());
+		//printf("EXT SOURCE:\n %s\n", extShaderSrc.c_str());
 	}
 	
 	// Create the shader
@@ -386,7 +386,7 @@ bool Shader::bindUniformLocation(const std::string& locName, GLint unit)
 {
 	GLint texSamplerUniformLoc = glGetUniformLocation(m_shaderProgram, locName.c_str());
 	if (texSamplerUniformLoc < 0) {
-		//SDL_Log("ERROR: Couldn't get uniform location with this name: %s", locName.c_str());
+		SDL_Log("ERROR: Couldn't get uniform location with this name: %s", locName.c_str());
 		return false;
 	}
 	glUniform1i(texSamplerUniformLoc, unit);

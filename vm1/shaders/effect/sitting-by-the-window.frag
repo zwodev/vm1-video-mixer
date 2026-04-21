@@ -5,7 +5,6 @@
 
 #define S(a, b, t) smoothstep(a, b, t)
 
-uniform float iTime;        // { "name": "Elapsed Time", "group": "Sitting By The Window", "default": 0.0, "min": 0.0, "max": 1000000.0, "step": 0.01 }
 uniform int enabled;        // { "name": "Enabled", "group": "Sitting By The Window", "default": 1, "min": 0, "max": 1 }
 uniform float size;         // { "name": "Size", "group": "Sitting By The Window", "default": 0.2, "min": 0.0, "max": 1.0, "step": 0.01 }
 

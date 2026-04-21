@@ -171,26 +171,6 @@ public:
         return inputConfig;
     }
 
-    // InputConfig* getInputConfig(int id, bool staged = false)
-    // {
-    //     InputConfig *inputConfig = nullptr;
-
-    //     if (staged) {
-    //         if (m_stagedSlots.find(id) != m_stagedSlots.end())
-    //         {
-    //             inputConfig = m_stagedSlots[id].get();
-    //         }
-    //     }
-    //     else {
-    //         if (m_activeSlots.find(id) != m_activeSlots.end())
-    //         {
-    //             inputConfig = m_activeSlots[id].get();
-    //         }
-    //     }
-
-    //     return inputConfig;
-    // }
-
     VideoInputConfig* getVideoInputConfig(int id, bool staged = false)
     {
         InputConfig *inputConfig = getInputConfig(id, staged);
@@ -295,6 +275,7 @@ struct PlaneSettings
             CEREAL_NVP(blendMode),
             CEREAL_NVP(opacity),
             CEREAL_NVP(shaderConfig),
+            CEREAL_NVP(extShaderFilename),
             CEREAL_NVP(coords),
             // CEREAL_NVP(rotation),
             CEREAL_NVP(scale),
