@@ -43,8 +43,9 @@ public:
     UI() = delete;
     ~UI() = default;
     UI(StbRenderer &stbRenderer, EventBus &eventBus);
-    void NewFrame(bool clear=true);
+    void NewFrame();
     void EndFrame();
+    void setClearFrame(bool clear = true);
     
     // Specialized Widgets
     void PlanePreviewWidget(std::vector<PlaneSettings>& planes, int& selectedPlane, PlanePreviewStyle style);
@@ -60,7 +61,7 @@ public:
     bool Text(const std::string &label);    // TODO: rename
     bool Action(const std::string& label);
     bool CheckBox(const std::string& label, bool checked);
-    bool RadioButton(const std::string& label, bool active);
+    bool RadioButton(const std::string& label, bool active, bool* auxFunctionTriggered = nullptr);
     bool SpinBoxInt(const std::string& label, int& value, int minValue, int maxValue, int step = 1);
     bool SpinBoxFloat(const std::string& label, float& value, float minValue, float maxValue, float step = 0.01f);
     bool SpinBoxVec2(const std::string& label, glm::vec2& vec, float step = 0.1f);
@@ -71,6 +72,7 @@ public:
     void StopOverlay();
     void ShowPopupMessage(std::string message);
     void ShowInputDialog(std::string title, int& cursorIdx, std::string& input);
+    void ShowFileDialog(std::string title);
       
     // List
     void BeginList(int* focusedIdxPtr);
@@ -136,6 +138,7 @@ private:
     int m_currentElementLineHeight = 0;
     int m_horizontalMargin = 4;
     
+    bool m_clearFrame = true;
     BDF::TextStyle m_currentTextStyle = BDF::TEXTSTYLE::MENU_ITEM;
     Color m_currentColor = COLOR::WHITE;
     

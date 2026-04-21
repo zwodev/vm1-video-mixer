@@ -60,10 +60,17 @@ public:
 
 private:
     void subscribeToEvents();
-    void setMenu(MenuType menuType);
+    
+    // Popups and Overlays
     void showPopupMessage(const std::string& message);
     void handlePopupMessage();
     void handleInputDialog();
+    void handleFileDialog();
+
+    // Widgets
+    void MediaPreview(const std::string& filename);
+    
+    // 
     void handleMediaAndEditButtons();
     void handleUpAndDownKeys();
     void handleBankSwitching();
@@ -71,15 +78,16 @@ private:
     void goUpHierachy();
     void handleMenuHierachyNavigation();
     std::string currentDirectoryPath();
-
+    
+    void setMenu(MenuType menuType);
     bool SubMenu(const std::string& label, std::function<void()> func);
     bool SubDir(const std::string& label, std::function<void()> func);
-    void MediaPreview(const std::string& filename);
     void ClearSlot();
 
+    // Start Screen
     void StartupScreen();
 
-    // Info
+    // Info 
     void InfoMenu();
     
     // Source
@@ -97,7 +105,6 @@ private:
     void EffectSelection();
     void EffectControl();
   
-
     // Output
     void OutputMenu();
     void Mask();
@@ -153,12 +160,17 @@ private:
     PopUpData m_popUp;
 
     struct InputDialogData {
-        bool show = false;
         int cursorIdx = 0;
         std::string title;
         std::string text;
+        std::function<void()> func;
     };
     InputDialogData m_inputDialog;
+
+    struct FileDialogData {
+        std::string filename;
+    };
+    FileDialogData m_fileDialog;
 
     std::vector<std::pair<char, Color>> m_buttonTexts = {{'Q', Color()}, {'W', Color()}, {'E', Color()}, {'R', Color()}, {'T', Color()}, {'Y', Color()}, {'U', Color()}, {'I',Color()},
                                                          {'A', Color()}, {'S', Color()}, {'D', Color()}, {'F', Color()}, {'G', Color()}, {'H', Color()}, {'J', Color()}, {'K',Color()}};
