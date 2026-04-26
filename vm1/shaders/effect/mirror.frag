@@ -11,7 +11,7 @@ uniform int axis;           // { "name": "Horizontal/Vertical", "group": "Mirror
 uniform float axisPos;      // { "name": "Axis Position", "group": "Mirror", "default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01 }
 
 
-void extMain(inout vec3 color, in vec2 coord)
+void extMain(inout vec4 color, in vec2 coord)
 {
     vec2 uv = coord;
     if(axis == 0)

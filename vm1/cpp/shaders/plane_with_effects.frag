@@ -29,9 +29,9 @@ uniform float opacity;
 uniform int isMultiplication;
 uniform float iTime;
 
-// effects
+// color correction
 uniform float ColorCorrection_Brightness; // { "name": "Brightness", "group": "Color Correction", "min": -1.0, "max": 1.0 }
-uniform float ColorCorrection_Contrast;	  // { "name": "Contrast", "group": "Color Correction", "min": -1.0, "max": 1.0 }
+uniform float ColorCorrection_Contrast;	  // { "name": "Contrast",   "group": "Color Correction", "min": -1.0, "max": 1.0 }
 uniform float ColorCorrection_Saturation; // { "name": "Saturation", "group": "Color Correction", "min": -1.0, "max": 1.0 }
 
 vec3 adjustBrightness(vec3 color, float value) {
@@ -49,10 +49,34 @@ vec3 adjustSaturation(vec3 color, float value) {
   return mix(grayscale, color, 1.0 + value);
 }
 
-vec3 colorAtUV(vec2 coord)
+// chroma key (from https://www.shadertoy.com/view/MlVXWD)
+uniform int ChromaKey_Enable;      // { "name": "Enable", 	 "group": "Chroma Key", "min": 0,     "max": 1,     "default": 0 }
+uniform float ChromaKey_RangeLow;  // { "name": "Range Low", "group": "Chroma Key", "min": 0.001, "max": 0.999, "default": 0.005, "step": 0.001 }
+uniform float ChromaKey_RangeHigh; // { "name": "Range Low", "group": "Chroma Key", "min": 0.001, "max": 0.999, "default": 0.26, "step": 0.001 }
+uniform float ChromaKey_ColorR;    // { "name": "Red", 		 "group": "Chroma Key", "min": 0.0,   "max": 1.0,   "default": 0.05, "step": 0.01 }
+uniform float ChromaKey_ColorG;    // { "name": "Green", 	 "group": "Chroma Key", "min": 0.0,   "max": 1.0,   "default": 0.63, "step": 0.01 }
+uniform float ChromaKey_ColorB;    // { "name": "Blue", 	 "group": "Chroma Key", "min": 0.0,   "max": 1.0,   "default": 0.14, "step": 0.01 }
+
+mat4 RGBtoYUV = mat4(0.257,  0.439, -0.148, 0.0,
+                     0.504, -0.368, -0.291, 0.0,
+                     0.098, -0.071,  0.439, 0.0,
+                     0.0625, 0.500,  0.500, 1.0 );
+
+float colorclose(vec3 yuv, vec3 keyYuv, vec2 tol)
 {
-	vec3 col0 = texture(inputTexture0, coord).rgb;
-	vec3 col1 = texture(inputTexture1, coord).rgb;
+    float tmp = sqrt(pow(keyYuv.g - yuv.g, 2.0) + pow(keyYuv.b - yuv.b, 2.0));
+    if (tmp < tol.x)
+      return 0.0;
+   	else if (tmp < tol.y)
+      return (tmp - tol.x)/(tol.y - tol.x);
+   	else
+      return 1.0;
+}
+
+vec4 colorAtUV(vec2 coord)
+{
+	vec4 col0 = texture(inputTexture0, coord);
+	vec4 col1 = texture(inputTexture1, coord);
 	return mix(col0, col1, mixValue);
 }
 
@@ -75,16 +99,27 @@ vec3 colorAtUV(vec2 coord)
 void main() {
 	// Mix images
 	vec2 coord = vec2(texCoord.x, (1.0f - texCoord.y));
-	vec3 color = colorAtUV(coord);
-	
+	vec4 color = colorAtUV(coord);
+
 	//###EXT_MAIN_USE###
 	// extMain(color, coord); 
 
-	color = adjustSaturation(color, ColorCorrection_Saturation);
-	color = adjustContrast(color, ColorCorrection_Contrast);
-	color = adjustBrightness(color, ColorCorrection_Brightness);
+	// chroma key
+	float chromaKey_Mask = 0.0;
+	vec4 chromaKey = vec4(ChromaKey_ColorR, ChromaKey_ColorG, ChromaKey_ColorB, 1);
+	vec2 chromaKey_MaskRange = vec2(ChromaKey_RangeLow, ChromaKey_RangeHigh);
+	vec4 keyYUV =  RGBtoYUV * chromaKey;
+	vec4 yuv = RGBtoYUV * color;
+	chromaKey_Mask = 1.0 - colorclose(yuv.rgb, keyYUV.rgb, chromaKey_MaskRange);
+	color = mix(max(color - chromaKey_Mask * chromaKey, 0.0), color, float(1 - ChromaKey_Enable));
 
-	color = mix(color, mix(vec3(1.0f), color, opacity), float(isMultiplication));
+	// color correction
+	color.rgb = adjustSaturation(color.rgb, ColorCorrection_Saturation);
+	color.rgb = adjustContrast(color.rgb, ColorCorrection_Contrast);
+	color.rgb = adjustBrightness(color.rgb, ColorCorrection_Brightness);
 
-	fragColor = vec4(color, opacity);
+	color.rgb = mix(color.rgb, mix(vec3(1.0f), color.rgb, opacity * (1.0 - chromaKey_Mask)), float(isMultiplication));
+
+	color.a *= opacity;
+	fragColor = color;
 }

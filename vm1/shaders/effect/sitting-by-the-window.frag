@@ -130,7 +130,7 @@ vec2 Rain(vec2 uv, float t) {
 }
 
 
-void extMain(inout vec3 color, in vec2 coord)
+void extMain(inout vec4 color, in vec2 coord)
 {
     // vec2 uv = (coord.xy-.5*iResolution.xy) / iResolution.y;
     // vec2 UV = coord.xy/iResolution.xy;
@@ -171,7 +171,7 @@ void extMain(inout vec3 color, in vec2 coord)
         vec2 Radius = Size/iResolution.xy;
 
         //vec3 col = texture(iChannel0, UV).rgb;
-        vec3 col = colorAtUV(UV);
+        vec4 col = colorAtUV(UV);
 
 
         // Blur calculations
@@ -180,7 +180,7 @@ void extMain(inout vec3 color, in vec2 coord)
             for(float i=1.0/Quality; i<=1.0; i+=1.0/Quality)
             {
                 //vec3 tex = texture( iChannel0, UV+n+vec2(cos(d),sin(d))*Radius*i).rgb;
-                vec3 tex = colorAtUV(UV+n+vec2(cos(d),sin(d))*Radius*i);
+                vec4 tex = colorAtUV(UV+n+vec2(cos(d),sin(d))*Radius*i);
                 col += tex;            
             }
         }
@@ -188,11 +188,11 @@ void extMain(inout vec3 color, in vec2 coord)
 
 
         //vec3 tex = texture( iChannel0, UV+n).rgb;
-        vec3 tex = colorAtUV(UV+n);
+        vec4 tex = colorAtUV(UV+n);
         c.y = clamp(c.y, 0.0, 1.);
 
         col -= c.y;
         col += c.y*(tex+.6);
     
-    color = vec3(col);
+    color = col;
 }

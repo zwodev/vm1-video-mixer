@@ -53,7 +53,7 @@ float shapeMask(vec2 p, float r, float strokeWidth, int shape) {
 }
 
 
-void extMain(inout vec3 color, in vec2 coord)
+void extMain(inout vec4 color, in vec2 coord)
 {
     vec2 p = coord - 0.5;
     p.y /= iAspect;
@@ -62,7 +62,7 @@ void extMain(inout vec3 color, in vec2 coord)
     p.x += px;
     vec2 uvMirrored = coord;
     uvMirrored.y = 1.0-uvMirrored.y;
-    vec3 colorMirrored = colorAtUV(uvMirrored);
+    vec4 colorMirrored = colorAtUV(uvMirrored);
     
     float brightness = (color.r + color.g + color.b) / 3.0;
     float maskValue = shapeMask(p, r, strokeWidth, shape) * step(threshold, brightness); // maybe use smoothstep?
