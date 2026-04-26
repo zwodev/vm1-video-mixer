@@ -191,6 +191,14 @@ void UI::FocusPreviousElement()
     }
 }
 
+// void UI::SetFocusedElement(int idx)
+// {
+//     if (!m_focusedIdxPtr) return;
+//     if(idx < m_listSize-1) {
+//         *m_focusedIdxPtr = idx;
+//     }
+// }
+
 void UI::TextStyle(BDF::TextStyle textStyle)
 {
     m_currentTextStyle = textStyle;
@@ -334,9 +342,20 @@ bool UI::Text(const std::string &label)
 
 void UI::Label(const std::string &label)
 {
-    UI::BeginListElement();
+    if(m_isHidden) return;
+
+    // UI::BeginListElement();
+    m_currentElementHeight = m_lineHeight;
+    m_currentTextStyle.color = m_currentColor;
+    
     m_stbRenderer.drawTextBdf(label, glm::uvec2(m_x, m_y), m_currentTextStyle );
-    UI::EndListElement();
+
+    // UI::EndListElement();
+    if (m_stbRenderer.isEnabled() && !m_isHidden) {
+        m_y += m_currentElementHeight;
+        m_y += m_textPaddingBottom;
+    }
+
 }
 
 void UI::Spacer(float value)

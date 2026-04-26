@@ -15,7 +15,11 @@
 #include <imgui.h>
 #include <vector>
 #include <string>
+#include <iostream>
+#include <ranges>
 #include <filesystem>
+#include <algorithm>
+
 
 #include <chrono>   // only needed for screenshot timestamp
 #include <iomanip>  // only needed for screenshot timestamp
@@ -61,6 +65,22 @@ bool MenuSystem::SubDir(const std::string& label, std::function<void()> func)
     }
     return false;
 }
+
+std::vector<std::string> MenuSystem::splitPath(const std::string& path) {
+    std::vector<std::string> result;
+
+    for (auto&& part : path | std::views::split('/')) {
+        std::string segment(part.begin(), part.end());
+
+        if (segment.empty() || segment == "." || segment == "..")
+            continue;
+
+        result.push_back(segment);
+    }
+
+    return result;
+}
+
 
 void MenuSystem::setMenu(MenuType menuType)
 {
@@ -204,15 +224,15 @@ void MenuSystem::FileManagerDialog()
             printf("Move: %s to %s\n", sourceFile.c_str(), destinationDirectory.c_str());
         };
     }
-    else if(m_ui.Action("Copy (n/a)")) 
+    else if(m_ui.Action("Copy (N/A)")) 
     {
 
     }
-    else if(m_ui.Action("Delete (n/a)")) 
+    else if(m_ui.Action("Delete (N/A)")) 
     {
 
     }
-    else if(m_ui.Action("Convert to Clip (n/a)")) 
+    else if(m_ui.Action("Convert to Clip (N/A)")) 
     {
 
     }
@@ -249,6 +269,12 @@ void MenuSystem::handleMediaAndEditButtons()
             setMenu(MT_InfoMenu);
             break;
         case 1:
+            if(m_currentMenuType != MT_SourceMenu) {
+                m_focusActiveSource = false;
+            } else {
+                m_focusActiveSource = !m_focusActiveSource;
+            }
+            printf("m_focusActiveSource: %d\n", m_focusActiveSource);
             setMenu(MT_SourceMenu);
             break;
         case 2:
@@ -435,39 +461,54 @@ void MenuSystem::InfoMenu()
     m_ui.MenuTitleWidget(m_activeMediaSlot.slotName, TextAlign::LEFT);
     m_ui.PlanePreviewWidget(m_registry.planes(), m_activeMediaSlot.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
-    
-    
+
+    m_ui.PushTranslate(0, 40);    
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
+    m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
     InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId);
     if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
     {
-        m_ui.Label("Source:    Media File");
-        m_ui.Label("Filename:  " + videoInputConfig->fileName);
-        m_ui.Label("Duration:  ");
-        m_ui.Label("In-Point:  ");
-        m_ui.Label("Out-Point: ");
-        m_ui.Label("Current Position:");
+        m_ui.Label("Mediafile:");
+        std::string fileName = videoInputConfig->fileName;
+        int lastSlashPos = fileName.find_last_of('/');
+        fileName = fileName.substr(lastSlashPos + 1);
+        m_ui.Label(fileName);
+        m_ui.Spacer();
+
+        m_ui.Label("Duration: (N/A)");
+        m_ui.Label("Position: (N/A)");
         std::string previewFilename = videoInputConfig->fileName + ".preview";
         MediaPreview(previewFilename);
     }
     else if (HdmiInputConfig*hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
     {
-        m_ui.Label("Source:     HDMI");
-        m_ui.Label("Input Port: " + std::to_string(hdmiInputConfig->hdmiPort));
+        m_ui.Label("HDMI:");
+        m_ui.Label("Port " + std::to_string(hdmiInputConfig->hdmiPort));
         m_ui.Label("Resolution: ");
+        m_ui.Spacer();
     }
     else if (ShaderInputConfig*shaderInputConfig = dynamic_cast<ShaderInputConfig *>(inputConfig))
     {
-        m_ui.Label("Source:     Shader");
-        m_ui.Label("Filename:   " + shaderInputConfig->fileName);
-        m_ui.Label("Parameters: ");
+        m_ui.Label("Shader:");
+        std::string shaderName = shaderInputConfig->fileName;
+        int lastSlashPos = shaderName.find_last_of('/');
+        shaderName = shaderName.substr(lastSlashPos + 1);
+        m_ui.Label(shaderName);
+        m_ui.Spacer();
     }
     m_ui.EndList(); 
+    m_ui.PopTranslate();
 }
 
 // ##### SOURCE MENU #####
 void MenuSystem::SourceMenu() 
 {
+    if(m_focusActiveSource) 
+    {
+        SelectActiveSourceFolder();
+        return;
+    }
+
     m_ui.MenuTitleWidget("SRC", TextAlign::CENTER);
     m_ui.MenuTitleWidget(m_activeMediaSlot.slotName, TextAlign::LEFT);
     m_ui.PlanePreviewWidget(m_registry.planes(), m_activeMediaSlot.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
@@ -533,6 +574,44 @@ void MenuSystem::MediaPreview(const std::string& filename)
     }
 }
 
+void MenuSystem::SelectActiveSourceFolder()
+{
+    printf("m_activeMediaSlot %d\n", m_activeMediaSlot.slotId);
+    printf("SelectActiveSourceFolder\n");
+    InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId);
+    if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
+    {
+        std::vector<std::string> menuPath = splitPath(videoInputConfig->fileName);
+        
+        std::string selectedFileName = menuPath.back();
+        menuPath.pop_back(); // remove filename
+        if (!menuPath.empty() && menuPath.front() == "videos") { // remove first element "videos"
+            menuPath.erase(menuPath.begin());
+        }
+        if(menuPath.size() > 0){
+            for (size_t i = 0; i < menuPath.size(); ++i) {
+                const std::string &pathElementName = menuPath[i];
+                printf("entering %s\n", pathElementName.c_str());
+                m_currentMenuPath.push_back(MenuState(0, [this](){FileSelection();}, pathElementName));
+            }            
+        }
+        else
+        {
+            m_currentMenuPath.push_back(MenuState(0, [this](){FileSelection();}));
+        }
+    }
+    else if (/*HdmiInputConfig *hdmiInputConfig = */dynamic_cast<HdmiInputConfig *>(inputConfig))
+    {
+        m_currentMenuPath.push_back(MenuState(0, [this](){LiveInputSelection();}));
+        // int port = hdmiInputConfig->hdmiPort;
+    }
+    else if (/*ShaderInputConfig *shaderInputConfig = */dynamic_cast<ShaderInputConfig *>(inputConfig))
+    {
+        m_currentMenuPath.push_back(MenuState(0, [this](){ShaderSelection();}));
+        // std::string shaderName = shaderInputConfig->fileName;
+    }
+}
+
 void MenuSystem::FileSelection()
 {
     m_ui.MenuTitleWidget("MEDIA", TextAlign::CENTER);
@@ -551,7 +630,7 @@ void MenuSystem::FileSelection()
 
     std::string videoPath = currentDirectoryPath();
     std::vector<DirectoryEntry> entries = m_registry.mediaPool().getVideoDirectoryEntries(videoPath);
-    //printf("VideoPath: %s Entries: %ld\n", videoPath.c_str(), entries.size());
+    // printf("VideoPath: %s Entries: %ld\n", videoPath.c_str(), entries.size());
     bool changed = false;
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
@@ -586,6 +665,7 @@ void MenuSystem::FileSelection()
                 config->fileName = entry.absolutePath;
                 changed = true;
             }
+            // todo: set focus to this entry if it's the active media
             if(openFileMenu) {
                 m_fileManagerDialog.filename = entry.name;
                 m_ui.setClearFrame(false);
@@ -594,7 +674,7 @@ void MenuSystem::FileSelection()
         }
     }
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
-    m_ui.EndList(); 
+    m_ui.EndList();     
 
     if(m_currentMenuPath.back().fIdx >= fileListStartIdx)
     {
@@ -707,15 +787,21 @@ void MenuSystem::ControlMenu()
     
     if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(currentConfig)) {
         m_ui.Label("Type: Mediafile");
+        std::string fileName = videoInputConfig->fileName;
+        int lastSlashPos = fileName.find_last_of('/');
+        fileName = fileName.substr(lastSlashPos + 1);
+        m_ui.Label("Name: " + fileName);
+        m_ui.Spacer();
+
         if (m_ui.CheckBox("loop", videoInputConfig->looping)) { 
             videoInputConfig->looping = !videoInputConfig->looping; 
         }
-        if (m_ui.CheckBox("backwards", videoInputConfig->backwards)) {
+        if (m_ui.CheckBox("backwards (N/A)", videoInputConfig->backwards)) {
             videoInputConfig->backwards = !videoInputConfig->backwards;
         }
-        m_ui.Label("start-time");
-        m_ui.Label("end-time");
-        m_ui.Label("speed");
+        m_ui.Text("start-time (N/A)");
+        m_ui.Text("end-time (N/A)");
+        m_ui.Text("speed (N/A)");
     }
     else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(currentConfig)) {
         m_ui.Label("Type: HDMI");
@@ -724,7 +810,12 @@ void MenuSystem::ControlMenu()
     }
     else if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(currentConfig)) {
         m_ui.Label("Type: Shader");
-        m_ui.Label("Name: " + shaderInputConfig->fileName);
+        std::string shaderName = shaderInputConfig->fileName;
+        int lastSlashPos = shaderName.find_last_of('/');
+        shaderName = shaderName.substr(lastSlashPos + 1);
+        m_ui.Label("Name: " + shaderName);
+        m_ui.Spacer();
+
         for (auto& kv : shaderInputConfig->shaderConfig.params) {
             auto& param = kv.second;
             if (std::holds_alternative<IntParameter>(param)) {
@@ -752,12 +843,13 @@ void MenuSystem::FxMenu()
     m_ui.MenuTitleWidget("FX", TextAlign::CENTER);
     m_ui.NewLine();
 
-    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_LARGE);
+    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
 
     m_ui.PushTranslate(0, 20);
 
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
+    // m_ui.Label("---Build In FX---");
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
     PlaneSettings& plane = m_registry.planes()[m_activeOutputPlane.planeId];
     const ShaderConfig& shaderConfig = plane.shaderConfig;
@@ -768,10 +860,14 @@ void MenuSystem::FxMenu()
             m_effectName = groupName;
         }
     }
-    SubMenu("Select Custom Shader", [this](){ CustomEffectShaderSelection(); });
-    if (m_ui.Action("Clear Custom Shader")) {
-        plane.extShaderFilename = "";
-        m_eventBus.publish(EffectShaderEvent(m_activeOutputPlane.planeId));
+    m_ui.Spacer();
+    // m_ui.Label("---Custom FX---");
+    SubMenu("Add Custom FX", [this](){ CustomEffectShaderSelection(); });
+    if(plane.shaderConfig.groups.size() > 2) {  // todo: '2' is temp value for the two build-in effects (chroma key, color correction)
+        if (m_ui.Action("Clear Custom FX")) {
+            plane.extShaderFilename = "";
+            m_eventBus.publish(EffectShaderEvent(m_activeOutputPlane.planeId));
+        }
     }
     m_ui.EndList();
     m_ui.PopTranslate();
@@ -779,10 +875,10 @@ void MenuSystem::FxMenu()
 
 void MenuSystem::CustomEffectShaderSelection()
 {
-    m_ui.MenuTitleWidget("CUSTOM EFFECTS", TextAlign::CENTER);
+    m_ui.MenuTitleWidget("CUSTOM FX", TextAlign::CENTER);
     m_ui.NewLine();
 
-    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_LARGE);
+    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
 
     m_ui.PushTranslate(0, 20);
@@ -814,9 +910,9 @@ void MenuSystem::EffectControl()
     if (!shaderConfig.groups.contains(m_effectName)) return;
 
     auto& group = shaderConfig.groups[m_effectName];
-    m_ui.MenuTitleWidget("FX/" + m_effectName, TextAlign::CENTER);
+    m_ui.MenuTitleWidget(m_effectName, TextAlign::CENTER);
     m_ui.NewLine();
-    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_LARGE);
+    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
     m_ui.PushTranslate(0, 20);
 
@@ -833,6 +929,23 @@ void MenuSystem::EffectControl()
             m_ui.SpinBoxFloat(floatParam.name, floatParam.value, floatParam.min, floatParam.max, floatParam.step);
         } 
     }
+    m_ui.Spacer();
+    if(m_ui.Action("Reset"))
+    {
+        for (const auto& paramName : group) {
+            if (!shaderConfig.params.contains(paramName)) continue;
+            auto& param = shaderConfig.params[paramName];
+            if (std::holds_alternative<IntParameter>(param)) {
+                auto& intParam = std::get<IntParameter>(param);
+                int defaultValue = (intParam.min + intParam.max) / 2;  // ToDo: Get default value (calculating the average was just a hack)
+                intParam.value = defaultValue;
+            } else if (std::holds_alternative<FloatParameter>(param)) {
+                auto& floatParam = std::get<FloatParameter>(param); 
+                float defaultValue = (floatParam.min + floatParam.max) / 2.0;  // ToDo: Get default value (calculating the average was just a hack)
+                floatParam.value = defaultValue;
+            } 
+        }
+    }
     m_ui.EndList(); 
     m_ui.PopTranslate();
 }
@@ -842,7 +955,7 @@ void MenuSystem::OutputMenu()
 {
     m_ui.MenuTitleWidget("OUT", TextAlign::CENTER);
     m_ui.NewLine();
-    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_LARGE);
+    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
     m_ui.PushTranslate(0, 20);
 

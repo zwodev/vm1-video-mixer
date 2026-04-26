@@ -140,8 +140,8 @@ namespace BDF {
     {
         static TextStyle MENU_TITLE =           { .font = &font_terminus_24b, .align = TextAlign::CENTER, .lineHeight = 16 };
         static TextStyle ROOT_MENU_ITEM =       { .font = &font_terminus_32n, .align = TextAlign::CENTER, .lineHeight = 20 };
-        static TextStyle MENU_ITEM =            { .font = &font_terminus_18n,                             .lineHeight = 14 };
-        static TextStyle MENU_ITEM_MONOSPACED = { .font = &font_terminus_12n,                             .lineHeight = 11 };
+        static TextStyle MENU_ITEM =            { .font = &font_terminus_18n, .align = TextAlign::LEFT,   .lineHeight = 14 };
+        static TextStyle MENU_ITEM_MONOSPACED = { .font = &font_terminus_12n, .align = TextAlign::LEFT,   .lineHeight = 11 };
     };    
 } 
 

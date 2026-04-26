@@ -96,6 +96,7 @@ public:
     // Navigation & Events
     void FocusNextElement();
     void FocusPreviousElement();
+    // void SetFocusedElement(int idx);
     bool isValueChangeEventTriggered(ValueChangeEvent::Type eventType, int id);
     bool isNavigationEventTriggered(NavigationEvent::Type eventType);
     bool isBankChangeEventTriggered(int& bankId);

@@ -60,6 +60,7 @@ public:
 
 private:
     void subscribeToEvents();
+    std::vector<std::string> splitPath(const std::string& path);
     
     // Popups and Overlays
     void showPopupMessage(const std::string& message);
@@ -93,6 +94,7 @@ private:
     
     // Source
     void SourceMenu();
+    void SelectActiveSourceFolder();
     void FileSelection();
     void LiveInputSelection();
     void ShaderSelection();
@@ -134,6 +136,8 @@ private:
     MenuType m_currentMenuType = MT_StartupScreen;
     std::vector<MenuState> m_currentMenuPath;
     std::string m_effectName;
+
+    bool m_focusActiveSource = true;
 
     struct MediaSlotData {
         int slotId = 0;
