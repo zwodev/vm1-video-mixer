@@ -269,13 +269,14 @@ void MenuSystem::handleMediaAndEditButtons()
             setMenu(MT_InfoMenu);
             break;
         case 1:
+            setMenu(MT_SourceMenu);
             if(m_currentMenuType != MT_SourceMenu) {
                 m_focusActiveSource = false;
             } else {
                 m_focusActiveSource = !m_focusActiveSource;
+                if(m_focusActiveSource) SelectActiveSourceFolder();
             }
             printf("m_focusActiveSource: %d\n", m_focusActiveSource);
-            setMenu(MT_SourceMenu);
             break;
         case 2:
             setMenu(MT_ControlMenu);
@@ -512,12 +513,6 @@ void MenuSystem::InfoMenu()
 // ##### SOURCE MENU #####
 void MenuSystem::SourceMenu() 
 {
-    if(m_focusActiveSource) 
-    {
-        SelectActiveSourceFolder();
-        return;
-    }
-
     m_ui.MenuTitleWidget("SRC", TextAlign::CENTER);
     m_ui.MenuTitleWidget(m_activeMediaSlot.slotName, TextAlign::LEFT);
     m_ui.PlanePreviewWidget(m_registry.planes(), m_activeMediaSlot.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
@@ -590,9 +585,13 @@ void MenuSystem::SelectActiveSourceFolder()
     InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId);
     if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
     {
+        printf("Filename: %s\n", videoInputConfig->fileName.c_str());
         std::vector<std::string> menuPath = splitPath(videoInputConfig->fileName);
+        for (const std::string& pathSegment : menuPath) {
+            printf("Path Segment: %s\n", pathSegment.c_str());
+        }
         
-        std::string selectedFileName = menuPath.back();
+        //std::string selectedFileName = menuPath.back();
         menuPath.pop_back(); // remove filename
         if (!menuPath.empty() && menuPath.front() == "videos") { // remove first element "videos"
             menuPath.erase(menuPath.begin());
@@ -674,7 +673,11 @@ void MenuSystem::FileSelection()
                 config->fileName = entry.absolutePath;
                 changed = true;
             }
-            // todo: set focus to this entry if it's the active media
+            // Set focus to this entry if it's the active media
+            if (config->fileName == entry.absolutePath) {
+                m_currentMenuPath.back().fIdx = m_ui.CurrentListSize()-1;
+            }
+            
             if(openFileMenu) {
                 m_fileManagerDialog.filename = entry.name;
                 m_ui.setClearFrame(false);
