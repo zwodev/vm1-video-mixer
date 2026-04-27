@@ -50,7 +50,7 @@ bool MenuSystem::SubMenu(const std::string& label, std::function<void()> func)
 {
     bool focused = m_ui.Text(label);
     if  (focused && m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationRight)) {
-        m_currentMenuPath.push_back(MenuState(0, func));
+        appendStateToMenuPath(MenuState(0, func));
         return true;
     }
     return false;
@@ -60,7 +60,7 @@ bool MenuSystem::SubDir(const std::string& label, std::function<void()> func)
 {
     bool focused = m_ui.Text(label);
     if  (focused && m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationRight)) {
-        m_currentMenuPath.push_back(MenuState(0, func, label));
+        appendStateToMenuPath(MenuState(0, func, label));
         return true;
     }
     return false;
@@ -390,6 +390,11 @@ void MenuSystem::goUpHierachy() {
     }
 }
 
+ void MenuSystem::appendStateToMenuPath(MenuState menuState)
+ {
+    m_nextMenuPath.push_back(menuState);
+ }
+
 void MenuSystem::handleMenuHierachyNavigation()
 {
     if (m_ui.isNavigationEventTriggered(NavigationEvent::Type::NavigationLeft)) 
@@ -441,6 +446,10 @@ void MenuSystem::render()
     }
 
     m_ui.EndFrame();
+    for (MenuState menuState : m_nextMenuPath) {
+        m_currentMenuPath.push_back(menuState);
+    }
+    m_nextMenuPath.clear();
 }
 
 void MenuSystem::ClearSlot() {
@@ -560,17 +569,17 @@ std::string MenuSystem::currentDirectoryPath()
 
 void MenuSystem::MediaPreview(const std::string& filename)
 {
-    std::shared_ptr<PreviewNode> previewNode = m_registry.mediaPool().getPreview(filename);
+    const ImageBuffer& previewImage = m_registry.mediaPool().getPreview(filename);
     if(m_preview.imageFileName != filename)
     {
-        if (previewNode->image.isValid) {
+        if (previewImage.isValid) {
             m_preview.imageFileName = filename;
             m_preview.frameIndex = 0;
         }
     }
 
-    if (previewNode->image.isValid) {
-        m_ui.AnimationFrameWidget(previewNode->image, m_preview.frameIndex);
+    if (previewImage.isValid) {
+        m_ui.AnimationFrameWidget(previewImage, m_preview.frameIndex);
     }
 }
 
@@ -592,22 +601,22 @@ void MenuSystem::SelectActiveSourceFolder()
             for (size_t i = 0; i < menuPath.size(); ++i) {
                 const std::string &pathElementName = menuPath[i];
                 printf("entering %s\n", pathElementName.c_str());
-                m_currentMenuPath.push_back(MenuState(0, [this](){FileSelection();}, pathElementName));
+                appendStateToMenuPath(MenuState(0, [this](){FileSelection();}, pathElementName));
             }            
         }
         else
         {
-            m_currentMenuPath.push_back(MenuState(0, [this](){FileSelection();}));
+            appendStateToMenuPath(MenuState(0, [this](){FileSelection();}));
         }
     }
     else if (/*HdmiInputConfig *hdmiInputConfig = */dynamic_cast<HdmiInputConfig *>(inputConfig))
     {
-        m_currentMenuPath.push_back(MenuState(0, [this](){LiveInputSelection();}));
+        appendStateToMenuPath(MenuState(0, [this](){LiveInputSelection();}));
         // int port = hdmiInputConfig->hdmiPort;
     }
     else if (/*ShaderInputConfig *shaderInputConfig = */dynamic_cast<ShaderInputConfig *>(inputConfig))
     {
-        m_currentMenuPath.push_back(MenuState(0, [this](){ShaderSelection();}));
+        appendStateToMenuPath(MenuState(0, [this](){ShaderSelection();}));
         // std::string shaderName = shaderInputConfig->fileName;
     }
 }
@@ -669,7 +678,7 @@ void MenuSystem::FileSelection()
             if(openFileMenu) {
                 m_fileManagerDialog.filename = entry.name;
                 m_ui.setClearFrame(false);
-                m_currentMenuPath.push_back(MenuState(0, [this](){FileManagerDialog();}));
+                appendStateToMenuPath(MenuState(0, [this](){FileManagerDialog();}));
             }
         }
     }

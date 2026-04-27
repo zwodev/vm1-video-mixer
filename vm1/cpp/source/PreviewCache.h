@@ -23,18 +23,18 @@ namespace fs = std::filesystem;
 using Clock = std::chrono::steady_clock;
 
 struct PreviewNode {
-    bool isValid = false;
     ImageBuffer image;
+    ImageBuffer loadedImage;
     Clock::time_point loadedAt{};
     std::atomic<bool> loading{false};
-    uint64_t version = 0;
+    bool isNew = false;
 };
 
 class PreviewCache {
 public:
     PreviewCache(size_t maxEntries = 30, std::chrono::seconds ttl = std::chrono::seconds(200));
 
-    std::shared_ptr<PreviewNode> getEntry(const std::string& path);
+    const ImageBuffer& getEntry(const std::string& path);
     void invalidate(const std::string& path);
     bool isStale(const std::shared_ptr<PreviewNode>& node) const;
 

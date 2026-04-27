@@ -13,7 +13,7 @@ PreviewCache::PreviewCache(size_t maxEntries, std::chrono::seconds ttl)
 {
 }
 
-std::shared_ptr<PreviewNode> PreviewCache::getEntry(const std::string& path) {
+const ImageBuffer& PreviewCache::getEntry(const std::string& path) {
     std::unique_lock lock(m_mutex);
     MapEntry& entry = m_map[path];
     if (!entry.node) {
@@ -24,45 +24,23 @@ std::shared_ptr<PreviewNode> PreviewCache::getEntry(const std::string& path) {
         touchLRU(entry.lruIt);
     }
 
-    if (!entry.node->loading.load() && isStale(entry.node)) startAsyncLoad(path, entry.node);
+    if (!entry.node->loading.load()) {
+        if (entry.node->loadedImage.isValid) {
+            entry.node->image = std::move(entry.node->loadedImage);
+        }
+        if (isStale(entry.node)) startAsyncLoad(path, entry.node);
+    }
     
-    return entry.node;
+
+    
+    return entry.node->image;
 }
-
-// ImageBuffer* PreviewCache::lock(const std::string& path) {
-//     std::unique_lock lock(m_mutex);
-//     MapEntry& entry = m_map[path];
-//     if (!entry.node) {
-//         entry.node = std::make_shared<PreviewNode>();
-//         entry.lruIt = m_lru.insert(m_lru.begin(), path);
-//         enforceCapacity();
-//     } else {
-//         touchLRU(entry.lruIt);
-//     }
-
-//     if (!entry.node->loading.load() || isStale(entry.node)) {
-//         startAsyncLoad(path, entry.node);
-//         return nullptr;
-//     }
-    
-//     entry.node->locked.store(true);
-//     return &(entry.node->image);
-// }
-
-// ImageBuffer* PreviewCache::unlock(const std::string& path) {
-//     std::unique_lock lock(m_mutex);
-//     MapEntry& entry = m_map[path];
-//     if (entry.node) {
-//         if
-//     }
-// }
 
 void PreviewCache::invalidate(const std::string& path) {
     std::unique_lock lock(m_mutex);
     auto it = m_map.find(path);
     if (it != m_map.end()) {
         it->second.node->loadedAt = Clock::time_point{};
-        it->second.node->version++;
     }
 }
 
@@ -90,8 +68,7 @@ void PreviewCache::startLoadIfNeeded(const std::string& path, std::shared_ptr<Pr
 }
 
 void PreviewCache::startAsyncLoad(const std::string& path, std::shared_ptr<PreviewNode> node) {
-    if (m_loading.load()) return;
-    m_loading.store(true);
+    if (node->loading.load()) return;
     node->loading.store(true);
 
     // Load directory content in separate thread
@@ -103,11 +80,9 @@ void PreviewCache::startAsyncLoad(const std::string& path, std::shared_ptr<Previ
         if (!imageBuffer.isValid) return;
 
         if (auto node = weakNode.lock()) {
-            node->image = std::move(imageBuffer);
+            node->loadedImage = std::move(imageBuffer);
             node->loadedAt = Clock::now();
             node->loading.store(false);
-            node->version++;
         }
-        m_loading.store(false);
     });
 }

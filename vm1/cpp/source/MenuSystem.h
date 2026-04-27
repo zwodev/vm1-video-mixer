@@ -78,6 +78,7 @@ private:
     void handleBankSwitching();
     void handlePlaneSwitching();
     void goUpHierachy();
+    void appendStateToMenuPath(MenuState menuState);
     void handleMenuHierachyNavigation();
     std::string currentDirectoryPath();
     
@@ -135,6 +136,7 @@ private:
 
     MenuType m_currentMenuType = MT_StartupScreen;
     std::vector<MenuState> m_currentMenuPath;
+    std::vector<MenuState> m_nextMenuPath;
     std::string m_effectName;
 
     bool m_focusActiveSource = true;

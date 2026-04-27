@@ -35,7 +35,7 @@ public:
     std::string getEffectShaderFilePath(const std::string& fileName);
     std::vector<DirectoryEntry> getEffectShaderFiles(const std::string& path = "");
 
-    std::shared_ptr<PreviewNode> getPreview(const std::string& path);
+    const ImageBuffer& getPreview(const std::string& path);
 
     void loadQrCodeImageBuffer();
     const ImageBuffer& getQrCodeImageBuffer();
