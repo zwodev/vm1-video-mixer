@@ -674,9 +674,9 @@ void MenuSystem::FileSelection()
                 changed = true;
             }
             // Set focus to this entry if it's the active media
-            if (config->fileName == entry.absolutePath) {
-                m_currentMenuPath.back().fIdx = m_ui.CurrentListSize()-1;
-            }
+            // if (config->fileName == entry.absolutePath) {
+            //     m_currentMenuPath.back().fIdx = m_ui.CurrentListSize()-1;
+            // }
             
             if(openFileMenu) {
                 m_fileManagerDialog.filename = entry.name;
