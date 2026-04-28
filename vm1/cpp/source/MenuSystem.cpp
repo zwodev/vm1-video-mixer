@@ -269,13 +269,20 @@ void MenuSystem::handleMediaAndEditButtons()
             setMenu(MT_InfoMenu);
             break;
         case 1:
-            setMenu(MT_SourceMenu);
-            if(m_currentMenuType != MT_SourceMenu) {
-                m_focusActiveSource = false;
-            } else {
-                m_focusActiveSource = !m_focusActiveSource;
-                if(m_focusActiveSource) SelectActiveSourceFolder();
+            if (m_currentMenuType != MT_SourceMenu) {
+                setMenu(MT_SourceMenu);
+                m_showActivesSource = false;
             }
+            else if (m_currentMenuPath.size() == 1) {
+                m_showActivesSource = true;
+                SelectActiveSourceFolder();
+            }
+            else {
+                setMenu(MT_SourceMenu);
+                m_showActivesSource = !m_showActivesSource;
+                if(m_showActivesSource) SelectActiveSourceFolder();
+            }
+            
             printf("m_focusActiveSource: %d\n", m_focusActiveSource);
             break;
         case 2:
@@ -594,14 +601,15 @@ void MenuSystem::SelectActiveSourceFolder()
         //std::string selectedFileName = menuPath.back();
         menuPath.pop_back(); // remove filename
         if (!menuPath.empty() && menuPath.front() == "videos") { // remove first element "videos"
-            menuPath.erase(menuPath.begin());
+            menuPath.front() = "";
         }
         if(menuPath.size() > 0){
             for (size_t i = 0; i < menuPath.size(); ++i) {
                 const std::string &pathElementName = menuPath[i];
                 printf("entering %s\n", pathElementName.c_str());
                 appendStateToMenuPath(MenuState(0, [this](){FileSelection();}, pathElementName));
-            }            
+            }
+            m_focusActiveSource = true;           
         }
         else
         {
@@ -674,9 +682,10 @@ void MenuSystem::FileSelection()
                 changed = true;
             }
             // Set focus to this entry if it's the active media
-            // if (config->fileName == entry.absolutePath) {
-            //     m_currentMenuPath.back().fIdx = m_ui.CurrentListSize()-1;
-            // }
+            if (m_focusActiveSource && config->fileName == entry.absolutePath) {
+                m_currentMenuPath.back().fIdx = m_ui.CurrentListSize()-1;
+                m_focusActiveSource = false;
+            }
             
             if(openFileMenu) {
                 m_fileManagerDialog.filename = entry.name;

@@ -139,7 +139,8 @@ private:
     std::vector<MenuState> m_nextMenuPath;
     std::string m_effectName;
 
-    bool m_focusActiveSource = true;
+    bool m_focusActiveSource = false;
+    bool m_showActivesSource = false;
 
     struct MediaSlotData {
         int slotId = 0;
