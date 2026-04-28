@@ -679,7 +679,7 @@ bool UI::RadioButton(const std::string& label, bool active, bool* auxFunctionTri
     return wasTriggered;
 }
 
-bool UI::SpinBoxInt(const std::string& label, int& value, int minValue, int maxValue, int step)
+bool UI::SpinBoxInt(const std::string& label, int& value, int minValue, int maxValue, int step, std::vector<std::string> optionNames)
 {
     bool hasChanged = false;
     if (!m_focusedIdxPtr) return false;
@@ -702,7 +702,13 @@ bool UI::SpinBoxInt(const std::string& label, int& value, int minValue, int maxV
         else if (value > maxValue) value = maxValue;
     }
 
-    std::string newLabel = label + ": " + std::to_string(value);
+    std::string newLabel;
+    if ((0 <= value) && (value < int(optionNames.size()))) {
+        newLabel = label + ": " + optionNames[value];
+    }
+    else {
+        newLabel = label + ": " + std::to_string(value);
+    }
     Text(newLabel);
     return hasChanged;
 }

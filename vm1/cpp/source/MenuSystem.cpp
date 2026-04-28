@@ -249,7 +249,10 @@ void MenuSystem::handleMediaAndEditButtons()
     for (int mediaSlotId : m_ui.getTriggeredMediaSlotIds())
     {
         m_activeMediaSlot.slotId = mediaSlotId;
-        // Shortcut (set selected Plane in FX/OUT for convenience)
+        if (m_currentMenuType == MT_SourceMenu) {
+            setMenu(MT_SourceMenu);
+            SelectActiveSourceFolder();
+        }
         InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId);
         if (inputConfig)
         {
@@ -356,39 +359,66 @@ void MenuSystem::handlePlaneSwitching()
         return;
     }
     
-    int* id = nullptr;
-    if (m_currentMenuType == MT_SourceMenu || 
-        m_currentMenuType == MT_ControlMenu ) 
-    {
-        printf("Media Slot: %d\n", m_activeMediaSlot.slotId); 
-        // change output plane for the currently selected media slot
-        InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId, true);
-        if (inputConfig) {
-            id = &inputConfig->planeId;
-            printf("Active Slot: %d\n", *id);   
-        } 
-    }
-    else if (m_currentMenuType == MT_FxMenu ||
-             m_currentMenuType == MT_OutputMenu)
+    int* planeId = nullptr;
+    // if (m_currentMenuType == MT_SourceMenu || 
+    //     m_currentMenuType == MT_ControlMenu ) 
+    // {
+    //     printf("Media Slot: %d\n", m_activeMediaSlot.slotId); 
+    //     // change output plane for the currently selected media slot
+    //     InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId, true);
+    //     if (inputConfig) {
+    //         id = &inputConfig->planeId;
+    //         printf("Active Slot: %d\n", *id);   
+    //     } 
+    // }
+    //else 
+    
+    if (m_currentMenuType == MT_InfoMenu        ||
+            m_currentMenuType == MT_SourceMenu  || 
+            m_currentMenuType == MT_ControlMenu ||
+            m_currentMenuType == MT_FxMenu      ||
+            m_currentMenuType == MT_OutputMenu
+        ) 
     {
         // select output plane for FX or OUT menu
-        id = &m_activeOutputPlane.planeId;
-    }
-
-    if (id != nullptr)
-    {
-        *id += diff;
+        planeId = &m_activeOutputPlane.planeId;
+        *planeId += diff;
         int minValue = 0;
         int maxValue = m_registry.planes().size() - 1;
-        if (*id > maxValue) *id = maxValue;
-        if (*id < minValue) *id = minValue;
+        if (*planeId > maxValue) *planeId = maxValue;
+        if (*planeId < minValue) *planeId = minValue;
+        m_activeOutputPlane.planeId = *planeId;
+        for (int i = 0; i < MEDIA_SLOT_COUNT; ++i) {
+            InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(i, false);
+            if (!inputConfig) continue;
 
-        if (m_currentMenuType == MT_SourceMenu || 
-            m_currentMenuType == MT_ControlMenu ) 
-        {
-            m_activeOutputPlane.planeId = *id; // switch output plane as well
+            if (inputConfig->planeId == *planeId && inputConfig->isActive) {
+                m_activeMediaSlot.slotId = i;
+                if (m_currentMenuType == MT_SourceMenu) {
+                    setMenu(MT_SourceMenu);
+                    SelectActiveSourceFolder();
+                }
+                
+                printf("Active Media Slot on Current Plane: %d\n", i);
+                break;
+            }
         }
     }
+
+    // if (id != nullptr)
+    // {
+    //     *id += diff;
+    //     int minValue = 0;
+    //     int maxValue = m_registry.planes().size() - 1;
+    //     if (*id > maxValue) *id = maxValue;
+    //     if (*id < minValue) *id = minValue;
+
+    //     if (m_currentMenuType == MT_SourceMenu || 
+    //         m_currentMenuType == MT_ControlMenu ) 
+    //     {
+    //         m_activeOutputPlane.planeId = *id; // switch output plane as well
+    //     }
+    // }
 }
 
 void MenuSystem::goUpHierachy() {
@@ -476,7 +506,7 @@ void MenuSystem::InfoMenu()
 {
     m_ui.MenuTitleWidget("Info", TextAlign::CENTER);
     m_ui.MenuTitleWidget(m_activeMediaSlot.slotName, TextAlign::LEFT);
-    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeMediaSlot.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
+    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
 
     m_ui.PushTranslate(0, 40);    
@@ -522,7 +552,7 @@ void MenuSystem::SourceMenu()
 {
     m_ui.MenuTitleWidget("SRC", TextAlign::CENTER);
     m_ui.MenuTitleWidget(m_activeMediaSlot.slotName, TextAlign::LEFT);
-    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeMediaSlot.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
+    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
 
     m_ui.PushTranslate(0, 40);
@@ -632,7 +662,7 @@ void MenuSystem::FileSelection()
 {
     m_ui.MenuTitleWidget("MEDIA", TextAlign::CENTER);
     m_ui.MenuTitleWidget(m_activeMediaSlot.slotName, TextAlign::LEFT);
-    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeMediaSlot.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
+    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
 
     m_ui.PushTranslate(4, 20);
@@ -720,7 +750,7 @@ void MenuSystem::LiveInputSelection()
 {
     m_ui.MenuTitleWidget("LIVE", TextAlign::CENTER);
     m_ui.MenuTitleWidget(m_activeMediaSlot.slotName, TextAlign::LEFT);
-    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeMediaSlot.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
+    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
     
     m_ui.PushTranslate(4, 20);
@@ -753,7 +783,7 @@ void MenuSystem::ShaderSelection()
 {
     m_ui.MenuTitleWidget("SHADER", TextAlign::CENTER);
     m_ui.MenuTitleWidget(m_activeMediaSlot.slotName, TextAlign::LEFT);
-    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeMediaSlot.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
+    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
 
     m_ui.PushTranslate(4, 20);
@@ -793,6 +823,7 @@ void MenuSystem::ControlMenu()
 {
     m_ui.MenuTitleWidget("CTL", TextAlign::CENTER);
     m_ui.MenuTitleWidget(m_activeMediaSlot.slotName, TextAlign::LEFT);
+    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
 
     m_ui.PushTranslate(4, 20);
@@ -814,6 +845,7 @@ void MenuSystem::ControlMenu()
         m_ui.Label("Name: " + fileName);
         m_ui.Spacer();
 
+        m_ui.SpinBoxInt("plane", videoInputConfig->planeId, 0, 3, 1, {"1", "2", "3", "4"});
         if (m_ui.CheckBox("loop", videoInputConfig->looping)) { 
             videoInputConfig->looping = !videoInputConfig->looping; 
         }
