@@ -68,6 +68,7 @@ private:
     void TextInputDialog();
     void FileManagerDialog();
     void FolderSelectionDialog();
+    void ConfirmActionDialog();
     
     // Widgets
     void MediaPreview(const std::string& filename);
@@ -188,6 +189,15 @@ private:
         std::function<void()> func;
     };
     FolderSelectionDialogData m_folderSelectionDialog;
+
+    struct ConfirmActionDialogData {
+        std::string title;
+        std::string subtitle;
+        std::string text;
+        std::function<void()> func;
+    };
+    ConfirmActionDialogData m_confirmActionDialog;
+
 
     std::vector<std::pair<char, Color>> m_buttonTexts = {{'Q', Color()}, {'W', Color()}, {'E', Color()}, {'R', Color()}, {'T', Color()}, {'Y', Color()}, {'U', Color()}, {'I',Color()},
                                                          {'A', Color()}, {'S', Color()}, {'D', Color()}, {'F', Color()}, {'G', Color()}, {'H', Color()}, {'J', Color()}, {'K',Color()}};
