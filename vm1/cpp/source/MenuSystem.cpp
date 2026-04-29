@@ -449,8 +449,8 @@ void MenuSystem::handlePlaneSwitching()
         *planeId += diff;
         int minValue = 0;
         int maxValue = m_registry.planes().size() - 1;
-        if (*planeId > maxValue) *planeId = maxValue;
-        if (*planeId < minValue) *planeId = minValue;
+        if (*planeId > maxValue) {*planeId = maxValue; return;}
+        if (*planeId < minValue) {*planeId = minValue; return;}
         m_activeOutputPlane.planeId = *planeId;
         for (int i = 0; i < MEDIA_SLOT_COUNT; ++i) {
             InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(i, false);
@@ -929,6 +929,8 @@ void MenuSystem::ControlMenu()
         m_ui.Label("Type: HDMI");
         std::string inputName = "Source: HDMI" + std::to_string(hdmiInputConfig->hdmiPort+1);
         m_ui.Label(inputName);
+        m_ui.Spacer();
+        m_ui.SpinBoxInt("plane", hdmiInputConfig->planeId, 0, 3, 1, {"1", "2", "3", "4"});
     }
     else if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(currentConfig)) {
         m_ui.Label("Type: Shader");
@@ -937,6 +939,8 @@ void MenuSystem::ControlMenu()
         shaderName = shaderName.substr(lastSlashPos + 1);
         m_ui.Label("Name: " + shaderName);
         m_ui.Spacer();
+
+        m_ui.SpinBoxInt("plane", shaderInputConfig->planeId, 0, 3, 1, {"1", "2", "3", "4"});
 
         for (auto& kv : shaderInputConfig->shaderConfig.params) {
             auto& param = kv.second;
