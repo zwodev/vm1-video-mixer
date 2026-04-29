@@ -314,16 +314,15 @@ void MenuSystem::handleMediaAndEditButtons()
     for (int mediaSlotId : m_ui.getTriggeredMediaSlotIds())
     {
         m_activeMediaSlot.slotId = mediaSlotId;
+        InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId);
+        if (!inputConfig) return;
+
         if (m_currentMenuType == MT_SourceMenu) {
             setMenu(MT_SourceMenu);
             SelectActiveSourceFolder();
         }
-        InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId);
-        if (inputConfig)
-        {
-            m_activeOutputPlane.planeId = inputConfig->planeId;        
-        }
-        return;
+        
+        m_activeOutputPlane.planeId = inputConfig->planeId;        
     }
 
     // check the edit-buttons
@@ -685,6 +684,8 @@ void MenuSystem::SelectActiveSourceFolder()
     printf("m_activeMediaSlot %d\n", m_activeMediaSlot.slotId);
     printf("SelectActiveSourceFolder\n");
     InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId);
+    if (!inputConfig) return;
+    
     if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
     {
         printf("Filename: %s\n", videoInputConfig->fileName.c_str());
@@ -895,7 +896,10 @@ void MenuSystem::ControlMenu()
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
 
-    InputConfig* currentConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId);
+    InputConfig* currentConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId, true);
+    // if (!currentConfig) {
+    //     currentConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId);
+    // }
     if (!currentConfig) {
         m_ui.Label("No input selected");
         m_ui.EndList();
