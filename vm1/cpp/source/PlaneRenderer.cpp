@@ -149,6 +149,9 @@ void PlaneRenderer::update(PlaneSettings& planeSettings, ScreenRotation rotation
     glBindTexture(GL_TEXTURE_2D, internalShaderParams.texture1);
     m_shader.bindUniformLocation("inputTexture1", 1);
     
+    m_shader.setValue("isTex0Valid", int(internalShaderParams.isTex0Valid));
+    m_shader.setValue("isTex1Valid", int(internalShaderParams.isTex1Valid));
+
     m_shader.setValue("mixValue", internalShaderParams.mixValue);
     m_shader.setValue("iTime", internalShaderParams.iTime);
 

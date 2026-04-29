@@ -64,6 +64,14 @@ public:
     {
         if (m_isFading) m_isActive = true;
     }
+    
+    void reset()
+    {
+        m_isActive = false;
+        m_toId = -1;
+        m_fromId = -1;
+        m_mixValue = 0.0f;
+    }
 
     bool startFade(int toId)
     {

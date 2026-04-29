@@ -24,6 +24,8 @@ const float iAspect = iResolution.x / iResolution.y;
 // standard
 uniform sampler2D inputTexture0;
 uniform sampler2D inputTexture1;
+uniform int isTex0Valid;
+uniform int isTex1Valid;
 uniform float mixValue;
 uniform float opacity;
 uniform int isMultiplication;
@@ -75,8 +77,10 @@ float colorclose(vec3 yuv, vec3 keyYuv, vec2 tol)
 
 vec4 colorAtUV(vec2 coord)
 {
-	vec4 col0 = texture(inputTexture0, coord);
-	vec4 col1 = texture(inputTexture1, coord);
+	vec4 col0 = vec4(0.0, 0.0, 0.0, 0.0);
+	vec4 col1 = vec4(0.0, 0.0, 0.0, 0.0);
+	if (isTex0Valid > 0) col0 = texture(inputTexture0, coord);
+	if (isTex1Valid > 0) col1 = texture(inputTexture1, coord);
 	return mix(col0, col1, mixValue);
 }
 

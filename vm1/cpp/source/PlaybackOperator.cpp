@@ -261,9 +261,17 @@ void PlaybackOperator::showMedia(int mediaSlotId)
         printf("start fade..");
         if (m_planeMixers[planeId].startFade(playerId)) {
             m_mediaPlayers[playerId]->play();
-            if (m_mediaSlotIdToPlayerId.find(mediaSlotId) != m_mediaSlotIdToPlayerId.end()) {
+            if (m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
                 int oldPlayerId = m_mediaSlotIdToPlayerId[mediaSlotId];
-                m_recentlyUsedPlayerIds.push_back(oldPlayerId);
+                MediaPlayer* oldMediaPlayer = m_mediaPlayers[oldPlayerId];
+                int oldPlaneId = oldMediaPlayer->planeId();
+                if (oldPlaneId == planeId) {
+                    m_recentlyUsedPlayerIds.push_back(oldPlayerId); 
+                }
+                // else {
+                //     //oldMediaPlayer->close();
+                //     m_planeMixers[oldPlaneId].reset();
+                // }
             }
             m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
         } 
@@ -322,7 +330,19 @@ void PlaybackOperator::showMedia(int mediaSlotId)
             shaderInputConfig->shaderConfig.update(shaderPlayer->shaderConfig());
         }
         if (m_planeMixers[planeId].startFade(playerId))  {
-            m_planeMixers[planeId].activate();
+            if (m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
+                int oldPlayerId = m_mediaSlotIdToPlayerId[mediaSlotId];
+                MediaPlayer* oldMediaPlayer = m_mediaPlayers[oldPlayerId];
+                int oldPlaneId = oldMediaPlayer->planeId();
+                if (oldPlaneId == planeId) {
+                    m_recentlyUsedPlayerIds.push_back(oldPlayerId); 
+                }
+                // else {
+                //     oldMediaPlayer->close();
+                //     m_planeMixers[oldPlaneId].reset();
+                // }
+            }
+            m_planeMixers[planeId].activate();            
             m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
         }
     }
@@ -356,14 +376,19 @@ void PlaybackOperator::update(float deltaTime)
         mediaPlayer->update();
     }
 
+    std::vector<int> activePlanes;
     std::vector<int> idsToDelete;
     for (const auto &[key, value] : m_mediaSlotIdToPlayerId)
     {
         int mediaSlotId = key;
         int playerId = value;
         MediaPlayer* mediaPlayer = m_mediaPlayers[playerId];
-
-        if (!isPlayerIdActive(playerId)) {
+        
+        if (isPlayerIdActive(playerId)) {
+            int activePlaneId = mediaPlayer->planeId();
+            activePlanes.push_back(activePlaneId);
+        }
+        else {
             if(m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
                 idsToDelete.push_back(mediaSlotId);
             }
@@ -436,6 +461,23 @@ void PlaybackOperator::update(float deltaTime)
         m_mediaSlotIdToPlayerId.erase(id);    
     }
 
+    for (int i = 0; i < PLANE_COUNT; i++) {
+        if (std::find(activePlanes.begin(), activePlanes.end(), i) == activePlanes.end()) {
+            auto activePlayerIds = m_planeMixers[i].activeIds();
+            for (auto activePlayerId : activePlayerIds) {
+                m_mediaPlayers[activePlayerId]->close();
+            }
+            m_planeMixers[i].reset();
+        }
+    }
+
+    // for (int i = 0; i < int(m_mediaPlayers.size()); ++i) {
+
+    //     if (m_mediaPlayers[i]->isPlaying()) {
+    //         printf("MEDIA PLAYER ACTIVE: %d\n", i);
+    //     }
+    // }
+
     updateDeviceController();
 }
 
@@ -473,23 +515,24 @@ void PlaybackOperator::renderPlane(int hdmiId)
             int fromId = planeMixer.fromId();
             int toId = planeMixer.toId();
 
+            PlaneRenderer::InternalShaderParams internalShaderParams;
             //float volume = float(m_registry.settings().volume) / 10.0f;
-            GLuint texture0 = 0;
+            //GLuint texture0 = 0;
             if (fromId >= 0) {
-                texture0 = m_mediaPlayers[fromId]->texture();
+                internalShaderParams.texture0 = m_mediaPlayers[fromId]->texture();
+                internalShaderParams.isTex0Valid = true;
                 //AudioStream* audioStream = m_audioStreams[fromId];
                 //if (audioStream) audioStream->setVolume((1.0f - planeMixer.mixValue()) * volume);
             }
-            GLuint texture1 = 0;
+            //GLuint texture1 = 0;
             if (toId >= 0) {
-                texture1 = m_mediaPlayers[toId]->texture();
+                internalShaderParams.texture1 = m_mediaPlayers[toId]->texture();
+                internalShaderParams.isTex1Valid = true;
                 //AudioStream* audioStream = m_audioStreams[toId];
                 //if (audioStream) audioStream->setVolume(planeMixer.mixValue() * volume);
             }
-
-            PlaneRenderer::InternalShaderParams internalShaderParams;
-            internalShaderParams.texture0 = texture0;
-            internalShaderParams.texture1 = texture1;
+;
+            
             internalShaderParams.mixValue = planeMixer.mixValue();
             internalShaderParams.iTime = m_registry.settings().currentTime;
             planeRenderer->update(m_registry.planes()[currentPlaneId], m_registry.settings().hdmiRotation0, internalShaderParams);

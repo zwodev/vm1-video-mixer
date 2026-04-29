@@ -25,6 +25,8 @@ public:
     struct InternalShaderParams {
         GLuint texture0 = 0;
         GLuint texture1 = 0;
+        bool isTex0Valid = false;
+        bool isTex1Valid = false;
         float mixValue = 0.0f;
         float iTime = 0.0f;
     };
