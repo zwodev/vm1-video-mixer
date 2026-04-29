@@ -661,7 +661,8 @@ bool UI::RadioButton(const std::string& label, bool active, bool* auxFunctionTri
 
     bool focused = ((*m_focusedIdxPtr) == m_listSize);
 
-    if(focused && isNavigationEventTriggered(NavigationEvent::Type::FnNavigationRight)) {
+    if(focused && (isNavigationEventTriggered(NavigationEvent::Type::FnNavigationRight) ||
+                   isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0)))  {
         if(auxFunctionTriggered != nullptr)
             *auxFunctionTriggered = true;
     }
