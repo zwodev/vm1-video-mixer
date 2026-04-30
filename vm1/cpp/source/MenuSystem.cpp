@@ -454,16 +454,18 @@ void MenuSystem::handlePlaneSwitching()
         m_activeOutputPlane.planeId = *planeId;
         for (int i = 0; i < MEDIA_SLOT_COUNT; ++i) {
             InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(i, false);
-            if (!inputConfig) continue;
+            if (!inputConfig) {
+                //m_activeMediaSlot.slotId = -1;
+                continue;
+            }
 
-            if (inputConfig->planeId == *planeId && inputConfig->isActive) {
+            if (inputConfig->planeId == *planeId) {
                 m_activeMediaSlot.slotId = i;
-                if (m_currentMenuType == MT_SourceMenu) {
+                if (m_currentMenuType == MT_SourceMenu && inputConfig->isActive) {
                     setMenu(MT_SourceMenu);
                     SelectActiveSourceFolder();
                 }
                 
-                printf("Active Media Slot on Current Plane: %d\n", i);
                 break;
             }
         }
@@ -509,10 +511,13 @@ void MenuSystem::render()
 {
     m_ui.NewFrame();
 
-    // get infos for top menu titles
-    int id16 = (m_activeMediaSlot.slotId % MEDIA_BUTTON_COUNT) + 1;
-    char bank = m_activeMediaSlot.slotId / MEDIA_BUTTON_COUNT + 65; // "+65" to get ASCII code
-    m_activeMediaSlot.slotName = std::string(1, bank) + std::to_string(id16);
+    if (m_activeMediaSlot.slotId >= 0) {
+        // get infos for top menu titles
+        int id16 = (m_activeMediaSlot.slotId % MEDIA_BUTTON_COUNT) + 1;
+        char bank = m_activeMediaSlot.slotId / MEDIA_BUTTON_COUNT + 65; // "+65" to get ASCII code
+        m_activeMediaSlot.slotName = std::string(1, bank) + std::to_string(id16);
+    }
+
     InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId, true);
     if (inputConfig) m_activeMediaSlot.planeId =  inputConfig->planeId;
     else m_activeMediaSlot.planeId = -1;   

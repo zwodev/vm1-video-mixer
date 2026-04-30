@@ -134,7 +134,7 @@ public:
 
     void stageInputConfig(int id, std::unique_ptr<InputConfig> inputConfig)
     {
-        //m_idsToValue[id] = std::move(inputConfig);
+        if (id < 0) return;
         m_stagedSlots[id] = std::move(inputConfig);
         if (m_activeSlots.contains(id)) {
             m_stagedSlots[id]->planeId = m_activeSlots[id]->planeId;
@@ -157,6 +157,8 @@ public:
 
     InputConfig* getInputConfig(int id, bool staged = false)
     {
+        if (id < 0) return nullptr;
+
         InputConfig *inputConfig = nullptr;
 
         if (staged && m_stagedSlots.find(id) != m_stagedSlots.end())

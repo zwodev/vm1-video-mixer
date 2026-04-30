@@ -452,6 +452,8 @@ void PlaybackOperator::update(float deltaTime)
                 shaderPlayer->close();
                 m_recentlyUsedPlayerIds.erase(std::find(m_recentlyUsedPlayerIds.begin(), m_recentlyUsedPlayerIds.end(), playerId));
             }
+            //mediaPlayer->close();
+            //m_recentlyUsedPlayerIds.erase(std::find(m_recentlyUsedPlayerIds.begin(), m_recentlyUsedPlayerIds.end(), playerId));
         } 
     }
 
@@ -465,7 +467,12 @@ void PlaybackOperator::update(float deltaTime)
         if (std::find(activePlanes.begin(), activePlanes.end(), i) == activePlanes.end()) {
             auto activePlayerIds = m_planeMixers[i].activeIds();
             for (auto activePlayerId : activePlayerIds) {
-                m_mediaPlayers[activePlayerId]->close();
+                //m_mediaPlayers[activePlayerId]->close();
+                MediaPlayer* mediaPlayer = m_mediaPlayers[activePlayerId];
+                WebcamPlayer* webcamPlayer = dynamic_cast<WebcamPlayer*>(mediaPlayer);
+                if (!webcamPlayer) {
+                    m_mediaPlayers[activePlayerId]->close();
+                }
             }
             m_planeMixers[i].reset();
         }
