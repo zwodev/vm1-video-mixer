@@ -393,6 +393,7 @@ void UI::SetElementLineHeight(int height)
 
 void UI::MenuTitleWidget(std::string label, TextAlign textAlign, Color color)
 {
+    if (label.empty()) return;
     int textWidth = m_stbRenderer.getTextWidth(label, BDF::TEXTSTYLE::MENU_TITLE);
     int minBoxWidth = 48;
     int boxWidth = std::max(textWidth + m_horizontalMargin * 2, minBoxWidth);
@@ -1071,7 +1072,7 @@ void UI::AnimationFrameWidget(const ImageBuffer& image, int& frameIndex)
     // printf("MediaPreview frame %d:  srcPosX: %d, srcPosY: %d\n",m_mediaPreviewFrameIndex, srcPosX, srcPosY);
 
     m_stbRenderer.drawSubImage(image, 
-                              glm::uvec2(160, 60),    // destPos
+                              glm::uvec2(156, 96),    // destPos
                               glm::uvec2(srcPosX, srcPosY),     // srcPos
                               glm::uvec2(160, 90)); // srcSize
     

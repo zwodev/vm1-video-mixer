@@ -42,6 +42,7 @@ class InputConfig
 public:
     InputConfig() = default;
     virtual ~InputConfig() = 0;
+    virtual std::unique_ptr<InputConfig> copy_unique() = 0;
 
     bool isActive = false;
     int planeId = 0;
@@ -56,6 +57,9 @@ class VideoInputConfig : public InputConfig
 public:
     VideoInputConfig() = default;
     ~VideoInputConfig() = default;
+    std::unique_ptr<InputConfig> copy_unique() override {
+        return std::make_unique<VideoInputConfig>(*this);
+    }
 
     std::string fileName;
     bool looping = false;
@@ -79,6 +83,9 @@ class HdmiInputConfig : public InputConfig
 public:
     HdmiInputConfig() = default;
     ~HdmiInputConfig() = default;
+    std::unique_ptr<InputConfig> copy_unique() override {
+        return std::make_unique<HdmiInputConfig>(*this);
+    }
 
     int hdmiPort = 0;
 
@@ -97,6 +104,9 @@ class ShaderInputConfig : public InputConfig
 public:
     ShaderInputConfig() = default;
     ~ShaderInputConfig() = default;
+    std::unique_ptr<InputConfig> copy_unique() override {
+        return std::make_unique<ShaderInputConfig>(*this);
+    }
 
     std::string fileName;
     ShaderConfig shaderConfig;
@@ -149,9 +159,9 @@ public:
             // if (m_activeSlots.contains(id)) {
             //     planeId = m_activeSlots[id]->planeId;
             // }
-            m_activeSlots[id] = std::move(m_stagedSlots[id]);
+            m_activeSlots[id] = std::move(m_stagedSlots[id]->copy_unique());
             //m_activeSlots[id]->planeId = planeId;
-            m_stagedSlots.erase(id);
+            //m_stagedSlots.erase(id);
         }
     }
 
@@ -211,7 +221,7 @@ public:
     {
         ar(
             CEREAL_NVP(bank),
-            cereal::make_nvp("media_slots", m_activeSlots)
+            cereal::make_nvp("media_slots", m_stagedSlots)
         );
     }
 
@@ -307,7 +317,7 @@ struct Settings
     bool defaultLooping = true;
     int fadeTime = 2;
     int volume = 10;
-    bool useUvcCaptureDevice = false;
+    bool useUvcCaptureDevice = true;
     int rotarySensitivity = 5;
     std::string serialDevice = "/dev/ttyACM0";
     int autoPlayOnHDMI0 = -1;

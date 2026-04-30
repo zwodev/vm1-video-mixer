@@ -528,15 +528,17 @@ void PlaybackOperator::renderPlane(int hdmiId)
             if (fromId >= 0) {
                 internalShaderParams.texture0 = m_mediaPlayers[fromId]->texture();
                 internalShaderParams.isTex0Valid = true;
-                //AudioStream* audioStream = m_audioStreams[fromId];
+                AudioStream* audioStream = m_audioStreams[fromId];
                 //if (audioStream) audioStream->setVolume((1.0f - planeMixer.mixValue()) * volume);
+                if (audioStream) audioStream->setVolume(0.0f);
             }
             //GLuint texture1 = 0;
             if (toId >= 0) {
                 internalShaderParams.texture1 = m_mediaPlayers[toId]->texture();
                 internalShaderParams.isTex1Valid = true;
-                //AudioStream* audioStream = m_audioStreams[toId];
+                AudioStream* audioStream = m_audioStreams[toId];
                 //if (audioStream) audioStream->setVolume(planeMixer.mixValue() * volume);
+                if (audioStream) audioStream->setVolume(0.0f);
             }
 ;
             

@@ -96,7 +96,7 @@ private:
     
     // Source
     void SourceMenu();
-    void SelectActiveSourceFolder();
+    void SelectActiveSourceFolder(bool staged = true);
     void FileSelection();
     void LiveInputSelection();
     void ShaderSelection();
