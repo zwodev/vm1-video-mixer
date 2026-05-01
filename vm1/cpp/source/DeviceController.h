@@ -15,6 +15,16 @@
 #include "EventBus.h"
 #include "Registry.h"
 
+// Bit positions (semantic state only)
+#define ASSIGNED_SHIFT     0
+#define PLAYING_SHIFT   1
+#define FOCUSED_SHIFT   2
+
+// Masks
+#define ASSIGNED_MASK   (1 << ASSIGNED_SHIFT)
+#define PLAYING_MASK    (1 << PLAYING_SHIFT)
+#define FOCUSED_MASK    (1 << FOCUSED_SHIFT)
+
 enum ButtonState : uint8_t
 {
     NONE,
@@ -31,6 +41,32 @@ enum ButtonState : uint8_t
     BLUE,
     RED
 };
+
+// enum Vm1Color : uint8_t {
+//   VM1_BLACK,
+//   VM1_SILVER,
+//   VM1_GRAY,
+//   VM1_WHITE,
+//   VM1_MAROON,
+//   VM1_RED,
+//   VM1_PURPLE,
+//   VM1_FUCHSIA,
+//   VM1_GREEN,
+//   VM1_LIME,
+//   VM1_OLIVE,
+//   VM1_YELLOW,
+//   VM1_NAVY,
+//   VM1_BLUE,
+//   VM1_TEAL,
+//   VM1_AQUA
+// };
+
+// enum Vm1Brightness : uint8_t {
+//   VM1_BRIGHT_0,
+//   VM1_BRIGHT_1,
+//   VM1_BRIGHT_2,
+//   VM1_BRIGHT_3
+// };
 
 enum RotaryButtonIds
 {
@@ -57,6 +93,7 @@ struct VM1DeviceState
     ButtonState fn = ButtonState::NONE;
     ButtonState editButtons[EDIT_BUTTON_COUNT] = {ButtonState::NONE};
     ButtonState mediaButtons[MEDIA_BUTTON_COUNT] = {ButtonState::EMPTY};
+    unsigned char mediaButtonsStates[MEDIA_BUTTON_COUNT] = {0};
 
     template <typename T>
     inline void hashCombine(std::size_t &seed, const T &v) const
@@ -79,6 +116,11 @@ struct VM1DeviceState
         }
 
         for (auto state : mediaButtons)
+        {
+            hashCombine(seed, state);
+        }
+
+        for (auto state : mediaButtonsStates)
         {
             hashCombine(seed, state);
         }

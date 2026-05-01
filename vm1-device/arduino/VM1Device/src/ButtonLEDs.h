@@ -13,9 +13,9 @@ void initNeoPixels();
 int *colorForButtonState(ButtonState state);
 uint32_t colorFromArray(int color[3]);
 void setMediaButtonLED(uint8_t buttonId, int* color);
-void animateAllNeoPixels();
+void neoPixelsStartAnimation();
 void updateNeoPixels();
-void animateActiveMediaSlotLED();
+// void animateActiveMediaSlotLED();
 
 
 

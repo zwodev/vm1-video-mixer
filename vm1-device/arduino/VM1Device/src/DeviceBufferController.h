@@ -2,6 +2,7 @@
 #include <Arduino.h>
 
 #define BUFFER_SIZE 8
+#define ANALOG_INPUTS_COUNT 4
 
 enum EventType : uint8_t {
   EDIT_BUTTON_EVENT,
@@ -23,7 +24,7 @@ struct DeviceBuffer
 {
   ButtonEvent buttonEvents[BUFFER_SIZE];
   bool fnPressed;
-  uint16_t analogInput[4];
+  uint16_t analogInput[ANALOG_INPUTS_COUNT];
 };
 #pragma pack()
 extern DeviceBuffer deviceBuffer;

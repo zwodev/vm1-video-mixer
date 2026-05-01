@@ -10,14 +10,21 @@
 #include "src/DeviceBufferController.h"
 #include "src/StateController.h"
 #include "src/ButtonLEDs.h"
+#include "src/AverageFilter.h"
 
 #define I2C_SLAVE_ADDRESS 0x08
 
+volatile uint8_t i2cBuffer[sizeof(DeviceState)];
+volatile uint8_t i2cIndex = 0;
+volatile bool i2cFrameReady = false;
+
+unsigned long current_millis;
+unsigned long millis_old = 0;
+
+
 // analog inputs
-#define A0_PIN 26
-#define A1_PIN 27
-#define A2_PIN 28
-#define A3_PIN 29
+const uint8_t analogInputPins[] = {26, 27, 28, 29};
+AverageFilter analogInputFilters[ANALOG_INPUTS_COUNT];
 
 DeviceBuffer deviceBuffer = {};   // output buffer for events. Gets cleared after events are sent via i2c
 DeviceState deviceState = {};     // state for the neopixel display, rotary encoder sensitivity etc.
@@ -45,11 +52,23 @@ void onI2CRequestHandler()
 
 void onI2CReceiveHandler(int numBytes)
 {
-  if (numBytes == sizeof(deviceState))
-  {
-    Wire.readBytes(reinterpret_cast<char *>(&deviceState), sizeof(deviceState));
-    updateNeoPixels();
-  }
+    while (Wire.available())
+    {
+        if (i2cIndex < sizeof(DeviceState))
+        {
+            i2cBuffer[i2cIndex++] = Wire.read();
+        }
+        else
+        {
+            Wire.read(); // discard overflow
+        }
+    }
+
+    // frame complete?
+    if (i2cIndex >= sizeof(DeviceState))
+    {
+        i2cFrameReady = true;
+    }
 }
 
 void setup()
@@ -67,17 +86,61 @@ void setup()
   Wire.onRequest(onI2CRequestHandler);
   Wire.onReceive(onI2CReceiveHandler);
 
-  animateAllNeoPixels();
+  neoPixelsStartAnimation();
 }
 
 void loop()
 {
+  current_millis = millis();
+  
   updateButtonMatrix();
   updateRotaryEncoders();
-  animateActiveMediaSlotLED();
 
-  uint16_t analog0 = analogRead(A0_PIN);  // ToDo: filter analog inputs, add all four of them
-  deviceBuffer.analogInput[0] = analog0;
+  if (i2cFrameReady)
+  {
+      noInterrupts();  // protect shared buffer flag
+
+      memcpy(&deviceState,
+              (void*)i2cBuffer,
+              sizeof(DeviceState));
+
+      i2cIndex = 0;
+      i2cFrameReady = false;
+
+      interrupts();
+
+      // DEBUG OUTPUT
+      Serial.println("Received DeviceState:");
+
+      for (int i = 0; i < 16; i++)
+      {
+          Serial.printf("[%d] ", i);
+
+          uint8_t s = deviceState.mediaButtonsStates[i];
+
+          if (s & ASSIGNED_MASK) Serial.print("ASSIGNED ");
+          if (s & PLAYING_MASK)  Serial.print("PLAYING ");
+          if (s & FOCUSED_MASK)  Serial.print("FOCUSED ");
+
+          if (s == 0) Serial.print("EMPTY");
+
+          Serial.println();
+      }
+  }
+
+ 
+  if (current_millis - millis_old > 16)
+  {
+    millis_old = current_millis;
+    updateNeoPixels();
+  }
+  // animateActiveMediaSlotLED();
+
+  for(int i = 0; i < ANALOG_INPUTS_COUNT; ++i)
+  {
+    float analogIn = analogRead(analogInputPins[i]);
+    deviceBuffer.analogInput[i] = analogInputFilters[i].Filter(analogIn);    
+  }
   
   // showDebugMessage();
 }

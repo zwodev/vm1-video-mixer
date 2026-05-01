@@ -534,17 +534,49 @@ void PlaybackOperator::updateDeviceController()
     {
         int mediaSlotId = (inputMappings.bank * MEDIA_BUTTON_COUNT) + i;
         InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
-        if (!inputConfig)
-        {
-            vm1DeviceState.mediaButtons[i] = ButtonState::NONE;
-        }
-        else 
-        {
-            vm1DeviceState.mediaButtons[i] = ButtonState(int(ButtonState::YELLOW) + inputConfig->planeId);
-        }
+        /* we need to differentiate these states:
+           1) the media-button is empty                       -> LED off
+           2) a media/input/shader is on the media-button     -> LED dimmed
+           3) a media-button is playing                       -> LED "breathing" from dimmed to bright
 
-        if(m_selectedMediaButton > -1) {
-            vm1DeviceState.mediaButtons[m_selectedMediaButton] = ButtonState::MEDIABUTTON_SELECTED;
+           4) a media-button is focused with empty media-slot        -> LED flashes with +50%
+              a media-button is focused with media on the media-slot -> LED flashes with +50%
+              a media-button is focused with media currently playing -> LED "breathing" + LED flashes with +50%
+                
+        */
+        // if (!inputConfig)
+        // {
+        //     vm1DeviceState.mediaButtons[i] = ButtonState::NONE;
+        // }
+        // else 
+        // {
+        //     vm1DeviceState.mediaButtons[i] = ButtonState(int(ButtonState::YELLOW) + inputConfig->planeId);
+        // }
+        // if(m_selectedMediaButton > -1)  // focused
+        // {
+        //     vm1DeviceState.mediaButtons[m_selectedMediaButton] = ButtonState::MEDIABUTTON_SELECTED;
+        // }
+
+        if(!inputConfig)
+        {
+            vm1DeviceState.mediaButtonsStates[i] = 0;
+            //return;
+        } else 
+        {
+            // not empty
+            vm1DeviceState.mediaButtonsStates[i] |= ASSIGNED_MASK;
+            
+            // currently playing
+            if(inputConfig->isActive)
+            {
+                vm1DeviceState.mediaButtonsStates[i] |= PLAYING_MASK;
+            }
+            
+            // focused
+            if(m_selectedMediaButton > -1)
+            {
+                vm1DeviceState.mediaButtonsStates[m_selectedMediaButton] |= FOCUSED_MASK;
+            }
         }
     }
     m_deviceController.send(vm1DeviceState);

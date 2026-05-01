@@ -34,6 +34,26 @@ void initNeoPixels() {
   strip.show();
 }
 
+int *colorForButtonState(unsigned char mediaButtonsState)
+{
+  int color[3] = {0};
+  if (mediaButtonsState & ASSIGNED_MASK)
+  {
+    memcpy(color, grey, sizeof(color));
+  }
+  if (mediaButtonsState & PLAYING_MASK ||
+      mediaButtonsState & FOCUSED_MASK)
+  {
+    memcpy(color, white, sizeof(color));
+  }
+
+  if(mediaButtonsState & FOCUSED_MASK)
+  {
+    fadeValue = 1.0f - abs(sin(millis()/500.0f)); /// TODO 
+  }
+  return color;
+}
+
 int *colorForButtonState(ButtonState state)
 {
   switch (state)
@@ -74,7 +94,7 @@ uint32_t colorFromArray(int color[3])
   return strip.Color(color[0], color[1], color[2]);
 }
 
-void animateAllNeoPixels()
+void neoPixelsStartAnimation()
 {
   for (int i = 0; i < NEOPIXEL_COUNT; ++i)
   {
@@ -89,7 +109,7 @@ void animateAllNeoPixels()
     strip.show();
   }
 
-  delay(250);
+  delay(50);
 
   for (int i = 0; i < NEOPIXEL_COUNT; ++i)
   {
@@ -120,7 +140,8 @@ void updateNeoPixels()
   // upper row media-keys [10-17]
   for (uint8_t i = 0; i < 8; ++i)
   {
-    color = colorForButtonState(deviceState.mediaButtons[7 - i]);
+    // color = colorForButtonState(deviceState.mediaButtons[7 - i]);
+    color = colorForButtonState(deviceState.mediaButtonsStates[7 - i]);
     strip.setPixelColor(10 + i, colorFromArray(color));
   }
 
@@ -131,7 +152,8 @@ void updateNeoPixels()
   // lower row media-keys [19-26]
   for (uint8_t i = 0; i < 8; ++i)
   {
-    color = colorForButtonState(deviceState.mediaButtons[8 + i]);
+    // color = colorForButtonState(deviceState.mediaButtons[8 + i]);
+    color = colorForButtonState(deviceState.mediaButtonsStates[8 + i]);
     strip.setPixelColor(19 + i, colorFromArray(color));
   }
 
@@ -156,25 +178,25 @@ void setMediaButtonLED(uint8_t buttonId, int* color)
   }
 }
 
-void animateActiveMediaSlotLED()
-{
-  if(lastPressedMediaButtonId <0) return;
+// void animateActiveMediaSlotLED()
+// {
+//   if(lastPressedMediaButtonId <0) return;
 
-  unsigned long current_millis = millis();  
-  static long time = 0;
-  static float fadeValue = 0.0f;
+//   unsigned long current_millis = millis();  
+//   static long time = 0;
+//   static float fadeValue = 0.0f;
   
-  if (current_millis - time > 16)
-  {
-    time = current_millis;
-    fadeValue = 1.0f - abs(sin(millis()/500.0f));
-    float divider = 1.0f + fadeValue * (dimmed_divider - 1.0f);
-    int fadeColor[3] = {0,0,0};
-    int* color = colorForButtonState(deviceState.mediaButtons[lastPressedMediaButtonId]);
-    for(int i = 0; i < 3; i++){ 
-      fadeColor[i] = color[i] / (int)divider;
-    }
-    setMediaButtonLED(lastPressedMediaButtonId, fadeColor);
-    strip.show();
-  }
-}
+//   if (current_millis - time > 16)
+//   {
+//     time = current_millis;
+//     fadeValue = 1.0f - abs(sin(millis()/500.0f));
+//     float divider = 1.0f + fadeValue * (dimmed_divider - 1.0f);
+//     int fadeColor[3] = {0,0,0};
+//     int* color = colorForButtonState(deviceState.mediaButtons[lastPressedMediaButtonId]);
+//     for(int i = 0; i < 3; i++){ 
+//       fadeColor[i] = color[i] / (int)divider;
+//     }
+//     setMediaButtonLED(lastPressedMediaButtonId, fadeColor);
+//     strip.show();
+//   }
+// }
