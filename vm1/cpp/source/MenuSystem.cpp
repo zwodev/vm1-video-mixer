@@ -442,7 +442,7 @@ void MenuSystem::handlePlaneSwitching()
             m_currentMenuType == MT_ControlMenu ||
             m_currentMenuType == MT_FxMenu      ||
             m_currentMenuType == MT_OutputMenu
-        ) 
+        )
     {
         // select output plane for FX or OUT menu
         planeId = &m_activeOutputPlane.planeId;
@@ -605,6 +605,9 @@ void MenuSystem::InfoMenu()
         m_ui.Label("Name: " + fileName);
         m_ui.Label("Player ID: " + std::to_string(currentConfig->playerId));
         m_ui.Spacer();
+        if (m_ui.Action("Show source")) {
+            SelectActiveSourceFolder(false);
+        }
         if (m_ui.Action("Deactivate")) {
             m_eventBus.publish(PlaneEvent(m_activeOutputPlane.planeId));
         }
@@ -617,6 +620,9 @@ void MenuSystem::InfoMenu()
         m_ui.Label(inputName);
         m_ui.Label("Player ID: " + std::to_string(currentConfig->playerId));
         m_ui.Spacer();
+        if (m_ui.Action("Show source")) {
+            SelectActiveSourceFolder(false);
+        }
         if (m_ui.Action("Deactivate")) {
             m_eventBus.publish(PlaneEvent(m_activeOutputPlane.planeId));
         }
@@ -629,6 +635,9 @@ void MenuSystem::InfoMenu()
         m_ui.Label("Name: " + shaderName);
         m_ui.Label("Player ID: " + std::to_string(currentConfig->playerId));
         m_ui.Spacer();
+        if (m_ui.Action("Show source")) {
+            SelectActiveSourceFolder(false);
+        }
         if (m_ui.Action("Deactivate")) {
             m_eventBus.publish(PlaneEvent(m_activeOutputPlane.planeId));
         }
@@ -744,10 +753,31 @@ void MenuSystem::SelectActiveSourceFolder(bool staged)
         appendStateToMenuPath(MenuState(0, [this](){LiveInputSelection();}));
         // int port = hdmiInputConfig->hdmiPort;
     }
-    else if (/*ShaderInputConfig *shaderInputConfig = */dynamic_cast<ShaderInputConfig *>(inputConfig))
+    else if (ShaderInputConfig *shaderInputConfig = dynamic_cast<ShaderInputConfig *>(inputConfig))
     {
-        appendStateToMenuPath(MenuState(0, [this](){ShaderSelection();}));
-        // std::string shaderName = shaderInputConfig->fileName;
+        printf("Filename: %s\n", shaderInputConfig->fileName.c_str());
+        std::vector<std::string> menuPath = splitPath(shaderInputConfig->fileName);
+        for (const std::string& pathSegment : menuPath) {
+            printf("Path Segment: %s\n", pathSegment.c_str());
+        }
+        
+        menuPath.pop_back(); // remove filename
+        if (menuPath.size() >=2 && menuPath[0] == "shaders" && menuPath[1] == "generative") { // remove first element "videos"
+            menuPath.pop_back();
+            menuPath[0] = "";
+        }
+        if(menuPath.size() > 0){
+            for (size_t i = 0; i < menuPath.size(); ++i) {
+                const std::string &pathElementName = menuPath[i];
+                printf("entering %s\n", pathElementName.c_str());
+                appendStateToMenuPath(MenuState(0, [this](){ShaderSelection();}, pathElementName));
+            }
+            m_focusActiveSource = true;           
+        }
+        else
+        {
+            appendStateToMenuPath(MenuState(0, [this](){ShaderSelection();}));
+        }
     }
 }
 
@@ -809,9 +839,12 @@ void MenuSystem::FileSelection()
                 changed = true;
             }
             // Set focus to this entry if it's the active media
-            if (m_focusActiveSource && config->fileName == entry.absolutePath) {
-                m_currentMenuPath.back().fIdx = m_ui.CurrentListSize()-1;
-                m_focusActiveSource = false;
+            if (m_focusActiveSource) {
+                VideoInputConfig* videoConfig = m_registry.inputMappings().getVideoInputConfig(m_activeMediaSlot.slotId);
+                if (videoConfig && entry.absolutePath == videoConfig->fileName) {
+                    m_currentMenuPath.back().fIdx = m_ui.CurrentListSize()-1;
+                    m_focusActiveSource = false;
+                }
             }
             
             if(openFileMenu) {
@@ -908,6 +941,14 @@ void MenuSystem::ShaderSelection()
         else if (m_ui.RadioButton(entry.name.c_str(), (config->fileName == entry.absolutePath))) {
             config->fileName = entry.absolutePath;
             changed = true;
+        }
+        // Set focus to this entry if it's the active shader
+        if (m_focusActiveSource) {
+            ShaderInputConfig* shaderInputConfig = m_registry.inputMappings().getShaderInputConfig(m_activeMediaSlot.slotId);
+            if (shaderInputConfig && entry.absolutePath == shaderInputConfig->fileName) {
+                m_currentMenuPath.back().fIdx = m_ui.CurrentListSize()-1;
+                m_focusActiveSource = false;
+            }
         }
     }
     m_ui.EndList(); 
