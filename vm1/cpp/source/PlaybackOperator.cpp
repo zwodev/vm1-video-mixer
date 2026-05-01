@@ -353,12 +353,13 @@ void PlaybackOperator::showMedia(int mediaSlotId)
 
         // Start fade
         if (m_planeMixers[planeId].startFade(playerId))  {
-            m_planeMixers[planeId].activate();            
+            //m_planeMixers[planeId].activate();            
             shaderInputConfig->playerId = playerId;
+            printf("Shader Player ID: %d\n", playerId);
         }
     }
 
-    inputConfig = m_registry.inputMappings().activateInputConfig(mediaSlotId);
+    m_registry.inputMappings().activateInputConfig(mediaSlotId);
 }
 
 void PlaybackOperator::update(float deltaTime)
@@ -381,6 +382,7 @@ void PlaybackOperator::update(float deltaTime)
     }
 
     std::vector<int> activePlanes;
+    std::vector<int> activePlayerIds;
     std::vector<int> activeSlotsToClear;
     std::vector<int> activeSlotIds = m_registry.inputMappings().activeSlotIds();
     for (int activeSlotId : activeSlotIds) {
@@ -392,11 +394,13 @@ void PlaybackOperator::update(float deltaTime)
             MediaPlayer* mediaPlayer = m_mediaPlayers[playerId];
             if (!mediaPlayer) {
                 activeSlotsToClear.push_back(activeSlotId);
+                printf("No Media Player on Slot: %d\n", activeSlotId);
                 continue;
             }
             if (isPlayerIdActive(playerId)) {
-                // Gather active planes
+                // Gather active planes and active player ids
                 activePlanes.push_back(inputConfig->planeId);
+                activePlayerIds.push_back(playerId);
 
                 // Set shader params
                 if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(inputConfig))
@@ -421,6 +425,7 @@ void PlaybackOperator::update(float deltaTime)
                     mediaPlayer->close();
                 }
                 activeSlotsToClear.push_back(activeSlotId);
+                printf("Delete Inactive Slot: %d\n", activeSlotId);
             }
         }
     }
@@ -430,10 +435,9 @@ void PlaybackOperator::update(float deltaTime)
         m_registry.inputMappings().removeConfig(id);
     }
 
-    activeSlotIds = m_registry.inputMappings().activeSlotIds();
     for (int i = 0; i < int(m_mediaPlayers.size()); ++i) {
         MediaPlayer* mediaPlayer = m_mediaPlayers[i];
-        if (std::find(activeSlotIds.begin(), activeSlotIds.end(), i) == activeSlotIds.end()) {
+        if (std::find(activePlayerIds.begin(), activePlayerIds.end(), i) == activePlayerIds.end()) {
             if (!dynamic_cast<WebcamPlayer*>(mediaPlayer)) {
                 mediaPlayer->close();
             }

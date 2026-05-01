@@ -587,7 +587,7 @@ void MenuSystem::InfoMenu()
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
 
-    InputConfig* currentConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId, true);
+    InputConfig* currentConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId);
     if (!currentConfig) {
         m_ui.Label("No input selected");
         m_ui.EndList();
@@ -603,11 +603,11 @@ void MenuSystem::InfoMenu()
             fileName = fileName.substr(0, 20) + "...";
         }
         m_ui.Label("Name: " + fileName);
+        m_ui.Label("Player ID: " + std::to_string(currentConfig->playerId));
         m_ui.Spacer();
-        m_ui.Text("Deactivate");
-        // if (m_ui.Action("Deactivate")) {
-        //     m_eventBus.publish(PlaneEvent(m_activeOutputPlane.planeId));
-        // }
+        if (m_ui.Action("Deactivate")) {
+            m_eventBus.publish(PlaneEvent(m_activeOutputPlane.planeId));
+        }
         std::string previewFilename = videoInputConfig->fileName + ".preview";
         MediaPreview(previewFilename);
     }
@@ -615,6 +615,7 @@ void MenuSystem::InfoMenu()
         m_ui.Label("Type: HDMI");
         std::string inputName = "Source: HDMI" + std::to_string(hdmiInputConfig->hdmiPort+1);
         m_ui.Label(inputName);
+        m_ui.Label("Player ID: " + std::to_string(currentConfig->playerId));
         m_ui.Spacer();
         if (m_ui.Action("Deactivate")) {
             m_eventBus.publish(PlaneEvent(m_activeOutputPlane.planeId));
@@ -626,6 +627,7 @@ void MenuSystem::InfoMenu()
         int lastSlashPos = shaderName.find_last_of('/');
         shaderName = shaderName.substr(lastSlashPos + 1);
         m_ui.Label("Name: " + shaderName);
+        m_ui.Label("Player ID: " + std::to_string(currentConfig->playerId));
         m_ui.Spacer();
         if (m_ui.Action("Deactivate")) {
             m_eventBus.publish(PlaneEvent(m_activeOutputPlane.planeId));
@@ -1194,8 +1196,8 @@ void MenuSystem::NetworkMenu()
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
     if (!eth0.empty()) m_ui.Label("Eth. IP: " + eth0);
     if (!wlan0.empty()) m_ui.Label("Wifi IP: " + wlan0);
-    m_ui.Label("SSID: VM-1");
-    m_ui.Label("Pass: vmone12345");
+    //m_ui.Label("SSID: VM-1");
+    //m_ui.Label("Pass: vmone12345");
     SubMenu("Show Wifi-QR", [this](){ WifiQrCode(); });
     m_ui.EndList();
     

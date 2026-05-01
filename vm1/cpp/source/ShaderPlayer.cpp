@@ -64,6 +64,10 @@ void ShaderPlayer::finalize()
 {
 }
 
+bool ShaderPlayer::isFrameReady() {
+    return m_isShaderReady = true;
+}
+
 void ShaderPlayer::loadShaders()
 {
 }

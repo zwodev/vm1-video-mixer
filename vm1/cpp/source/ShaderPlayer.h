@@ -33,6 +33,7 @@ public:
     bool openFile(const std::string& fileName, AudioStream* audioStream = nullptr);
     void close() override;
     void finalize();
+    bool isFrameReady() override;
     void update() override;
     const ShaderConfig& shaderConfig();
     void setShaderUniforms(const ShaderConfig& shaderConfig);

@@ -63,7 +63,7 @@ public:
     void setDevicePath(const std::string& devicePath);
     bool isPlaying() const { return m_isRunning; }
     virtual void update() = 0;
-    bool isFrameReady();
+    virtual bool isFrameReady();
     GLuint texture();
     //void setPlaneId(int planeId);
     //int planeId();
