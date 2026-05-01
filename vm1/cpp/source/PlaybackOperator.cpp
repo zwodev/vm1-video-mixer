@@ -158,7 +158,6 @@ void PlaybackOperator::finalize()
 
     m_mediaPlayers.clear(); 
     m_planeMixers.clear();
-    m_mediaSlotIdToPlayerId.clear();
     m_audioStreams.clear();
 
     m_audioSystem.finalize();
