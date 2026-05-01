@@ -151,7 +151,7 @@ private:
     std::vector<WebcamPlayer*> m_webcamPlayers;
     std::vector<ShaderPlayer*> m_shaderPlayers;
     std::vector<MediaPlayer*> m_mediaPlayers;
-    std::map<int, int> m_mediaSlotIdToPlayerId;
+    //std::map<int, int> m_mediaSlotIdToPlayerId;
     std::vector<int> m_recentlyUsedPlayerIds;
 
     bool m_isInitialized = false;

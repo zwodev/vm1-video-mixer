@@ -118,6 +118,7 @@ private:
 
     // Network
     void NetworkMenu();
+    void WifiQrCode();
 
     // Global Settings
     void GlobalSettingsMenu();

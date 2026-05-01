@@ -53,6 +53,32 @@ void PlaybackOperator::subscribeToEvents()
     m_eventBus.subscribe<EffectShaderEvent>([this](const EffectShaderEvent& event) {
         reloadPlaneShader(event.planeId);
     });
+
+    m_eventBus.subscribe<PlaneEvent>([this](const PlaneEvent& event) {
+        if (event.planeId < 0) return;
+
+        std::vector<int> activeSlotsToClear;
+        std::vector<int> activeSlotIds = m_registry.inputMappings().activeSlotIds();
+        for (int activeSlotId : activeSlotIds) {
+            InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(activeSlotId);
+            
+            if (inputConfig && inputConfig->planeId == event.planeId) {
+                int playerId = inputConfig->playerId;
+                if (playerId >= 0) {
+                    MediaPlayer* mediaPlayer = m_mediaPlayers[playerId];
+                    if (mediaPlayer && !dynamic_cast<HdmiInputConfig*>(inputConfig)) {
+                        mediaPlayer->close();
+                    }
+                    activeSlotsToClear.push_back(activeSlotId);
+                }   
+                
+            }
+        }
+        
+        for (auto id : activeSlotsToClear) {
+            m_registry.inputMappings().removeConfig(id);
+        }
+    });
 }
 
 void PlaybackOperator::initialize()
@@ -222,11 +248,10 @@ void PlaybackOperator::showMedia(int mediaSlotId)
         return;
     }
 
-    //std::string fileName;
     std::string filePath;
 
     InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId, true);
-    m_registry.inputMappings().activateInputConfig(mediaSlotId);
+    
     if (!inputConfig) {
         m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::NoMedia, "No media"));
         return;
@@ -247,10 +272,9 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
     {
         filePath = videoInputConfig->fileName;
-        //fileName = videoInputConfig->fileName;
-        //filePath = fileName;
-
         if (!getFreeVideoPlayerId(playerId, planeId)) return;
+
+        // Open video file
         AudioStream* audioStream = m_audioStreams[playerId];
         if (!m_mediaPlayers[playerId]->openFile(filePath, audioStream)) {
             printf("Could not play!!\n");
@@ -258,22 +282,18 @@ void PlaybackOperator::showMedia(int mediaSlotId)
             return;
         }
 
-        printf("start fade..");
+        // Start fade
         if (m_planeMixers[planeId].startFade(playerId)) {
-            m_mediaPlayers[playerId]->play();
-            if (m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
-                int oldPlayerId = m_mediaSlotIdToPlayerId[mediaSlotId];
-                MediaPlayer* oldMediaPlayer = m_mediaPlayers[oldPlayerId];
-                int oldPlaneId = oldMediaPlayer->planeId();
-                if (oldPlaneId == planeId) {
-                    m_recentlyUsedPlayerIds.push_back(oldPlayerId); 
-                }
-                // else {
-                //     //oldMediaPlayer->close();
-                //     m_planeMixers[oldPlaneId].reset();
-                // }
+            MediaPlayer* mediaPlayer = m_mediaPlayers[playerId];
+            VideoPlayer* videoPlayer = dynamic_cast<VideoPlayer*>(mediaPlayer);
+            if (videoPlayer)
+            {
+                bool looping = videoInputConfig->looping;
+                videoPlayer->setLooping(looping);
+                videoPlayer->play();
             }
-            m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
+            
+            videoInputConfig->playerId = playerId;
         } 
     
     }
@@ -296,6 +316,7 @@ void PlaybackOperator::showMedia(int mediaSlotId)
         {
             if (!getWebcamPlayerIdFromPort(hdmiInputConfig->hdmiPort, playerId)) return;
 
+            // Start capture if not already running
             if (!m_mediaPlayers[playerId]->isPlaying()) {
                 if(WebcamPlayer* webcamPlayer = dynamic_cast<WebcamPlayer *>(m_mediaPlayers[playerId])) {
                     CaptureType captureType = CaptureType::CT_CSI;
@@ -305,51 +326,40 @@ void PlaybackOperator::showMedia(int mediaSlotId)
                     webcamPlayer->setCaptureType(captureType);
                 }
                 m_mediaPlayers[playerId]->openFile(m_registry.settings().captureDevicePath);
-                printf("Device Path: %s\n", m_registry.settings().captureDevicePath.c_str());
                 m_mediaPlayers[playerId]->play(); 
             }
             
+            // Start fade
             if (m_planeMixers[planeId].startFade(playerId))  {
-                m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
+                hdmiInputConfig->playerId = playerId;
             }
         }
     }
     else if (ShaderInputConfig *shaderInputConfig = dynamic_cast<ShaderInputConfig *>(inputConfig))
     {
         if (!getFreeShaderPlayerId(playerId, planeId)) return;
+        
+        // Open shader file
         filePath = shaderInputConfig->fileName;
-        //filePath = m_registry.mediaPool().getGenerativeShaderFilePath(fileName);
         if (!m_mediaPlayers[playerId]->openFile(filePath)) {
             printf("Could not open custom shader!!\n");
             m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::FileNotSupported, "File not supported"));
             return;
         }
 
+        // Update shader parameters
         if (ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(m_mediaPlayers[playerId])) {
-            //shaderInputConfig->shaderConfig = shaderPlayer->shaderConfig();
             shaderInputConfig->shaderConfig.update(shaderPlayer->shaderConfig());
         }
+
+        // Start fade
         if (m_planeMixers[planeId].startFade(playerId))  {
-            if (m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
-                int oldPlayerId = m_mediaSlotIdToPlayerId[mediaSlotId];
-                MediaPlayer* oldMediaPlayer = m_mediaPlayers[oldPlayerId];
-                int oldPlaneId = oldMediaPlayer->planeId();
-                if (oldPlaneId == planeId) {
-                    m_recentlyUsedPlayerIds.push_back(oldPlayerId); 
-                }
-                // else {
-                //     oldMediaPlayer->close();
-                //     m_planeMixers[oldPlaneId].reset();
-                // }
-            }
             m_planeMixers[planeId].activate();            
-            m_mediaSlotIdToPlayerId[mediaSlotId] = playerId;
+            shaderInputConfig->playerId = playerId;
         }
     }
 
-    if (playerId >= 0) {
-        m_mediaPlayers[playerId]->setPlaneId(planeId);
-    }
+    inputConfig = m_registry.inputMappings().activateInputConfig(mediaSlotId);
 }
 
 void PlaybackOperator::update(float deltaTime)
@@ -369,121 +379,74 @@ void PlaybackOperator::update(float deltaTime)
         else {
             planeMixer.updateAutoFade(deltaTime);
         }
-        
-    }
-
-    for (auto mediaPlayer : m_mediaPlayers) {
-        mediaPlayer->update();
     }
 
     std::vector<int> activePlanes;
-    std::vector<int> idsToDelete;
-    for (const auto &[key, value] : m_mediaSlotIdToPlayerId)
-    {
-        int mediaSlotId = key;
-        int playerId = value;
-        MediaPlayer* mediaPlayer = m_mediaPlayers[playerId];
+    std::vector<int> activeSlotsToClear;
+    std::vector<int> activeSlotIds = m_registry.inputMappings().activeSlotIds();
+    for (int activeSlotId : activeSlotIds) {
+        InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(activeSlotId);
         
-        if (isPlayerIdActive(playerId)) {
-            int activePlaneId = mediaPlayer->planeId();
-            activePlanes.push_back(activePlaneId);
-        }
-        else {
-            if(m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
-                idsToDelete.push_back(mediaSlotId);
+        if (inputConfig) {
+            int playerId = inputConfig->playerId;
+            if (playerId < 0) continue;
+            MediaPlayer* mediaPlayer = m_mediaPlayers[playerId];
+            if (!mediaPlayer) {
+                activeSlotsToClear.push_back(activeSlotId);
+                continue;
             }
-            if (VideoPlayer* videoPlayer = dynamic_cast<VideoPlayer*>(mediaPlayer)) {
-                videoPlayer->close();
-            }
-            else if (ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(mediaPlayer)) {
-                printf("Close shader (first)!\n");
-                shaderPlayer->close();
-            }
-        }
+            if (isPlayerIdActive(playerId)) {
+                // Gather active planes
+                activePlanes.push_back(inputConfig->planeId);
 
-        InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
-        if (!inputConfig) continue;
-
-        if (inputConfig) inputConfig->isActive = isPlayerIdActive(playerId);
-        if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(inputConfig))
-        {
-            bool looping = videoInputConfig->looping;
-            VideoPlayer* videoPlayer = dynamic_cast<VideoPlayer*>(mediaPlayer);
-            if (videoPlayer && videoPlayer->isPlaying())
-            {
-                videoPlayer->setLooping(looping);
-            }
-
-            if (!videoPlayer || !videoPlayer->isPlaying())
-            {
-                if(m_mediaSlotIdToPlayerId.contains(mediaSlotId)) {
-                    idsToDelete.push_back(mediaSlotId);
+                // Set shader params
+                if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(inputConfig))
+                {
+                    if (ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(mediaPlayer)) {
+                        // TODO: Move to registry, maybe "Animation System"
+                        ShaderConfig& shaderConfig = shaderInputConfig->shaderConfig;
+                        if (shaderConfig.params.contains("iTime")) {
+                            auto& param = shaderConfig.params["iTime"];
+                            if (std::holds_alternative<FloatParameter>(param)) {
+                                auto& intParam = std::get<FloatParameter>(param);
+                                intParam.value = m_registry.settings().currentTime;
+                            }
+                        } 
+                        shaderPlayer->setShaderUniforms(shaderConfig);
+                    } 
                 }
             }
-        }
-        else if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(inputConfig))
-        {
-            if (ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(mediaPlayer)) {
-                // TODO: Move to registry, maybe "Animation System"
-                ShaderConfig& shaderConfig = shaderInputConfig->shaderConfig;
-                if (shaderConfig.params.contains("iTime")) {
-                    auto& param = shaderConfig.params["iTime"];
-                    if (std::holds_alternative<FloatParameter>(param)) {
-                        auto& intParam = std::get<FloatParameter>(param);
-                        intParam.value = m_registry.settings().currentTime;
-                    }
-                } 
-                shaderPlayer->setShaderUniforms(shaderConfig);
-            } 
+            else {
+                HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(inputConfig);
+                if (!hdmiInputConfig) {
+                    mediaPlayer->close();
+                }
+                activeSlotsToClear.push_back(activeSlotId);
+            }
         }
     }
-
-    std::vector<int> recentlyUsedPlayerIds = m_recentlyUsedPlayerIds;
-    for (int playerId : recentlyUsedPlayerIds) {
-        MediaPlayer* mediaPlayer = m_mediaPlayers[playerId];
-        if (!isPlayerIdActive(playerId)) {
-            // TODO: Can we just close() on MediaPlayer for all types. What about WebcamPlayer. Do we want to close it?
-            if (VideoPlayer* videoPlayer = dynamic_cast<VideoPlayer*>(mediaPlayer)) {
-                videoPlayer->close();
-                m_recentlyUsedPlayerIds.erase(std::find(m_recentlyUsedPlayerIds.begin(), m_recentlyUsedPlayerIds.end(), playerId));
-            }
-            else if (ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(mediaPlayer)) {
-                printf("Close shader (second)!\n");
-                shaderPlayer->close();
-                m_recentlyUsedPlayerIds.erase(std::find(m_recentlyUsedPlayerIds.begin(), m_recentlyUsedPlayerIds.end(), playerId));
-            }
-            //mediaPlayer->close();
-            //m_recentlyUsedPlayerIds.erase(std::find(m_recentlyUsedPlayerIds.begin(), m_recentlyUsedPlayerIds.end(), playerId));
-        } 
+    
+    for (auto id : activeSlotsToClear) {
+        //InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(id);
+        m_registry.inputMappings().removeConfig(id);
     }
 
-    for (auto id : idsToDelete) {
-        InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(id);
-        if (inputConfig) inputConfig->isActive = false;
-        m_mediaSlotIdToPlayerId.erase(id);    
+    activeSlotIds = m_registry.inputMappings().activeSlotIds();
+    for (int i = 0; i < int(m_mediaPlayers.size()); ++i) {
+        MediaPlayer* mediaPlayer = m_mediaPlayers[i];
+        if (std::find(activeSlotIds.begin(), activeSlotIds.end(), i) == activeSlotIds.end()) {
+            if (!dynamic_cast<WebcamPlayer*>(mediaPlayer)) {
+                mediaPlayer->close();
+            }
+        }
+        mediaPlayer->update();
     }
 
     for (int i = 0; i < PLANE_COUNT; i++) {
         if (std::find(activePlanes.begin(), activePlanes.end(), i) == activePlanes.end()) {
-            auto activePlayerIds = m_planeMixers[i].activeIds();
-            for (auto activePlayerId : activePlayerIds) {
-                //m_mediaPlayers[activePlayerId]->close();
-                MediaPlayer* mediaPlayer = m_mediaPlayers[activePlayerId];
-                WebcamPlayer* webcamPlayer = dynamic_cast<WebcamPlayer*>(mediaPlayer);
-                if (!webcamPlayer) {
-                    m_mediaPlayers[activePlayerId]->close();
-                }
-            }
             m_planeMixers[i].reset();
         }
     }
-
-    // for (int i = 0; i < int(m_mediaPlayers.size()); ++i) {
-
-    //     if (m_mediaPlayers[i]->isPlaying()) {
-    //         printf("MEDIA PLAYER ACTIVE: %d\n", i);
-    //     }
-    // }
 
     updateDeviceController();
 }
@@ -495,12 +458,15 @@ void PlaybackOperator::renderPlane(int hdmiId)
     const auto& planes = m_registry.planes();
 
     std::vector<int> activePlanesIds;
-    for (auto iter = m_mediaSlotIdToPlayerId.begin(); iter != m_mediaSlotIdToPlayerId.end(); ++iter)
+    std::vector<int> activeSlotIds = m_registry.inputMappings().activeSlotIds();
+    for (int activeSlotId : activeSlotIds)
     {
-        int playerId = iter->second;
-        int planeId = m_mediaPlayers[playerId]->planeId();
-        if(std::find(activePlanesIds.begin(), activePlanesIds.end(), planeId) == activePlanesIds.end()) {
-            activePlanesIds.push_back(planeId);
+        InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(activeSlotId);
+        if (inputConfig) {
+            int planeId = inputConfig->planeId;
+            if(std::find(activePlanesIds.begin(), activePlanesIds.end(), planeId) == activePlanesIds.end()) {
+                activePlanesIds.push_back(planeId);
+            }
         }
     }
     std::sort(activePlanesIds.begin(), activePlanesIds.end(), [](int x, int y){return x < y;});
@@ -524,7 +490,6 @@ void PlaybackOperator::renderPlane(int hdmiId)
 
             PlaneRenderer::InternalShaderParams internalShaderParams;
             //float volume = float(m_registry.settings().volume) / 10.0f;
-            //GLuint texture0 = 0;
             if (fromId >= 0) {
                 internalShaderParams.texture0 = m_mediaPlayers[fromId]->texture();
                 internalShaderParams.isTex0Valid = true;
@@ -532,7 +497,6 @@ void PlaybackOperator::renderPlane(int hdmiId)
                 //if (audioStream) audioStream->setVolume((1.0f - planeMixer.mixValue()) * volume);
                 if (audioStream) audioStream->setVolume(0.0f);
             }
-            //GLuint texture1 = 0;
             if (toId >= 0) {
                 internalShaderParams.texture1 = m_mediaPlayers[toId]->texture();
                 internalShaderParams.isTex1Valid = true;

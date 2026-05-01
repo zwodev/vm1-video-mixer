@@ -65,8 +65,8 @@ public:
     virtual void update() = 0;
     bool isFrameReady();
     GLuint texture();
-    void setPlaneId(int planeId);
-    int planeId();
+    //void setPlaneId(int planeId);
+    //int planeId();
 
 protected:
     void createVertexBuffers();

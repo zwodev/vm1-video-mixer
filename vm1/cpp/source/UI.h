@@ -55,8 +55,7 @@ public:
     void MenuTitleWidget(std::string menuTitle, TextAlign textAlign = TextAlign::LEFT, Color color = COLOR::WHITE);
     
     // Generic UI Items
-    void Image(const ImageBuffer& imageBuffer);
-    
+    void Image(const ImageBuffer& imageBuffer, glm::uvec2 pos = glm::uvec2(0, 0)); 
     void Label(const std::string &label);
     bool Text(const std::string &label);    // TODO: rename
     bool Action(const std::string& label);

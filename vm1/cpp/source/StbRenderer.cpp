@@ -339,7 +339,7 @@ void StbRenderer::drawSubImage(const ImageBuffer& imageBuffer, glm::uvec2 destPo
 {
     if (!m_isEnabled) return;
     if (!imageBuffer.isValid || imageBuffer.data == nullptr) return;
-    if (imageBuffer.channels < 3) return; // need at least RGB
+    if (imageBuffer.channels != 3) return; // need at least RGB
 
     uint imageBufferBytesPerLine = imageBuffer.width * imageBuffer.channels;
     uint srcBytesPerLine = srcSize.x * imageBuffer.channels;

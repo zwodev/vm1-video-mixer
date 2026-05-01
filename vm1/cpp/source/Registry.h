@@ -46,9 +46,15 @@ public:
 
     bool isActive = false;
     int planeId = 0;
+    int playerId = -1;
 
     template <class Archive>
-    void serialize(Archive& ar) {}
+    void serialize(Archive& ar)
+    {
+        ar(
+            CEREAL_NVP(planeId)
+        );
+    }
 };
 inline InputConfig::~InputConfig() = default;
 
@@ -72,8 +78,7 @@ public:
             cereal::base_class<InputConfig>(this),
             CEREAL_NVP(fileName),
             CEREAL_NVP(looping),
-            CEREAL_NVP(backwards),
-            CEREAL_NVP(planeId)
+            CEREAL_NVP(backwards)
         );
     }
 };
@@ -146,23 +151,20 @@ public:
     {
         if (id < 0) return;
         m_stagedSlots[id] = std::move(inputConfig);
-        if (m_activeSlots.contains(id)) {
-            m_stagedSlots[id]->planeId = m_activeSlots[id]->planeId;
-        }
+        // if (m_activeSlots.contains(id)) {
+        //     m_stagedSlots[id]->planeId = m_activeSlots[id]->planeId;
+        // }
     }
 
-    void activateInputConfig(int id)
-    {      
+    InputConfig* activateInputConfig(int id)
+    {   
+        InputConfig* inputConfig = nullptr; 
         if (m_stagedSlots.contains(id)) {
-            //m_idsToValue[id] = std::move(inputConfig);
-            // int planeId = 0;
-            // if (m_activeSlots.contains(id)) {
-            //     planeId = m_activeSlots[id]->planeId;
-            // }
             m_activeSlots[id] = std::move(m_stagedSlots[id]->copy_unique());
-            //m_activeSlots[id]->planeId = planeId;
-            //m_stagedSlots.erase(id);
+            inputConfig = m_activeSlots[id].get();
         }
+
+        return inputConfig;
     }
 
     InputConfig* getInputConfig(int id, bool staged = false)
@@ -215,6 +217,16 @@ public:
 
         return nullptr;
     }
+
+    std::vector<int> activeSlotIds() const {
+        std::vector<int> ids;
+        ids.reserve(m_activeSlots.size());
+        for (const auto &kv : m_activeSlots) {
+            ids.push_back(kv.first);
+        }
+
+        return ids;
+    } 
 
     template <class Archive>
     void serialize(Archive& ar)

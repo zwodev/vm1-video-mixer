@@ -142,12 +142,12 @@ void MediaPlayer::initializeFramebufferAndTextures()
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void MediaPlayer::setPlaneId(int planeId)
-{
-    m_planeId = planeId;
-}
+// void MediaPlayer::setPlaneId(int planeId)
+// {
+//     m_planeId = planeId;
+// }
 
-int MediaPlayer::planeId()
-{
-    return m_planeId;
-}
+// int MediaPlayer::planeId()
+// {
+//     return m_planeId;
+// }

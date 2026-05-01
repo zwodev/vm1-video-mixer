@@ -576,9 +576,9 @@ void MenuSystem::StartupScreen()
 }
 
 // ##### INFO MENU #####
-void MenuSystem::InfoMenu()
+void MenuSystem::InfoMenu() 
 {
-    m_ui.MenuTitleWidget("Info", TextAlign::CENTER);
+    m_ui.MenuTitleWidget("INFO", TextAlign::CENTER);
     m_ui.MenuTitleWidget(m_activeMediaSlot.slotName, TextAlign::LEFT);
     m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
@@ -587,16 +587,14 @@ void MenuSystem::InfoMenu()
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
 
-    InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId);
-    if (!inputConfig) {
-        m_ui.Label("No active media");
+    InputConfig* currentConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId, true);
+    if (!currentConfig) {
+        m_ui.Label("No input selected");
         m_ui.EndList();
-        m_ui.PopTranslate();
         return;
     }
-
-    if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
-    {
+    
+    if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(currentConfig)) {
         m_ui.Label("Type: Mediafile");
         std::string fileName = videoInputConfig->fileName;
         int lastSlashPos = fileName.find_last_of('/');
@@ -606,43 +604,35 @@ void MenuSystem::InfoMenu()
         }
         m_ui.Label("Name: " + fileName);
         m_ui.Spacer();
-
-        //m_ui.Label("Duration: (N/A)");
-        //m_ui.Label("Position: (N/A)");
-
-        if (m_ui.Action("Goto Media")) {
-            setMenu(MT_SourceMenu);
-            SelectActiveSourceFolder(false);
-        }
-
+        m_ui.Text("Deactivate");
+        // if (m_ui.Action("Deactivate")) {
+        //     m_eventBus.publish(PlaneEvent(m_activeOutputPlane.planeId));
+        // }
         std::string previewFilename = videoInputConfig->fileName + ".preview";
         MediaPreview(previewFilename);
     }
-    else if (HdmiInputConfig*hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
-    {
-        m_ui.Label("HDMI:");
-        m_ui.Label("Port " + std::to_string(hdmiInputConfig->hdmiPort));
-        m_ui.Label("Resolution: ");
+    else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(currentConfig)) {
+        m_ui.Label("Type: HDMI");
+        std::string inputName = "Source: HDMI" + std::to_string(hdmiInputConfig->hdmiPort+1);
+        m_ui.Label(inputName);
         m_ui.Spacer();
-        if (m_ui.Action("Goto Media")) {
-            setMenu(MT_SourceMenu);
-            SelectActiveSourceFolder(false);
+        if (m_ui.Action("Deactivate")) {
+            m_eventBus.publish(PlaneEvent(m_activeOutputPlane.planeId));
         }
     }
-    else if (ShaderInputConfig*shaderInputConfig = dynamic_cast<ShaderInputConfig *>(inputConfig))
-    {
-        m_ui.Label("Shader:");
+    else if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(currentConfig)) {
+        m_ui.Label("Type: Shader");
         std::string shaderName = shaderInputConfig->fileName;
         int lastSlashPos = shaderName.find_last_of('/');
         shaderName = shaderName.substr(lastSlashPos + 1);
-        m_ui.Label(shaderName);
+        m_ui.Label("Name: " + shaderName);
         m_ui.Spacer();
-        if (m_ui.Action("Goto Media")) {
-            setMenu(MT_SourceMenu);
-            SelectActiveSourceFolder(false);
+        if (m_ui.Action("Deactivate")) {
+            m_eventBus.publish(PlaneEvent(m_activeOutputPlane.planeId));
         }
     }
-    m_ui.EndList(); 
+    
+    m_ui.EndList();
     m_ui.PopTranslate();
 }
 
@@ -814,7 +804,6 @@ void MenuSystem::FileSelection()
             }
             if (m_ui.RadioButton(entryName, (config->fileName == entry.absolutePath), &openFileMenu)) {
                 config->fileName = entry.absolutePath;
-                config->planeId = m_activeOutputPlane.planeId;
                 changed = true;
             }
             // Set focus to this entry if it's the active media
@@ -846,8 +835,10 @@ void MenuSystem::FileSelection()
         }
     }
 
-    if (changed)
+    if (changed) {
+        config->planeId = m_activeOutputPlane.planeId;
         m_registry.inputMappings().stageInputConfig(m_activeMediaSlot.slotId, std::move(config));
+    }
     
     m_ui.PopTranslate();
 }
@@ -880,6 +871,7 @@ void MenuSystem::LiveInputSelection()
 
     if (changed)  {
         //printf("ID: %d, PORT: %d\n", id, config->hdmiPort);
+        config->planeId = m_activeOutputPlane.planeId;
         m_registry.inputMappings().stageInputConfig(m_activeMediaSlot.slotId, std::move(config));
     }
     m_ui.PopTranslate();
@@ -918,8 +910,10 @@ void MenuSystem::ShaderSelection()
     }
     m_ui.EndList(); 
 
-    if (changed)
+    if (changed) {
+        config->planeId = m_activeOutputPlane.planeId;
         m_registry.inputMappings().stageInputConfig(m_activeMediaSlot.slotId, std::move(config));
+    }
 
     m_ui.PopTranslate();
 }
@@ -1198,18 +1192,24 @@ void MenuSystem::NetworkMenu()
 
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
-    if (!eth0.empty()) m_ui.Label("e: " + eth0);
-    if (!wlan0.empty()) m_ui.Label("w: " + wlan0);
+    if (!eth0.empty()) m_ui.Label("Eth. IP: " + eth0);
+    if (!wlan0.empty()) m_ui.Label("Wifi IP: " + wlan0);
     m_ui.Label("SSID: VM-1");
     m_ui.Label("Pass: vmone12345");
+    SubMenu("Show Wifi-QR", [this](){ WifiQrCode(); });
     m_ui.EndList();
     
-    // TODO: Add QR code for WiFi
-    // const ImageBuffer& imageBuffer = m_registry.mediaPool().getQrCodeImageBuffer();
-    // if (imageBuffer.isValid) {
-    //     m_ui.Image(imageBuffer);
-    // }
+
     m_ui.PopTranslate();
+}
+
+void MenuSystem::WifiQrCode()
+{
+    m_ui.MenuTitleWidget("WIFI QR", TextAlign::CENTER);
+    const ImageBuffer& imageBuffer = m_registry.mediaPool().getQrCodeImageBuffer();
+    if (imageBuffer.isValid) {
+        m_ui.Image(imageBuffer, glm::uvec2(105, 65));
+    }
 }
 
 // GLOBAL SETTINGS MENU

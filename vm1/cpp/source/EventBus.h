@@ -62,6 +62,15 @@ struct MediaSlotEvent
     bool triggerPlayback;
 };
 
+struct PlaneEvent 
+{
+    PlaneEvent(int planeId) {
+        this->planeId = planeId;
+    }
+
+    int planeId;
+};
+
 struct EditModeEvent
 {
     EditModeEvent() = delete;

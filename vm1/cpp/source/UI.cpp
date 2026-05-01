@@ -305,10 +305,10 @@ void UI::EndListElement(int elementSize)
     }
 }
 
-void UI::Image(const ImageBuffer& imageBuffer)
+void UI::Image(const ImageBuffer& imageBuffer, glm::uvec2 pos)
 {
     //m_stbRenderer.drawImage(imageBuffer);
-    m_stbRenderer.drawSubImage(imageBuffer, glm::uvec2(0, 0), glm::uvec2(0, 0), glm::uvec2(imageBuffer.width, imageBuffer.height));
+    m_stbRenderer.drawSubImage(imageBuffer, pos, glm::uvec2(0, 0), glm::uvec2(imageBuffer.width, imageBuffer.height));
 }
 
 bool UI::Text(const std::string &label)

@@ -118,7 +118,7 @@ void MediaPool::loadQrCodeImageBuffer()
         &width,
         &height,
         &channels,
-        0);
+        3);
 
     if (data == nullptr)
     {
@@ -133,7 +133,7 @@ void MediaPool::loadQrCodeImageBuffer()
     // if (channels != 3)
     //     return;
 
-    m_qrCodeImageBuffer = ImageBuffer(width, height, channels, reinterpret_cast<char*>(data));
+    m_qrCodeImageBuffer = ImageBuffer(width, height, 3, reinterpret_cast<char*>(data));
 }
 
 const ImageBuffer& MediaPool::getQrCodeImageBuffer()
