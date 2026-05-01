@@ -10,13 +10,6 @@ extern Adafruit_NeoPixel strip;
 extern int8_t lastPressedMediaButtonId;
 
 void initNeoPixels();
-// int *colorForButtonState(ButtonState state);
 uint32_t colorForButtonState(unsigned char mediaButtonsState);
-// uint32_t colorFromArray(int color[3]);
-// void setMediaButtonLED(uint8_t buttonId, int* color);
-void neoPixelsStartAnimation();
+void startupAnimation();
 void updateNeoPixels();
-// void animateActiveMediaSlotLED();
-
-
-

@@ -37,13 +37,16 @@ void PlaybackOperator::reloadPlaneShader(int planeId)
 void PlaybackOperator::subscribeToEvents()
 {
     m_eventBus.subscribe<MediaSlotEvent>([this](const MediaSlotEvent& event) {
+        m_selectedMediaButton = event.slotId % MEDIA_BUTTON_COUNT;
+        std::cout << "m_selectedMediaButton: " << m_selectedMediaButton << std::endl;
         if(event.triggerPlayback) {
-            m_selectedMediaButton = -1;
+            // m_selectedMediaButton = -1;
             showMedia(event.slotId);
-        } else {
-            m_selectedMediaButton = event.slotId % MEDIA_BUTTON_COUNT;
-            std::cout << "m_selectedMediaButton: " << m_selectedMediaButton << std::endl;
         }
+        // else {
+        //     m_selectedMediaButton = event.slotId % MEDIA_BUTTON_COUNT;
+        //     std::cout << "m_selectedMediaButton: " << m_selectedMediaButton << std::endl;
+        // }
     });
 
     m_eventBus.subscribe<EditModeEvent>([this](const EditModeEvent& event) {
@@ -527,10 +530,8 @@ void PlaybackOperator::updateDeviceController()
     for (int i = 0; i < EDIT_BUTTON_COUNT; ++i)
     {
         if (i == m_selectedEditButton) {
-            // vm1DeviceState.editButtons[i] = ButtonState::EMPTY; // "EMPTY" is simply white color. todo: rename
             vm1DeviceState.editButtons[i] |= ASSIGNED_MASK;
         } else {
-            // vm1DeviceState.editButtons[i] = ButtonState::NONE;
             vm1DeviceState.editButtons[i] = 0;
         }
     }
@@ -539,50 +540,33 @@ void PlaybackOperator::updateDeviceController()
     {
         int mediaSlotId = (inputMappings.bank * MEDIA_BUTTON_COUNT) + i;
         InputConfig *inputConfigStaged = m_registry.inputMappings().getInputConfig(mediaSlotId, true);
-        InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId, false);
-        /* we need to differentiate these states:
-           1) the media-button is empty                       -> LED off
-           2) a media/input/shader is on the media-button     -> LED dimmed
-           3) a media-button is playing                       -> LED "breathing" from dimmed to bright
+        InputConfig *inputConfigActive = m_registry.inputMappings().getInputConfig(mediaSlotId, false);
 
-           4) a media-button is focused with empty media-slot        -> LED flashes with +50%
-              a media-button is focused with media on the media-slot -> LED flashes with +50%
-              a media-button is focused with media currently playing -> LED "breathing" + LED flashes with +50%
-                
-        */
-        // if (!inputConfig)
-        // {
-        //     vm1DeviceState.mediaButtons[i] = ButtonState::NONE;
-        // }
-        // else 
-        // {
-        //     vm1DeviceState.mediaButtons[i] = ButtonState(int(ButtonState::YELLOW) + inputConfig->planeId);
-        // }
-        // if(m_selectedMediaButton > -1)  // focused
-        // {
-        //     vm1DeviceState.mediaButtons[m_selectedMediaButton] = ButtonState::MEDIABUTTON_SELECTED;
-        // }
-
-        if(!inputConfig)
+        // empty
+        if(!inputConfigStaged)
         {
             vm1DeviceState.mediaButtonsStates[i] = 0;
-            //return;
-        } else 
+        } 
+        else 
         {
             // not empty
             vm1DeviceState.mediaButtonsStates[i] |= ASSIGNED_MASK;
             
             // currently playing
-            if(inputConfig->isActive)
+            if(inputConfigActive)
             {
                 vm1DeviceState.mediaButtonsStates[i] |= PLAYING_MASK;
             }
-            
-            // focused
-            if(m_selectedMediaButton > -1)
+            else
             {
-                vm1DeviceState.mediaButtonsStates[m_selectedMediaButton] |= FOCUSED_MASK;
-            }
+                vm1DeviceState.mediaButtonsStates[i] &= ~PLAYING_MASK;
+            }         
+        }
+
+        // focused (also an empty mediaslot can be focused when the user selects it)
+        if(m_selectedMediaButton > -1)
+        {
+            vm1DeviceState.mediaButtonsStates[m_selectedMediaButton] |= FOCUSED_MASK;
         }
     }
     m_deviceController.send(vm1DeviceState);

@@ -86,7 +86,7 @@ void setup()
   Wire.onRequest(onI2CRequestHandler);
   Wire.onReceive(onI2CReceiveHandler);
 
-  neoPixelsStartAnimation();
+  startupAnimation();
 }
 
 void loop()
@@ -134,7 +134,6 @@ void loop()
     millis_old = current_millis;
     updateNeoPixels();
   }
-  // animateActiveMediaSlotLED();
 
   for(int i = 0; i < ANALOG_INPUTS_COUNT; ++i)
   {
