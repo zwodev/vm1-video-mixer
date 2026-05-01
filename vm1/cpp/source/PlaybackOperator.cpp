@@ -524,16 +524,19 @@ void PlaybackOperator::updateDeviceController()
     for (int i = 0; i < EDIT_BUTTON_COUNT; ++i)
     {
         if (i == m_selectedEditButton) {
-            vm1DeviceState.editButtons[i] = ButtonState::EMPTY; // "EMPTY" is simply white color. todo: rename
+            // vm1DeviceState.editButtons[i] = ButtonState::EMPTY; // "EMPTY" is simply white color. todo: rename
+            vm1DeviceState.editButtons[i] |= ASSIGNED_MASK;
         } else {
-            vm1DeviceState.editButtons[i] = ButtonState::NONE;
+            // vm1DeviceState.editButtons[i] = ButtonState::NONE;
+            vm1DeviceState.editButtons[i] = 0;
         }
     }
     
     for (int i = 0; i < MEDIA_BUTTON_COUNT; ++i)
     {
         int mediaSlotId = (inputMappings.bank * MEDIA_BUTTON_COUNT) + i;
-        InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
+        InputConfig *inputConfigStaged = m_registry.inputMappings().getInputConfig(mediaSlotId, true);
+        InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId, false);
         /* we need to differentiate these states:
            1) the media-button is empty                       -> LED off
            2) a media/input/shader is on the media-button     -> LED dimmed

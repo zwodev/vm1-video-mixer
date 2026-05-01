@@ -34,7 +34,7 @@ void initNeoPixels() {
   strip.show();
 }
 
-int *colorForButtonState(unsigned char mediaButtonsState)
+uint32_t colorForButtonState(unsigned char mediaButtonsState)
 {
   int color[3] = {0};
   if (mediaButtonsState & ASSIGNED_MASK)
@@ -49,62 +49,67 @@ int *colorForButtonState(unsigned char mediaButtonsState)
 
   if(mediaButtonsState & FOCUSED_MASK)
   {
-    fadeValue = 1.0f - abs(sin(millis()/500.0f)); /// TODO 
+    float fadeValue = 1.0f - abs(sin(millis() / 500.0f));
+    for(int i = 0; i < 3; ++i)
+    {
+      color[i] *= fadeValue;
+    }
   }
-  return color;
-}
-
-int *colorForButtonState(ButtonState state)
-{
-  switch (state)
-  {
-  case NONE:
-    return black;
-  case EMPTY:
-    return grey;
-  case FILE_ASSET_ACTIVE:
-      return red;
-  case FILE_ASSET:
-    return red_dimmed;
-  case LIVECAM_ACTIVE:
-    return orange;
-  case LIVECAM:
-    return orange_dimmed;
-  case SHADER_ACTIVE:
-    return yellow;
-  case SHADER:
-    return yellow_dimmed;
-  case MEDIABUTTON_SELECTED:
-    return blue;
-  case YELLOW:
-    return yellow;
-  case GREEN:
-    return green;
-  case BLUE:
-    return blue;
-  case RED:
-    return red;
-  default:
-    return black;
-  }
-}
-
-uint32_t colorFromArray(int color[3])
-{
   return strip.Color(color[0], color[1], color[2]);
+  // return color;
 }
+
+// int *colorForButtonState(ButtonState state)
+// {
+//   switch (state)
+//   {
+//   case NONE:
+//     return black;
+//   case EMPTY:
+//     return grey;
+//   case FILE_ASSET_ACTIVE:
+//       return red;
+//   case FILE_ASSET:
+//     return red_dimmed;
+//   case LIVECAM_ACTIVE:
+//     return orange;
+//   case LIVECAM:
+//     return orange_dimmed;
+//   case SHADER_ACTIVE:
+//     return yellow;
+//   case SHADER:
+//     return yellow_dimmed;
+//   case MEDIABUTTON_SELECTED:
+//     return blue;
+//   case YELLOW:
+//     return yellow;
+//   case GREEN:
+//     return green;
+//   case BLUE:
+//     return blue;
+//   case RED:
+//     return red;
+//   default:
+//     return black;
+//   }
+// }
+
+// uint32_t colorFromArray(int color[3])
+// {
+//   return strip.Color(color[0], color[1], color[2]);
+// }
 
 void neoPixelsStartAnimation()
 {
   for (int i = 0; i < NEOPIXEL_COUNT; ++i)
   {
-    strip.setPixelColor(i, colorFromArray(black));
+    strip.setPixelColor(i, strip.Color(0,0,0));
   }
   strip.show();
 
   for (int i = 0; i < NEOPIXEL_COUNT; ++i)
   {
-    strip.setPixelColor(i, colorFromArray(red_dimmed));
+    strip.setPixelColor(i,strip.Color(red_dimmed[0], red_dimmed[1], red_dimmed[2]));
     delay(50);
     strip.show();
   }
@@ -113,7 +118,7 @@ void neoPixelsStartAnimation()
 
   for (int i = 0; i < NEOPIXEL_COUNT; ++i)
   {
-    strip.setPixelColor(i, colorFromArray(black));
+    strip.setPixelColor(i, strip.Color(0,0,0));
     delay(50);
     strip.show();
   }
@@ -123,60 +128,60 @@ void neoPixelsStartAnimation()
 void updateNeoPixels()
 {
   // forward-key [0]
-  int *color = colorForButtonState(deviceState.forward);
-  strip.setPixelColor(0, colorFromArray(color));
+  // int color = colorForButtonState(deviceState.forward);
+  strip.setPixelColor(0, colorForButtonState(deviceState.forward));
   
   // backward-key [1]
-  color = colorForButtonState(deviceState.backward);
-  strip.setPixelColor(1, colorFromArray(color));
+  // color = colorForButtonState(deviceState.backward);
+  strip.setPixelColor(1, colorForButtonState(deviceState.backward));
 
   // 8 edit-keys [2-9]
   for (uint8_t i = 0; i < 8; ++i)
   {
-    color = colorForButtonState(deviceState.editButtons[i]);
-    strip.setPixelColor(2 + i, colorFromArray(color));
+    // color = colorForButtonState(deviceState.editButtons[i]);
+    strip.setPixelColor(2 + i, colorForButtonState(deviceState.editButtons[i]));
   }
 
   // upper row media-keys [10-17]
   for (uint8_t i = 0; i < 8; ++i)
   {
     // color = colorForButtonState(deviceState.mediaButtons[7 - i]);
-    color = colorForButtonState(deviceState.mediaButtonsStates[7 - i]);
-    strip.setPixelColor(10 + i, colorFromArray(color));
+    // color = colorForButtonState(deviceState.mediaButtonsStates[7 - i]);
+    strip.setPixelColor(10 + i, colorForButtonState(deviceState.mediaButtonsStates[7 - i]));
   }
 
   // fn-key [18]
-  color = colorForButtonState(deviceState.fn);
-  strip.setPixelColor(18, colorFromArray(color));
+  // color = colorForButtonState(deviceState.fn);
+  strip.setPixelColor(18, colorForButtonState(deviceState.fn));
 
   // lower row media-keys [19-26]
   for (uint8_t i = 0; i < 8; ++i)
   {
     // color = colorForButtonState(deviceState.mediaButtons[8 + i]);
-    color = colorForButtonState(deviceState.mediaButtonsStates[8 + i]);
-    strip.setPixelColor(19 + i, colorFromArray(color));
+    // color = colorForButtonState(deviceState.mediaButtonsStates[8 + i]);
+    strip.setPixelColor(19 + i, colorForButtonState(deviceState.mediaButtonsStates[8 + i]));
   }
 
   // 6 bank-pixels [27-32]
-  for (uint8_t i = 0; i < 6; ++i)
-  {
-    color = red_dimmed;
-    if (i == deviceState.bank)
-      color = orange_dimmed;
-    strip.setPixelColor(32 - i, colorFromArray(color));
-  }
+  // for (uint8_t i = 0; i < 6; ++i)
+  // {
+  //   color = red_dimmed;
+  //   if (i == deviceState.bank)
+  //     color = orange_dimmed;
+  //   strip.setPixelColor(32 - i, strip.Color(color[0], color[1], color[2]));
+  // }
 
   strip.show();
 }
 
-void setMediaButtonLED(uint8_t buttonId, int* color)
-{
-  if (buttonId < 8){   // upper row
-    strip.setPixelColor(10 + (7-buttonId), colorFromArray(color));
-  } else {
-    strip.setPixelColor(19 + (buttonId-8), colorFromArray(color));
-  }
-}
+// void setMediaButtonLED(uint8_t buttonId, int* color)
+// {
+//   if (buttonId < 8){   // upper row
+//     strip.setPixelColor(10 + (7-buttonId), colorFromArray(color));
+//   } else {
+//     strip.setPixelColor(19 + (buttonId-8), colorFromArray(color));
+//   }
+// }
 
 // void animateActiveMediaSlotLED()
 // {

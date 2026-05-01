@@ -25,22 +25,22 @@
 #define PLAYING_MASK    (1 << PLAYING_SHIFT)
 #define FOCUSED_MASK    (1 << FOCUSED_SHIFT)
 
-enum ButtonState : uint8_t
-{
-    NONE,
-    EMPTY,
-    FILE_ASSET,
-    LIVECAM,
-    SHADER,
-    FILE_ASSET_ACTIVE,
-    LIVECAM_ACTIVE,
-    SHADER_ACTIVE,
-    MEDIABUTTON_SELECTED,
-    YELLOW,
-    GREEN,
-    BLUE,
-    RED
-};
+// enum ButtonState : uint8_t
+// {
+//     NONE,
+//     EMPTY,
+//     FILE_ASSET,
+//     LIVECAM,
+//     SHADER,
+//     FILE_ASSET_ACTIVE,
+//     LIVECAM_ACTIVE,
+//     SHADER_ACTIVE,
+//     MEDIABUTTON_SELECTED,
+//     YELLOW,
+//     GREEN,
+//     BLUE,
+//     RED
+// };
 
 // enum Vm1Color : uint8_t {
 //   VM1_BLACK,
@@ -88,12 +88,17 @@ struct VM1DeviceState
 {
     uint8_t rotarySensitivity = 5;
     uint8_t bank = 0;
-    ButtonState forward = ButtonState::NONE;
-    ButtonState backward = ButtonState::NONE;
-    ButtonState fn = ButtonState::NONE;
-    ButtonState editButtons[EDIT_BUTTON_COUNT] = {ButtonState::NONE};
-    ButtonState mediaButtons[MEDIA_BUTTON_COUNT] = {ButtonState::EMPTY};
-    unsigned char mediaButtonsStates[MEDIA_BUTTON_COUNT] = {0};
+  // ButtonState forward = ButtonState::NONE;
+  // ButtonState backward = ButtonState::NONE;
+  // ButtonState fn = ButtonState::NONE;
+  // ButtonState editButtons[8] = {ButtonState::NONE};
+  // ButtonState mediaButtons[16] = {ButtonState::NONE};
+  unsigned char forward = 0;
+  unsigned char backward = 0;
+  unsigned char fn = 0;
+  unsigned char editButtons[8] = {0};
+  unsigned char mediaButtons[16] = {0};
+  unsigned char mediaButtonsStates[16] = {0};
 
     template <typename T>
     inline void hashCombine(std::size_t &seed, const T &v) const
