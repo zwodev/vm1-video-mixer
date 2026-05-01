@@ -565,7 +565,7 @@ void MenuSystem::render()
 }
 
 void MenuSystem::ClearSlot() {
-    m_registry.inputMappings().removeConfig(m_activeMediaSlot.slotId);
+    m_registry.inputMappings().removeConfig(m_activeMediaSlot.slotId, true);
     goUpHierachy();
 }
 

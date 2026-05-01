@@ -142,9 +142,11 @@ public:
     InputMappings() {}
     ~InputMappings() {}
 
-    void removeConfig(int id)
+    void removeConfig(int id, bool clearStaged = false)
     {
         m_activeSlots.erase(id);
+        if(clearStaged)
+            m_stagedSlots.erase(id);
     }
 
     void stageInputConfig(int id, std::unique_ptr<InputConfig> inputConfig)
