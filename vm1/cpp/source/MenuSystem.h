@@ -144,12 +144,11 @@ private:
     bool m_focusActiveSource = false;
     bool m_showActivesSource = false;
 
-    struct MediaSlotData {
-        int slotId = 0;
-        int planeId = 0;
-        std::string slotName;
-    };
-    MediaSlotData m_activeMediaSlot;
+    // struct MediaSlotData {
+    //     int slotId = 0;
+    //     int planeId = 0;
+    // };
+    // MediaSlotData m_activeMediaSlot;
 
     struct OutputPlaneData {
         int planeId = 0;

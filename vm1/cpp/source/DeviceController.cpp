@@ -125,7 +125,7 @@ void DeviceController::requestVM1DeviceBuffer()
                                 : m_eventBus.publish(EditModeEvent(buttonId));
                     break;
                 case MEDIA_BUTTON_EVENT: {
-                    int mediaSlotId = (m_registry.inputMappings().bank * MEDIA_BUTTON_COUNT) + buttonId;
+                    int mediaSlotId = (m_registry.inputMappings().focusedBank * MEDIA_BUTTON_COUNT) + buttonId;
                     m_eventBus.publish(MediaSlotEvent(mediaSlotId, !isFnPressed));
                     break; }
                 case NAVIGATION_BUTTON_EVENT:

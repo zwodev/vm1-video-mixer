@@ -34,8 +34,7 @@
 #include "ShaderConfig.h"
 #include "ScreenOptions.h"
 #include "MediaPool.h"
-
-const int PLANE_COUNT = 4;
+#include "VM1DeviceDefinitions.h"
 
 class InputConfig
 {
@@ -158,6 +157,43 @@ public:
         // }
     }
 
+    void setFocusedMediaSlot(int mediaSlotId)
+    {
+        if(mediaSlotId >= 0) 
+        {
+            focusedBank = mediaSlotId / MEDIA_BUTTON_COUNT;
+            focusedMediaButton = mediaSlotId % MEDIA_BUTTON_COUNT;
+        } 
+        else
+        {
+            focusedBank = 0;
+            focusedMediaButton = -1;    
+        }
+    }
+
+    inline int getFocusedMediaSlot()
+    {
+        if (focusedMediaButton >= 0)
+        {
+            return focusedBank * MEDIA_BUTTON_COUNT + focusedMediaButton;
+        }
+        else
+        {
+            return -1;
+        }
+    }
+
+    InputConfig* getFocusedInputConfig(bool staged = false)
+    {
+        return getInputConfig(getFocusedMediaSlot(), staged);
+    }
+    
+    inline std::string focusedMediaButtonName()
+    {
+        if(focusedMediaButton < 0) return "";
+        return std::string(1, focusedBank + 65) + std::to_string(focusedMediaButton + 1);
+    }
+
     InputConfig* activateInputConfig(int id)
     {   
         InputConfig* inputConfig = nullptr; 
@@ -234,13 +270,16 @@ public:
     void serialize(Archive& ar)
     {
         ar(
-            CEREAL_NVP(bank),
+            // CEREAL_NVP(focusedBank),
             cereal::make_nvp("media_slots", m_stagedSlots)
         );
     }
 
 public:
-    int bank = 0;
+    int focusedPlane = 0;
+    int focusedMediaButton = -1;
+    int focusedBank = 0;
+    // int focusedMediaSlot = -1;
 
 private:
     std::map<int, std::unique_ptr<InputConfig>> m_stagedSlots;

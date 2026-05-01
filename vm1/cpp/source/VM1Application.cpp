@@ -96,7 +96,6 @@ bool VM1Application::initialize()
         m_eventBus.enqueue(MediaSlotEvent(m_registry.settings().autoPlayOnHDMI1));
     }
     m_menuSystem.reset();
-    m_registry.inputMappings().bank = 0;
 
     return true;
 }
