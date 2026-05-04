@@ -76,11 +76,11 @@ chroot $1 systemctl disable getty@tty1.service
 chroot $1 systemctl mask rpi-eeprom-update.service 
 
 # Copy data (TODO: use relative paths later)
-rsync -av ../../../cpp/builddir/vm1 $1/home/$IGconf_device_user1/vm1/
+rsync -av ../../../cpp/build/vm1 $1/home/$IGconf_device_user1/vm1/
 rsync -av ../../../cpp/shaders $1/home/$IGconf_device_user1/vm1/
 rsync -av ../../../cpp/fonts $1/home/$IGconf_device_user1/vm1/
 rsync -av /usr/local/lib/libSDL* $1/usr/local/lib/
-rsync -av ../../../cpp/builddir/subprojects/imgui/libimgui.so $1/usr/local/lib/
+rsync -av ../../../cpp/build/subprojects/imgui/libimgui.so $1/usr/local/lib/
 
 # Chown user folder (recursive)
 chroot $1 chown -R $IGconf_device_user1:$IGconf_device_user1 /home/$IGconf_device_user1
