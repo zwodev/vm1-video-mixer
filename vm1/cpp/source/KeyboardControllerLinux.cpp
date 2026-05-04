@@ -124,7 +124,7 @@ void KeyboardControllerLinux::update(input_event& event)
 
         for(size_t i = 0; i < m_mediaKeys.size(); ++i) 
         {
-            int mediaSlotId = (m_registry.inputMappings().bank * MEDIA_BUTTON_COUNT) + int(i);
+            int mediaSlotId = (m_registry.inputMappings().focusedBank * MEDIA_BUTTON_COUNT) + int(i);
             if (event.code == m_mediaKeys[i]) {
                 if(m_isShiftPressed){
                     m_eventBus.publish(MediaSlotEvent(mediaSlotId, false)); // do not trigger playback

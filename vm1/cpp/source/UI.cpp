@@ -586,21 +586,23 @@ void UI::BankInfoWidget(int bank)
 {
     int width = m_stbRenderer.width();
     int height = m_stbRenderer.height();
-    m_stbRenderer.clear();
+    // m_stbRenderer.clear();
     
     int quadPadding = 5;
     int quadSize = (width / BANK_COUNT) - quadPadding;
     // int fontSize = 16;
+    m_stbRenderer.drawRectNEW(glm::vec2(0, height - quadSize - 10), glm::vec2(width, quadSize + 10), DrawStyle{COLOR::BLACK, true, 0, AnchorPoint::LEFT_TOP});
     for(size_t i = 0; i < BANK_COUNT; i++)
     {
         int x = quadPadding / 2 + i * (quadSize + quadPadding);
-        int y = height/2 - quadSize / 2;
+        int y = height - quadSize - 8;
         if(bank == int(i)) {
-            // m_stbRenderer.drawRect(x, y, quadSize, quadSize, COLOR::WHITE);
-            m_stbRenderer.drawTextBdf(std::string(1, static_cast<char>(i + 65)),  glm::vec2(x + 4, y + 3), BDF::TEXTSTYLE::MENU_ITEM);
+            m_stbRenderer.drawRectNEW(glm::vec2(x, y), glm::vec2(quadSize, quadSize), DrawStyle{COLOR::WHITE, true, 2, AnchorPoint::LEFT_TOP});
+            BDF::TextStyle textStyle = BDF::TEXTSTYLE::MENU_ITEM;
+            textStyle.color = COLOR::BLACK;
+            m_stbRenderer.drawTextBdf(std::string(1, static_cast<char>(i + 65)),  glm::vec2(x + 4, y + 3), textStyle);
         } else {
-            // m_stbRenderer.drawEmptyRect(x, y, quadSize, quadSize, COLOR::WHITE);
-            m_stbRenderer.drawRectNEW(glm::vec2(x, y), glm::vec2(quadSize, quadSize), DrawStyle{COLOR::WHITE, false, 1, AnchorPoint::LEFT_TOP});
+            m_stbRenderer.drawRectNEW(glm::vec2(x, y), glm::vec2(quadSize, quadSize), DrawStyle{COLOR::WHITE, false, 2, AnchorPoint::LEFT_TOP});
             m_stbRenderer.drawTextBdf(std::string(1, static_cast<char>(i + 65)),  glm::vec2(x + 4, y + 3), BDF::TEXTSTYLE::MENU_ITEM);
         }
     }

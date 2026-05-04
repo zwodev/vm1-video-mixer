@@ -37,8 +37,8 @@ void PlaybackOperator::reloadPlaneShader(int planeId)
 void PlaybackOperator::subscribeToEvents()
 {
     m_eventBus.subscribe<MediaSlotEvent>([this](const MediaSlotEvent& event) {
-        m_selectedMediaButton = event.slotId % MEDIA_BUTTON_COUNT;
-        std::cout << "m_selectedMediaButton: " << m_selectedMediaButton << std::endl;
+        // m_selectedMediaButton = event.slotId % MEDIA_BUTTON_COUNT;
+        // std::cout << "m_selectedMediaButton: " << m_selectedMediaButton << std::endl;
         if(event.triggerPlayback) {
             // m_selectedMediaButton = -1;
             showMedia(event.slotId);
@@ -523,7 +523,7 @@ void PlaybackOperator::updateDeviceController()
 {
     InputMappings &inputMappings = m_registry.inputMappings();
     VM1DeviceState vm1DeviceState;
-    vm1DeviceState.bank = static_cast<uint8_t>(inputMappings.bank);
+    vm1DeviceState.bank = static_cast<uint8_t>(inputMappings.focusedBank);
     vm1DeviceState.rotarySensitivity = static_cast<uint8_t>(m_registry.settings().rotarySensitivity);
     
     
@@ -538,7 +538,7 @@ void PlaybackOperator::updateDeviceController()
     
     for (int i = 0; i < MEDIA_BUTTON_COUNT; ++i)
     {
-        int mediaSlotId = (inputMappings.bank * MEDIA_BUTTON_COUNT) + i;
+        int mediaSlotId = (inputMappings.focusedBank * MEDIA_BUTTON_COUNT) + i;
         InputConfig *inputConfigStaged = m_registry.inputMappings().getInputConfig(mediaSlotId, true);
         InputConfig *inputConfigActive = m_registry.inputMappings().getInputConfig(mediaSlotId, false);
 
@@ -564,9 +564,10 @@ void PlaybackOperator::updateDeviceController()
         }
 
         // focused (also an empty mediaslot can be focused when the user selects it)
-        if(m_selectedMediaButton > -1)
+        int focusedMediaButton = m_registry.inputMappings().focusedMediaButton;
+        if(focusedMediaButton > -1)
         {
-            vm1DeviceState.mediaButtonsStates[m_selectedMediaButton] |= FOCUSED_MASK;
+            vm1DeviceState.mediaButtonsStates[focusedMediaButton] |= FOCUSED_MASK;
         }
     }
     m_deviceController.send(vm1DeviceState);

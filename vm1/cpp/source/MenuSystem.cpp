@@ -313,8 +313,8 @@ void MenuSystem::handleMediaAndEditButtons()
     // check the media-slot-ids
     for (int mediaSlotId : m_ui.getTriggeredMediaSlotIds())
     {
-        m_activeMediaSlot.slotId = mediaSlotId;
-        InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId);
+        m_registry.inputMappings().setFocusedMediaSlot(mediaSlotId);
+        InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId);
         if (!inputConfig) return;
 
         if (m_currentMenuType == MT_SourceMenu) {
@@ -401,9 +401,10 @@ void MenuSystem::handleUpAndDownKeys()
 void MenuSystem::handleBankSwitching()
 {
     int bank = 0;
-    if (m_ui.isBankChangeEventTriggered(bank)) {
-        m_registry.inputMappings().bank = bank;
-        m_ui.StartOverlay([this](){m_ui.BankInfoWidget(m_registry.inputMappings().bank);});
+    if (m_ui.isBankChangeEventTriggered(bank)) 
+    {
+        m_registry.inputMappings().focusedBank = bank;
+        m_ui.StartOverlay([this, bank](){m_ui.BankInfoWidget(bank);});
     }
 }
 
@@ -424,18 +425,6 @@ void MenuSystem::handlePlaneSwitching()
     }
     
     int* planeId = nullptr;
-    // if (m_currentMenuType == MT_SourceMenu || 
-    //     m_currentMenuType == MT_ControlMenu ) 
-    // {
-    //     printf("Media Slot: %d\n", m_activeMediaSlot.slotId); 
-    //     // change output plane for the currently selected media slot
-    //     InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId, true);
-    //     if (inputConfig) {
-    //         id = &inputConfig->planeId;
-    //         printf("Active Slot: %d\n", *id);   
-    //     } 
-    // }
-    //else 
     
     if (m_currentMenuType == MT_InfoMenu        ||
             m_currentMenuType == MT_SourceMenu  || 
@@ -457,12 +446,12 @@ void MenuSystem::handlePlaneSwitching()
         for (int i = 0; i < MEDIA_SLOT_COUNT; ++i) {
             InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(i, false);
             if (!inputConfig) {
-                m_activeMediaSlot.slotId = -1;
+                m_registry.inputMappings().setFocusedMediaSlot(-1);
                 continue;
             }
 
             if (inputConfig->planeId == *planeId) {
-                m_activeMediaSlot.slotId = i;
+                m_registry.inputMappings().setFocusedMediaSlot(i);
                 if (m_currentMenuType == MT_SourceMenu) {
                     setMenu(MT_SourceMenu);
                     SelectActiveSourceFolder();
@@ -513,19 +502,11 @@ void MenuSystem::render()
 {
     m_ui.NewFrame();
 
-    if (m_activeMediaSlot.slotId >= 0) {
-        // get infos for top menu titles
-        int id16 = (m_activeMediaSlot.slotId % MEDIA_BUTTON_COUNT) + 1;
-        char bank = m_activeMediaSlot.slotId / MEDIA_BUTTON_COUNT + 65; // "+65" to get ASCII code
-        m_activeMediaSlot.slotName = std::string(1, bank) + std::to_string(id16);
-    }
-    else {
-        m_activeMediaSlot.slotName = "";
-    }
-
-    InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId, true);
-    if (inputConfig) m_activeMediaSlot.planeId =  inputConfig->planeId;
-    else m_activeMediaSlot.planeId = -1;   
+    InputConfig* inputConfig = m_registry.inputMappings().getFocusedInputConfig(true);
+    if (inputConfig) 
+        m_registry.inputMappings().focusedPlane = inputConfig->planeId;
+    else 
+        m_registry.inputMappings().focusedPlane = -1;   
 
     // Render dynamic content (if present)
     if (m_currentMenuPath.back().func) {
@@ -565,7 +546,8 @@ void MenuSystem::render()
 }
 
 void MenuSystem::ClearSlot() {
-    m_registry.inputMappings().removeConfig(m_activeMediaSlot.slotId, true);
+    int slotId = m_registry.inputMappings().getFocusedMediaSlot();
+    m_registry.inputMappings().removeConfig(slotId, true);
     goUpHierachy();
 }
 
@@ -579,7 +561,7 @@ void MenuSystem::StartupScreen()
 void MenuSystem::InfoMenu() 
 {
     m_ui.MenuTitleWidget("INFO", TextAlign::CENTER);
-    m_ui.MenuTitleWidget(m_activeMediaSlot.slotName, TextAlign::LEFT);
+    m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::LEFT);
     m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
 
@@ -587,7 +569,7 @@ void MenuSystem::InfoMenu()
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
 
-    InputConfig* currentConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId);
+    InputConfig* currentConfig = m_registry.inputMappings().getFocusedInputConfig();
     if (!currentConfig) {
         m_ui.Label("No input selected");
         m_ui.EndList();
@@ -651,7 +633,7 @@ void MenuSystem::InfoMenu()
 void MenuSystem::SourceMenu() 
 {
     m_ui.MenuTitleWidget("SRC", TextAlign::CENTER);
-    m_ui.MenuTitleWidget(m_activeMediaSlot.slotName, TextAlign::LEFT);
+    m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::LEFT);
     m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
 
@@ -717,9 +699,7 @@ void MenuSystem::MediaPreview(const std::string& filename)
 
 void MenuSystem::SelectActiveSourceFolder(bool staged)
 {
-    printf("m_activeMediaSlot %d\n", m_activeMediaSlot.slotId);
-    printf("SelectActiveSourceFolder\n");
-    InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId, staged);
+    InputConfig *inputConfig = m_registry.inputMappings().getFocusedInputConfig(staged);
     if (!inputConfig) return;
     
     if (VideoInputConfig *videoInputConfig = dynamic_cast<VideoInputConfig *>(inputConfig))
@@ -784,7 +764,7 @@ void MenuSystem::SelectActiveSourceFolder(bool staged)
 void MenuSystem::FileSelection()
 {
     m_ui.MenuTitleWidget("MEDIA", TextAlign::CENTER);
-    m_ui.MenuTitleWidget(m_activeMediaSlot.slotName, TextAlign::LEFT);
+    m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::LEFT);
     m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
 
@@ -792,7 +772,8 @@ void MenuSystem::FileSelection()
     auto config = std::make_unique<VideoInputConfig>();
     config->looping = m_registry.settings().defaultLooping;
 
-    VideoInputConfig* currentConfig = m_registry.inputMappings().getVideoInputConfig(m_activeMediaSlot.slotId, true);
+    int slotId = m_registry.inputMappings().getFocusedMediaSlot();
+    VideoInputConfig* currentConfig = m_registry.inputMappings().getVideoInputConfig(slotId, true);
     if (currentConfig) {
         *config = *currentConfig;
     }
@@ -840,7 +821,7 @@ void MenuSystem::FileSelection()
             }
             // Set focus to this entry if it's the active media
             if (m_focusActiveSource) {
-                VideoInputConfig* videoConfig = m_registry.inputMappings().getVideoInputConfig(m_activeMediaSlot.slotId);
+                VideoInputConfig* videoConfig = m_registry.inputMappings().getVideoInputConfig(slotId);
                 if (videoConfig && entry.absolutePath == videoConfig->fileName) {
                     m_currentMenuPath.back().fIdx = m_ui.CurrentListSize()-1;
                     m_focusActiveSource = false;
@@ -872,7 +853,7 @@ void MenuSystem::FileSelection()
 
     if (changed) {
         config->planeId = m_activeOutputPlane.planeId;
-        m_registry.inputMappings().stageInputConfig(m_activeMediaSlot.slotId, std::move(config));
+        m_registry.inputMappings().stageInputConfig(slotId, std::move(config));
     }
     
     m_ui.PopTranslate();
@@ -881,13 +862,14 @@ void MenuSystem::FileSelection()
 void MenuSystem::LiveInputSelection() 
 {
     m_ui.MenuTitleWidget("LIVE", TextAlign::CENTER);
-    m_ui.MenuTitleWidget(m_activeMediaSlot.slotName, TextAlign::LEFT);
+    m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::LEFT);
     m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
     
     m_ui.PushTranslate(4, 20);
     auto config = std::make_unique<HdmiInputConfig>();
-    HdmiInputConfig* currentConfig = m_registry.inputMappings().getHdmiInputConfig(m_activeMediaSlot.slotId, true);
+    int slotId = m_registry.inputMappings().getFocusedMediaSlot();
+    HdmiInputConfig* currentConfig = m_registry.inputMappings().getHdmiInputConfig(slotId, true);
     if (currentConfig) { *config = *currentConfig; }
 
     bool changed = false;
@@ -907,7 +889,7 @@ void MenuSystem::LiveInputSelection()
     if (changed)  {
         //printf("ID: %d, PORT: %d\n", id, config->hdmiPort);
         config->planeId = m_activeOutputPlane.planeId;
-        m_registry.inputMappings().stageInputConfig(m_activeMediaSlot.slotId, std::move(config));
+        m_registry.inputMappings().stageInputConfig(m_registry.inputMappings().getFocusedMediaSlot(), std::move(config));
     }
     m_ui.PopTranslate();
 }
@@ -915,14 +897,15 @@ void MenuSystem::LiveInputSelection()
 void MenuSystem::ShaderSelection()
 {
     m_ui.MenuTitleWidget("SHADER", TextAlign::CENTER);
-    m_ui.MenuTitleWidget(m_activeMediaSlot.slotName, TextAlign::LEFT);
+    m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::LEFT);
     m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
 
     m_ui.PushTranslate(4, 20);
     auto config = std::make_unique<ShaderInputConfig>();
 
-    ShaderInputConfig* currentConfig = m_registry.inputMappings().getShaderInputConfig(m_activeMediaSlot.slotId, true);
+    int slotId = m_registry.inputMappings().getFocusedMediaSlot();
+    ShaderInputConfig* currentConfig = m_registry.inputMappings().getShaderInputConfig(slotId, true);
     if (currentConfig) {
         *config = *currentConfig;
     } 
@@ -944,7 +927,7 @@ void MenuSystem::ShaderSelection()
         }
         // Set focus to this entry if it's the active shader
         if (m_focusActiveSource) {
-            ShaderInputConfig* shaderInputConfig = m_registry.inputMappings().getShaderInputConfig(m_activeMediaSlot.slotId);
+            ShaderInputConfig* shaderInputConfig = m_registry.inputMappings().getShaderInputConfig(m_registry.inputMappings().getFocusedMediaSlot());
             if (shaderInputConfig && entry.absolutePath == shaderInputConfig->fileName) {
                 m_currentMenuPath.back().fIdx = m_ui.CurrentListSize()-1;
                 m_focusActiveSource = false;
@@ -955,7 +938,7 @@ void MenuSystem::ShaderSelection()
 
     if (changed) {
         config->planeId = m_activeOutputPlane.planeId;
-        m_registry.inputMappings().stageInputConfig(m_activeMediaSlot.slotId, std::move(config));
+        m_registry.inputMappings().stageInputConfig(slotId, std::move(config));
     }
 
     m_ui.PopTranslate();
@@ -965,7 +948,7 @@ void MenuSystem::ShaderSelection()
 void MenuSystem::ControlMenu() 
 {
     m_ui.MenuTitleWidget("CTL", TextAlign::CENTER);
-    m_ui.MenuTitleWidget(m_activeMediaSlot.slotName, TextAlign::LEFT);
+    m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::LEFT);
     m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
 
@@ -973,10 +956,8 @@ void MenuSystem::ControlMenu()
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
 
-    InputConfig* currentConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId, true);
-    // if (!currentConfig) {
-    //     currentConfig = m_registry.inputMappings().getInputConfig(m_activeMediaSlot.slotId);
-    // }
+    InputConfig* currentConfig = m_registry.inputMappings().getFocusedInputConfig(true);
+
     if (!currentConfig) {
         m_ui.Label("No input selected");
         m_ui.EndList();
@@ -1325,7 +1306,7 @@ void MenuSystem::ButtonMatrixMenu()
     m_ui.MenuTitleWidget("Button");
     m_ui.NewLine();
 
-    int bank = m_registry.inputMappings().bank;
+    int bank = m_registry.inputMappings().focusedBank;
     for (size_t i = 0; i < m_buttonTexts.size(); ++i) {
         int mediaSlot = bank * 16 + int(i);
         InputConfig* currentConfig = m_registry.inputMappings().getInputConfig(mediaSlot);
