@@ -390,7 +390,10 @@ struct Settings
     std::vector<std::string> hdmiInputs = std::vector<std::string>(2, std::string());
     
     float currentTime = 0.0f;
-    float analog0 = 0.5f;
+    float analog0 = 0.0f;
+    float analog1 = 0.0f;
+    float analog2 = 0.0f;
+    float analog3 = 0.0f;
     int32_t rotary = 0;
 
     template <class Archive>
