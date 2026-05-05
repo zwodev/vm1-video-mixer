@@ -15,7 +15,12 @@ out vec4 fragColor;
 
 const vec2 OUT_TEX_SIZE = vec2(1920.0f, 1080.0f);
 // uniform vec2 iResolution;
-uniform float iTime; // { "name": "Elapsed Time", "default": 0.0, "min": 0.0, "max": 1000000.0, "step": 0.01 }
+uniform float iTime;
+uniform float analog0;
+uniform float analog1;
+uniform float analog2;
+uniform float analog3;
+
 uniform float red;   // { "name": "Red", "default": 1.0, "min": 0.0, "max":1.0, "step": 0.01 }
 uniform float green; // { "name": "Green", "default": 0.5, "min": 0.0, "max":1.0, "step": 0.01 }
 uniform float blue;  // { "name": "Blue", "default": 0.5, "min": 0.0, "max":1.0, "step": 0.01 }

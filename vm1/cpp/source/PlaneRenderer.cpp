@@ -154,6 +154,10 @@ void PlaneRenderer::update(PlaneSettings& planeSettings, ScreenRotation rotation
 
     m_shader.setValue("mixValue", internalShaderParams.mixValue);
     m_shader.setValue("iTime", internalShaderParams.iTime);
+    m_shader.setValue("analog0", internalShaderParams.analog0);
+    m_shader.setValue("analog1", internalShaderParams.analog1);
+    m_shader.setValue("analog2", internalShaderParams.analog2);
+    m_shader.setValue("analog3", internalShaderParams.analog3);
 
     // Set blend mode
     int isMultiplication = 0;

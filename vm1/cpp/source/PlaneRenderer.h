@@ -29,6 +29,10 @@ public:
         bool isTex1Valid = false;
         float mixValue = 0.0f;
         float iTime = 0.0f;
+        float analog0 = 0.0f;
+        float analog1 = 0.0f;
+        float analog2 = 0.0f;
+        float analog3 = 0.0f;
     };
 
 public: 

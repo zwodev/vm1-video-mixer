@@ -7,6 +7,7 @@ chroot $1 mkdir /home/$IGconf_device_user1/vm1
 chroot $1 mkdir -p /home/$IGconf_device_user1/videos
 chroot $1 mkdir -p /home/$IGconf_device_user1/vm1/data
 chroot $1 mkdir -p /home/$IGconf_device_user1/vm1/media
+chroot $1 mkdir -p /home/$IGconf_device_user1/vm1/shaders
 chroot $1 mkdir -p /home/$IGconf_device_user1/shaders
 chroot $1 mkdir -p /home/$IGconf_device_user1/shaders/generative
 chroot $1 mkdir -p /home/$IGconf_device_user1/shaders/effect
@@ -86,6 +87,7 @@ rsync -av ../../../cpp/build/vm1 $1/home/$IGconf_device_user1/vm1/
 rsync -av ../../../shaders/generative/ $1/home/$IGconf_device_user1/shaders/generative/
 rsync -av ../../../shaders/effect/ $1/home/$IGconf_device_user1/shaders/effect/
 rsync -av ../../../cpp/media/ $1/home/$IGconf_device_user1/vm1/media/
+rsync -av ../../../cpp/shaders/ $1/home/$IGconf_device_user1/vm1/shaders/
 #rsync -av ../../../cpp/fonts $1/home/$IGconf_device_user1/vm1/
 rsync -av /usr/local/lib/libSDL* $1/usr/local/lib/
 rsync -av ../../../cpp/build/subprojects/imgui/libimgui.so $1/usr/local/lib/

@@ -29,6 +29,11 @@ float circle( in vec2 p, in float r )
 void main() {
 	vec2 fragCoord = gl_FragCoord.xy;
 	vec2 iResolution = OUT_TEX_SIZE;
+    uniform float iTime;
+    uniform float analog0;
+    uniform float analog1;
+    uniform float analog2;
+    uniform float analog3;
 
     vec2 p = (2.0*fragCoord-iResolution.xy)/iResolution.y;
     p.x -= offsetX;

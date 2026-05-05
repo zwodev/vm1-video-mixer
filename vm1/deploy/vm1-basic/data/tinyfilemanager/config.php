@@ -24,9 +24,9 @@ $default_timezone = 'Etc/UTC'; // UTC
 
 // Root path for file manager
 // use absolute path of directory i.e: '/var/www/folder' or $_SERVER['DOCUMENT_ROOT'].'/folder'
-$root_path = $_SERVER['DOCUMENT_ROOT'].'/videos';
+//$root_path = $_SERVER['DOCUMENT_ROOT'].'/videos';
 
-$root_url = '/videos';
+//$root_url = '/videos';
 
 // input encoding for iconv
 $iconv_input_encoding = 'UTF-8';
@@ -45,7 +45,7 @@ $allowed_upload_extensions = '';
 
 // Files and folders to excluded from listing
 // e.g. array('myfile.html', 'personal-folder', '*.php', ...)
-$exclude_items = array('');
+$exclude_items = array('*.php', '.*', 'vm1');
 
 // Online office Docs Viewer
 // Availabe rules are 'google', 'microsoft' or false

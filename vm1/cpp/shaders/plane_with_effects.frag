@@ -29,7 +29,12 @@ uniform int isTex1Valid;
 uniform float mixValue;
 uniform float opacity;
 uniform int isMultiplication;
+
 uniform float iTime;
+uniform float analog0;
+uniform float analog1;
+uniform float analog2;
+uniform float analog3;
 
 // color correction
 uniform float ColorCorrection_Brightness; // { "name": "Brightness", "group": "Color Correction", "min": -1.0, "max": 1.0 }

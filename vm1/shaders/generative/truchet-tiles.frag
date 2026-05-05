@@ -8,7 +8,12 @@ in vec2 texCoord;
 out vec4 fragColor;
 
 const vec2 OUT_TEX_SIZE = vec2(1920.0f, 1080.0f);
-uniform float iTime;    // { "name": "Elapsed Time", "default": 0.0, "min": 0.0, "max": 1000000.0, "step": 0.01 }
+uniform float iTime;
+uniform float analog0;
+uniform float analog1;
+uniform float analog2;
+uniform float analog3;
+
 uniform float size;     // { "name": "Size", "default": 1.0, "min": 0.01, "max": 10.0, "step": 0.01 }
 
 

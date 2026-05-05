@@ -406,7 +406,7 @@ void PlaybackOperator::update(float deltaTime)
                 activePlayerIds.push_back(playerId);
 
                 // Set shader params
-                if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(inputConfig))
+                if (/* ShaderInputConfig* shaderInputConfig = */ dynamic_cast<ShaderInputConfig*>(inputConfig))
                 {
                     if (ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(mediaPlayer)) {
                         // TODO: Move to registry, maybe "Animation System"
@@ -545,6 +545,10 @@ void PlaybackOperator::renderPlane(int hdmiId)
             
             internalShaderParams.mixValue = planeMixer.mixValue();
             internalShaderParams.iTime = m_registry.settings().currentTime;
+            internalShaderParams.analog0 = m_registry.settings().analog0;
+            internalShaderParams.analog1 = m_registry.settings().analog1;
+            internalShaderParams.analog2 = m_registry.settings().analog2;
+            internalShaderParams.analog3 = m_registry.settings().analog3;
             planeRenderer->update(m_registry.planes()[currentPlaneId], m_registry.settings().hdmiRotation0, internalShaderParams);
         }
     }

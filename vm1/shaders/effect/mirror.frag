@@ -6,6 +6,7 @@
  * for full license details.
  */
 
+
 uniform int enabled;        // { "name": "Enabled", "group": "Mirror", "default": 1, "min": 0, "max": 1 }
 uniform int axis;           // { "name": "Horizontal/Vertical", "group": "Mirror", "default": 0, "min": 0, "max": 1, "step": 1 }
 uniform float axisPos;      // { "name": "Axis Position", "group": "Mirror", "default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01 }
