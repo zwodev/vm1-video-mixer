@@ -180,9 +180,27 @@ void DeviceController::requestVM1DeviceBuffer()
 
 
         // quick solution to get analogInput[0]
-        float a0 = float(deviceBuffer.analogInput[0]) / 1024.0;
-        if (a0 < 0.01) a0 = 0.0;
-        else if (a0 > 0.99) a0 = 1.0;
-        m_registry.settings().analog0 = a0;
+        float analogIn = float(deviceBuffer.analogInput[0]) / 1024.0;
+        if (analogIn < 0.01) analogIn = 0.0;
+        else if (analogIn > 0.99) analogIn = 1.0;
+        m_registry.settings().analog0 = analogIn;
+
+        // quick solution to get analogInput[1]
+        analogIn = float(deviceBuffer.analogInput[1]) / 1024.0;
+        if (analogIn < 0.01) analogIn = 0.0;
+        else if (analogIn > 0.99) analogIn = 1.0;
+        m_registry.settings().analog1 = analogIn;
+
+        // quick solution to get analogInput[2]
+        analogIn = float(deviceBuffer.analogInput[2]) / 1024.0;
+        if (analogIn < 0.01) analogIn = 0.0;
+        else if (analogIn > 0.99) analogIn = 1.0;
+        m_registry.settings().analog2 = analogIn;
+
+        // quick solution to get analogInput[3]
+        analogIn = float(deviceBuffer.analogInput[3]) / 1024.0;
+        if (analogIn < 0.01) analogIn = 0.0;
+        else if (analogIn > 0.99) analogIn = 1.0;
+        m_registry.settings().analog3 = analogIn;
     }
 }

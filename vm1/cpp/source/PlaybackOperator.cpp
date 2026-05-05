@@ -410,14 +410,45 @@ void PlaybackOperator::update(float deltaTime)
                 {
                     if (ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(mediaPlayer)) {
                         // TODO: Move to registry, maybe "Animation System"
-                        ShaderConfig& shaderConfig = shaderInputConfig->shaderConfig;
+                        ShaderInputConfig* stagedShaderInputConfig = m_registry.inputMappings().getShaderInputConfig(activeSlotId, true);
+                        ShaderConfig& shaderConfig = stagedShaderInputConfig->shaderConfig;
+
                         if (shaderConfig.params.contains("iTime")) {
                             auto& param = shaderConfig.params["iTime"];
                             if (std::holds_alternative<FloatParameter>(param)) {
-                                auto& intParam = std::get<FloatParameter>(param);
-                                intParam.value = m_registry.settings().currentTime;
+                                auto& floatParam = std::get<FloatParameter>(param);
+                                floatParam.value = m_registry.settings().currentTime;
                             }
                         } 
+                        if (shaderConfig.params.contains("analog0")) {
+                            auto& param = shaderConfig.params["analog0"];
+                            if (std::holds_alternative<FloatParameter>(param)) {
+                                auto& floatParam = std::get<FloatParameter>(param);
+                                floatParam.value = m_registry.settings().analog0;
+                            }
+                        } 
+                        if (shaderConfig.params.contains("analog1")) {
+                            auto& param = shaderConfig.params["analog1"];
+                            if (std::holds_alternative<FloatParameter>(param)) {
+                                auto& floatParam = std::get<FloatParameter>(param);
+                                floatParam.value = m_registry.settings().analog1;
+                            }
+                        } 
+                        if (shaderConfig.params.contains("analog2")) {
+                            auto& param = shaderConfig.params["analog2"];
+                            if (std::holds_alternative<FloatParameter>(param)) {
+                                auto& floatParam = std::get<FloatParameter>(param);
+                                floatParam.value = m_registry.settings().analog2;
+                            }
+                        } 
+                        if (shaderConfig.params.contains("analog3")) {
+                            auto& param = shaderConfig.params["analog3"];
+                            if (std::holds_alternative<FloatParameter>(param)) {
+                                auto& floatParam = std::get<FloatParameter>(param);
+                                floatParam.value = m_registry.settings().analog3;
+                            }
+                        }
+                        
                         shaderPlayer->setShaderUniforms(shaderConfig);
                     } 
                 }
