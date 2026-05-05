@@ -119,6 +119,7 @@ private:
     // Network
     void NetworkMenu();
     void WifiQrCode();
+    void TFMQrCode();
 
     // Global Settings
     void GlobalSettingsMenu();

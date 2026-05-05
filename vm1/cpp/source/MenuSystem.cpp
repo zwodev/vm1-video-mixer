@@ -1221,6 +1221,7 @@ void MenuSystem::NetworkMenu()
     //m_ui.Label("SSID: VM-1");
     //m_ui.Label("Pass: vmone12345");
     SubMenu("Show Wifi-QR", [this](){ WifiQrCode(); });
+    SubMenu("Show FileMgr-QR", [this](){ TFMQrCode(); });
     m_ui.EndList();
     
 
@@ -1231,6 +1232,15 @@ void MenuSystem::WifiQrCode()
 {
     m_ui.MenuTitleWidget("WIFI QR", TextAlign::CENTER);
     const ImageBuffer& imageBuffer = m_registry.mediaPool().getQrCodeImageBuffer();
+    if (imageBuffer.isValid) {
+        m_ui.Image(imageBuffer, glm::uvec2(105, 65));
+    }
+}
+
+void MenuSystem::TFMQrCode()
+{
+    m_ui.MenuTitleWidget("FILEMGR QR", TextAlign::CENTER);
+    const ImageBuffer& imageBuffer = m_registry.mediaPool().getQrCodeTFMImageBuffer();
     if (imageBuffer.isValid) {
         m_ui.Image(imageBuffer, glm::uvec2(105, 65));
     }
@@ -1256,9 +1266,11 @@ void MenuSystem::GlobalSettingsMenu()
     m_ui.SpinBoxInt("Volume", settings.volume, 0, 10);
     //if (m_registry.settings().isProVersion) { m_ui.SpinBoxInt("Rot. Sensit.", settings.rotarySensitivity, 1, 20) };
     //if (m_ui.CheckBox("Use UVC", settings.useUvcCaptureDevice)) { settings.useUvcCaptureDevice = !settings.useUvcCaptureDevice; };
-    if (m_ui.CheckBox("Show UI", settings.showUI)) { settings.showUI = !settings.showUI; };
     if (m_ui.CheckBox("Default Looping", settings.defaultLooping)) { settings.defaultLooping = !settings.defaultLooping; };
     m_ui.SpinBoxInt("ScreenRotation", (int&)settings.hdmiRotation0, 0, 3);
+    if (m_ui.CheckBox("Show UI", settings.showUI)) { settings.showUI = !settings.showUI; };
+    if (m_ui.CheckBox("Is Pro Version", settings.isProVersion)) { settings.isProVersion = !settings.isProVersion; };
+
     m_ui.EndList();
 
     m_ui.PopTranslate();

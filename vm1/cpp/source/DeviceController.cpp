@@ -28,13 +28,13 @@ DeviceController::~DeviceController(){
 // Helper: Set up serial port
 bool DeviceController::connect(const std::string& port)
 {
-    bool isProVersion = false;
+    //bool isProVersion = false;
 
     std::cout << "Failed to open Serial Connection, trying I2C..." << std::endl;
     if(connectI2C()) 
     {
         std::cout << "Connected to VM1-Device via I2C." << std::endl;
-        isProVersion = true;
+        //isProVersion = true;
     } 
     else
     {
@@ -42,7 +42,7 @@ bool DeviceController::connect(const std::string& port)
         return false;
     }    
 
-    m_registry.settings().isProVersion = isProVersion;
+    //m_registry.settings().isProVersion = isProVersion;
     return true;
 }
 

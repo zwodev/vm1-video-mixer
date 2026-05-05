@@ -40,6 +40,9 @@ public:
     void loadQrCodeImageBuffer();
     const ImageBuffer& getQrCodeImageBuffer();
 
+    void loadQrCodeTFMImageBuffer();
+    const ImageBuffer& getQrCodeTFMImageBuffer();
+
 private:
     void runMediaDirectoryWatcher();
     void startDirectoryWatcher();
@@ -57,6 +60,7 @@ private:
     PreviewCache m_previewCache;
 
     ImageBuffer m_qrCodeImageBuffer;
+    ImageBuffer m_qrCodeTFMImageBuffer;
     std::thread m_thread;
     bool m_isWatcherRunning;
 

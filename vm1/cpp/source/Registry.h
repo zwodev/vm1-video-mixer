@@ -382,7 +382,7 @@ struct Settings
     ScreenRotation hdmiRotation1 = ScreenRotation::SR_Rotate_0;
 
     // Volatile
-    bool isProVersion = false;
+    bool isProVersion = true;
     bool isHdmiOutputReady = false;
     bool isHdmiInputReady = false;
     std::string captureDevicePath = "";
@@ -397,7 +397,6 @@ struct Settings
     void serialize(Archive &ar)
     {
         ar(
-            CEREAL_NVP(showUI), 
             CEREAL_NVP(defaultLooping), 
             CEREAL_NVP(fadeTime),
             CEREAL_NVP(useFader),
@@ -410,7 +409,9 @@ struct Settings
             CEREAL_NVP(autoPlayOnHDMI1),
             CEREAL_NVP(kiosk),
             CEREAL_NVP(hdmiRotation0),
-            CEREAL_NVP(hdmiRotation1)
+            CEREAL_NVP(hdmiRotation1),
+            CEREAL_NVP(showUI),
+            CEREAL_NVP(isProVersion)
         );
     }
 };

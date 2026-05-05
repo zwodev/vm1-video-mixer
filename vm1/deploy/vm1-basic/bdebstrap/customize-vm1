@@ -5,6 +5,12 @@ set -eu
 # Create folders
 chroot $1 mkdir /home/$IGconf_device_user1/vm1
 chroot $1 mkdir -p /home/$IGconf_device_user1/videos
+chroot $1 mkdir -p /home/$IGconf_device_user1/vm1/data
+chroot $1 mkdir -p /home/$IGconf_device_user1/vm1/media
+chroot $1 mkdir -p /home/$IGconf_device_user1/shaders
+chroot $1 mkdir -p /home/$IGconf_device_user1/shaders/generative
+chroot $1 mkdir -p /home/$IGconf_device_user1/shaders/effect
+
 chroot $1 mkdir -p /home/$IGconf_device_user1/.local/share/localsend_app
 
 # Copy demo videos
@@ -77,8 +83,10 @@ chroot $1 systemctl mask rpi-eeprom-update.service
 
 # Copy data (TODO: use relative paths later)
 rsync -av ../../../cpp/build/vm1 $1/home/$IGconf_device_user1/vm1/
-rsync -av ../../../cpp/shaders $1/home/$IGconf_device_user1/vm1/
-rsync -av ../../../cpp/fonts $1/home/$IGconf_device_user1/vm1/
+rsync -av ../../../shaders/generative/ $1/home/$IGconf_device_user1/shaders/generative/
+rsync -av ../../../shaders/effect/ $1/home/$IGconf_device_user1/shaders/effect/
+rsync -av ../../../cpp/media/ $1/home/$IGconf_device_user1/vm1/media/
+#rsync -av ../../../cpp/fonts $1/home/$IGconf_device_user1/vm1/
 rsync -av /usr/local/lib/libSDL* $1/usr/local/lib/
 rsync -av ../../../cpp/build/subprojects/imgui/libimgui.so $1/usr/local/lib/
 
@@ -107,6 +115,9 @@ cat ../autorun-vm1.service.tpl | sed \
    -e "s|<VM1_RUNDIR>|\/home\/$IGconf_device_user1|g" \
    -e "s|<VM1_APP>|$APP|g" \
    > $1/etc/systemd/system/autorun-vm1.service
+
+cat ../create-wifi-qr.sh.tpl > $1/home/$IGconf_device_user1/vm1/create-wifi-qr.sh
+chmod +x $1/home/$IGconf_device_user1/vm1/create-wifi-qr.sh
 
 # Trigger the systemd service to run only when everything is installed
 $BDEBSTRAP_HOOKS/enable-units "$1" autorun-vm1

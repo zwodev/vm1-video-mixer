@@ -15,6 +15,7 @@
 MediaPool::MediaPool()
 {
     loadQrCodeImageBuffer();
+    loadQrCodeTFMImageBuffer();
     startDirectoryWatcher();
 }
 
@@ -139,6 +140,31 @@ void MediaPool::loadQrCodeImageBuffer()
 const ImageBuffer& MediaPool::getQrCodeImageBuffer()
 {
     return m_qrCodeImageBuffer;
+}
+
+void MediaPool::loadQrCodeTFMImageBuffer()
+{
+    int width, height, channels;
+    std::string filename("media/qr-tinyfilemgr.png");
+    unsigned char *data = stbi_load(
+        filename.c_str(),
+        &width,
+        &height,
+        &channels,
+        3);
+
+    if (data == nullptr)
+    {
+        std::cerr << "Failed to load PNG: " << filename << std::endl;
+        return;
+    }
+
+    m_qrCodeTFMImageBuffer = ImageBuffer(width, height, 3, reinterpret_cast<char*>(data));
+}
+
+const ImageBuffer& MediaPool::getQrCodeTFMImageBuffer()
+{
+    return m_qrCodeTFMImageBuffer;
 }
 
 void MediaPool::runMediaDirectoryWatcher()
