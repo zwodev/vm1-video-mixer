@@ -463,13 +463,21 @@ void VideoPlayer::handleAudioFrame(AVFrame *frame)
 }
 
 void VideoPlayer::run() {
+    // const double in_seconds  = 10.0;
+    // int64_t in_ts  = av_rescale_q((int64_t)(in_seconds  * 1000), AV_TIME_BASE_Q, m_videoContext->pkt_timebase ) / 1000;
+    // av_seek_frame(m_formatContext, -1, in_ts, AVSEEK_FLAG_ANY);
+    // avcodec_flush_buffers(m_audioContext);
+    // avcodec_flush_buffers(m_videoContext);
+    
     while (m_isRunning) {
         if (!m_isFlushing) {
             // Read and decode frames
             int result = av_read_frame(m_formatContext, m_packet);
             if (result < 0) {
                 if (m_isLooping) {
-                    m_firstPts = -1.0;
+                    m_firstPts = -1.0;      
+                    // int64_t in_ts  = av_rescale_q((int64_t)(in_seconds  * 1000), AV_TIME_BASE_Q, m_videoContext->pkt_timebase ) / 1000;
+                    // av_seek_frame(m_formatContext, -1, in_ts, AVSEEK_FLAG_BACKWARD);
                     av_seek_frame(m_formatContext, -1, 0, AVSEEK_FLAG_BACKWARD);
                     SDL_Log("End of stream, restart (looping)\n");
                 }
@@ -499,14 +507,11 @@ void VideoPlayer::run() {
             }
         }
         
-        if (m_audioContext) {
-            while (avcodec_receive_frame(m_audioContext, m_frame) >= 0) {
-                if (m_audio) handleAudioFrame(m_frame);
-            }
-            // if (m_isFlushing) {
-            //     SDL_FlushAudioStream(m_audio);
-            // }
-        }
+        // if (m_audioContext) {
+        //     while (avcodec_receive_frame(m_audioContext, m_frame) >= 0) {
+        //         if (m_audio) handleAudioFrame(m_frame);
+        //     }
+        // }
         // Process decoded frames
         if (m_videoContext) { 
             while (avcodec_receive_frame(m_videoContext, m_frame) >= 0) {
@@ -517,6 +522,10 @@ void VideoPlayer::run() {
                     firstFrame = true;
                 }
                 pts -= m_firstPts;
+
+                // if (pts < in_seconds) {
+                //     continue;
+                // }
 
                 VideoFrame frame;
                 if (getTextureForDRMFrame(m_frame, frame)) {

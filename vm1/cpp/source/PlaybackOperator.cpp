@@ -297,7 +297,6 @@ void PlaybackOperator::showMedia(int mediaSlotId)
             
             videoInputConfig->playerId = playerId;
         } 
-    
     }
     else if (HdmiInputConfig *hdmiInputConfig = dynamic_cast<HdmiInputConfig *>(inputConfig))
     {
@@ -361,6 +360,9 @@ void PlaybackOperator::showMedia(int mediaSlotId)
             printf("Shader Player ID: %d\n", playerId);
         }
     }
+    else {
+        return;
+    }
 
     m_registry.inputMappings().activateInputConfig(mediaSlotId);
 }
@@ -406,12 +408,17 @@ void PlaybackOperator::update(float deltaTime)
                 activePlayerIds.push_back(playerId);
 
                 // Set shader params
-                if (/* ShaderInputConfig* shaderInputConfig = */ dynamic_cast<ShaderInputConfig*>(inputConfig))
+                if (dynamic_cast<ShaderInputConfig*>(inputConfig))
                 {
-                    if (ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(mediaPlayer)) {
+                    ShaderInputConfig* shaderInputConfig = m_registry.inputMappings().getShaderInputConfig(activeSlotId, true);
+                    if (!shaderInputConfig) {
+                       shaderInputConfig = m_registry.inputMappings().getShaderInputConfig(activeSlotId); 
+                    }
+                    ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(mediaPlayer);
+                    
+                    if (shaderInputConfig && shaderPlayer) {
                         // TODO: Move to registry, maybe "Animation System"
-                        ShaderInputConfig* stagedShaderInputConfig = m_registry.inputMappings().getShaderInputConfig(activeSlotId, true);
-                        ShaderConfig& shaderConfig = stagedShaderInputConfig->shaderConfig;
+                        ShaderConfig& shaderConfig = shaderInputConfig->shaderConfig;
 
                         if (shaderConfig.params.contains("iTime")) {
                             auto& param = shaderConfig.params["iTime"];
