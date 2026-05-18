@@ -69,6 +69,8 @@ public:
     std::string fileName;
     bool looping = false;
     bool backwards = false;
+    float inPoint = 0.0f;
+    float outPoint = 1.0f;
 
     template <class Archive>
     void serialize(Archive& ar)
@@ -77,7 +79,9 @@ public:
             cereal::base_class<InputConfig>(this),
             CEREAL_NVP(fileName),
             CEREAL_NVP(looping),
-            CEREAL_NVP(backwards)
+            CEREAL_NVP(backwards),
+            CEREAL_NVP(inPoint),
+            CEREAL_NVP(outPoint)
         );
     }
 };

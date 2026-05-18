@@ -982,8 +982,8 @@ void MenuSystem::ControlMenu()
         if (m_ui.CheckBox("backwards (N/A)", videoInputConfig->backwards)) {
             videoInputConfig->backwards = !videoInputConfig->backwards;
         }
-        m_ui.Text("start-time (N/A)");
-        m_ui.Text("end-time (N/A)");
+        m_ui.SpinBoxFloat("in point", videoInputConfig->inPoint, 0.0f, 1.0f, 0.05);
+        m_ui.SpinBoxFloat("out point", videoInputConfig->outPoint, 0.0f, 1.0f, 0.05);
         m_ui.Text("speed (N/A)");
 
         std::string previewFilename = videoInputConfig->fileName + ".preview";

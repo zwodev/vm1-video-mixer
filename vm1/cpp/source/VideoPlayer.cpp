@@ -47,6 +47,26 @@ VideoPlayer::~VideoPlayer()
     close();
 }
 
+void VideoPlayer::setInPoint(float value)
+{
+    m_inPoint = value;
+}
+
+float VideoPlayer::inPoint()
+{
+    return m_inPoint;
+}
+
+void VideoPlayer::setOutPoint(float value)
+{
+    m_outPoint = value;
+}
+
+float VideoPlayer::outPoint()
+{
+    return m_outPoint;
+}
+
 void VideoPlayer::reset()
 {
     MediaPlayer::reset();
@@ -54,6 +74,7 @@ void VideoPlayer::reset()
     m_firstPts = -1.0;
     m_firstAudioPts = -1.0;
     m_isFlushing = false;
+    m_foundKeyframe = false;
 }
 
 void VideoPlayer::loadShaders()
@@ -462,13 +483,33 @@ void VideoPlayer::handleAudioFrame(AVFrame *frame)
     m_audioQueue.pushFrame(audioFrame);
 }
 
-void VideoPlayer::run() {
-    // const double in_seconds  = 10.0;
-    // int64_t in_ts  = av_rescale_q((int64_t)(in_seconds  * 1000), AV_TIME_BASE_Q, m_videoContext->pkt_timebase ) / 1000;
-    // av_seek_frame(m_formatContext, -1, in_ts, AVSEEK_FLAG_ANY);
-    // avcodec_flush_buffers(m_audioContext);
-    // avcodec_flush_buffers(m_videoContext);
+void VideoPlayer::seekToInPoint(bool backward) {
+    AVStream *stream = m_formatContext->streams[m_videoStream];
+    double dur_s = av_q2d(stream->time_base) * (double)stream->duration;
+    const double loop_start_s = dur_s * double(m_inPoint);
+    const double loop_after_s = dur_s * double(m_outPoint);
     
+    int64_t loop_start_pts = llround(loop_start_s / av_q2d(stream->time_base));
+    int64_t loop_after_pts = llround(loop_after_s / av_q2d(stream->time_base));
+    
+    int flags = AVSEEK_FLAG_BACKWARD;
+    if (av_seek_frame(m_formatContext, m_videoStream, loop_start_pts, flags) >= 0) {
+        avcodec_flush_buffers(m_videoContext);
+    }
+}
+
+static int do_seek_and_flush(AVFormatContext *fmt_ctx, AVCodecContext *dec_ctx, int stream_index, int64_t seek_target_pts) {
+    int flags = AVSEEK_FLAG_BACKWARD; // land on a preceding keyframe
+    int ret = av_seek_frame(fmt_ctx, stream_index, seek_target_pts, flags);
+    if (ret < 0) return ret;
+    if (dec_ctx) avcodec_flush_buffers(dec_ctx);
+    return 0;
+}
+
+void VideoPlayer::run() {
+    seekToInPoint();
+
+    bool restart = false;
     while (m_isRunning) {
         if (!m_isFlushing) {
             // Read and decode frames
@@ -476,9 +517,7 @@ void VideoPlayer::run() {
             if (result < 0) {
                 if (m_isLooping) {
                     m_firstPts = -1.0;      
-                    // int64_t in_ts  = av_rescale_q((int64_t)(in_seconds  * 1000), AV_TIME_BASE_Q, m_videoContext->pkt_timebase ) / 1000;
-                    // av_seek_frame(m_formatContext, -1, in_ts, AVSEEK_FLAG_BACKWARD);
-                    av_seek_frame(m_formatContext, -1, 0, AVSEEK_FLAG_BACKWARD);
+                    //seekToInPoint();
                     SDL_Log("End of stream, restart (looping)\n");
                 }
                 else {
@@ -492,6 +531,76 @@ void VideoPlayer::run() {
                     avcodec_flush_buffers(m_videoContext);
                 }
             } else {
+
+                if (m_packet->stream_index == m_videoStream) {
+                    AVStream *stream = m_formatContext->streams[m_videoStream];
+                    double dur_s = av_q2d(stream->time_base) * (double)stream->duration;
+                    const double loop_start_s = dur_s * double(m_inPoint);
+                    const double loop_after_s = dur_s * double(m_outPoint);
+                    
+                    int64_t loop_start_pts = llround(loop_start_s / av_q2d(stream->time_base));
+                    int64_t loop_after_pts = llround(loop_after_s / av_q2d(stream->time_base));
+
+                    // Compute packet timestamp (prefer pts, fallback to dts)
+                    int64_t pkt_ts = (m_packet->pts != AV_NOPTS_VALUE) ? m_packet->pts : m_packet->dts;
+                    if (pkt_ts == AV_NOPTS_VALUE) {
+                        av_packet_unref(m_packet);
+                        continue;
+                    }
+
+                    // If we've reached loop point, perform seek back to loop_start and flush,
+                    // then discard packets until we reach valid packets after the seek.
+                    if (pkt_ts >= loop_after_pts) {
+                        m_firstPts = -1;
+                        // seek back
+                        // if (do_seek_and_flush(m_formatContext, m_videoContext, m_videoStream, loop_start_pts) < 0) {
+                        //     fprintf(stderr, "Seek back failed\n");
+                        //     av_packet_unref(m_packet);
+                        //     break;
+                        // }
+
+                        seekToInPoint(true);
+                        // clear packet and continue; next av_read_frame will deliver packets after seek
+                        av_packet_unref(m_packet);
+                        continue;
+                    }
+
+                    printf("Start: %ld\n", loop_start_pts);
+                    printf("End: %ld\n", loop_after_pts);
+                    printf("Packet: %ld\n", pkt_ts);
+                }
+
+
+
+                // // If packet is before our current logical playback window (i.e., old packets), drop it.
+                // // This is crucial immediately after a seek: demuxer can return packets earlier than seek_target.
+                // if (pkt_ts < loop_start_pts) {
+                //     av_packet_unref(m_packet);
+                //     continue;
+                // }
+
+
+
+                //int64_t packet_ts = m_packet->pts == AV_NOPTS_VALUE ? m_packet->dts : m_packet->pts;
+                
+
+                // if (m_inPoint > 0.0f) {
+                //     AVStream *stream = m_formatContext->streams[m_videoStream];
+                //     int64_t duration = stream->duration;
+                //     AVRational timebase = stream->time_base;
+                //     int64_t start = (int64_t)(m_inPoint * duration);
+                //     double start_secs = start * av_q2d(timebase);
+                //     int64_t start_ts = (int64_t)(start_secs * AV_TIME_BASE);
+                //     packetInRange = duration == AV_NOPTS_VALUE ||
+                //         (packet_ts - (start_ts != AV_NOPTS_VALUE ? start_ts : 0)) *
+                //         av_q2d(timebase) -
+                //         (double)(start_ts != AV_NOPTS_VALUE ? start_ts : 0) / AV_TIME_BASE
+                //         <= ((double)duration / AV_TIME_BASE);
+                // }
+
+                // printf("InPoint: %f\n", m_inPoint);
+    
+                bool packetInRange = true;
                 if (m_packet->stream_index == m_audioStream) {
                     result = avcodec_send_packet(m_audioContext, m_packet);
                     if (result < 0) {
@@ -507,11 +616,11 @@ void VideoPlayer::run() {
             }
         }
         
-        // if (m_audioContext) {
-        //     while (avcodec_receive_frame(m_audioContext, m_frame) >= 0) {
-        //         if (m_audio) handleAudioFrame(m_frame);
-        //     }
-        // }
+        if (m_audioContext) {
+            while (avcodec_receive_frame(m_audioContext, m_frame) >= 0) {
+                if (m_audio) handleAudioFrame(m_frame);
+            }
+        }
         // Process decoded frames
         if (m_videoContext) { 
             while (avcodec_receive_frame(m_videoContext, m_frame) >= 0) {
@@ -521,19 +630,14 @@ void VideoPlayer::run() {
                     m_firstPts = pts;
                     firstFrame = true;
                 }
-                pts -= m_firstPts;
-
-                // if (pts < in_seconds) {
-                //     continue;
-                // }
 
                 VideoFrame frame;
                 if (getTextureForDRMFrame(m_frame, frame)) {
                     frame.isFirstFrame = firstFrame;
-                    frame.pts = pts;
+                    frame.pts = pts - m_firstPts;
                     m_videoQueue.pushFrame(frame);
                 }
-            }      
+            }
         }
 
         if (m_isFlushing) m_isRunning = false;

@@ -46,6 +46,11 @@ public:
     VideoPlayer();
     ~VideoPlayer();
 
+    void setInPoint(float value);
+    float inPoint();
+    void setOutPoint(float value);
+    float outPoint();
+
     bool openFile(const std::string& fileName, AudioStream* audioStream = nullptr) override;
     void close() override;
     void setLooping(bool looping);
@@ -56,6 +61,7 @@ private:
     void loadShaders() override;
     void run() override;
     void render();
+    void seekToInPoint(bool backward = false);
     
 
     AVCodecContext* openVideoStream();
@@ -65,8 +71,12 @@ private:
 
 
 private:
+    float m_inPoint = 0.0f;
+    float m_outPoint = 1.0f;
+
     // FFMpeg
     Uint64 m_startTime = 0;
+    int64_t m_duration = 0;
     double m_firstPts = -1.0;
     double m_firstAudioPts = -1.0;
     AVFormatContext* m_formatContext = nullptr;
@@ -79,6 +89,7 @@ private:
     AVFrame*  m_frame = nullptr;
     int m_videoStream = -1;
     int m_audioStream = -1;
+    bool m_foundKeyframe = false;
 
     // State
     std::atomic<bool> m_isLooping = false;

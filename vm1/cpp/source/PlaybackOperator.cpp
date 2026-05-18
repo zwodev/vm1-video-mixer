@@ -292,6 +292,10 @@ void PlaybackOperator::showMedia(int mediaSlotId)
             {
                 bool looping = videoInputConfig->looping;
                 videoPlayer->setLooping(looping);
+                float inPoint = videoInputConfig->inPoint;
+                videoPlayer->setInPoint(inPoint);
+                float outPoint = videoInputConfig->inPoint;
+                videoPlayer->setInPoint(outPoint);
                 videoPlayer->play();
             }
             
@@ -408,6 +412,21 @@ void PlaybackOperator::update(float deltaTime)
                 activePlayerIds.push_back(playerId);
 
                 // Set shader params
+                if (dynamic_cast<VideoInputConfig*>(inputConfig)) {
+                    VideoInputConfig* videoInputConfig = m_registry.inputMappings().getVideoInputConfig(activeSlotId, true);
+                    if (!videoInputConfig) {
+                       videoInputConfig = m_registry.inputMappings().getVideoInputConfig(activeSlotId); 
+                    }
+                    VideoPlayer* videoPlayer = dynamic_cast<VideoPlayer*>(mediaPlayer);
+                    if (videoInputConfig && videoPlayer) {
+                        //bool looping = videoInputConfig->looping;
+                        //videoPlayer->setLooping(looping);
+                        float inPoint = videoInputConfig->inPoint;
+                        videoPlayer->setInPoint(inPoint);
+                        float outPoint = videoInputConfig->outPoint;
+                        videoPlayer->setOutPoint(outPoint);
+                    }
+                }
                 if (dynamic_cast<ShaderInputConfig*>(inputConfig))
                 {
                     ShaderInputConfig* shaderInputConfig = m_registry.inputMappings().getShaderInputConfig(activeSlotId, true);
@@ -460,8 +479,7 @@ void PlaybackOperator::update(float deltaTime)
                     } 
                 }
             }
-            else {
-                HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(inputConfig);
+            else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(inputConfig)) {
                 if (!hdmiInputConfig) {
                     mediaPlayer->close();
                 }
