@@ -979,11 +979,11 @@ void MenuSystem::ControlMenu()
         if (m_ui.CheckBox("loop", videoInputConfig->looping)) { 
             videoInputConfig->looping = !videoInputConfig->looping; 
         }
+        m_ui.SpinBoxFloat("in point", videoInputConfig->inPoint, 0.0f, videoInputConfig->outPoint, 0.05f);
+        m_ui.SpinBoxFloat("out point", videoInputConfig->outPoint, videoInputConfig->inPoint, 1.0f, 0.05f);
         if (m_ui.CheckBox("backwards (N/A)", videoInputConfig->backwards)) {
             videoInputConfig->backwards = !videoInputConfig->backwards;
         }
-        m_ui.SpinBoxFloat("in point", videoInputConfig->inPoint, 0.0f, 1.0f, 0.05);
-        m_ui.SpinBoxFloat("out point", videoInputConfig->outPoint, 0.0f, 1.0f, 0.05);
         m_ui.Text("speed (N/A)");
 
         std::string previewFilename = videoInputConfig->fileName + ".preview";

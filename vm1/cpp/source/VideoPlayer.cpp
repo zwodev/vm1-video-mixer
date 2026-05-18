@@ -487,10 +487,8 @@ void VideoPlayer::seekToInPoint(bool backward) {
     AVStream *stream = m_formatContext->streams[m_videoStream];
     double dur_s = av_q2d(stream->time_base) * (double)stream->duration;
     const double loop_start_s = dur_s * double(m_inPoint);
-    const double loop_after_s = dur_s * double(m_outPoint);
     
     int64_t loop_start_pts = llround(loop_start_s / av_q2d(stream->time_base));
-    int64_t loop_after_pts = llround(loop_after_s / av_q2d(stream->time_base));
     
     int flags = AVSEEK_FLAG_BACKWARD;
     if (av_seek_frame(m_formatContext, m_videoStream, loop_start_pts, flags) >= 0) {
@@ -498,18 +496,9 @@ void VideoPlayer::seekToInPoint(bool backward) {
     }
 }
 
-static int do_seek_and_flush(AVFormatContext *fmt_ctx, AVCodecContext *dec_ctx, int stream_index, int64_t seek_target_pts) {
-    int flags = AVSEEK_FLAG_BACKWARD; // land on a preceding keyframe
-    int ret = av_seek_frame(fmt_ctx, stream_index, seek_target_pts, flags);
-    if (ret < 0) return ret;
-    if (dec_ctx) avcodec_flush_buffers(dec_ctx);
-    return 0;
-}
-
 void VideoPlayer::run() {
-    seekToInPoint();
+    if (m_inPoint > 0.0f) seekToInPoint();
 
-    bool restart = false;
     while (m_isRunning) {
         if (!m_isFlushing) {
             // Read and decode frames
@@ -517,7 +506,7 @@ void VideoPlayer::run() {
             if (result < 0) {
                 if (m_isLooping) {
                     m_firstPts = -1.0;      
-                    //seekToInPoint();
+                    seekToInPoint();
                     SDL_Log("End of stream, restart (looping)\n");
                 }
                 else {
@@ -532,13 +521,13 @@ void VideoPlayer::run() {
                 }
             } else {
 
-                if (m_packet->stream_index == m_videoStream) {
+                if (m_outPoint < 1.0f && m_packet->stream_index == m_videoStream) {
                     AVStream *stream = m_formatContext->streams[m_videoStream];
                     double dur_s = av_q2d(stream->time_base) * (double)stream->duration;
-                    const double loop_start_s = dur_s * double(m_inPoint);
+                    //const double loop_start_s = dur_s * double(m_inPoint);
                     const double loop_after_s = dur_s * double(m_outPoint);
                     
-                    int64_t loop_start_pts = llround(loop_start_s / av_q2d(stream->time_base));
+                    //int64_t loop_start_pts = llround(loop_start_s / av_q2d(stream->time_base));
                     int64_t loop_after_pts = llround(loop_after_s / av_q2d(stream->time_base));
 
                     // Compute packet timestamp (prefer pts, fallback to dts)
@@ -552,27 +541,18 @@ void VideoPlayer::run() {
                     // then discard packets until we reach valid packets after the seek.
                     if (pkt_ts >= loop_after_pts) {
                         m_firstPts = -1;
-                        // seek back
-                        // if (do_seek_and_flush(m_formatContext, m_videoContext, m_videoStream, loop_start_pts) < 0) {
-                        //     fprintf(stderr, "Seek back failed\n");
-                        //     av_packet_unref(m_packet);
-                        //     break;
-                        // }
-
                         seekToInPoint(true);
-                        // clear packet and continue; next av_read_frame will deliver packets after seek
                         av_packet_unref(m_packet);
                         continue;
                     }
 
-                    printf("Start: %ld\n", loop_start_pts);
-                    printf("End: %ld\n", loop_after_pts);
-                    printf("Packet: %ld\n", pkt_ts);
+                    // printf("Start: %ld\n", loop_start_pts);
+                    // printf("End: %ld\n", loop_after_pts);
+                    // printf("Packet: %ld\n", pkt_ts);
                 }
 
 
 
-                // // If packet is before our current logical playback window (i.e., old packets), drop it.
                 // // This is crucial immediately after a seek: demuxer can return packets earlier than seek_target.
                 // if (pkt_ts < loop_start_pts) {
                 //     av_packet_unref(m_packet);
@@ -600,7 +580,6 @@ void VideoPlayer::run() {
 
                 // printf("InPoint: %f\n", m_inPoint);
     
-                bool packetInRange = true;
                 if (m_packet->stream_index == m_audioStream) {
                     result = avcodec_send_packet(m_audioContext, m_packet);
                     if (result < 0) {
