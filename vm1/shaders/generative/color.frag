@@ -24,7 +24,7 @@ uniform float analog3;
 uniform float red;   // { "name": "Red", "default": 1.0, "min": 0.0, "max":1.0, "step": 0.01 }
 uniform float green; // { "name": "Green", "default": 0.5, "min": 0.0, "max":1.0, "step": 0.01 }
 uniform float blue;  // { "name": "Blue", "default": 0.5, "min": 0.0, "max":1.0, "step": 0.01 }
-uniform float alpha; // { "name": "Transparency", "default": 0.0, "min": 0.0, "max":1.0, "step": 0.01 }
+uniform float alpha; // { "name": "Transparency", "default": 1.0, "min": 0.0, "max":1.0, "step": 0.01 }
 
 void main() {
 	vec2 fragCoord = gl_FragCoord.xy;

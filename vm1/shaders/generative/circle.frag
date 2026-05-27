@@ -16,6 +16,11 @@ out vec4 fragColor;
 const vec2 OUT_TEX_SIZE = vec2(1920.0f, 1080.0f);
 // uniform vec2 iResolution;
 uniform float iTime;    // { "name": "Elapsed Time", "default": 0.0, "min": 0.0, "max": 1000000.0, "step": 0.01 }
+uniform float analog0;
+uniform float analog1;
+uniform float analog2;
+uniform float analog3;
+
 uniform float offsetX;  // { "name": "Offset X", "default": 0.0, "min": -2.0, "max": 2.0, "step": 0.01 }
 uniform float offsetY;  // { "name": "Offset Y", "default": 0.0, "min": -2.0, "max": 2.0, "step": 0.01 }
 uniform float scale;    // { "name": "Scale", "default": 1.0, "min": 0.0, "max": 10.0, "step": 0.01 }
@@ -29,11 +34,6 @@ float circle( in vec2 p, in float r )
 void main() {
 	vec2 fragCoord = gl_FragCoord.xy;
 	vec2 iResolution = OUT_TEX_SIZE;
-    uniform float iTime;
-    uniform float analog0;
-    uniform float analog1;
-    uniform float analog2;
-    uniform float analog3;
 
     vec2 p = (2.0*fragCoord-iResolution.xy)/iResolution.y;
     p.x -= offsetX;
