@@ -364,6 +364,16 @@ void UI::Spacer(float value)
     m_y += value;
 }
 
+void UI::Separator()
+{
+    m_y += 10;
+    DrawStyle drawStyle;
+    drawStyle.color = COLOR::WHITE;
+    m_stbRenderer.drawLineNEW(glm::vec2(0, m_y), glm::vec2(m_stbRenderer.width(), m_y), drawStyle);
+    m_y += 15;
+}
+
+
 void UI::NewLine()
 {
     if(m_translateStack.size() > 0)

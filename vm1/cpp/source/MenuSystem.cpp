@@ -427,8 +427,8 @@ void MenuSystem::handlePlaneSwitching()
     int* planeId = nullptr;
     
     if (m_currentMenuType == MT_InfoMenu        ||
-            m_currentMenuType == MT_SourceMenu  || 
-            m_currentMenuType == MT_ControlMenu ||
+            /*m_currentMenuType == MT_SourceMenu  || 
+            m_currentMenuType == MT_ControlMenu ||*/
             m_currentMenuType == MT_FxMenu      ||
             m_currentMenuType == MT_OutputMenu
         )
@@ -634,7 +634,7 @@ void MenuSystem::SourceMenu()
 {
     m_ui.MenuTitleWidget("SRC", TextAlign::CENTER);
     m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::LEFT);
-    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
+    // m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
 
     m_ui.PushTranslate(0, 40);
@@ -765,7 +765,7 @@ void MenuSystem::FileSelection()
 {
     m_ui.MenuTitleWidget("MEDIA", TextAlign::CENTER);
     m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::LEFT);
-    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
+    // m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
 
     m_ui.PushTranslate(4, 20);
@@ -863,7 +863,7 @@ void MenuSystem::LiveInputSelection()
 {
     m_ui.MenuTitleWidget("LIVE", TextAlign::CENTER);
     m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::LEFT);
-    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
+    // m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
     
     m_ui.PushTranslate(4, 20);
@@ -898,7 +898,7 @@ void MenuSystem::ShaderSelection()
 {
     m_ui.MenuTitleWidget("SHADER", TextAlign::CENTER);
     m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::LEFT);
-    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
+    // m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
 
     m_ui.PushTranslate(4, 20);
@@ -949,7 +949,7 @@ void MenuSystem::ControlMenu()
 {
     m_ui.MenuTitleWidget("CTL", TextAlign::CENTER);
     m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::LEFT);
-    m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
+    // m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
 
     m_ui.PushTranslate(4, 20);
@@ -974,18 +974,17 @@ void MenuSystem::ControlMenu()
         }
         m_ui.Label("Name: " + fileName);
         m_ui.Spacer();
-
-        m_ui.SpinBoxInt("plane", videoInputConfig->planeId, 0, 3, 1, {"1", "2", "3", "4"});
         if (m_ui.CheckBox("loop", videoInputConfig->looping)) { 
             videoInputConfig->looping = !videoInputConfig->looping; 
         }
-        m_ui.SpinBoxFloat("in point", videoInputConfig->inPoint, 0.0f, videoInputConfig->outPoint, 0.05f);
-        m_ui.SpinBoxFloat("out point", videoInputConfig->outPoint, videoInputConfig->inPoint, 1.0f, 0.05f);
-        if (m_ui.CheckBox("backwards (N/A)", videoInputConfig->backwards)) {
-            videoInputConfig->backwards = !videoInputConfig->backwards;
-        }
-        m_ui.Text("speed (N/A)");
-
+        m_ui.SpinBoxFloat("in point", videoInputConfig->inPoint, 0.0f, videoInputConfig->outPoint, 0.01f);
+        m_ui.SpinBoxFloat("out point", videoInputConfig->outPoint, videoInputConfig->inPoint, 1.0f, 0.01f);
+        // if (m_ui.CheckBox("backwards (N/A)", videoInputConfig->backwards)) {
+        //     videoInputConfig->backwards = !videoInputConfig->backwards;
+        // }
+        // m_ui.Text("speed (N/A)");
+        m_ui.Separator();
+        m_ui.SpinBoxInt("Output Plane", videoInputConfig->planeId, 0, 3, 1, {"1", "2", "3", "4"});
         std::string previewFilename = videoInputConfig->fileName + ".preview";
         MediaPreview(previewFilename);
     }
@@ -993,8 +992,8 @@ void MenuSystem::ControlMenu()
         m_ui.Label("Type: HDMI");
         std::string inputName = "Source: HDMI" + std::to_string(hdmiInputConfig->hdmiPort+1);
         m_ui.Label(inputName);
-        m_ui.Spacer();
-        m_ui.SpinBoxInt("plane", hdmiInputConfig->planeId, 0, 3, 1, {"1", "2", "3", "4"});
+        m_ui.Separator();
+        m_ui.SpinBoxInt("Output Plane", hdmiInputConfig->planeId, 0, 3, 1, {"1", "2", "3", "4"});
     }
     else if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(currentConfig)) {
         m_ui.Label("Type: Shader");
@@ -1003,8 +1002,6 @@ void MenuSystem::ControlMenu()
         shaderName = shaderName.substr(lastSlashPos + 1);
         m_ui.Label("Name: " + shaderName);
         m_ui.Spacer();
-
-        m_ui.SpinBoxInt("plane", shaderInputConfig->planeId, 0, 3, 1, {"1", "2", "3", "4"});
 
         for (auto& kv : shaderInputConfig->shaderConfig.params) {
             auto& param = kv.second;
@@ -1016,6 +1013,8 @@ void MenuSystem::ControlMenu()
                 m_ui.SpinBoxFloat(floatParam.name, floatParam.value, floatParam.min, floatParam.max, floatParam.step);
             }
         }
+        m_ui.Separator();
+        m_ui.SpinBoxInt("Output Plane", shaderInputConfig->planeId, 0, 3, 1, {"1", "2", "3", "4"});
     }
     
     m_ui.EndList();
@@ -1151,14 +1150,14 @@ void MenuSystem::OutputMenu()
 
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
-    SubMenu("Mrs. Mask", [this](){ Mask(); });
-    SubMenu("Mr. Mapping", [this](){ Mapping(); });
-    m_ui.SpinBoxInt("Blend Mode", (int&)m_registry.planes()[m_activeOutputPlane.planeId].blendMode, 0, 2);
+    // SubMenu("Mrs. Mask", [this](){ Mask(); });
+    SubMenu("Projection Mapping", [this](){ Mapping(); });
+    m_ui.SpinBoxInt("Blend Mode", (int&)m_registry.planes()[m_activeOutputPlane.planeId].blendMode, 0, 2, 1, {"Normal", "Blend", "Multiply"});
     m_ui.SpinBoxFloat("Opacity", m_registry.planes()[m_activeOutputPlane.planeId].opacity, 0.0f, 1.0f);
-    if(m_ui.CheckBox("Use Fader For Opacity", m_registry.planes()[m_activeOutputPlane.planeId].useFaderForOpacity))
-    {
-        m_registry.planes()[m_activeOutputPlane.planeId].useFaderForOpacity = !m_registry.planes()[m_activeOutputPlane.planeId].useFaderForOpacity;
-    }
+    // if(m_ui.CheckBox("Use Fader For Opacity", m_registry.planes()[m_activeOutputPlane.planeId].useFaderForOpacity))
+    // {
+    //     m_registry.planes()[m_activeOutputPlane.planeId].useFaderForOpacity = !m_registry.planes()[m_activeOutputPlane.planeId].useFaderForOpacity;
+    // }
     m_ui.SpinBoxInt("HDMI Output", m_registry.planes()[m_activeOutputPlane.planeId].hdmiId, 0, 1);
     m_ui.EndList();
     m_ui.PopTranslate();

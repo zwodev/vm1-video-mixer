@@ -87,6 +87,7 @@ public:
     void PushTranslate(int x, int y);
     void PopTranslate();
     void Spacer(float value = 15.0f);
+    void Separator();
     void NewLine();
     void HideElements();
     void ShowElements();
