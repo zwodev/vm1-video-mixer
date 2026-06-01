@@ -395,6 +395,12 @@ void PlaybackOperator::update(float deltaTime)
     std::vector<int> activeSlotsToClear;
     std::vector<int> activeSlotIds = m_registry.inputMappings().activeSlotIds();
     for (int activeSlotId : activeSlotIds) {
+        InputConfig* stagedInputConfig = m_registry.inputMappings().getInputConfig(activeSlotId, true);
+        if (stagedInputConfig && stagedInputConfig->changed) {
+            stagedInputConfig->changed = false;
+            showMedia(activeSlotId);
+        }
+
         InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(activeSlotId);
         
         if (inputConfig) {
@@ -411,7 +417,7 @@ void PlaybackOperator::update(float deltaTime)
                 activePlanes.push_back(inputConfig->planeId);
                 activePlayerIds.push_back(playerId);
 
-                // Set shader params
+                // Set live editable video params
                 if (dynamic_cast<VideoInputConfig*>(inputConfig)) {
                     VideoInputConfig* videoInputConfig = m_registry.inputMappings().getVideoInputConfig(activeSlotId, true);
                     if (!videoInputConfig) {
@@ -490,7 +496,6 @@ void PlaybackOperator::update(float deltaTime)
     }
     
     for (auto id : activeSlotsToClear) {
-        //InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(id);
         m_registry.inputMappings().removeConfig(id);
     }
 

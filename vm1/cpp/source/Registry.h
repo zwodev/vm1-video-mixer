@@ -46,6 +46,7 @@ public:
     bool isActive = false;
     int planeId = 0;
     int playerId = -1;
+    bool changed = false;
 
     template <class Archive>
     void serialize(Archive& ar)
@@ -155,10 +156,10 @@ public:
     void stageInputConfig(int id, std::unique_ptr<InputConfig> inputConfig)
     {
         if (id < 0) return;
+        if (m_stagedSlots.contains(id)) {
+            inputConfig->changed = true;
+        }
         m_stagedSlots[id] = std::move(inputConfig);
-        // if (m_activeSlots.contains(id)) {
-        //     m_stagedSlots[id]->planeId = m_activeSlots[id]->planeId;
-        // }
     }
 
     void setFocusedMediaSlot(int mediaSlotId)
@@ -276,6 +277,7 @@ public:
         ar(
             // CEREAL_NVP(focusedBank),
             cereal::make_nvp("media_slots", m_stagedSlots)
+            //cereal::make_nvp("media_slots", m_activeSlots)
         );
     }
 
