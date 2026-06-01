@@ -178,7 +178,10 @@ private:
     TextInputDialogData m_textInputDialog;
 
     struct FileManagerDialogData {
-        std::string filename;
+        // std::string filename;
+        // std::string absolutePath;
+        int slotId;
+        DirectoryEntry entry;
     };
     FileManagerDialogData m_fileManagerDialog;
 

@@ -621,8 +621,9 @@ void UI::BankInfoWidget(int bank)
 bool UI::Action(const std::string& label)
 {
     if (!m_focusedIdxPtr) return false;
-    bool keyPressed = isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0) ||
-                      isNavigationEventTriggered(NavigationEvent::Type::NavigationRight);
+    // bool keyPressed = isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0) ||
+    //                   isNavigationEventTriggered(NavigationEvent::Type::NavigationRight);
+    bool keyPressed = isNavigationEventTriggered(NavigationEvent::Type::NavigationEnter);
     bool focused = ((*m_focusedIdxPtr) == m_listSize);
 
     Text(label);
@@ -636,15 +637,23 @@ bool UI::CheckBox(const std::string& label, bool checked)
     bool oldChecked = checked;
     bool focused = ((*m_focusedIdxPtr) == m_listSize);
     if (focused) {
+        // if (isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0))  // deselect
+        // {
+        //     checked = false;
+        // } 
+        // else if (isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0))  // select
+        // {
+        //     checked = true;
+        // }
+        // else if (isNavigationEventTriggered(NavigationEvent::Type::NavigationRight)) { // toggle
+        //     checked = !checked;
+        // }
         if (isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0))  // deselect
         {
             checked = false;
         } 
-        else if (isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0))  // select
+        else if (isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0))  // toggle
         {
-            checked = true;
-        }
-        else if (isNavigationEventTriggered(NavigationEvent::Type::NavigationRight)) { // toggle
             checked = !checked;
         }
     }
@@ -667,15 +676,22 @@ bool UI::RadioButton(const std::string& label, bool active, bool* auxFunctionTri
     if (!m_focusedIdxPtr) return false;
     bool keyPressed = false;
 
-    if (isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0) ||
-        isNavigationEventTriggered(NavigationEvent::Type::NavigationRight)) {
+    // if (isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0) ||
+    //     isNavigationEventTriggered(NavigationEvent::Type::NavigationRight)) {
+    //     keyPressed = true;
+    // }
+    if (isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0)) {
         keyPressed = true;
     }
 
     bool focused = ((*m_focusedIdxPtr) == m_listSize);
 
-    if(focused && (isNavigationEventTriggered(NavigationEvent::Type::FnNavigationRight) ||
-                   isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0)))  {
+    // if(focused && (isNavigationEventTriggered(NavigationEvent::Type::FnNavigationRight) ||
+    //                isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0)))  {
+    //     if(auxFunctionTriggered != nullptr)
+    //         *auxFunctionTriggered = true;
+    // }
+    if(focused && isNavigationEventTriggered(NavigationEvent::Type::NavigationEnter))  {
         if(auxFunctionTriggered != nullptr)
             *auxFunctionTriggered = true;
     }
@@ -698,12 +714,14 @@ bool UI::SpinBoxInt(const std::string& label, int& value, int minValue, int maxV
     bool hasChanged = false;
     if (!m_focusedIdxPtr) return false;
     int diff = 0;
-    if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0))
+    if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0) || 
+       isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 1))
     {
         hasChanged = true;
         diff = step;    
     }
-    else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0))
+    else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0) || 
+            isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 1))
     {
         hasChanged = true;
         diff = -step;
@@ -732,12 +750,14 @@ bool UI::SpinBoxFloat(const std::string& label, float& value, float minValue, fl
     bool hasChanged = false;
     if (!m_focusedIdxPtr) return false;
     float diff = 0;
-    if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0))
+    if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0) || 
+       isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 1))
     {
         hasChanged = true;
         diff = step;    
     }
-    else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0))
+    else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0) || 
+            isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 1))
     {
         hasChanged = true;
         diff = -step;

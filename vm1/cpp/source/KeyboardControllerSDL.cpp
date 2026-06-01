@@ -24,74 +24,149 @@ void KeyboardControllerSDL::update(SDL_Event& event)
     if (event.type == SDL_EVENT_KEY_DOWN)
     {
         bool isShiftPressed = event.key.mod & SDL_KMOD_SHIFT;
-        switch (event.key.key)
+        if(!isShiftPressed)
         {
-        case SDLK_ESCAPE:
-            m_eventBus.publish(SystemEvent(SystemEvent::Type::Exit));
-            return;
-            break;
-        case SDLK_UP:
-            if (isShiftPressed)
+            switch (event.key.key)
             {
-                m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 1));
+                case SDLK_RIGHT:
+                case SDLK_RETURN:
+                    m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationEnter));
+                    return;
+                    break;
+                    case SDLK_LEFT:
+                case SDLK_ESCAPE:
+                    m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationExit));
+                    return;
+                    break;
+                case SDLK_UP:
+                    m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationUp));
+                    return;
+                    break;
+                case SDLK_DOWN:
+                    m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationDown));
+                    return;
+                    break;
+                // case SDLK_PAGEUP:
+                //     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxDown));
+                //     return;
+                //     break;
+                // case SDLK_PAGEDOWN:
+                //     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxUp));
+                //     return;
+                //     break;
+                // case SDLK_SPACE:
+                //     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::Screenshot));
+                //     return;
+                //     break;
+                default:
+                    break;
             }
-            else
+        } 
+        else 
+        {
+            switch (event.key.key)
             {
-                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationUp));
+                case SDLK_RIGHT:
+                case SDLK_RETURN:
+                    m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 0));
+                    return;
+                    break;
+                case SDLK_LEFT:
+                    m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 0));
+                    return;
+                    break;
+                case SDLK_UP:
+                    m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 1));
+                    return;
+                    break;
+                case SDLK_DOWN:
+                    m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 1));
+                    return;
+                    break;
+                // case SDLK_PAGEUP:
+                //     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxDown));
+                //     return;
+                //     break;
+                // case SDLK_PAGEDOWN:
+                //     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxUp));
+                //     return;
+                //     break;
+                // case SDLK_SPACE:
+                //     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::Screenshot));
+                //     return;
+                //     break;
+                default:
+                    break;
             }
-            return;
-            break;
-        case SDLK_DOWN:
-            if (isShiftPressed)
-            {
-                m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 1));
-            }
-            else
-            {
-                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationDown));
-            }
-            return;
-            break;
-        case SDLK_LEFT:
-            if (isShiftPressed)
-            {
-                // TODO: How to deal with FnNavigation with keyboard control?
-                m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 0));
-                //m_eventBus.publish(NavigationEvent(NavigationEvent::Type::FnNavigationLeft));
-            }
-            else
-            {
-                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationLeft));
-            }
-            return;
-            break;
-        case SDLK_RIGHT:
-            if (isShiftPressed)
-            {
-                m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 0));
-                //m_eventBus.publish(NavigationEvent(NavigationEvent::Type::FnNavigationRight));
-            }
-            else
-            {
-                m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationRight));
-            }
-            return;
-            break;
-        case SDLK_PAGEUP:
-            m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxDown));
-            return;
-            break;
-        case SDLK_PAGEDOWN:
-            m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxUp));
-            return;
-            break;
-        case SDLK_SPACE:
-            m_eventBus.publish(NavigationEvent(NavigationEvent::Type::Screenshot));
-            return;
-            break;
-        default:
-            break;
         }
+        // switch (event.key.key)
+        // {
+        // case SDLK_ESCAPE:
+        //     m_eventBus.publish(SystemEvent(SystemEvent::Type::Exit));
+        //     return;
+        //     break;
+        // case SDLK_UP:
+        //     if (isShiftPressed)
+        //     {
+        //         m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 1));
+        //     }
+        //     else
+        //     {
+        //         m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationUp));
+        //     }
+        //     return;
+        //     break;
+        // case SDLK_DOWN:
+        //     if (isShiftPressed)
+        //     {
+        //         m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 1));
+        //     }
+        //     else
+        //     {
+        //         m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationDown));
+        //     }
+        //     return;
+        //     break;
+        // case SDLK_LEFT:
+        //     if (isShiftPressed)
+        //     {
+        //         // TODO: How to deal with FnNavigation with keyboard control?
+        //         m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 0));
+        //         //m_eventBus.publish(NavigationEvent(NavigationEvent::Type::FnNavigationLeft));
+        //     }
+        //     else
+        //     {
+        //         m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationLeft));
+        //     }
+        //     return;
+        //     break;
+        // case SDLK_RIGHT:
+        //     if (isShiftPressed)
+        //     {
+        //         m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 0));
+        //         //m_eventBus.publish(NavigationEvent(NavigationEvent::Type::FnNavigationRight));
+        //     }
+        //     else
+        //     {
+        //         m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationRight));
+        //     }
+        //     return;
+        //     break;
+        // case SDLK_PAGEUP:
+        //     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxDown));
+        //     return;
+        //     break;
+        // case SDLK_PAGEDOWN:
+        //     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxUp));
+        //     return;
+        //     break;
+        // case SDLK_SPACE:
+        //     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::Screenshot));
+        //     return;
+        //     break;
+        // default:
+        //     break;
+        // }
 
         for(size_t i = 0; i < m_editKeys.size(); ++i) 
         {

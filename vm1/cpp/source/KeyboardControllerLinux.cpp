@@ -42,7 +42,8 @@ void KeyboardControllerLinux::update(input_event& event)
         switch (event.code)
         {
             case KEY_ESC:
-                m_eventBus.publish(SystemEvent(SystemEvent::Type::Exit));
+                // m_eventBus.publish(SystemEvent(SystemEvent::Type::Exit));
+                printf("Linux\n");
                 return;
                 break;
             case KEY_LEFTSHIFT:
