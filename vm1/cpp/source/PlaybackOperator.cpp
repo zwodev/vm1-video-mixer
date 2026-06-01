@@ -354,7 +354,12 @@ void PlaybackOperator::showMedia(int mediaSlotId)
 
         // Update shader parameters
         if (ShaderPlayer* shaderPlayer = dynamic_cast<ShaderPlayer*>(m_mediaPlayers[playerId])) {
-            shaderInputConfig->shaderConfig.update(shaderPlayer->shaderConfig());
+            if (shaderInputConfig->changed) {
+                shaderInputConfig->shaderConfig = shaderPlayer->shaderConfig();
+            }
+            else {
+                shaderInputConfig->shaderConfig.update(shaderPlayer->shaderConfig());
+            }
         }
 
         // Start fade
@@ -397,8 +402,8 @@ void PlaybackOperator::update(float deltaTime)
     for (int activeSlotId : activeSlotIds) {
         InputConfig* stagedInputConfig = m_registry.inputMappings().getInputConfig(activeSlotId, true);
         if (stagedInputConfig && stagedInputConfig->changed) {
-            stagedInputConfig->changed = false;
             showMedia(activeSlotId);
+            stagedInputConfig->changed = false;
         }
 
         InputConfig* inputConfig = m_registry.inputMappings().getInputConfig(activeSlotId);

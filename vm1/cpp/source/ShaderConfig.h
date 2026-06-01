@@ -213,6 +213,11 @@ struct ShaderConfig
     //     this->name = name;
     // }
 
+    void reset() {
+        params.clear();
+        groups.clear();
+    }
+
     void update(const ShaderConfig& shaderConfig) {
         std::vector<std::string> toDelete;
         for (const auto& kv : params) {
