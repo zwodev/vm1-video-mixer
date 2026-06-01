@@ -24,7 +24,7 @@ void KeyboardControllerSDL::update(SDL_Event& event)
     if (event.type == SDL_EVENT_KEY_DOWN)
     {
         bool isShiftPressed = event.key.mod & SDL_KMOD_SHIFT;
-        if(!isShiftPressed)
+        if(!isShiftPressed)  // if SHIFT not pressed
         {
             switch (event.key.key)
             {
@@ -33,7 +33,7 @@ void KeyboardControllerSDL::update(SDL_Event& event)
                     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationEnter));
                     return;
                     break;
-                    case SDLK_LEFT:
+                case SDLK_LEFT:
                 case SDLK_ESCAPE:
                     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationExit));
                     return;
@@ -46,14 +46,16 @@ void KeyboardControllerSDL::update(SDL_Event& event)
                     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationDown));
                     return;
                     break;
-                // case SDLK_PAGEUP:
-                //     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxDown));
-                //     return;
-                //     break;
-                // case SDLK_PAGEDOWN:
-                //     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxUp));
-                //     return;
-                //     break;
+                case SDLK_PAGEUP:
+                case SDLK_PERIOD:
+                    m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxDown));
+                    return;
+                    break;
+                case SDLK_PAGEDOWN:
+                case SDLK_COMMA:
+                    m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxUp));
+                    return;
+                    break;
                 // case SDLK_SPACE:
                 //     m_eventBus.publish(NavigationEvent(NavigationEvent::Type::Screenshot));
                 //     return;
@@ -62,7 +64,7 @@ void KeyboardControllerSDL::update(SDL_Event& event)
                     break;
             }
         } 
-        else 
+        else  // if SHIFT pressed
         {
             switch (event.key.key)
             {

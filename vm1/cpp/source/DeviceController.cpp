@@ -118,62 +118,150 @@ void DeviceController::requestVM1DeviceBuffer()
         {
             buttonId = deviceBuffer.buttonEvents[i].buttonId;
 
-            switch(deviceBuffer.buttonEvents[i].eventType) 
+            if(!isFnPressed) // if FN not pressed
             {
-                case EDIT_BUTTON_EVENT:
-                    isFnPressed ? m_eventBus.publish(BankChangeEvent(buttonId))
-                                : m_eventBus.publish(EditModeEvent(buttonId));
-                    break;
-                case MEDIA_BUTTON_EVENT: {
-                    int mediaSlotId = (m_registry.inputMappings().focusedBank * MEDIA_BUTTON_COUNT) + buttonId;
-                    m_eventBus.publish(MediaSlotEvent(mediaSlotId, !isFnPressed));
-                    break; }
-                case NAVIGATION_BUTTON_EVENT:
-                    if(buttonId == NAVIGATION_BUTTON_LEFT)
-                    {
-                        isFnPressed ?  m_eventBus.publish(NavigationEvent(NavigationEvent::Type::FnNavigationLeft))
-                                     : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationLeft));
-                    }
-                    else if (buttonId == NAVIGATION_BUTTON_RIGHT)
-                    {
-                        isFnPressed ?  m_eventBus.publish(NavigationEvent(NavigationEvent::Type::FnNavigationRight))
-                                     : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationRight));
-                    }
-                    else 
-                    {
-                        printf("Unknown Navigation Button Id #%d\n", buttonId);
-                    }
-                    break;
-                case ROTARY_EVENT:
-                    if (buttonId == PRIMARY_ENCODER_CCW)
-                    {
-                        isFnPressed ? m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 0)) 
-                                    : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationUp));
-                    }
-                    else if (buttonId == PRIMARY_ENCODER_CW)
-                    {
-                        isFnPressed ? m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 0)) 
-                                    : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationDown));
-                    }
-                    else if (buttonId == SECONDARY_ENCODER_CCW)
-                    {
-                        isFnPressed ? m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 1)) 
-                                    : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxUp));
-                    }
-                    else if (buttonId == SECONDARY_ENCODER_CW)
-                    {
-                        isFnPressed ? m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 1)) 
-                                    : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxDown));
-                    }
-                    else
-                    {
-                        printf("Unknown Rotary Button Id #%d\n", buttonId);
-                    }
-                    break;
-                default:
-                
-                    break;
+                switch(deviceBuffer.buttonEvents[i].eventType) 
+                {
+                    case EDIT_BUTTON_EVENT:
+                        m_eventBus.publish(EditModeEvent(buttonId));
+                        break;
+                    case MEDIA_BUTTON_EVENT: {
+                        int mediaSlotId = (m_registry.inputMappings().focusedBank * MEDIA_BUTTON_COUNT) + buttonId;
+                        m_eventBus.publish(MediaSlotEvent(mediaSlotId, true));
+                        break; }
+
+                    case NAVIGATION_BUTTON_EVENT:
+                        if(buttonId == NAVIGATION_BUTTON_RIGHT)
+                        {
+                            m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationEnter));
+                        }
+                        else if (buttonId == NAVIGATION_BUTTON_LEFT)
+                        {
+                            m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationExit));
+                        }
+                        break;
+                    case ROTARY_EVENT:
+                        if (buttonId == PRIMARY_ENCODER_CCW)
+                        {
+                            m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationUp));
+                        }
+                        else if (buttonId == PRIMARY_ENCODER_CW)
+                        {
+                            m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationDown));
+                        }
+                        else if (buttonId == SECONDARY_ENCODER_CCW)
+                        {
+                            m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxUp));
+                        }
+                        else if (buttonId == SECONDARY_ENCODER_CW)
+                        {
+                            m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxDown));
+                        }
+                        break;
+                    default:                    
+                        break;
+                }
             }
+            else    // if FN pressed
+            {
+                switch(deviceBuffer.buttonEvents[i].eventType) 
+                {
+                    case EDIT_BUTTON_EVENT:
+                        m_eventBus.publish(BankChangeEvent(buttonId));
+                        break;
+                    case MEDIA_BUTTON_EVENT: {
+                        int mediaSlotId = (m_registry.inputMappings().focusedBank * MEDIA_BUTTON_COUNT) + buttonId;
+                        m_eventBus.publish(MediaSlotEvent(mediaSlotId, false));
+                        break; }
+
+                    case NAVIGATION_BUTTON_EVENT:
+                        if(buttonId == NAVIGATION_BUTTON_RIGHT)
+                        {
+                            m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 0));
+                        }
+                        else if (buttonId == NAVIGATION_BUTTON_LEFT)
+                        {
+                            m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 0));
+                        }
+                        break;
+                    case ROTARY_EVENT:
+                        if (buttonId == PRIMARY_ENCODER_CCW)
+                        {
+                            m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 0));
+                        }
+                        else if (buttonId == PRIMARY_ENCODER_CW)
+                        {
+                            m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 0));
+                        }
+                        else if (buttonId == SECONDARY_ENCODER_CCW)
+                        {
+                            m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 1));
+                        }
+                        else if (buttonId == SECONDARY_ENCODER_CW)
+                        {
+                            m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 1));
+                        }
+                    default:                    
+                        break;
+                }
+            }
+
+            // switch(deviceBuffer.buttonEvents[i].eventType) 
+            // {
+            //     case EDIT_BUTTON_EVENT:
+            //         isFnPressed ? m_eventBus.publish(BankChangeEvent(buttonId))
+            //                     : m_eventBus.publish(EditModeEvent(buttonId));
+            //         break;
+            //     case MEDIA_BUTTON_EVENT: {
+            //         int mediaSlotId = (m_registry.inputMappings().focusedBank * MEDIA_BUTTON_COUNT) + buttonId;
+            //         m_eventBus.publish(MediaSlotEvent(mediaSlotId, !isFnPressed));
+            //         break; }
+            //     case NAVIGATION_BUTTON_EVENT:
+            //         if(buttonId == NAVIGATION_BUTTON_LEFT)
+            //         {
+            //             isFnPressed ?  m_eventBus.publish(NavigationEvent(NavigationEvent::Type::FnNavigationLeft))
+            //                          : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationLeft));
+            //         }
+            //         else if (buttonId == NAVIGATION_BUTTON_RIGHT)
+            //         {
+            //             isFnPressed ?  m_eventBus.publish(NavigationEvent(NavigationEvent::Type::FnNavigationRight))
+            //                          : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationRight));
+            //         }
+            //         else 
+            //         {
+            //             printf("Unknown Navigation Button Id #%d\n", buttonId);
+            //         }
+            //         break;
+            //     case ROTARY_EVENT:
+            //         if (buttonId == PRIMARY_ENCODER_CCW)
+            //         {
+            //             isFnPressed ? m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 0)) 
+            //                         : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationUp));
+            //         }
+            //         else if (buttonId == PRIMARY_ENCODER_CW)
+            //         {
+            //             isFnPressed ? m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 0)) 
+            //                         : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationDown));
+            //         }
+            //         else if (buttonId == SECONDARY_ENCODER_CCW)
+            //         {
+            //             isFnPressed ? m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Down, 1)) 
+            //                         : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxUp));
+            //         }
+            //         else if (buttonId == SECONDARY_ENCODER_CW)
+            //         {
+            //             isFnPressed ? m_eventBus.publish(ValueChangeEvent(ValueChangeEvent::Type::Up, 1)) 
+            //                         : m_eventBus.publish(NavigationEvent(NavigationEvent::Type::NavigationAuxDown));
+            //         }
+            //         else
+            //         {
+            //             printf("Unknown Rotary Button Id #%d\n", buttonId);
+            //         }
+            //         break;
+            //     default:
+                
+            //         break;
+            // }
         }
         if (deviceBuffer.buttonEvents->eventType != NO_EVENT)
             m_eventBus.publish(SystemEvent(SystemEvent::KeyDown)); // used for time-out in kiosk mode
