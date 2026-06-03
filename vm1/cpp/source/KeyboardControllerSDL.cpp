@@ -182,7 +182,9 @@ void KeyboardControllerSDL::update(SDL_Event& event)
                 return;
             }
         }
-
+        if (event.key.scancode == SDL_SCANCODE_GRAVE) {
+            m_eventBus.publish(EditModeEvent(0));
+        }
         for(size_t i = 0; i < m_mediaKeys.size(); ++i) 
         {
             int mediaSlotId = (m_registry.inputMappings().focusedBank * MEDIA_BUTTON_COUNT) + int(i);
