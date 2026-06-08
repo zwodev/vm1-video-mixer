@@ -255,7 +255,7 @@ void PlaybackOperator::showMedia(int mediaSlotId)
     InputConfig *inputConfig = m_registry.inputMappings().getInputConfig(mediaSlotId, true);
     
     if (!inputConfig) {
-        m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::NoMedia, "No media"));
+        m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::NoMedia, "empty slot")); // "no media", "slot empty", "mediaslot empty", "please select media", "nothing to play"... (?)
         return;
     }
 

@@ -68,7 +68,7 @@ public:
     }
 
     std::string fileName;
-    bool looping = false;
+    bool looping = true;
     bool backwards = false;
     float inPoint = 0.0f;
     float outPoint = 1.0f;

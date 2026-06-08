@@ -92,7 +92,7 @@ namespace COLOR
 enum class AnchorPoint {    
     LEFT_TOP,           // X_Y
     CENTER_TOP,
-    // RIGHT_TOP,
+    RIGHT_TOP,
 
     // LEFT_CENTER,
     CENTER_CENTER //,
@@ -105,8 +105,8 @@ enum class AnchorPoint {
 
 enum class TextAlign {
     LEFT,
-    CENTER //,
-    // RIGHT
+    CENTER,
+    RIGHT
 };
 
 struct DrawStyle
@@ -116,6 +116,7 @@ struct DrawStyle
     int strokeWidth = 1;
     AnchorPoint anchorPoint = AnchorPoint::LEFT_TOP;
     bool isInverted = false;
+    Color strokeColor = COLOR::WHITE;
 };
 
 namespace BDF {
@@ -153,7 +154,7 @@ private:
     std::mutex m_mutex;
     std::condition_variable m_cv;
     bool m_isEnabled = true;
-    std::pair<glm::vec2, glm::vec2> m_boundingBox;   // two points: top left, bottom right
+    std::pair<glm::uvec2, glm::uvec2> m_boundingBox;   // two points: top left, bottom right
     float m_boundingBoxOpacity = 1.0f;
 
     void queueCurrentImage();
@@ -191,17 +192,17 @@ public:
     // void drawArrow(int x0, int y0, int size, int direction, Color color = COLOR::WHITE);
     
     // basic shapes, new versions (WIP):
-    void drawLineNEW(glm::vec2 from, glm::vec2 to, DrawStyle drawStyle);
-    void drawRectNEW(glm::vec2 pos, glm::vec2 size, DrawStyle drawStyle);
-    void drawTriangleNEW(glm::vec2 p1, glm::vec2 p2, glm::vec2 p3, DrawStyle drawStyle);
-    void drawPolygonNEW(std::vector<glm::vec2> pos, DrawStyle drawStyle);
+    void drawLineNEW(glm::uvec2 from, glm::uvec2 to, DrawStyle drawStyle);
+    void drawRectNEW(glm::uvec2 pos, glm::uvec2 size, DrawStyle drawStyle);
+    void drawTriangleNEW(glm::uvec2 p1, glm::uvec2 p2, glm::uvec2 p3, DrawStyle drawStyle);
+    void drawPolygonNEW(std::vector<glm::uvec2> pos, DrawStyle drawStyle);
 
     // set/reset bounding box for drawing calls:
-    void setBoundingBox(glm::vec2 pos, glm::vec2 size, AnchorPoint anchorPoint, float opacity = 0.0f);
+    void setBoundingBox(glm::uvec2 pos, glm::uvec2 size, AnchorPoint anchorPoint, float opacity = 0.0f);
     void resetBoundingBox();
-    bool insideBoundingBox(glm::vec2 pos) const;
-    void setPixelClipped(glm::vec2 pos, Color c);
-    void blendPixelClipped(glm::vec2 pos, Color c, uint8_t srcAlpha);
+    bool insideBoundingBox(glm::uvec2 pos) const;
+    void setPixelClipped(glm::uvec2 pos, Color c);
+    void blendPixelClipped(glm::uvec2 pos, Color c, uint8_t srcAlpha);
     void invertPixel(glm::uvec2 pos);
     void roundVec2(glm::vec2& pos);
 

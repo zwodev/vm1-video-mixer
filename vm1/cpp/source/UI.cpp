@@ -327,6 +327,7 @@ bool UI::Text(const std::string &label)
         if (focused) {           
             drawStyle.color = m_currentColor;
             drawStyle.isFilled = true;
+            drawStyle.strokeWidth = 0;
             m_stbRenderer.drawRectNEW(glm::vec2(m_x, m_y - 1), glm::vec2(
                     textWidth, 
                     m_lineHeight), 
@@ -411,7 +412,6 @@ void UI::MenuTitleWidget(std::string label, TextAlign textAlign, Color color)
     int xBox = m_x;
     int xText = m_x;
     BDF::TextStyle textStyle = BDF::TEXTSTYLE::MENU_TITLE;
-    textStyle.align = textAlign;
     AnchorPoint anchorPoint;
 
     if(textAlign == TextAlign::CENTER)
@@ -419,14 +419,28 @@ void UI::MenuTitleWidget(std::string label, TextAlign textAlign, Color color)
         anchorPoint = AnchorPoint::CENTER_TOP;
         xBox += boxWidth / 2;
         xText = xBox;
+        textStyle.align = TextAlign::CENTER;
+    }
+    else if (textAlign == TextAlign::RIGHT)
+    {
+        anchorPoint = AnchorPoint::RIGHT_TOP;
+        xBox = m_stbRenderer.width() - boxWidth - m_elementPadding;
+        xText = xBox + boxWidth / 2;
+        textStyle.align = TextAlign::CENTER;
     }
     else
     {
         anchorPoint = AnchorPoint::LEFT_TOP;    // todo: TextAlign::RIGHT not needed right now
         xBox += m_elementPadding;
         xText = xBox + m_horizontalMargin;
+        textStyle.align = TextAlign::LEFT;
     }
-    m_stbRenderer.drawRectNEW(glm::vec2(xBox, m_y), glm::vec2(boxWidth, boxHeight), DrawStyle{COLOR::WHITE, false, 2, anchorPoint});
+    DrawStyle drawStyle;
+    drawStyle.color = COLOR::WHITE;
+    drawStyle.isFilled = false;
+    drawStyle.strokeWidth = 2;
+    drawStyle.anchorPoint = anchorPoint;
+    m_stbRenderer.drawRectNEW(glm::vec2(xBox, m_y), glm::vec2(boxWidth, boxHeight), drawStyle);
     m_stbRenderer.drawTextBdf(label, 
                             glm::uvec2(xText, m_y + m_menuTitlePaddingTop),
                             textStyle);
@@ -437,14 +451,25 @@ void UI::MenuTitleWidget(std::string label, TextAlign textAlign, Color color)
 
 void UI::ShowPopupMessage(std::string message)
 {
-    m_stbRenderer.clear();
-    
-    int height = m_stbRenderer.height();
-    int fontHeight = m_stbRenderer.getFontLineHeight(BDF::TEXTSTYLE::MENU_ITEM);
-    int x = 4;
-    int y = height/2 - fontHeight/2;
+    // m_stbRenderer.clear();
+    BDF::TextStyle textstyle = BDF::TEXTSTYLE::MENU_ITEM;
+    textstyle.align = TextAlign::CENTER;
+    int fontHeight = m_stbRenderer.getFontLineHeight(textstyle);
+    int x = m_stbRenderer.width() / 2;
+    int y = m_stbRenderer.height() / 2 - fontHeight / 2;
 
-    m_stbRenderer.drawTextBdf(message, glm::vec2(x, y), BDF::TEXTSTYLE::MENU_ITEM);
+    glm::vec2 rectSize;
+    rectSize.y = fontHeight * 3;
+    rectSize.x = m_stbRenderer.width() / 2;
+    DrawStyle rectDrawStyle;
+    rectDrawStyle.anchorPoint = AnchorPoint::CENTER_CENTER;
+    rectDrawStyle.isFilled = true;
+    rectDrawStyle.strokeWidth = 2.0;
+    rectDrawStyle.color = COLOR::BLACK;
+    rectDrawStyle.strokeColor = COLOR::WHITE;
+    m_stbRenderer.drawRectNEW(glm::vec2(x,y), rectSize, rectDrawStyle);
+
+    m_stbRenderer.drawTextBdf(message, glm::vec2(x, y - fontHeight / 2), textstyle);
 }
 
 void UI::ShowTextInputDialog(std::string title, int& cursorIdx, std::string& input)
@@ -908,7 +933,11 @@ void UI::PlanePreviewWidget(std::vector<PlaneSettings>& planes, int& selectedPla
                     Color color = (i == selectedPlane) ? colors[i] : COLOR::GREY;
                     opacity = style == PLANE_PREVIEW_VERTICES ? 0.3f : 0.0f;
                     m_stbRenderer.setBoundingBox(glm::vec2(rectCenterX[p.hdmiId], centerY), glm::vec2(rectWidth, rectHeight), AnchorPoint::CENTER_CENTER, opacity);
-                    m_stbRenderer.drawPolygonNEW(p.vertices, DrawStyle{color, false, polygonThickness, AnchorPoint::LEFT_TOP});
+                    std::vector<glm::uvec2> pVertices;
+                    for (auto p : p.vertices) {
+                        pVertices.push_back(p);
+                    }
+                    m_stbRenderer.drawPolygonNEW(pVertices, DrawStyle{color, false, polygonThickness, AnchorPoint::LEFT_TOP});
                 }
                 i++;
             }
@@ -919,11 +948,15 @@ void UI::PlanePreviewWidget(std::vector<PlaneSettings>& planes, int& selectedPla
     Color color = colors[selectedPlane];
     if(p.vertices.size() >= 4)
     {
-        m_stbRenderer.setBoundingBox(glm::vec2(rectCenterX[p.hdmiId], centerY), glm::vec2(rectWidth, rectHeight), AnchorPoint::CENTER_CENTER, opacity);
-        m_stbRenderer.drawPolygonNEW(p.vertices, DrawStyle{color, false, polygonThickness, AnchorPoint::LEFT_TOP});
+        m_stbRenderer.setBoundingBox(glm::uvec2(rectCenterX[p.hdmiId], centerY), glm::uvec2(rectWidth, rectHeight), AnchorPoint::CENTER_CENTER, opacity);
+        std::vector<glm::uvec2> pVertices;
+        for (auto p : p.vertices) {
+            pVertices.push_back(p);
+        }
+        m_stbRenderer.drawPolygonNEW(pVertices, DrawStyle{color, false, polygonThickness, AnchorPoint::LEFT_TOP});
     }
     m_stbRenderer.resetBoundingBox();
-
+    
 
     // draw tiny horizontal lines to indicate the layer position
     int layerlineLength;
@@ -1104,7 +1137,7 @@ void UI::AnimationFrameWidget(const ImageBuffer& image, int& frameIndex)
     // printf("MediaPreview frame %d:  srcPosX: %d, srcPosY: %d\n",m_mediaPreviewFrameIndex, srcPosX, srcPosY);
 
     m_stbRenderer.drawSubImage(image, 
-                              glm::uvec2(156, 96),    // destPos
+                              glm::uvec2(80, 30),    // destPos
                               glm::uvec2(srcPosX, srcPosY),     // srcPos
                               glm::uvec2(160, 90)); // srcSize
     

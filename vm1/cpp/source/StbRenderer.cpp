@@ -372,6 +372,10 @@ void StbRenderer::drawTextBdf(const std::string& text, glm::uvec2 pos, BDF::Text
     {
         offsetX -= getTextWidth(text, textStyle) / 2;
     }
+    else if (textStyle.align == TextAlign::RIGHT)
+    {
+        offsetX -= getTextWidth(text, textStyle);
+    }
 
     BDF::BdfEmitCtx ctx;
     ctx.img = &m_img;
@@ -412,7 +416,7 @@ int StbRenderer::getTextWidth(const std::string& text, const BDF::TextStyle& tex
     return textWidth;
 }
 
-void StbRenderer::drawLineNEW(glm::vec2 from, glm::vec2 to, DrawStyle drawStyle)
+void StbRenderer::drawLineNEW(glm::uvec2 from, glm::uvec2 to, DrawStyle drawStyle)
 {
     if (!m_isEnabled) return;
 
@@ -447,53 +451,53 @@ void StbRenderer::drawLineNEW(glm::vec2 from, glm::vec2 to, DrawStyle drawStyle)
     }
 }
 
-void StbRenderer::drawRectNEW(glm::vec2 pos, glm::vec2 size, DrawStyle drawStyle) 
+void StbRenderer::drawRectNEW(glm::uvec2 pos, glm::uvec2 size, DrawStyle drawStyle) 
 {
-    roundVec2(pos);
-    roundVec2(size);
     if (!m_isEnabled) return;
-    glm::vec2 topLeft = pos;
+
+    glm::uvec2 topLeft = pos;
     if (drawStyle.anchorPoint == AnchorPoint::CENTER_CENTER) {
-        topLeft = pos - size / 2.0f;
+        topLeft = pos - size / glm::uvec2(2);
     } else if (drawStyle.anchorPoint == AnchorPoint::CENTER_TOP) {
         topLeft.x = pos.x - size.x / 2.0f;
         topLeft.y = pos.y;
     }
 
     if (drawStyle.isFilled) {
-        for (int y = topLeft.y; y < topLeft.y + size.y; ++y)
-            for (int x = topLeft.x; x < topLeft.x + size.x; ++x)
-                setPixelClipped(glm::vec2(x, y), drawStyle.color);
+        for (unsigned y = topLeft.y; y < topLeft.y + size.y; ++y)
+            for (unsigned int x = topLeft.x; x < topLeft.x + size.x; ++x)
+                setPixelClipped(glm::uvec2(x, y), drawStyle.color);
     } 
     else if (drawStyle.isInverted) {
-        for (int y = topLeft.y; y < topLeft.y + size.y; ++y)
-            for (int x = topLeft.x; x < topLeft.x + size.x; ++x)
-                invertPixel(glm::vec2(x, y));
+        for (unsigned int y = topLeft.y; y < topLeft.y + size.y; ++y)
+            for (unsigned int x = topLeft.x; x < topLeft.x + size.x; ++x)
+                invertPixel(glm::uvec2(x, y));
     } 
-    else 
-    {  
-        drawLineNEW(topLeft, topLeft + glm::vec2(size.x, 0), drawStyle);
-        drawLineNEW(topLeft + glm::vec2(size.x, 0), topLeft + size, drawStyle);
-        drawLineNEW(topLeft + glm::vec2(0, size.y), topLeft + size, drawStyle);
-        drawLineNEW(topLeft, topLeft + glm::vec2(0, size.y), drawStyle);
+
+    if (drawStyle.strokeWidth > 0) 
+    {
+        drawStyle.color = drawStyle.strokeColor;
+        drawLineNEW(topLeft, topLeft + glm::uvec2(size.x, 0), drawStyle);
+        drawLineNEW(topLeft + glm::uvec2(size.x, 0), topLeft + size, drawStyle);
+        drawLineNEW(topLeft + glm::uvec2(0, size.y), topLeft + size, drawStyle);
+        drawLineNEW(topLeft, topLeft + glm::uvec2(0, size.y), drawStyle);
     }
 }
 
-void StbRenderer::drawTriangleNEW(glm::vec2 p1, glm::vec2 p2, glm::vec2 p3, DrawStyle drawStyle)
+void StbRenderer::drawTriangleNEW(glm::uvec2 p1, glm::uvec2 p2, glm::uvec2 p3, DrawStyle drawStyle)
 {
 
 }
 
-void StbRenderer::drawPolygonNEW(std::vector<glm::vec2> pos, DrawStyle drawStyle)
+void StbRenderer::drawPolygonNEW(std::vector<glm::uvec2> pos, DrawStyle drawStyle)
 {
     if (!m_isEnabled) return;
     for (size_t i = 0; i < pos.size(); i++) {
-        roundVec2(pos[i]);
         drawLineNEW(pos[i], pos[(i + 1) % pos.size()], drawStyle);
     }
 }
 
-void StbRenderer::setBoundingBox(glm::vec2 pos, glm::vec2 size, AnchorPoint anchorPoint, float opacity)
+void StbRenderer::setBoundingBox(glm::uvec2 pos, glm::uvec2 size, AnchorPoint anchorPoint, float opacity)
 {
     m_boundingBoxOpacity = opacity;
     if (anchorPoint == AnchorPoint::LEFT_TOP) {
@@ -503,9 +507,6 @@ void StbRenderer::setBoundingBox(glm::vec2 pos, glm::vec2 size, AnchorPoint anch
         m_boundingBox.first = glm::vec2(pos.x - size.x / 2, pos.y - size.y / 2);
         m_boundingBox.second = glm::vec2(pos.x + size.x / 2, pos.y + size.y / 2);
     }
-
-    roundVec2(m_boundingBox.first);
-    roundVec2(m_boundingBox.second);
 
     // extend bounding box by 1 pixel
     m_boundingBox.first -= 1.0f;
@@ -518,20 +519,19 @@ void StbRenderer::setBoundingBox(glm::vec2 pos, glm::vec2 size, AnchorPoint anch
 
 void StbRenderer::resetBoundingBox()
 {
-    m_boundingBox.first = glm::vec2(-1.0f, -1.0f);
-    m_boundingBox.second = glm::vec2(m_img.width, m_img.height);
+    m_boundingBox.first = glm::uvec2(0, 0);
+    m_boundingBox.second = glm::uvec2(m_img.width, m_img.height);
 }
 
-inline bool StbRenderer::insideBoundingBox(glm::vec2 pos) const {
+inline bool StbRenderer::insideBoundingBox(glm::uvec2 pos) const {
     return pos.x > m_boundingBox.first.x &&
            pos.x <  m_boundingBox.second.x &&
            pos.y > m_boundingBox.first.y &&
            pos.y <  m_boundingBox.second.y;
 }
 
-inline void StbRenderer::setPixelClipped(glm::vec2 pos, Color c) {
-    roundVec2(pos);
-
+inline void StbRenderer::setPixelClipped(glm::uvec2 pos, Color c) 
+{
     if (m_boundingBoxOpacity == 0.0f)
     {
         if (!insideBoundingBox(pos)) 
@@ -551,11 +551,9 @@ inline void StbRenderer::setPixelClipped(glm::vec2 pos, Color c) {
     }
 }
 
-inline void StbRenderer::blendPixelClipped(glm::vec2 pos, Color c, uint8_t srcAlpha)
+inline void StbRenderer::blendPixelClipped(glm::uvec2 pos, Color c, uint8_t srcAlpha)
 {
     if (srcAlpha == 0) return;
-
-    roundVec2(pos);
 
     // boundingBoxOpacity:
     // - 0.0f means "only draw inside the bounding box"

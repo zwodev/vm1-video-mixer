@@ -37,10 +37,11 @@ public:
         MT_ControlMenu,
         MT_FxMenu,
         MT_OutputMenu,
-        MT_DeviceSettingsMenu,
-        MT_NetworkMenu,
-        MT_GlobalSettingsMenu,
-        MT_ButtonMatrixMenu
+
+        MT_SettingsMenu,
+        // MT_DeviceSettingsMenu,
+        // MT_NetworkMenu,
+        // MT_ButtonMatrixMenu
     };
 
     // TODO: Why do we have this? It is never used at the moment.
@@ -116,19 +117,22 @@ private:
     void Mapping();
     // void HdmiSelection();
 
-    // Network
+    // Settings
+    void SettingsMenu();
+
+    // Settings -> Network
     void NetworkMenu();
     void WifiQrCode();
     void TFMQrCode();
 
-    // Global Settings
-    void GlobalSettingsMenu();
+    // Settings -> Hardware Setup / Connected Devices
+    void HardwareSetupMenu();
 
-    // Device Settings
-    void DeviceSettingsMenu();
+    // Settings -> About
+    void AboutMenu();
 
     // Button Matrix
-    void ButtonMatrixMenu();
+    // void ButtonMatrixMenu();
 
 
 

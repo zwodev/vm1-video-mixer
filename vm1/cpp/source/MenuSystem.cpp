@@ -107,18 +107,18 @@ void MenuSystem::setMenu(MenuType menuType)
         case MT_OutputMenu:
             menuFunc = [this](){ OutputMenu(); };
             break;
-        case MT_NetworkMenu:
-            menuFunc = [this](){ NetworkMenu(); };
+        case MT_SettingsMenu:
+            menuFunc = [this](){ SettingsMenu(); };
             break;
-        case MT_GlobalSettingsMenu:
-            menuFunc = [this](){ GlobalSettingsMenu(); };
-            break;
-        case MT_DeviceSettingsMenu:
-            menuFunc = [this](){ DeviceSettingsMenu(); };
-            break;
-        case MT_ButtonMatrixMenu:
-            menuFunc = [this](){ ButtonMatrixMenu(); };
-            break;
+        // case MT_NetworkMenu:
+        //     menuFunc = [this](){ NetworkMenu(); };
+        //     break;
+        // case MT_DeviceSettingsMenu:
+        //     menuFunc = [this](){ DeviceSettingsMenu(); };
+        //     break;
+        // case MT_ButtonMatrixMenu:
+        //     menuFunc = [this](){ ButtonMatrixMenu(); };
+        //     break;
         default:
             changed = false;
     }
@@ -380,23 +380,23 @@ void MenuSystem::handleMediaAndEditButtons()
             setMenu(MT_OutputMenu);
             break;
         case 5:
-            setMenu(MT_DeviceSettingsMenu);
-            break;
+            setMenu(MT_SettingsMenu);
+        break;
         case 6:
-            setMenu(MT_GlobalSettingsMenu);
+            // setMenu(MT_DeviceSettingsMenu);
             break;
         case 7:
-            if(!m_registry.settings().kiosk.enabled) {
-                setMenu(MT_NetworkMenu);
-            } else {
-                showPopupMessage("Not implemented");
-            }
+            // if(!m_registry.settings().kiosk.enabled) {
+            //     setMenu(MT_NetworkMenu);
+            // } else {
+            //     showPopupMessage("Not implemented");
+            // }
             break;
         case 8:     // 8-15: Edit Keys with Fn-Button pressed
-            setMenu(MT_ButtonMatrixMenu);
+            // setMenu(MT_ButtonMatrixMenu);
             break;
-        case 15:
-            setMenu(MT_StartupScreen);
+        // case 15:
+            // setMenu(MT_StartupScreen);
             break;
         default:
             break;
@@ -652,7 +652,7 @@ void MenuSystem::InfoMenu()
 void MenuSystem::SourceMenu() 
 {
     m_ui.MenuTitleWidget("SRC", TextAlign::CENTER);
-    m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::LEFT);
+    m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::RIGHT);
     // m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
 
@@ -783,7 +783,7 @@ void MenuSystem::SelectActiveSourceFolder(bool staged)
 void MenuSystem::FileSelection()
 {
     m_ui.MenuTitleWidget("MEDIA", TextAlign::CENTER);
-    m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::LEFT);
+    m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::RIGHT);
     // m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
 
@@ -884,7 +884,7 @@ void MenuSystem::FileSelection()
 void MenuSystem::LiveInputSelection() 
 {
     m_ui.MenuTitleWidget("LIVE", TextAlign::CENTER);
-    m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::LEFT);
+    m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::RIGHT);
     // m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
     
@@ -897,11 +897,11 @@ void MenuSystem::LiveInputSelection()
     bool changed = false;
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
-    if (m_ui.RadioButton("HDMI 1", currentConfig && (config->hdmiPort == 0))) {
+    if (m_ui.RadioButton("HDMI Input 1", currentConfig && (config->hdmiPort == 0))) {
         config->hdmiPort = 0; 
         changed = true; 
     }
-    if (m_ui.RadioButton("HDMI 2", currentConfig && (config->hdmiPort == 1))) { 
+    if (m_ui.RadioButton("HDMI Input 2", currentConfig && (config->hdmiPort == 1))) { 
         config->hdmiPort = 1; 
         changed = true; 
     }
@@ -919,7 +919,7 @@ void MenuSystem::LiveInputSelection()
 void MenuSystem::ShaderSelection()
 {
     m_ui.MenuTitleWidget("SHADER", TextAlign::CENTER);
-    m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::LEFT);
+    m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::RIGHT);
     // m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
 
@@ -970,7 +970,7 @@ void MenuSystem::ShaderSelection()
 void MenuSystem::ControlMenu() 
 {
     m_ui.MenuTitleWidget("CTL", TextAlign::CENTER);
-    m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::LEFT);
+    m_ui.MenuTitleWidget(m_registry.inputMappings().focusedMediaButtonName(), TextAlign::RIGHT);
     // m_ui.PlanePreviewWidget(m_registry.planes(), m_activeOutputPlane.planeId, UI::PlanePreviewStyle::PLANE_PREVIEW_SMALL);
     m_ui.NewLine();
 
@@ -987,15 +987,15 @@ void MenuSystem::ControlMenu()
     }
     
     if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(currentConfig)) {
-        m_ui.Label("Type: Mediafile");
-        std::string fileName = videoInputConfig->fileName;
-        int lastSlashPos = fileName.find_last_of('/');
-        fileName = fileName.substr(lastSlashPos + 1);
-        if (fileName.size() > 20) {
-            fileName = fileName.substr(0, 20) + "...";
-        }
-        m_ui.Label("Name: " + fileName);
-        m_ui.Spacer();
+        // m_ui.Label("Type: Mediafile");
+        // std::string fileName = videoInputConfig->fileName;
+        // int lastSlashPos = fileName.find_last_of('/');
+        // fileName = fileName.substr(lastSlashPos + 1);
+        // if (fileName.size() > 20) {
+        //     fileName = fileName.substr(0, 20) + "...";
+        // }
+        // m_ui.Label("Name: " + fileName);
+        m_ui.Spacer(85);
         if (m_ui.CheckBox("loop", videoInputConfig->looping)) { 
             videoInputConfig->looping = !videoInputConfig->looping; 
         }
@@ -1005,7 +1005,7 @@ void MenuSystem::ControlMenu()
         //     videoInputConfig->backwards = !videoInputConfig->backwards;
         // }
         // m_ui.Text("speed (N/A)");
-        m_ui.Separator();
+        m_ui.Spacer();
         m_ui.SpinBoxInt("Output Plane", videoInputConfig->planeId, 0, 3, 1, {"1", "2", "3", "4"});
         std::string previewFilename = videoInputConfig->fileName + ".preview";
         MediaPreview(previewFilename);
@@ -1014,15 +1014,15 @@ void MenuSystem::ControlMenu()
         m_ui.Label("Type: HDMI");
         std::string inputName = "Source: HDMI" + std::to_string(hdmiInputConfig->hdmiPort+1);
         m_ui.Label(inputName);
-        m_ui.Separator();
+        m_ui.Spacer();
         m_ui.SpinBoxInt("Output Plane", hdmiInputConfig->planeId, 0, 3, 1, {"1", "2", "3", "4"});
     }
     else if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(currentConfig)) {
-        m_ui.Label("Type: Shader");
+        // m_ui.Label("Type: Shader");
         std::string shaderName = shaderInputConfig->fileName;
         int lastSlashPos = shaderName.find_last_of('/');
         shaderName = shaderName.substr(lastSlashPos + 1);
-        m_ui.Label("Name: " + shaderName);
+        m_ui.Label(shaderName);
         m_ui.Spacer();
 
         for (auto& kv : shaderInputConfig->shaderConfig.params) {
@@ -1035,7 +1035,7 @@ void MenuSystem::ControlMenu()
                 m_ui.SpinBoxFloat(floatParam.name, floatParam.value, floatParam.min, floatParam.max, floatParam.step);
             }
         }
-        m_ui.Separator();
+        m_ui.Spacer();
         m_ui.SpinBoxInt("Output Plane", shaderInputConfig->planeId, 0, 3, 1, {"1", "2", "3", "4"});
     }
     
@@ -1173,14 +1173,15 @@ void MenuSystem::OutputMenu()
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
     // SubMenu("Mrs. Mask", [this](){ Mask(); });
+    m_ui.SpinBoxInt("Output", m_registry.planes()[m_activeOutputPlane.planeId].hdmiId, 0, 1, 1, {"HDMI 1", "HDMI 2"});
     SubMenu("Projection Mapping", [this](){ Mapping(); });
+    m_ui.Spacer();
     m_ui.SpinBoxInt("Blend Mode", (int&)m_registry.planes()[m_activeOutputPlane.planeId].blendMode, 0, 2, 1, {"Normal", "Blend", "Multiply"});
     m_ui.SpinBoxFloat("Opacity", m_registry.planes()[m_activeOutputPlane.planeId].opacity, 0.0f, 1.0f);
     // if(m_ui.CheckBox("Use Fader For Opacity", m_registry.planes()[m_activeOutputPlane.planeId].useFaderForOpacity))
     // {
     //     m_registry.planes()[m_activeOutputPlane.planeId].useFaderForOpacity = !m_registry.planes()[m_activeOutputPlane.planeId].useFaderForOpacity;
     // }
-    m_ui.SpinBoxInt("HDMI Output", m_registry.planes()[m_activeOutputPlane.planeId].hdmiId, 0, 1);
     m_ui.EndList();
     m_ui.PopTranslate();
 }
@@ -1202,7 +1203,7 @@ void MenuSystem::Mask()
 
 void MenuSystem::Mapping()
 {
-    m_ui.MenuTitleWidget("MAPPING", TextAlign::CENTER);
+    m_ui.MenuTitleWidget("PROJECTION MAPPING", TextAlign::CENTER);
     m_ui.NewLine();
 
     m_activeOutputPlane.selectedVertexId =  m_currentMenuPath.back().fIdx - m_ui.CurrentListSize();
@@ -1237,12 +1238,13 @@ void MenuSystem::NetworkMenu()
 
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
+    SubMenu("Wifi QR-Code", [this](){ WifiQrCode(); });
+    SubMenu("File Manager QR-Code", [this](){ TFMQrCode(); });
+    m_ui.Spacer();
     if (!eth0.empty()) m_ui.Label("Eth. IP: " + eth0);
     if (!wlan0.empty()) m_ui.Label("Wifi IP: " + wlan0);
     //m_ui.Label("SSID: VM-1");
     //m_ui.Label("Pass: vmone12345");
-    SubMenu("Show Wifi-QR", [this](){ WifiQrCode(); });
-    SubMenu("Show FileMgr-QR", [this](){ TFMQrCode(); });
     m_ui.EndList();
     
 
@@ -1251,7 +1253,7 @@ void MenuSystem::NetworkMenu()
 
 void MenuSystem::WifiQrCode()
 {
-    m_ui.MenuTitleWidget("WIFI QR", TextAlign::CENTER);
+    m_ui.MenuTitleWidget("WiFi", TextAlign::CENTER);
     const ImageBuffer& imageBuffer = m_registry.mediaPool().getQrCodeImageBuffer();
     if (imageBuffer.isValid) {
         m_ui.Image(imageBuffer, glm::uvec2(105, 65));
@@ -1260,7 +1262,7 @@ void MenuSystem::WifiQrCode()
 
 void MenuSystem::TFMQrCode()
 {
-    m_ui.MenuTitleWidget("FILEMGR QR", TextAlign::CENTER);
+    m_ui.MenuTitleWidget("File Manager", TextAlign::CENTER);
     const ImageBuffer& imageBuffer = m_registry.mediaPool().getQrCodeTFMImageBuffer();
     if (imageBuffer.isValid) {
         m_ui.Image(imageBuffer, glm::uvec2(105, 65));
@@ -1268,55 +1270,102 @@ void MenuSystem::TFMQrCode()
 }
 
 // GLOBAL SETTINGS MENU
-void MenuSystem::GlobalSettingsMenu() 
+void MenuSystem::SettingsMenu() 
 {
     m_ui.MenuTitleWidget("Settings", TextAlign::CENTER);
     m_ui.NewLine();
     m_ui.PushTranslate(0, 20);
 
+    /*
+    Menu Structure
+    
+    - Fade Time
+    - Volume
+    - Connected Devices / Hardware Setup
+        - "Scan for New" -> "Initialize"
+        - Screen Rotation
+        - Info 
+    - Network
+        - Show WiFiQR
+        - Show FileManagerQR
+        - IP-Adresses
+    - About
+        - Version (Basic/Pro)
+    */
+
     Settings& settings = m_registry.settings();
 
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
-    m_ui.Label("Version: " + VERSION);
-    std::string useFader = "Use Fader (" + std::to_string(settings.analog0).substr(0, 4) + ")";
-    if(m_ui.CheckBox(useFader, settings.useFader)) { settings.useFader = !settings.useFader; }
-    std::string useRotaryAsFader = "Use Rotary (" + std::to_string(settings.rotary) + ")" ;
-    if(m_ui.CheckBox(useRotaryAsFader, settings.useRotaryAsFader)) { settings.useRotaryAsFader = !settings.useRotaryAsFader; }
     m_ui.SpinBoxInt("Fade Time", settings.fadeTime, 0, 10);
     m_ui.SpinBoxInt("Volume", settings.volume, 0, 10);
-    //if (m_registry.settings().isProVersion) { m_ui.SpinBoxInt("Rot. Sensit.", settings.rotarySensitivity, 1, 20) };
-    //if (m_ui.CheckBox("Use UVC", settings.useUvcCaptureDevice)) { settings.useUvcCaptureDevice = !settings.useUvcCaptureDevice; };
-    if (m_ui.CheckBox("Default Looping", settings.defaultLooping)) { settings.defaultLooping = !settings.defaultLooping; };
-    m_ui.SpinBoxInt("ScreenRotation", (int&)settings.hdmiRotation0, 0, 3);
-    if (m_ui.CheckBox("Show UI", settings.showUI)) { settings.showUI = !settings.showUI; };
-    if (m_ui.CheckBox("Is Pro Version", settings.isProVersion)) { settings.isProVersion = !settings.isProVersion; };
+    m_ui.Spacer();
+    SubMenu("Connected Devices", [this](){ HardwareSetupMenu(); });
+    if(!m_registry.settings().kiosk.enabled) {
+        SubMenu("Network", [this](){ NetworkMenu(); });
+    }
+    m_ui.Spacer();
+    SubMenu("About", [this](){ AboutMenu(); });
+    
+    // std::string useFader = "Use Fader (" + std::to_string(settings.analog0).substr(0, 4) + ")";
+    // if(m_ui.CheckBox(useFader, settings.useFader)) { settings.useFader = !settings.useFader; }
+    // std::string useRotaryAsFader = "Use Rotary (" + std::to_string(settings.rotary) + ")" ;
+    // if(m_ui.CheckBox(useRotaryAsFader, settings.useRotaryAsFader)) { settings.useRotaryAsFader = !settings.useRotaryAsFader; }
+    // if (m_ui.CheckBox("Use UVC", settings.useUvcCaptureDevice)) { settings.useUvcCaptureDevice = !settings.useUvcCaptureDevice; };
+    // if (m_registry.settings().isProVersion) { m_ui.SpinBoxInt("Rot. Sensit.", settings.rotarySensitivity, 1, 20) };
+    // if (m_ui.CheckBox("Default Looping", settings.defaultLooping)) { settings.defaultLooping = !settings.defaultLooping; };
+    // if (m_ui.CheckBox("Show UI", settings.showUI)) { settings.showUI = !settings.showUI; };
 
     m_ui.EndList();
 
     m_ui.PopTranslate();
 }
 
-// ##### DEVICE SETTINGS MENU #####
-void MenuSystem::DeviceSettingsMenu() 
+void MenuSystem::AboutMenu()
+{
+    Settings& settings = m_registry.settings();
+
+    m_ui.MenuTitleWidget("About", TextAlign::CENTER);
+    m_ui.NewLine();
+    m_ui.PushTranslate(0, 20);
+    m_ui.BeginList(&m_currentMenuPath.back().fIdx);
+
+    std::string versionPostfix = " Basic";
+    if (settings.isProVersion) versionPostfix = " Pro";
+    m_ui.Label("Version: " + VERSION + versionPostfix);
+    // if (m_ui.CheckBox("Is Pro Version", settings.isProVersion)) { settings.isProVersion = !settings.isProVersion; };
+
+
+    m_ui.EndList();
+    m_ui.PopTranslate();
+
+}
+
+// ##### HARDWARE SETUP MENU #####
+void MenuSystem::HardwareSetupMenu() 
 {  
-    m_ui.MenuTitleWidget("Hdmi Settings", TextAlign::CENTER);
+    Settings& settings = m_registry.settings();
+
+    m_ui.MenuTitleWidget("Connected Devices", TextAlign::CENTER);
     m_ui.NewLine();
     m_ui.PushTranslate(0, 20);
 
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
     if (m_registry.settings().isHdmiOutputReady && m_registry.settings().isHdmiInputReady) {
-        if (m_ui.Action("Scan for new")) {
+        if (m_ui.Action("Re-Initialize")) {
             m_registry.settings().isHdmiOutputReady = false;
             m_registry.settings().isHdmiInputReady = false;
             m_eventBus.publish(SystemEvent(SystemEvent::Type::Restart));  
         }
+        m_ui.SpinBoxInt("Screen Rotation", (int&)settings.hdmiRotation0, 0, 3, 1, {"0 Deg", "90 Deg", "180 Deg", "270 Deg"});
     }
     else {
         m_ui.Label("Scanning...");
     }
     
+    m_ui.Spacer();
+
     auto& hdmiOutputs = m_registry.settings().hdmiOutputs;
     for (size_t i = 0; i < hdmiOutputs.size(); ++i) {
         std::string displayConfig = !(hdmiOutputs[i].empty()) ? hdmiOutputs[i] : "Not connected";
@@ -1334,31 +1383,31 @@ void MenuSystem::DeviceSettingsMenu()
 }
 
 // ##### KEYS/MATRIX MENU #####
-void MenuSystem::ButtonMatrixMenu() 
-{
-    m_ui.MenuTitleWidget("Button");
-    m_ui.NewLine();
+// void MenuSystem::ButtonMatrixMenu() 
+// {
+//     m_ui.MenuTitleWidget("Button");
+//     m_ui.NewLine();
 
-    int bank = m_registry.inputMappings().focusedBank;
-    for (size_t i = 0; i < m_buttonTexts.size(); ++i) {
-        int mediaSlot = bank * 16 + int(i);
-        InputConfig* currentConfig = m_registry.inputMappings().getInputConfig(mediaSlot);
-        if (!currentConfig) {
-            m_buttonTexts[i].second = COLOR::BLACK;
-        }
+//     int bank = m_registry.inputMappings().focusedBank;
+//     for (size_t i = 0; i < m_buttonTexts.size(); ++i) {
+//         int mediaSlot = bank * 16 + int(i);
+//         InputConfig* currentConfig = m_registry.inputMappings().getInputConfig(mediaSlot);
+//         if (!currentConfig) {
+//             m_buttonTexts[i].second = COLOR::BLACK;
+//         }
 
-        if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(currentConfig)) {
-            if (videoInputConfig->isActive) m_buttonTexts[i].second = COLOR::RED;
-            else m_buttonTexts[i].second = COLOR::DARK_RED;
-        }
-        else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(currentConfig)) {
-            if (hdmiInputConfig->isActive) m_buttonTexts[i].second = COLOR::BLUE;
-            else m_buttonTexts[i].second = COLOR::DARK_BLUE;
-        }
-        else if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(currentConfig)) {
-            if (shaderInputConfig->isActive) m_buttonTexts[i].second = COLOR::GREEN;
-            else m_buttonTexts[i].second = COLOR::DARK_GREEN;
-        }
-    }
-    m_ui.ButtonMatrixWidget(m_buttonTexts);
-}
+//         if (VideoInputConfig* videoInputConfig = dynamic_cast<VideoInputConfig*>(currentConfig)) {
+//             if (videoInputConfig->isActive) m_buttonTexts[i].second = COLOR::RED;
+//             else m_buttonTexts[i].second = COLOR::DARK_RED;
+//         }
+//         else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(currentConfig)) {
+//             if (hdmiInputConfig->isActive) m_buttonTexts[i].second = COLOR::BLUE;
+//             else m_buttonTexts[i].second = COLOR::DARK_BLUE;
+//         }
+//         else if (ShaderInputConfig* shaderInputConfig = dynamic_cast<ShaderInputConfig*>(currentConfig)) {
+//             if (shaderInputConfig->isActive) m_buttonTexts[i].second = COLOR::GREEN;
+//             else m_buttonTexts[i].second = COLOR::DARK_GREEN;
+//         }
+//     }
+//     m_ui.ButtonMatrixWidget(m_buttonTexts);
+// }
