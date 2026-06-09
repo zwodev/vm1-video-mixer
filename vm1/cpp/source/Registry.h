@@ -305,7 +305,8 @@ struct PlaneSettings
     enum BlendMode {
         BM_None,
         BM_Alpha,
-        BM_Multiply
+        BM_Multiply,
+        BM_Add
     };
 
     void resetMapping() {

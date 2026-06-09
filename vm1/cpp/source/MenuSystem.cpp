@@ -1204,7 +1204,7 @@ void MenuSystem::OutputMenu()
     // SubMenu("Mrs. Mask", [this](){ Mask(); });
     SubMenu("Projection Mapping", [this](){ Mapping(); });
     m_ui.Spacer();
-    m_ui.SpinBoxInt("Blend Mode", (int&)m_registry.planes()[m_activeOutputPlane.planeId].blendMode, 0, 2, 1, {"Normal", "Blend", "Multiply"});
+    m_ui.SpinBoxInt("Blend Mode", (int&)m_registry.planes()[m_activeOutputPlane.planeId].blendMode, 0, 3, 1, {"Normal", "Blend", "Multiply", "Add"});
     m_ui.SpinBoxFloat("Opacity", m_registry.planes()[m_activeOutputPlane.planeId].opacity, 0.0f, 1.0f);
     // if(m_ui.CheckBox("Use Fader For Opacity", m_registry.planes()[m_activeOutputPlane.planeId].useFaderForOpacity))
     // {

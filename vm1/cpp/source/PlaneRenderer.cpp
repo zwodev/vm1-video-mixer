@@ -161,6 +161,7 @@ void PlaneRenderer::update(PlaneSettings& planeSettings, ScreenRotation rotation
 
     // Set blend mode
     int isMultiplication = 0;
+    // int isAdd = 0;
     switch (planeSettings.blendMode) {
         case PlaneSettings::BlendMode::BM_Alpha:
             glEnable(GL_BLEND); 
@@ -171,6 +172,12 @@ void PlaneRenderer::update(PlaneSettings& planeSettings, ScreenRotation rotation
             glEnable(GL_BLEND);
             glBlendFunc(GL_ZERO, GL_SRC_COLOR);
             break;
+        case PlaneSettings::BlendMode::BM_Add:
+            isMultiplication = 1;
+            // isAdd = 1;   // ToDo: check shader plane_with_effects.frag; current bug: when opacity is lowered in this blend mode, the image turns white
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_ONE, GL_ONE);
+            break;
         default:
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -178,6 +185,7 @@ void PlaneRenderer::update(PlaneSettings& planeSettings, ScreenRotation rotation
     }
     m_shader.setValue("opacity", planeSettings.opacity);
     m_shader.setValue("isMultiplication", isMultiplication);
+    // m_shader.setValue("isAdd", isAdd);
 
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
