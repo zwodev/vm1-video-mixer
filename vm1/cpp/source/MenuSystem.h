@@ -72,7 +72,7 @@ private:
     void ConfirmActionDialog();
     
     // Widgets
-    void MediaPreview(const std::string& filename);
+    void MediaPreview(const std::string& filename, glm::uvec2 pos);
     
     // 
     void handleMediaAndEditButtons();

@@ -49,7 +49,7 @@ public:
     
     // Specialized Widgets
     void PlanePreviewWidget(std::vector<PlaneSettings>& planes, int& selectedPlane, PlanePreviewStyle style);
-    void AnimationFrameWidget(const ImageBuffer& image, int& frameIndex);
+    void AnimationFrameWidget(const ImageBuffer& image, int& frameIndex, glm::uvec2 pos);
     void ButtonMatrixWidget(std::vector<std::pair<char, Color>> buttonTexts);
     void BankInfoWidget(int bank);
     void MenuTitleWidget(std::string menuTitle, TextAlign textAlign = TextAlign::LEFT, Color color = COLOR::WHITE);

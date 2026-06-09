@@ -1126,7 +1126,7 @@ void UI::PlanePreviewWidget(std::vector<PlaneSettings>& planes, int& selectedPla
     SetElementLineHeight(rectHeight);
 }
 
-void UI::AnimationFrameWidget(const ImageBuffer& image, int& frameIndex)
+void UI::AnimationFrameWidget(const ImageBuffer& image, int& frameIndex, glm::uvec2 pos)
 {
     if (!image.isValid) return;
 
@@ -1137,7 +1137,7 @@ void UI::AnimationFrameWidget(const ImageBuffer& image, int& frameIndex)
     // printf("MediaPreview frame %d:  srcPosX: %d, srcPosY: %d\n",m_mediaPreviewFrameIndex, srcPosX, srcPosY);
 
     m_stbRenderer.drawSubImage(image, 
-                              glm::uvec2(80, 30),    // destPos
+                              glm::uvec2(pos.x, pos.y),    // destPos
                               glm::uvec2(srcPosX, srcPosY),     // srcPos
                               glm::uvec2(160, 90)); // srcSize
     

@@ -625,7 +625,7 @@ void MenuSystem::InfoMenu()
             m_eventBus.publish(PlaneEvent(m_activeOutputPlane.planeId));
         }
         std::string previewFilename = videoInputConfig->fileName + ".preview";
-        MediaPreview(previewFilename);
+        MediaPreview(previewFilename, glm::uvec2(156, 96));
     }
     else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(currentConfig)) {
         m_ui.Label("Type: HDMI");
@@ -712,7 +712,7 @@ std::string MenuSystem::currentDirectoryPath()
     return path;
 }
 
-void MenuSystem::MediaPreview(const std::string& filename)
+void MenuSystem::MediaPreview(const std::string& filename, glm::uvec2 pos)
 {
     const ImageBuffer& previewImage = m_registry.mediaPool().getPreview(filename);
     if(m_preview.imageFileName != filename)
@@ -724,7 +724,7 @@ void MenuSystem::MediaPreview(const std::string& filename)
     }
 
     if (previewImage.isValid) {
-        m_ui.AnimationFrameWidget(previewImage, m_preview.frameIndex);
+        m_ui.AnimationFrameWidget(previewImage, m_preview.frameIndex, pos);
     }
 }
 
@@ -881,7 +881,7 @@ void MenuSystem::FileSelection()
             if (!entry.isDir) {
                 std::string videoFilePath = entry.absolutePath;
                 std::string previewFilename = videoFilePath + ".preview";    
-                MediaPreview(previewFilename);
+                MediaPreview(previewFilename, glm::uvec2(156, 96));
             }
         }
     }
@@ -1028,8 +1028,10 @@ void MenuSystem::ControlMenu()
         if (m_ui.CheckBox("loop", videoInputConfig->looping)) { 
             videoInputConfig->looping = !videoInputConfig->looping; 
         }
-        m_ui.SpinBoxFloat("in point", videoInputConfig->inPoint, 0.0f, videoInputConfig->outPoint, 0.01f);
-        m_ui.SpinBoxFloat("out point", videoInputConfig->outPoint, videoInputConfig->inPoint, 1.0f, 0.01f);
+        m_ui.SpinBoxFloat("in point   ", videoInputConfig->inPoint, 0.0f, videoInputConfig->outPoint, 0.01f);
+        m_ui.SpinBoxFloat("out point  ", videoInputConfig->outPoint, videoInputConfig->inPoint, 1.0f, 0.01f);
+        m_ui.SpinBoxFloat("current pos", videoInputConfig->outPoint, videoInputConfig->inPoint, 1.0f, 0.01f);
+        
         // if (m_ui.CheckBox("backwards (N/A)", videoInputConfig->backwards)) {
         //     videoInputConfig->backwards = !videoInputConfig->backwards;
         // }
@@ -1037,7 +1039,7 @@ void MenuSystem::ControlMenu()
         m_ui.Spacer();
         m_ui.SpinBoxInt("Output Plane", videoInputConfig->planeId, 0, 3, 1, {"1", "2", "3", "4"});
         std::string previewFilename = videoInputConfig->fileName + ".preview";
-        MediaPreview(previewFilename);
+        MediaPreview(previewFilename, glm::uvec2(80, 30));
     }
     else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(currentConfig)) {
         // m_ui.Label("Type: HDMI");
