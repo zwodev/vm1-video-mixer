@@ -1028,10 +1028,8 @@ void MenuSystem::ControlMenu()
         if (m_ui.CheckBox("loop", videoInputConfig->looping)) { 
             videoInputConfig->looping = !videoInputConfig->looping; 
         }
-        m_ui.SpinBoxFloat("in point   ", videoInputConfig->inPoint, 0.0f, videoInputConfig->outPoint, 0.01f);
-        m_ui.SpinBoxFloat("out point  ", videoInputConfig->outPoint, videoInputConfig->inPoint, 1.0f, 0.01f);
-        m_ui.SpinBoxFloat("current pos", videoInputConfig->outPoint, videoInputConfig->inPoint, 1.0f, 0.01f);
-        
+        m_ui.PlaybackControlWidget(*videoInputConfig);
+
         // if (m_ui.CheckBox("backwards (N/A)", videoInputConfig->backwards)) {
         //     videoInputConfig->backwards = !videoInputConfig->backwards;
         // }
@@ -1204,7 +1202,6 @@ void MenuSystem::OutputMenu()
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
     // SubMenu("Mrs. Mask", [this](){ Mask(); });
-    m_ui.SpinBoxInt("Output", m_registry.planes()[m_activeOutputPlane.planeId].hdmiId, 0, 1, 1, {"HDMI 1", "HDMI 2"});
     SubMenu("Projection Mapping", [this](){ Mapping(); });
     m_ui.Spacer();
     m_ui.SpinBoxInt("Blend Mode", (int&)m_registry.planes()[m_activeOutputPlane.planeId].blendMode, 0, 2, 1, {"Normal", "Blend", "Multiply"});
@@ -1245,6 +1242,7 @@ void MenuSystem::Mapping()
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
     m_ui.SpinBoxFloat("Scale", m_registry.planes()[m_activeOutputPlane.planeId].scale, 0.0f, 10.0f, 0.1f);
     m_ui.SpinBoxVec2("Translation", m_registry.planes()[m_activeOutputPlane.planeId].translation);
+    m_ui.SpinBoxInt("Output", m_registry.planes()[m_activeOutputPlane.planeId].hdmiId, 0, 1, 1, {"HDMI 1", "HDMI 2"});
     m_ui.Spacer();
     if(m_ui.Action("Reset")) {
         m_registry.planes()[m_activeOutputPlane.planeId].resetMapping();

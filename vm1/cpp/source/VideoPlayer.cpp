@@ -409,6 +409,7 @@ void VideoPlayer::update()
 
     if (processVideoFrame) {
         render();
+        m_currentPts = videoFrame.pts;
         m_fence = eglCreateSync(display, EGL_SYNC_FENCE, NULL);
     }
 }

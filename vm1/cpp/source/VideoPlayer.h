@@ -50,6 +50,7 @@ public:
     float inPoint();
     void setOutPoint(float value);
     float outPoint();
+    double currentPts() const { return m_currentPts; } 
 
     bool openFile(const std::string& fileName, AudioStream* audioStream = nullptr) override;
     void close() override;
@@ -79,6 +80,7 @@ private:
     int64_t m_duration = 0;
     double m_firstPts = -1.0;
     double m_firstAudioPts = -1.0;
+    double m_currentPts = -1.0;
     AVFormatContext* m_formatContext = nullptr;
     //AVDictionary* m_options = nullptr;
     const AVCodec* m_audioCodec = nullptr;

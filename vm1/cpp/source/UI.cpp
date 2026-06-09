@@ -14,9 +14,10 @@
 
 ImageBuffer UI::m_gizmoImageBuffer = ImageBuffer("media/gizmo.png");
 
-UI::UI(StbRenderer &stbRenderer, EventBus &eventBus) : 
+UI::UI(StbRenderer &stbRenderer, EventBus &eventBus, PlaybackOperator &playbackOperator) : 
     m_stbRenderer(stbRenderer), 
-    m_eventBus(eventBus) 
+    m_eventBus(eventBus),
+    m_playbackOperator(playbackOperator)
 {
     subscribeToEvents();
 }
@@ -1143,6 +1144,30 @@ void UI::AnimationFrameWidget(const ImageBuffer& image, int& frameIndex, glm::uv
     
     frameIndex++;
     frameIndex %= (tilesX*tilesY);
+}
+
+void UI::PlaybackControlWidget(VideoInputConfig& videoInputConfig) 
+{
+    /*
+    This widget symbolizes a timeline with 'in' and 'out' points,
+    as well as a playhead.
+    It's possible to move the in/out points as well as scrub through the video with the playhead.
+    The keyframes of the h265 video are marked with dots.
+    In/out points can only be set to these dots at the moment (?),
+    also 'scrubbing' is only possible to these dots (?).
+    |o--[---o--->----------o-----------o-]---|
+                |
+                | current position
+    */
+
+    VideoPlayer* videoPlayer = m_playbackOperator.videoPlayer(videoInputConfig.playerId);
+    if (!videoPlayer) return;
+
+    SpinBoxFloat("in point   ", videoInputConfig.inPoint, 0.0f, videoInputConfig.outPoint, 0.01f);
+    SpinBoxFloat("out point  ", videoInputConfig.outPoint, videoInputConfig.inPoint, 1.0f, 0.01f);
+    Label("Current PTS: " + std::to_string(videoPlayer->currentPts()));
+    
+    // m_stbRenderer.drawTextBdf(std::to_string(videoPlayer->currentPts()), glm::vec2(10, 10), BDF::TEXTSTYLE::MENU_ITEM);
 }
 
 void UI::savePNG(const std::string& filename){

@@ -14,6 +14,7 @@
 #include "StbRenderer.h"
 #include "EventBus.h"
 #include "ImageBuffer.h"
+#include "PlaybackOperator.h"
 
 #include <string>
 #include <algorithm>
@@ -42,7 +43,7 @@ public:
 
     UI() = delete;
     ~UI() = default;
-    UI(StbRenderer &stbRenderer, EventBus &eventBus);
+    UI(StbRenderer &stbRenderer, EventBus &eventBus, PlaybackOperator &playbackOperator);
     void NewFrame();
     void EndFrame();
     void setClearFrame(bool clear = true);
@@ -53,7 +54,8 @@ public:
     void ButtonMatrixWidget(std::vector<std::pair<char, Color>> buttonTexts);
     void BankInfoWidget(int bank);
     void MenuTitleWidget(std::string menuTitle, TextAlign textAlign = TextAlign::LEFT, Color color = COLOR::WHITE);
-    
+    void PlaybackControlWidget(VideoInputConfig& videoInputConfig);
+
     // Generic UI Items
     void Image(const ImageBuffer& imageBuffer, glm::uvec2 pos = glm::uvec2(0, 0)); 
     void Label(const std::string &label);
@@ -119,6 +121,7 @@ private:
     
     StbRenderer& m_stbRenderer;
     EventBus& m_eventBus;
+    PlaybackOperator &m_playbackOperator;
     int m_x = 0;
     int m_y = 0;
     std::vector<glm::vec2> m_translateStack;
