@@ -186,6 +186,10 @@ private:
         // std::string absolutePath;
         int slotId;
         DirectoryEntry entry;
+        enum class FileType {
+            Video,
+            Shader
+        } fileType;
     };
     FileManagerDialogData m_fileManagerDialog;
 

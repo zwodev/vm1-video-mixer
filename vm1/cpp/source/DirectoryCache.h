@@ -23,6 +23,7 @@ using Clock = std::chrono::steady_clock;
 struct DirectoryEntry {
     std::string name;
     std::string absolutePath;
+    std::string directory;
     bool isDir = false;
     uint64_t size = 0;
     std::uint64_t mtime = 0;

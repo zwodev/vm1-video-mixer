@@ -93,6 +93,7 @@ void DirectoryCache::startAsyncLoad(const std::string& path, std::shared_ptr<Dir
                 DirectoryEntry entry;
                 entry.name = fileName;
                 entry.absolutePath = it.path().string();
+                entry.directory = it.path().parent_path().string();
                 entry.isDir = it.is_directory();
                 if (!entry.isDir) {
                     std::error_code errorCode;

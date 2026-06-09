@@ -219,42 +219,54 @@ void MenuSystem::ConfirmActionDialog()
 void MenuSystem::FileManagerDialog()
 {
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
-    std::string filename = m_fileManagerDialog.entry.name;
 
-    m_ui.ShowDialog(filename);
+    m_ui.ShowDialog(m_fileManagerDialog.entry.name);
     if(m_ui.Action("Select"))
     {
-        printf("Select Media\n");
-        auto config = std::make_unique<VideoInputConfig>();
-        VideoInputConfig* currentConfig = m_registry.inputMappings().getVideoInputConfig(m_fileManagerDialog.slotId, true);
-        if (currentConfig) {
-            *config = *currentConfig;
+        if(m_fileManagerDialog.fileType == FileManagerDialogData::FileType::Video) {
+            std::unique_ptr config = std::make_unique<VideoInputConfig>();
+            config->fileName = m_fileManagerDialog.entry.absolutePath;
+            config->planeId = m_activeOutputPlane.planeId;
+            m_registry.inputMappings().stageInputConfig(m_fileManagerDialog.slotId, std::move(config));
+        } 
+        else if (m_fileManagerDialog.fileType == FileManagerDialogData::FileType::Shader) {            std::unique_ptr config = std::make_unique<ShaderInputConfig>();
+            config->fileName = m_fileManagerDialog.entry.absolutePath;
+            config->planeId = m_activeOutputPlane.planeId;
+            m_registry.inputMappings().stageInputConfig(m_fileManagerDialog.slotId, std::move(config));
         }
-
-        config->fileName = m_fileManagerDialog.entry.absolutePath;
-        config->planeId = m_activeOutputPlane.planeId;
-        m_registry.inputMappings().stageInputConfig(m_fileManagerDialog.slotId, std::move(config));
         goUpHierachy();
     }
-    else if(SubMenu("Rename", [this](){TextInputDialog();})) 
+    else if(SubMenu("Rename", [this](){ TextInputDialog(); })) 
     {
         m_textInputDialog.cursorIdx = 0;
         m_textInputDialog.title = "Rename";
-        m_textInputDialog.text = filename;
-        m_textInputDialog.func = [this, &filename](){
-            std::string oldFilename = m_registry.mediaPool().getVideoFilePath(currentDirectoryPath() + filename);
-            std::string newFilename = m_registry.mediaPool().getVideoFilePath() + currentDirectoryPath() + m_textInputDialog.text;
-            printf("Renaming: %s to %s\n", oldFilename.c_str(), newFilename.c_str());
+        m_textInputDialog.text = m_fileManagerDialog.entry.name;
+        m_textInputDialog.func = [this](){
+            printf("%s\n", m_fileManagerDialog.entry.absolutePath.c_str());
+            std::string oldAbsFilename =  m_fileManagerDialog.entry.absolutePath;
+            std::string newAbsFilename =  m_fileManagerDialog.entry.directory + "/" + m_textInputDialog.text;
+            printf("Renaming: %s to %s\n", oldAbsFilename.c_str(), newAbsFilename.c_str());
             // todo: make sure no preview-creating-process starts here?
-            std::filesystem::rename(oldFilename, newFilename);
-            std::filesystem::rename(oldFilename + ".preview", newFilename + ".preview");
-            filename = m_textInputDialog.text;
+            if (std::filesystem::exists(oldAbsFilename)) {
+                std::filesystem::rename(oldAbsFilename, newAbsFilename);
+                m_fileManagerDialog.entry.name = m_textInputDialog.text;
+                m_fileManagerDialog.entry.absolutePath = newAbsFilename;
+                // m_fileManagerDialog.entry.directory =
+
+                // ToDo / BUG: re-link the new filename to the corresponding media-slot
+            } else {
+                printf("error while renaming - file not found\n");
+            }
+            if (std::filesystem::exists(oldAbsFilename + ".preview")) {
+                std::filesystem::rename(oldAbsFilename + ".preview", newAbsFilename + ".preview");
+            }
+            
         };
     }
     else if(SubMenu("Move", [this](){FolderSelectionDialog();})) 
     {
         m_folderSelectionDialog.title = "Move";
-        m_folderSelectionDialog.subtitle = filename;
+        m_folderSelectionDialog.subtitle = m_fileManagerDialog.entry.name;
         m_folderSelectionDialog.foldername = m_registry.mediaPool().getVideoFilePath();
         m_folderSelectionDialog.subFolders.clear();
         m_folderSelectionDialog.subFolders.push_back(std::filesystem::path(m_folderSelectionDialog.foldername));
@@ -263,9 +275,9 @@ void MenuSystem::FileManagerDialog()
             if (entry.is_directory())
             m_folderSelectionDialog.subFolders.push_back(entry.path());
         }
-        m_folderSelectionDialog.func = [this, filename](){
-            std::string sourceFile = m_registry.mediaPool().getVideoFilePath(currentDirectoryPath() + filename);
-            std::string destinationFile = m_folderSelectionDialog.foldername + "/" + filename;
+        m_folderSelectionDialog.func = [this](){
+            std::string sourceFile = m_registry.mediaPool().getVideoFilePath(currentDirectoryPath() + m_fileManagerDialog.entry.name);
+            std::string destinationFile = m_folderSelectionDialog.foldername + "/" + m_fileManagerDialog.entry.name;
 
             printf("Move: %s to %s\n", sourceFile.c_str(), destinationFile.c_str());
             std::filesystem::copy_file(sourceFile, destinationFile);
@@ -278,7 +290,7 @@ void MenuSystem::FileManagerDialog()
     else if(SubMenu("Copy", [this](){FolderSelectionDialog();})) 
     {
         m_folderSelectionDialog.title = "Copy";
-        m_folderSelectionDialog.subtitle = filename;
+        m_folderSelectionDialog.subtitle = m_fileManagerDialog.entry.name;
         m_folderSelectionDialog.foldername = m_registry.mediaPool().getVideoFilePath();
         m_folderSelectionDialog.subFolders.clear();
         m_folderSelectionDialog.subFolders.push_back(std::filesystem::path(m_folderSelectionDialog.foldername));
@@ -287,9 +299,9 @@ void MenuSystem::FileManagerDialog()
             if (entry.is_directory())
                 m_folderSelectionDialog.subFolders.push_back(entry.path());
         }
-        m_folderSelectionDialog.func = [this, &filename](){
-            std::string sourceFile = m_registry.mediaPool().getVideoFilePath(currentDirectoryPath() + filename);
-            std::string destinationFile = m_folderSelectionDialog.foldername + "/" + filename;
+        m_folderSelectionDialog.func = [this](){
+            std::string sourceFile = m_registry.mediaPool().getVideoFilePath(currentDirectoryPath() + m_fileManagerDialog.entry.name);
+            std::string destinationFile = m_folderSelectionDialog.foldername + "/" + m_fileManagerDialog.entry.name;
 
             printf("Copy: %s to %s\n", sourceFile.c_str(), destinationFile.c_str());
             std::filesystem::copy_file(sourceFile, destinationFile);
@@ -300,25 +312,25 @@ void MenuSystem::FileManagerDialog()
     else if(SubMenu("Delete", [this](){ConfirmActionDialog();}))  
     {
         m_confirmActionDialog.title = "Delete";
-        m_confirmActionDialog.subtitle = filename;
+        m_confirmActionDialog.subtitle = m_fileManagerDialog.entry.name;
         m_confirmActionDialog.text = "Are you sure?";
-        m_confirmActionDialog.func = [this, &filename](){
-            std::string filePath = m_registry.mediaPool().getVideoFilePath(currentDirectoryPath() + filename);
+        m_confirmActionDialog.func = [this](){
+            std::string filePath = m_registry.mediaPool().getVideoFilePath(currentDirectoryPath() + m_fileManagerDialog.entry.name);
             printf("Deleting %s\n", filePath.c_str());
             std::filesystem::remove(filePath);
             std::filesystem::remove(filePath + ".preview");
             goUpHierachy();
         };
     }
-    else if(SubMenu("Convert to clip (n/a)", [this](){ConfirmActionDialog();})) 
-    {
-        m_confirmActionDialog.title = "Convert to Clip";
-        m_confirmActionDialog.subtitle = filename;
-        m_confirmActionDialog.text = "This might take a while.\nAre you sure?";
-        m_confirmActionDialog.func = [this, &filename](){
-            printf("TODO: Converting... %s\n", filename.c_str());
-        };
-    }
+    // else if(SubMenu("Convert to clip (n/a)", [this](){ConfirmActionDialog();})) 
+    // {
+    //     m_confirmActionDialog.title = "Convert to Clip";
+    //     m_confirmActionDialog.subtitle = m_fileManagerDialog.entry.name;
+    //     m_confirmActionDialog.text = "This might take a while.\nAre you sure?";
+    //     m_confirmActionDialog.func = [this](){
+    //         printf("TODO: Converting... %s\n", m_fileManagerDialog.entry.name.c_str());
+    //     };
+    // }
     else if(m_ui.Action("Cancel"))
     {
         goUpHierachy();
@@ -852,6 +864,7 @@ void MenuSystem::FileSelection()
                 // m_fileManagerDialog.absolutePath = entry.absolutePath;
                 m_fileManagerDialog.slotId = slotId;
                 m_fileManagerDialog.entry = entry;
+                m_fileManagerDialog.fileType = FileManagerDialogData::FileType::Video;
                 m_ui.setClearFrame(false);
                 appendStateToMenuPath(MenuState(0, [this](){FileManagerDialog();}));
             }
@@ -943,16 +956,32 @@ void MenuSystem::ShaderSelection()
         if (entry.isDir) {
             SubDir(entry.name, [this]() { ShaderSelection(); });
         }
-        else if (m_ui.RadioButton(entry.name.c_str(), (config->fileName == entry.absolutePath))) {
-            config->fileName = entry.absolutePath;
-            changed = true;
-        }
-        // Set focus to this entry if it's the active shader
-        if (m_focusActiveSource) {
-            ShaderInputConfig* shaderInputConfig = m_registry.inputMappings().getShaderInputConfig(m_registry.inputMappings().getFocusedMediaSlot());
-            if (shaderInputConfig && entry.absolutePath == shaderInputConfig->fileName) {
-                m_currentMenuPath.back().fIdx = m_ui.CurrentListSize()-1;
-                m_focusActiveSource = false;
+        else {
+            bool openFileMenu = false;
+            std::string entryName = entry.name;
+            if (entryName.size() > 20) {
+                entryName = entryName.substr(0, 20) + "...";
+            }
+
+            if (m_ui.RadioButton(entryName, (config->fileName == entry.absolutePath), &openFileMenu)) {
+                config->fileName = entry.absolutePath;
+                changed = true;
+            }
+            // Set focus to this entry if it's the active shader
+            if (m_focusActiveSource) {
+                ShaderInputConfig* shaderInputConfig = m_registry.inputMappings().getShaderInputConfig(m_registry.inputMappings().getFocusedMediaSlot());
+                if (shaderInputConfig && entry.absolutePath == shaderInputConfig->fileName) {
+                    m_currentMenuPath.back().fIdx = m_ui.CurrentListSize()-1;
+                    m_focusActiveSource = false;
+                }
+            }
+
+            if(openFileMenu) {
+                m_fileManagerDialog.slotId = slotId;
+                m_fileManagerDialog.entry = entry;
+                m_fileManagerDialog.fileType = FileManagerDialogData::FileType::Shader;
+                m_ui.setClearFrame(false);
+                appendStateToMenuPath(MenuState(0, [this](){FileManagerDialog();}));
             }
         }
     }
@@ -1011,8 +1040,8 @@ void MenuSystem::ControlMenu()
         MediaPreview(previewFilename);
     }
     else if (HdmiInputConfig* hdmiInputConfig = dynamic_cast<HdmiInputConfig*>(currentConfig)) {
-        m_ui.Label("Type: HDMI");
-        std::string inputName = "Source: HDMI" + std::to_string(hdmiInputConfig->hdmiPort+1);
+        // m_ui.Label("Type: HDMI");
+        std::string inputName = "HDMI Input " + std::to_string(hdmiInputConfig->hdmiPort+1);
         m_ui.Label(inputName);
         m_ui.Spacer();
         m_ui.SpinBoxInt("Output Plane", hdmiInputConfig->planeId, 0, 3, 1, {"1", "2", "3", "4"});
