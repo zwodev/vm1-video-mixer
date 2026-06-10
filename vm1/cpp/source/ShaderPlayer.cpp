@@ -47,7 +47,7 @@ bool ShaderPlayer::openFile(const std::string& fileName, AudioStream* audioStrea
 {
     printf("Load Custom Shader: %s\n", fileName.c_str());
     m_isShaderReady = m_shader.load("shaders/pass.vert", fileName.c_str());
-    return true;
+    return m_isShaderReady;
 }
 
 void ShaderPlayer::close()

@@ -280,7 +280,7 @@ void PlaybackOperator::showMedia(int mediaSlotId)
         AudioStream* audioStream = m_audioStreams[playerId];
         if (!m_mediaPlayers[playerId]->openFile(filePath, audioStream)) {
             printf("Could not play!!\n");
-            m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::FileNotSupported, "File not supported"));
+            m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::FileNotSupported, "Video not supported"));
             return;
         }
 
@@ -348,7 +348,7 @@ void PlaybackOperator::showMedia(int mediaSlotId)
         filePath = shaderInputConfig->fileName;
         if (!m_mediaPlayers[playerId]->openFile(filePath)) {
             printf("Could not open custom shader!!\n");
-            m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::FileNotSupported, "File not supported"));
+            m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::FileNotSupported, "Shader not supported"));
             return;
         }
 

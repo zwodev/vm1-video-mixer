@@ -229,7 +229,8 @@ void MenuSystem::FileManagerDialog()
             config->planeId = m_activeOutputPlane.planeId;
             m_registry.inputMappings().stageInputConfig(m_fileManagerDialog.slotId, std::move(config));
         } 
-        else if (m_fileManagerDialog.fileType == FileManagerDialogData::FileType::Shader) {            std::unique_ptr config = std::make_unique<ShaderInputConfig>();
+        else if (m_fileManagerDialog.fileType == FileManagerDialogData::FileType::Shader) {
+            std::unique_ptr config = std::make_unique<ShaderInputConfig>();
             config->fileName = m_fileManagerDialog.entry.absolutePath;
             config->planeId = m_activeOutputPlane.planeId;
             m_registry.inputMappings().stageInputConfig(m_fileManagerDialog.slotId, std::move(config));
@@ -251,9 +252,39 @@ void MenuSystem::FileManagerDialog()
                 std::filesystem::rename(oldAbsFilename, newAbsFilename);
                 m_fileManagerDialog.entry.name = m_textInputDialog.text;
                 m_fileManagerDialog.entry.absolutePath = newAbsFilename;
-                // m_fileManagerDialog.entry.directory =
 
-                // ToDo / BUG: re-link the new filename to the corresponding media-slot
+                // re-link the new filename to the corresponding media-slot
+                // BUG: right now, the current mediaSlot (m_fileManagerDialog.slotId) gets the renamed file, no matter if it was previously selected for this slot or not.
+                // TODO: check if the filename is connected to *any* media-slot and change it there - this has nothing to do with the currently selected mediaSlot!!
+                // Q: would it be good if the FileManager shows information if/where a file is used?
+                if(m_fileManagerDialog.fileType == FileManagerDialogData::FileType::Video) { 
+                    /*
+                     Q: Do I really need to make a new VideoInputConfig-Pointer and move that back to the inputMappings?
+                        Can't I just grab the current VideoInputConfig and change that fileName?
+                    */                    
+                    // VideoInputConfig* config = m_registry.inputMappings().getVideoInputConfig(m_fileManagerDialog.slotId);
+                    // config->fileName = newAbsFilename;
+
+                    std::unique_ptr config = std::make_unique<VideoInputConfig>();
+                    VideoInputConfig* currentConfig = m_registry.inputMappings().getVideoInputConfig(m_fileManagerDialog.slotId);
+                    if(currentConfig)
+                    {
+                        *config = *currentConfig;
+                        config->fileName = newAbsFilename;
+                        m_registry.inputMappings().stageInputConfig(m_fileManagerDialog.slotId, std::move(config));
+                    }
+                } 
+                else if (m_fileManagerDialog.fileType == FileManagerDialogData::FileType::Shader) {
+                    std::unique_ptr config = std::make_unique<ShaderInputConfig>();
+                    ShaderInputConfig* currentConfig = m_registry.inputMappings().getShaderInputConfig(m_fileManagerDialog.slotId);
+                    if(currentConfig)
+                    {
+                        *config = *currentConfig;
+                        config->fileName = newAbsFilename;
+                        m_registry.inputMappings().stageInputConfig(m_fileManagerDialog.slotId, std::move(config));
+                    }
+                }
+
             } else {
                 printf("error while renaming - file not found\n");
             }
@@ -287,28 +318,28 @@ void MenuSystem::FileManagerDialog()
             goUpHierachy();
         };
     }
-    else if(SubMenu("Copy", [this](){FolderSelectionDialog();})) 
-    {
-        m_folderSelectionDialog.title = "Copy";
-        m_folderSelectionDialog.subtitle = m_fileManagerDialog.entry.name;
-        m_folderSelectionDialog.foldername = m_registry.mediaPool().getVideoFilePath();
-        m_folderSelectionDialog.subFolders.clear();
-        m_folderSelectionDialog.subFolders.push_back(std::filesystem::path(m_folderSelectionDialog.foldername));
-        for (const auto& entry : std::filesystem::recursive_directory_iterator(m_folderSelectionDialog.foldername))
-        {
-            if (entry.is_directory())
-                m_folderSelectionDialog.subFolders.push_back(entry.path());
-        }
-        m_folderSelectionDialog.func = [this](){
-            std::string sourceFile = m_registry.mediaPool().getVideoFilePath(currentDirectoryPath() + m_fileManagerDialog.entry.name);
-            std::string destinationFile = m_folderSelectionDialog.foldername + "/" + m_fileManagerDialog.entry.name;
+    // else if(SubMenu("Copy", [this](){FolderSelectionDialog();})) 
+    // {
+    //     m_folderSelectionDialog.title = "Copy";
+    //     m_folderSelectionDialog.subtitle = m_fileManagerDialog.entry.name;
+    //     m_folderSelectionDialog.foldername = m_registry.mediaPool().getVideoFilePath();
+    //     m_folderSelectionDialog.subFolders.clear();
+    //     m_folderSelectionDialog.subFolders.push_back(std::filesystem::path(m_folderSelectionDialog.foldername));
+    //     for (const auto& entry : std::filesystem::recursive_directory_iterator(m_folderSelectionDialog.foldername))
+    //     {
+    //         if (entry.is_directory())
+    //             m_folderSelectionDialog.subFolders.push_back(entry.path());
+    //     }
+    //     m_folderSelectionDialog.func = [this](){
+    //         std::string sourceFile = m_registry.mediaPool().getVideoFilePath(currentDirectoryPath() + m_fileManagerDialog.entry.name);
+    //         std::string destinationFile = m_folderSelectionDialog.foldername + "/" + m_fileManagerDialog.entry.name;
 
-            printf("Copy: %s to %s\n", sourceFile.c_str(), destinationFile.c_str());
-            std::filesystem::copy_file(sourceFile, destinationFile);
-            std::filesystem::copy_file(sourceFile + ".preview", destinationFile + ".preview");
-            goUpHierachy();
-        };
-    }
+    //         printf("Copy: %s to %s\n", sourceFile.c_str(), destinationFile.c_str());
+    //         std::filesystem::copy_file(sourceFile, destinationFile);
+    //         std::filesystem::copy_file(sourceFile + ".preview", destinationFile + ".preview");
+    //         goUpHierachy();
+    //     };
+    // }
     else if(SubMenu("Delete", [this](){ConfirmActionDialog();}))  
     {
         m_confirmActionDialog.title = "Delete";

@@ -461,7 +461,7 @@ void UI::ShowPopupMessage(std::string message)
 
     glm::vec2 rectSize;
     rectSize.y = fontHeight * 3;
-    rectSize.x = m_stbRenderer.width() / 2;
+    rectSize.x = std::max(m_stbRenderer.width() / 2, m_stbRenderer.getTextWidth(message, textstyle) + 20);
     DrawStyle rectDrawStyle;
     rectDrawStyle.anchorPoint = AnchorPoint::CENTER_CENTER;
     rectDrawStyle.isFilled = true;
