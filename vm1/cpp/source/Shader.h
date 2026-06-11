@@ -9,7 +9,7 @@
 #pragma once
 
 #include <GLES3/gl3.h>
-
+#include <glm/vec2.hpp>
 #include <ShaderConfig.h>
 
 class Shader {
@@ -23,6 +23,7 @@ public:
     bool bindUniformLocation(const std::string& locName, GLint unit);
     bool setValue(const std::string& locName, GLfloat value);
     bool setValue(const std::string& locName, GLint value);
+    bool setValue(const std::string& locName, glm::vec2 value);
     void activate();
     void deactivate();
     const ShaderConfig& shaderConfig();

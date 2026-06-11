@@ -805,7 +805,7 @@ bool UI::SpinBoxFloat(const std::string& label, float& value, float minValue, fl
     return hasChanged;
 }
 
-bool UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
+bool UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, glm::vec2 minValue, glm::vec2 maxValue, glm::vec2 step)
 {
     bool hasChanged = false;
     if (!m_focusedIdxPtr) return false;
@@ -814,34 +814,34 @@ bool UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, float step)
     if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0))
     {
         hasChanged = true;
-        diffX = step;    
+        diffX = step.x;    
     }
     else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0))
     {
         hasChanged = true;
-        diffX = -step;
+        diffX = -step.x;
     }
     else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 1))
     {
         hasChanged = true;
-        diffY = step;    
+        diffY = step.y;    
     }
     else if(isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 1))
     {
         hasChanged = true;
-        diffY = -step;
+        diffY = -step.y;
     }
 
     bool focused = ((*m_focusedIdxPtr) == m_listSize);
     if (focused && diffX != 0) {
         vec.x += diffX;
-        // if (value < minValue) value = minValue;
-        // else if (value > maxValue) value = maxValue;
+        if (vec.x < minValue.x) vec.x = minValue.x;
+        else if (vec.x > maxValue.x) vec.x = maxValue.x;
     }
     else if (focused && diffY != 0) {
         vec.y += diffY;
-        // if (value < minValue) value = minValue;
-        // else if (value > maxValue) value = maxValue;
+        if (vec.y < minValue.y) vec.y = minValue.y;
+        else if (vec.y > maxValue.y) vec.y = maxValue.y;
     }
 
     std::string newLabel = label + ": " + strhlpr::formatFloat(vec.x, 2)+ "/" + strhlpr::formatFloat(vec.y, 2);;

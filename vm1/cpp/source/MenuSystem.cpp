@@ -1090,9 +1090,14 @@ void MenuSystem::ControlMenu()
             if (std::holds_alternative<IntParameter>(param)) {
                 auto& intParam = std::get<IntParameter>(param);  
                 m_ui.SpinBoxInt(intParam.name, intParam.value, intParam.min, intParam.max, intParam.step);
-            } else if (std::holds_alternative<FloatParameter>(param)) {
+            } 
+            else if (std::holds_alternative<FloatParameter>(param)) {
                 auto& floatParam = std::get<FloatParameter>(param); 
                 m_ui.SpinBoxFloat(floatParam.name, floatParam.value, floatParam.min, floatParam.max, floatParam.step);
+            }
+            else if (std::holds_alternative<Vec2Parameter>(param)) {
+                auto& vec2Param = std::get<Vec2Parameter>(param); 
+                m_ui.SpinBoxVec2(vec2Param.name, vec2Param.value, vec2Param.min, vec2Param.max, vec2Param.step);
             }
         }
         m_ui.Spacer();
@@ -1195,9 +1200,18 @@ void MenuSystem::EffectControl()
         if (std::holds_alternative<IntParameter>(param)) {
             auto& intParam = std::get<IntParameter>(param);  
             m_ui.SpinBoxInt(intParam.name, intParam.value, intParam.min, intParam.max, intParam.step);
-        } else if (std::holds_alternative<FloatParameter>(param)) {
+        } 
+        else if (std::holds_alternative<FloatParameter>(param)) {
             auto& floatParam = std::get<FloatParameter>(param); 
             m_ui.SpinBoxFloat(floatParam.name, floatParam.value, floatParam.min, floatParam.max, floatParam.step);
+        }
+        else if (std::holds_alternative<Vec2Parameter>(param)) {
+            auto& vec2Param = std::get<Vec2Parameter>(param); 
+            glm::vec2 value(vec2Param.value.x, vec2Param.value.y);
+            glm::vec2 min(vec2Param.min.x, vec2Param.min.y);
+            glm::vec2 max(vec2Param.max.x, vec2Param.max.y);
+            glm::vec2 step(vec2Param.step.x, vec2Param.step.y);
+            m_ui.SpinBoxVec2(vec2Param.name, vec2Param.value, vec2Param.min, vec2Param.max, vec2Param.step);
         } 
     }
     m_ui.Spacer();
@@ -1208,12 +1222,15 @@ void MenuSystem::EffectControl()
             auto& param = shaderConfig.params[paramName];
             if (std::holds_alternative<IntParameter>(param)) {
                 auto& intParam = std::get<IntParameter>(param);
-                int defaultValue = (intParam.min + intParam.max) / 2;  // ToDo: Get default value (calculating the average was just a hack)
-                intParam.value = defaultValue;
-            } else if (std::holds_alternative<FloatParameter>(param)) {
+                intParam.reset();
+            } 
+            else if (std::holds_alternative<FloatParameter>(param)) {
                 auto& floatParam = std::get<FloatParameter>(param); 
-                float defaultValue = (floatParam.min + floatParam.max) / 2.0;  // ToDo: Get default value (calculating the average was just a hack)
-                floatParam.value = defaultValue;
+                floatParam.reset();
+            }
+            else if (std::holds_alternative<Vec2Parameter>(param)) {
+                auto& vec2Param = std::get<Vec2Parameter>(param);
+                vec2Param.reset();
             } 
         }
     }
@@ -1272,7 +1289,7 @@ void MenuSystem::Mapping()
     m_ui.PushTranslate(0, 20);
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
     m_ui.SpinBoxFloat("Scale", m_registry.planes()[m_activeOutputPlane.planeId].scale, 0.0f, 10.0f, 0.1f);
-    m_ui.SpinBoxVec2("Translation", m_registry.planes()[m_activeOutputPlane.planeId].translation);
+    m_ui.SpinBoxVec2("Translation", m_registry.planes()[m_activeOutputPlane.planeId].translation, glm::vec2(-2.0f, -2.0f), glm::vec2(2.0f, 2.0f), glm::vec2(0.1f, 0.1f));
     m_ui.SpinBoxInt("Output", m_registry.planes()[m_activeOutputPlane.planeId].hdmiId, 0, 1, 1, {"HDMI 1", "HDMI 2"});
     m_ui.Spacer();
     if(m_ui.Action("Reset")) {
@@ -1366,6 +1383,7 @@ void MenuSystem::SettingsMenu()
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
     m_ui.SpinBoxInt("Fade Time", settings.fadeTime, 0, 10);
     m_ui.SpinBoxInt("Volume", settings.volume, 0, 10);
+    if (m_ui.CheckBox("Show Dev UI", settings.showUI)) { settings.showUI = !settings.showUI; };
     m_ui.Spacer();
     SubMenu("Connected Devices", [this](){ HardwareSetupMenu(); });
     if(!m_registry.settings().kiosk.enabled) {

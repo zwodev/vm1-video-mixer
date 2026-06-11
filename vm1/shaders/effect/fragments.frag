@@ -7,8 +7,7 @@
  */
 
 uniform int enabled;        // { "name": "Enabled", "group": "Fragments", "default": 1, "min": 0, "max": 1 }
-uniform int tilesX;         // { "name": "Tiles X", "group": "Fragments", "default": 4, "min": 1, "max": 100, "step": 1 }
-uniform int tilesY;         // { "name": "Tiles Y", "group": "Fragments", "default": 4, "min": 1, "max": 100, "step": 1 }
+uniform vec2 tiles;         // { "name": "Tiles", "group": "Fragments", "default": [4,4], "min": [1,1], "max": [100,100], "step": [1,1] }
 uniform int seed;           // { "name": "Seed", "group": "Fragments", "default": 24234, "min": 0, "max": 100000, "step": 1 }
 
 
@@ -45,26 +44,25 @@ int feistelPermute(int x, int N, int sk) {
 
 void extMain(inout vec4 color, in vec2 coord) {
     vec2 uv = coord;
-    vec2 tc       = vec2(float(tilesX), float(tilesY));
-    vec2 tileSize = 1.0 / tc;
+    vec2 tileSize = 1.0 / tiles;
 
     vec2 tileIdx = floor(uv / tileSize);
     vec2 localUV = fract(uv / tileSize);
 
     // Linearer Index der aktuellen Kachel
-    int linearIdx = int(tileIdx.y) * tilesX + int(tileIdx.x);
-    int N         = tilesX * tilesY;
+    int linearIdx = int(tileIdx.y) * int(tiles.x) + int(tileIdx.x);
+    int N         = int(tiles.x) * int(tiles.y);
 
     // Permutierter Quell-Index
     int srcLinear = feistelPermute(linearIdx, N, seed);
 
     // Zurück in 2D
     vec2 srcTile = vec2(
-        float(srcLinear % tilesX),
-        float(srcLinear / tilesX)
+        float(srcLinear % int(tiles.x)),
+        float(srcLinear / int(tiles.x))
     );
 
-    vec2 srcUV = (srcTile + localUV) / tc;
+    vec2 srcUV = (srcTile + localUV) / tiles;
 
     color = colorAtUV(srcUV);
 }

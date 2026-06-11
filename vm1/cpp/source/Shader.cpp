@@ -42,7 +42,7 @@ void fetchIntParameterFromJson(const std::string& name, IntParameter& param, con
 	if (jsonData.contains(name)) {
 		const json& value = jsonData[name];
 		if (value.is_number_integer()) {
-			if (name == "default") param.value = value.get<int>();
+			if (name == "default") { param.value = value.get<int>(); param.defaultValue = param.value; }
 			if (name == "min") param.min = value.get<int>();
 			if (name == "max") param.max = value.get<int>();
 			if (name == "step") param.step = value.get<int>();
@@ -57,7 +57,7 @@ void fetchFloatParameterFromJson(const std::string& name, FloatParameter& param,
 	if (jsonData.contains(name)) {
 		const json& value = jsonData[name];
 		if (value.is_number_float()) {
-			if (name == "default") param.value = value.get<float>();
+			if (name == "default") { param.value = value.get<float>(); param.defaultValue = param.value; }
 			if (name == "min") param.min = value.get<float>();
 			if (name == "max") param.max = value.get<float>();
 			if (name == "step") param.step = value.get<float>();
@@ -72,15 +72,16 @@ void fetchVec2ParameterFromJson(const std::string& name, Vec2Parameter& param, c
 	if (jsonData.contains(name)) {
 		const json& value = jsonData[name];
 		if (value.is_array() && value.size() == 2) {
-			Vec2 vec;
+			glm::vec2 vec;
 			for (size_t i = 0; i < value.size(); ++i) {
 				const json& component = value[i];
-				if (component.is_number_float()) {
+				if (component.is_number()) {
 					vec[i] = component.get<float>();
 				}
 			}
+			//printf("Name: %s, Value: %f, %f\n", name.c_str(), vec.x, vec.y);
 
-			if (name == "default") param.value = vec;
+			if (name == "default"){ param.value = vec; param.defaultValue = param.value;}
 			if (name == "min") param.min = vec;
 			if (name == "max") param.max = vec;
 			if (name == "step") param.step = vec;
@@ -155,7 +156,7 @@ void Shader::extractUniformMetadata()
 				std::string uniformType = match[1].str();
 				std::string uniformName = match[2].str();
 				std::string uniformJson = match[3].str();
-				printf("Uniform: %s, Type: %s, JSON: %s\n", uniformName.c_str(), uniformType.c_str(), uniformJson.c_str());
+				//printf("Uniform: %s, Type: %s, JSON: %s\n", uniformName.c_str(), uniformType.c_str(), uniformJson.c_str());
 				parseUnifromJson(uniformName, uniformType, uniformJson);
 				next++;
 			}
@@ -165,16 +166,22 @@ void Shader::extractUniformMetadata()
   	// 	// Syntax error in the regular expression
 	// }
 
-	for (auto& kv : m_shaderConfig.params) {
-		auto& param = kv.second;
-		if (std::holds_alternative<IntParameter>(param)) {
-			auto& intParam = std::get<IntParameter>(param);  
-			printf("Int -> Name: %s, Value: %d, Min: %d, Max: %d, Step: %d\n", intParam.name.c_str(), intParam.value, intParam.min, intParam.max, intParam.step);
-		} else if (std::holds_alternative<FloatParameter>(param)) {
-			auto& floatParam = std::get<FloatParameter>(param); 
-			printf("Float -> Name: %s, Value: %f, Min: %f, Max: %f, Step: %f\n", floatParam.name.c_str(), floatParam.value, floatParam.min, floatParam.max, floatParam.step);
-		}
-	}
+	// for (auto& kv : m_shaderConfig.params) {
+	// 	auto& param = kv.second;
+	// 	if (std::holds_alternative<IntParameter>(param)) {
+	// 		auto& intParam = std::get<IntParameter>(param);  
+	// 		printf("Int -> Name: %s, Value: %d, Min: %d, Max: %d, Step: %d\n", intParam.name.c_str(), intParam.value, intParam.min, intParam.max, intParam.step);
+	// 	} 
+	// 	else if (std::holds_alternative<FloatParameter>(param)) {
+	// 		auto& floatParam = std::get<FloatParameter>(param); 
+	// 		printf("Float -> Name: %s, Value: %f, Min: %f, Max: %f, Step: %f\n", floatParam.name.c_str(), floatParam.value, floatParam.min, floatParam.max, floatParam.step);
+	// 	}
+	// 	else if (std::holds_alternative<Vec2Parameter>(param)) {
+	// 		auto& vec2Param = std::get<Vec2Parameter>(param); 
+	// 		printf("Vec2 -> Name: %s, Value: %f, %f, Min: %f, %f, Max: %f, %f, Step: %f, %f\n", vec2Param.name.c_str(), vec2Param.value.x, vec2Param.value.y, vec2Param.min.x, vec2Param.min.y, vec2Param.max.x, vec2Param.max.y, vec2Param.step.x, vec2Param.step.y);
+	// 	}
+
+	// }
 
 	//auto begin = shaderCode.cbegin();
     //auto end = shaderCode.cend();
@@ -207,12 +214,15 @@ void Shader::createShaderConfigFromUniforms()
 		switch (type) {
 			case GL_FLOAT:
 				m_shaderConfig.params[name] = FloatParameter(std::string(name), 0.0f);
+				//printf("Name: %s Type: Float\n", name);
 				break;
 			case GL_FLOAT_VEC2:
-				m_shaderConfig.params[name] = Vec2Parameter(std::string(name), Vec2(0.0f, 0.0f));
+				m_shaderConfig.params[name] = Vec2Parameter(std::string(name), glm::vec2(0.0f, 0.0f));
+				//printf("Name: %s Type: Vec2\n", name);
 				break;
 			case GL_INT:
 				m_shaderConfig.params[name] = IntParameter(std::string(name), 0);
+				//printf("Name: %s Type: Int\n", name);
 				break;
 			//default:
 			//	SDL_Log("This uniform type is not supported: %d\n", type);
@@ -412,6 +422,17 @@ bool Shader::setValue(const std::string& locName, GLint value)
 		return false;
 	}
 	glUniform1i(uniformLoc, value);
+	return true;
+}
+
+bool Shader::setValue(const std::string& locName, glm::vec2 value)
+{
+	GLint uniformLoc = glGetUniformLocation(m_shaderProgram, locName.c_str());
+	if (uniformLoc < 0) {
+		//SDL_Log("ERROR: Couldn't get uniform location with this name: %s", locName.c_str());
+		return false;
+	}
+	glUniform2f(uniformLoc, value.x, value.y);
 	return true;
 }
 

@@ -134,10 +134,17 @@ void PlaneRenderer::update(PlaneSettings& planeSettings, ScreenRotation rotation
         if (std::holds_alternative<IntParameter>(param)) {
             auto& intParam = std::get<IntParameter>(param);
             m_shader.setValue(uniformName.c_str(), intParam.value);
-        } else if (std::holds_alternative<FloatParameter>(param)) {
+        } 
+        else if (std::holds_alternative<FloatParameter>(param)) {
             auto& floatParam = std::get<FloatParameter>(param);
             m_shader.setValue(uniformName.c_str(), floatParam.value);
-        } 
+        }
+        else if (std::holds_alternative<Vec2Parameter>(param)) {
+            auto& vec2Param = std::get<Vec2Parameter>(param);
+            glm::vec2 value(vec2Param.value.x, vec2Param.value.y);
+            m_shader.setValue(uniformName.c_str(), value);
+        }
+        
     }
 
     // Set internal shader parameters
