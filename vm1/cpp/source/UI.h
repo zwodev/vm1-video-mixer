@@ -43,7 +43,7 @@ public:
 
     UI() = delete;
     ~UI() = default;
-    UI(StbRenderer &stbRenderer, EventBus &eventBus, PlaybackOperator &playbackOperator);
+    UI(StbRenderer &stbRenderer, EventBus &eventBus);
     void NewFrame();
     void EndFrame();
     void setClearFrame(bool clear = true);
@@ -121,7 +121,7 @@ private:
     
     StbRenderer& m_stbRenderer;
     EventBus& m_eventBus;
-    PlaybackOperator &m_playbackOperator;
+
     int m_x = 0;
     int m_y = 0;
     std::vector<glm::vec2> m_translateStack;

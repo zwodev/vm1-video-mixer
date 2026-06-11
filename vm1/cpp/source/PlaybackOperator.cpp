@@ -436,6 +436,7 @@ void PlaybackOperator::update(float deltaTime)
                         videoPlayer->setInPoint(inPoint);
                         float outPoint = videoInputConfig->outPoint;
                         videoPlayer->setOutPoint(outPoint);
+                        videoInputConfig->currentPts = videoPlayer->currentPts();
                     }
                 }
                 if (dynamic_cast<ShaderInputConfig*>(inputConfig))
@@ -521,13 +522,6 @@ void PlaybackOperator::update(float deltaTime)
     }
 
     updateDeviceController();
-}
-
-VideoPlayer* PlaybackOperator::videoPlayer(int playerId)
-{
-    if (!m_isInitialized || playerId < 0 || playerId >= (int)m_mediaPlayers.size())
-        return nullptr;
-    return dynamic_cast<VideoPlayer*>(m_mediaPlayers[playerId]);
 }
 
 void PlaybackOperator::renderPlane(int hdmiId)

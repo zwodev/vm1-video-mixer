@@ -14,10 +14,9 @@
 
 ImageBuffer UI::m_gizmoImageBuffer = ImageBuffer("media/gizmo.png");
 
-UI::UI(StbRenderer &stbRenderer, EventBus &eventBus, PlaybackOperator &playbackOperator) : 
+UI::UI(StbRenderer &stbRenderer, EventBus &eventBus) : 
     m_stbRenderer(stbRenderer), 
-    m_eventBus(eventBus),
-    m_playbackOperator(playbackOperator)
+    m_eventBus(eventBus)
 {
     subscribeToEvents();
 }
@@ -1165,12 +1164,12 @@ void UI::PlaybackControlWidget(VideoInputConfig& videoInputConfig)
                 | current position
     */
 
-    VideoPlayer* videoPlayer = m_playbackOperator.videoPlayer(videoInputConfig.playerId);
-    if (!videoPlayer) return;
-
     SpinBoxFloat("in point   ", videoInputConfig.inPoint, 0.0f, videoInputConfig.outPoint, 0.01f);
     SpinBoxFloat("out point  ", videoInputConfig.outPoint, videoInputConfig.inPoint, 1.0f, 0.01f);
-    Label("Current PTS: " + std::to_string(videoPlayer->currentPts()));
+
+    std::ostringstream currentPtsString;
+    currentPtsString << std::fixed << std::setprecision(2) << videoInputConfig.currentPts;
+    Label("Current PTS: " + currentPtsString.str());
     
     // m_stbRenderer.drawTextBdf(std::to_string(videoPlayer->currentPts()), glm::vec2(10, 10), BDF::TEXTSTYLE::MENU_ITEM);
 }

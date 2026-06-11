@@ -126,7 +126,6 @@ public:
     void showMedia(int mediaId);
     void update(float deltaTime);
     void renderPlane(int hdmiId);
-    VideoPlayer* videoPlayer(int playerId);
     
 private:
 

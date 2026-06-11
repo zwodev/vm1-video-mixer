@@ -68,11 +68,15 @@ public:
         return std::make_unique<VideoInputConfig>(*this);
     }
 
+    // saved
     std::string fileName;
     bool looping = true;
     bool backwards = false;
     float inPoint = 0.0f;
     float outPoint = 1.0f;
+
+    // volatile
+    double currentPts = 0.0;
 
     template <class Archive>
     void serialize(Archive& ar)
