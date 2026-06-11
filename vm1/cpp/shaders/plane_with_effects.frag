@@ -29,6 +29,7 @@ uniform int isTex1Valid;
 uniform float mixValue;
 uniform float opacity;
 uniform int isMultiplication;
+uniform int isAdd;
 
 uniform float iTime;
 uniform float analog0;
@@ -127,7 +128,12 @@ void main() {
 	color.rgb = adjustContrast(color.rgb, ColorCorrection_Contrast);
 	color.rgb = adjustBrightness(color.rgb, ColorCorrection_Brightness);
 
-	color.rgb = mix(color.rgb, mix(vec3(1.0f), color.rgb, opacity * (1.0 - chromaKey_Mask)), float(isMultiplication));
+	color.rgb = mix(color.rgb, color.rgb * opacity, float(isAdd));
+	color.rgb = mix(color.rgb, 
+					mix(vec3(1.0f),
+					    color.rgb, 
+						opacity * (1.0 - chromaKey_Mask)), 
+					float(isMultiplication));
 
 	color.a *= opacity;
 	fragColor = color;

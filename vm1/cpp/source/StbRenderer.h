@@ -131,7 +131,7 @@ namespace BDF {
     extern "C" void bdf_on_emit(uint8_t x, uint8_t bits, void* userdata);
 
     struct TextStyle {
-        const ::FontData* font;
+        const ::FontData* font = &font_terminus_18n;
         TextAlign align = TextAlign::LEFT;
         Color color = COLOR::WHITE;
         int lineHeight = 16;

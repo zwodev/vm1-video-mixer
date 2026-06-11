@@ -66,6 +66,7 @@ sources = [ 'main.cpp',
             'source/ILI9341Controller.cpp',
             'source/ili9341/DEV_Config.c',
             'source/ili9341/ILI9341.c',
+            'source/NetworkTools.cpp',
 
             'source/fonts/bdfont-support.c',
 

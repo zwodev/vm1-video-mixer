@@ -351,6 +351,11 @@ void UI::Label(const std::string &label)
     m_currentElementHeight = m_lineHeight;
     m_currentTextStyle.color = m_currentColor;
     
+    if(m_currentTextStyle.align == TextAlign::CENTER)
+    {
+        m_x = m_stbRenderer.width() / 2; 
+    }
+
     m_stbRenderer.drawTextBdf(label, glm::uvec2(m_x, m_y), m_currentTextStyle );
 
     // UI::EndListElement();

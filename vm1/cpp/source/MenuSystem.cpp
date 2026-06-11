@@ -1235,7 +1235,7 @@ void MenuSystem::OutputMenu()
     // SubMenu("Mrs. Mask", [this](){ Mask(); });
     SubMenu("Projection Mapping", [this](){ Mapping(); });
     m_ui.Spacer();
-    m_ui.SpinBoxInt("Blend Mode", (int&)m_registry.planes()[m_activeOutputPlane.planeId].blendMode, 0, 3, 1, {"Normal", "Blend", "Multiply", "Add"});
+    m_ui.SpinBoxInt("Blend Mode", (int&)m_registry.planes()[m_activeOutputPlane.planeId].blendMode, 0, 2, 1, {"Normal", "Multiply", "Add"});
     m_ui.SpinBoxFloat("Opacity", m_registry.planes()[m_activeOutputPlane.planeId].opacity, 0.0f, 1.0f);
     // if(m_ui.CheckBox("Use Fader For Opacity", m_registry.planes()[m_activeOutputPlane.planeId].useFaderForOpacity))
     // {
@@ -1306,7 +1306,7 @@ void MenuSystem::NetworkMenu()
     //m_ui.Label("SSID: VM-1");
     //m_ui.Label("Pass: vmone12345");
     m_ui.EndList();
-    
+        
 
     m_ui.PopTranslate();
 }
@@ -1314,10 +1314,17 @@ void MenuSystem::NetworkMenu()
 void MenuSystem::WifiQrCode()
 {
     m_ui.MenuTitleWidget("WiFi", TextAlign::CENTER);
+    m_ui.NewLine();
     const ImageBuffer& imageBuffer = m_registry.mediaPool().getQrCodeImageBuffer();
     if (imageBuffer.isValid) {
-        m_ui.Image(imageBuffer, glm::uvec2(105, 65));
+        m_ui.Image(imageBuffer, glm::uvec2(105, 65-10));
     }
+    m_ui.PushTranslate(0, 170-10);
+    BDF::TextStyle textStyle = BDF::TEXTSTYLE::MENU_ITEM;
+    textStyle.align = TextAlign::CENTER;
+    m_ui.TextStyle(textStyle);
+    m_ui.Label(m_registry.settings().apCredentials.ssid + " / " + m_registry.settings().apCredentials.psk);
+    m_ui.PopTranslate();
 }
 
 void MenuSystem::TFMQrCode()

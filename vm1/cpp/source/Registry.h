@@ -35,6 +35,7 @@
 #include "ScreenOptions.h"
 #include "MediaPool.h"
 #include "VM1DeviceDefinitions.h"
+#include "NetworkTools.h"
 
 class InputConfig
 {
@@ -303,7 +304,6 @@ namespace glm {
 struct PlaneSettings
 {
     enum BlendMode {
-        BM_None,
         BM_Alpha,
         BM_Multiply,
         BM_Add
@@ -322,7 +322,7 @@ struct PlaneSettings
 
 
     int hdmiId = 0;
-    BlendMode blendMode = BlendMode::BM_None;
+    BlendMode blendMode = BlendMode::BM_Alpha;
     float opacity = 1.0f;
     bool useFaderForOpacity = false;
     ShaderConfig shaderConfig;
@@ -395,6 +395,7 @@ struct Settings
     std::string captureDevicePath = "";
     std::vector<std::string> hdmiOutputs = std::vector<std::string>(2, std::string());
     std::vector<std::string> hdmiInputs = std::vector<std::string>(2, std::string());
+    NetworkTools::APCredentials apCredentials;
     
     float currentTime = 0.0f;
     float analog0 = 0.0f;
@@ -429,7 +430,11 @@ struct Settings
 class Registry
 {
 public:
-    Registry() { load(); }
+    Registry()
+    { 
+        onStartUp(); 
+        load(); 
+    }
     ~Registry() {}
 
     Settings& settings() { return m_settings; }
@@ -465,6 +470,11 @@ public:
             std::cerr << "Serialization failed: " << e.what() << std::endl;
         }
         
+    }
+
+    void onStartUp()
+    {
+       settings().apCredentials = NetworkTools::getAPCredentials();
     }
 
     void load()
