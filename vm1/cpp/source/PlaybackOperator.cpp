@@ -437,6 +437,7 @@ void PlaybackOperator::update(float deltaTime)
                         float outPoint = videoInputConfig->outPoint;
                         videoPlayer->setOutPoint(outPoint);
                         videoInputConfig->currentPts = videoPlayer->currentPts();
+                        videoPlayer->pause(!videoInputConfig->isRunning);
                     }
                 }
                 if (dynamic_cast<ShaderInputConfig*>(inputConfig))

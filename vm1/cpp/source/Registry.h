@@ -77,6 +77,7 @@ public:
 
     // volatile
     double currentPts = 0.0;
+    bool isRunning = true;
 
     template <class Archive>
     void serialize(Archive& ar)

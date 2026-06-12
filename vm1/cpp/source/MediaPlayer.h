@@ -62,6 +62,7 @@ public:
     virtual void close();
     void setDevicePath(const std::string& devicePath);
     bool isPlaying() const { return m_isRunning; }
+    void pause(bool isPaused) { m_isRunning = !isPaused; };
     virtual void update() = 0;
     virtual bool isFrameReady();
     GLuint texture();

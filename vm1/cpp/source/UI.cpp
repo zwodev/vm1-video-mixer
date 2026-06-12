@@ -1164,12 +1164,14 @@ void UI::PlaybackControlWidget(VideoInputConfig& videoInputConfig)
                 | current position
     */
 
+    std::ostringstream currentPtsString;
+    currentPtsString << std::fixed << std::setprecision(2) << videoInputConfig.currentPts;    
+    std::string playLabel = "play : " + currentPtsString.str();
+    if (CheckBox(playLabel, videoInputConfig.isRunning)) { 
+        videoInputConfig.isRunning = !videoInputConfig.isRunning;
+    }
     SpinBoxFloat("in point   ", videoInputConfig.inPoint, 0.0f, videoInputConfig.outPoint, 0.01f);
     SpinBoxFloat("out point  ", videoInputConfig.outPoint, videoInputConfig.inPoint, 1.0f, 0.01f);
-
-    std::ostringstream currentPtsString;
-    currentPtsString << std::fixed << std::setprecision(2) << videoInputConfig.currentPts;
-    Label("Current PTS: " + currentPtsString.str());
     
     // m_stbRenderer.drawTextBdf(std::to_string(videoPlayer->currentPts()), glm::vec2(10, 10), BDF::TEXTSTYLE::MENU_ITEM);
 }
