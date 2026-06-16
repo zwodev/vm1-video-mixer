@@ -72,13 +72,14 @@ public:
     std::string fileName;
     bool looping = true;
     bool backwards = false;
-    float inPoint = 0.0f;
-    float outPoint = 1.0f;
+    double inPoint = 0.0;
+    double outPoint = -1.0;
 
     // volatile
-    int64_t currentFrame = 0;
+    double currentTime = 0.0; // in seconds
     bool isPaused = false;
     double fps = -1.0;
+    double duration = 0.0;
 
     template <class Archive>
     void serialize(Archive& ar)

@@ -805,6 +805,32 @@ bool UI::SpinBoxFloat(const std::string& label, float& value, float minValue, fl
     return hasChanged;
 }
 
+bool UI::SpinBoxSeconds(const std::string& label, double& value, 
+                         double minValue, double maxValue, double fps)
+{
+    bool hasChanged = false;
+    if (!m_focusedIdxPtr) return false;
+    double step = 1.0 / fps;
+    double diff = 0;
+    if (isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 0) ||
+        isValueChangeEventTriggered(ValueChangeEvent::Type::Up, 1))
+    { hasChanged = true; diff = step; }
+    else if (isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 0) ||
+             isValueChangeEventTriggered(ValueChangeEvent::Type::Down, 1))
+    { hasChanged = true; diff = -step; }
+
+    bool focused = ((*m_focusedIdxPtr) == m_listSize);
+    if (focused && diff != 0) {
+        value += diff;
+        if (value < minValue) value = minValue;
+        else if (value > maxValue) value = maxValue;
+    }
+
+    Text(label + ": " + strhlpr::secondsToSmpte(value, fps));
+    return hasChanged;
+}
+
+
 bool UI::SpinBoxVec2(const std::string& label, glm::vec2& vec, glm::vec2 minValue, glm::vec2 maxValue, glm::vec2 step)
 {
     bool hasChanged = false;
@@ -1152,6 +1178,8 @@ void UI::AnimationFrameWidget(const ImageBuffer& image, int& frameIndex, glm::uv
 
 void UI::PlaybackControlWidget(VideoInputConfig& videoInputConfig) 
 {
+    if (videoInputConfig.fps <= 0.0) return;
+
     /*
     This widget symbolizes a timeline with 'in' and 'out' points,
     as well as a playhead.
@@ -1164,19 +1192,21 @@ void UI::PlaybackControlWidget(VideoInputConfig& videoInputConfig)
                 | current position
     */
 
-    int fps = (int)videoInputConfig.fps;
-    int secs   = (int)(videoInputConfig.currentFrame / fps);
-    int frames = (int)(videoInputConfig.currentFrame % fps);
-    std::string playLabel = "play : " + std::to_string(secs) + "." + (frames < 10 ? "0" : "") + std::to_string(frames);
-    
+    std::string playLabel = "play : " 
+        + strhlpr::secondsToSmpte(videoInputConfig.currentTime, videoInputConfig.fps)
+        + "/"
+        + strhlpr::secondsToSmpte(videoInputConfig.duration, videoInputConfig.fps);
+
     if (CheckBox(playLabel, !videoInputConfig.isPaused)) { 
         videoInputConfig.isPaused = !videoInputConfig.isPaused;
     }
 
-    SpinBoxFloat("in point   ", videoInputConfig.inPoint, 0.0f, videoInputConfig.outPoint, 0.01f);
-    SpinBoxFloat("out point  ", videoInputConfig.outPoint, videoInputConfig.inPoint, 1.0f, 0.01f);
+    // SpinBoxFloat("in point   ", videoInputConfig.inPoint, 0.0f, videoInputConfig.outPoint, 0.01f);
+    // SpinBoxFloat("out point  ", videoInputConfig.outPoint, videoInputConfig.inPoint, 1.0f, 0.01f);
     
-    // m_stbRenderer.drawTextBdf(std::to_string(videoPlayer->currentPts()), glm::vec2(10, 10), BDF::TEXTSTYLE::MENU_ITEM);
+    SpinBoxSeconds("in ", videoInputConfig.inPoint, 0.0, videoInputConfig.outPoint, videoInputConfig.fps);
+    SpinBoxSeconds("out", videoInputConfig.outPoint, videoInputConfig.inPoint, videoInputConfig.duration, videoInputConfig.fps);
+
 }
 
 void UI::savePNG(const std::string& filename){

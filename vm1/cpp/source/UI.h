@@ -65,6 +65,7 @@ public:
     bool RadioButton(const std::string& label, bool active, bool* auxFunctionTriggered = nullptr);
     bool SpinBoxInt(const std::string& label, int& value, int minValue, int maxValue, int step = 1, std::vector<std::string> optionNames = std::vector<std::string>());
     bool SpinBoxFloat(const std::string& label, float& value, float minValue, float maxValue, float step = 0.01f);
+    bool SpinBoxSeconds(const std::string& label, double& value, double minValue, double maxValue, double fps);
     bool SpinBoxVec2(const std::string& label, glm::vec2& vec, glm::vec2 minValue, glm::vec2 maxValue, glm::vec2 step = glm::vec2(0.01f, 0.01f));
 
     // Overlays

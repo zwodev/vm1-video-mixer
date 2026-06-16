@@ -47,22 +47,22 @@ VideoPlayer::~VideoPlayer()
     close();
 }
 
-void VideoPlayer::setInPoint(float value)
+void VideoPlayer::setInPoint(double value)
 {
     m_inPoint = value;
 }
 
-float VideoPlayer::inPoint()
+double VideoPlayer::inPoint()
 {
     return m_inPoint;
 }
 
-void VideoPlayer::setOutPoint(float value)
+void VideoPlayer::setOutPoint(double value)
 {
     m_outPoint = value;
 }
 
-float VideoPlayer::outPoint()
+double VideoPlayer::outPoint()
 {
     return m_outPoint;
 }
@@ -75,7 +75,7 @@ void VideoPlayer::reset()
     m_firstAudioPts = -1.0;
     m_isFlushing = false;
     m_foundKeyframe = false;
-    m_currentFrame = 0;
+    m_currentTime = 0.0;
 }
 
 void VideoPlayer::pause(bool isPaused) {
@@ -141,6 +141,8 @@ bool VideoPlayer::openFile(const std::string& fileName, AudioStream* audioStream
     m_videoStream = av_find_best_stream(m_formatContext, AVMEDIA_TYPE_VIDEO, -1, -1, &m_videoCodec, 0);
     if (m_videoStream >= 0) {
         m_fps = av_q2d(m_formatContext->streams[m_videoStream]->avg_frame_rate);
+        m_duration = m_formatContext->streams[m_videoStream]->duration * av_q2d(m_formatContext->streams[m_videoStream]->time_base);
+
         m_videoContext = openVideoStream();
         if (!m_videoContext) {
             return false;
@@ -420,6 +422,7 @@ void VideoPlayer::update()
 
     if (processVideoFrame) {
         render();
+        m_currentTime = m_firstPts + videoFrame.pts;
         m_fence = eglCreateSync(display, EGL_SYNC_FENCE, NULL);
     }
 }
@@ -496,8 +499,9 @@ void VideoPlayer::handleAudioFrame(AVFrame *frame)
 
 void VideoPlayer::seekToInPoint(bool backward) {
     AVStream *stream = m_formatContext->streams[m_videoStream];
-    double dur_s = av_q2d(stream->time_base) * (double)stream->duration;
-    const double loop_start_s = dur_s * double(m_inPoint);
+    // double dur_s = av_q2d(stream->time_base) * (double)stream->duration;
+    // const double loop_start_s = dur_s * double(m_inPoint);
+    const double loop_start_s = double(m_inPoint);
     
     int64_t loop_start_pts = llround(loop_start_s / av_q2d(stream->time_base));
     
@@ -508,7 +512,7 @@ void VideoPlayer::seekToInPoint(bool backward) {
 }
 
 void VideoPlayer::run() {
-    if (m_inPoint > 0.0f) seekToInPoint();
+    if (m_inPoint > 0.0) seekToInPoint();
 
     while (m_isRunning) {
             if (m_isPaused) {
@@ -536,11 +540,11 @@ void VideoPlayer::run() {
                 }
             } else {
 
-                if (m_outPoint < 1.0f && m_packet->stream_index == m_videoStream) {
+                if (m_outPoint > 0.0 && m_packet->stream_index == m_videoStream) {
                     AVStream *stream = m_formatContext->streams[m_videoStream];
-                    double dur_s = av_q2d(stream->time_base) * (double)stream->duration;
+                    // double dur_s = av_q2d(stream->time_base) * (double)stream->duration;
                     //const double loop_start_s = dur_s * double(m_inPoint);
-                    const double loop_after_s = dur_s * double(m_outPoint);
+                    const double loop_after_s = m_outPoint;
                     
                     //int64_t loop_start_pts = llround(loop_start_s / av_q2d(stream->time_base));
                     int64_t loop_after_pts = llround(loop_after_s / av_q2d(stream->time_base));
@@ -619,7 +623,6 @@ void VideoPlayer::run() {
         if (m_videoContext) { 
             while (avcodec_receive_frame(m_videoContext, m_frame) >= 0) {
                 double pts = ((double)m_frame->pts * m_videoContext->pkt_timebase.num) / m_videoContext->pkt_timebase.den;
-                m_currentFrame = (int64_t)round((pts - m_firstPts) * m_fps);
                 bool firstFrame = false;
                 if (m_firstPts < 0.0) {
                     m_firstPts = pts;
