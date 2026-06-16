@@ -76,8 +76,9 @@ public:
     float outPoint = 1.0f;
 
     // volatile
-    double currentPts = 0.0;
+    int64_t currentFrame = 0;
     bool isPaused = false;
+    double fps = -1.0;
 
     template <class Archive>
     void serialize(Archive& ar)

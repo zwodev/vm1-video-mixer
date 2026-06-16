@@ -75,6 +75,7 @@ void VideoPlayer::reset()
     m_firstAudioPts = -1.0;
     m_isFlushing = false;
     m_foundKeyframe = false;
+    m_currentFrame = 0;
 }
 
 void VideoPlayer::pause(bool isPaused) {
@@ -139,6 +140,7 @@ bool VideoPlayer::openFile(const std::string& fileName, AudioStream* audioStream
 
     m_videoStream = av_find_best_stream(m_formatContext, AVMEDIA_TYPE_VIDEO, -1, -1, &m_videoCodec, 0);
     if (m_videoStream >= 0) {
+        m_fps = av_q2d(m_formatContext->streams[m_videoStream]->avg_frame_rate);
         m_videoContext = openVideoStream();
         if (!m_videoContext) {
             return false;
@@ -418,7 +420,6 @@ void VideoPlayer::update()
 
     if (processVideoFrame) {
         render();
-        m_currentPts = videoFrame.pts;
         m_fence = eglCreateSync(display, EGL_SYNC_FENCE, NULL);
     }
 }
@@ -618,6 +619,7 @@ void VideoPlayer::run() {
         if (m_videoContext) { 
             while (avcodec_receive_frame(m_videoContext, m_frame) >= 0) {
                 double pts = ((double)m_frame->pts * m_videoContext->pkt_timebase.num) / m_videoContext->pkt_timebase.den;
+                m_currentFrame = (int64_t)round((pts - m_firstPts) * m_fps);
                 bool firstFrame = false;
                 if (m_firstPts < 0.0) {
                     m_firstPts = pts;

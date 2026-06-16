@@ -436,7 +436,8 @@ void PlaybackOperator::update(float deltaTime)
                         videoPlayer->setInPoint(inPoint);
                         float outPoint = videoInputConfig->outPoint;
                         videoPlayer->setOutPoint(outPoint);
-                        videoInputConfig->currentPts = videoPlayer->currentPts();
+                        videoInputConfig->fps = videoPlayer->fps();
+                        videoInputConfig->currentFrame = videoPlayer->currentFrame();
                         videoPlayer->pause(videoInputConfig->isPaused);
                     }
                 }
