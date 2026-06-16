@@ -30,8 +30,8 @@ struct VideoFrame {
     EGLImage image = EGL_NO_IMAGE;
 
     bool isFirstFrame = false;
-    double pts = 0.0;
-
+    double pts = 0.0;         // relative to first decoded frame, used for frame scheduling
+    double absolutePts = 0.0; // absolute position in the video file, used for display
     int index = -1;
     Buffer* buffer = nullptr;
     

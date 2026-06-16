@@ -422,7 +422,8 @@ void VideoPlayer::update()
 
     if (processVideoFrame) {
         render();
-        m_currentTime = m_firstPts + videoFrame.pts;
+        // m_currentTime = m_firstPts + videoFrame.pts;
+        m_currentTime = videoFrame.absolutePts;
         m_fence = eglCreateSync(display, EGL_SYNC_FENCE, NULL);
     }
 }
@@ -633,6 +634,7 @@ void VideoPlayer::run() {
                 if (getTextureForDRMFrame(m_frame, frame)) {
                     frame.isFirstFrame = firstFrame;
                     frame.pts = pts - m_firstPts;
+                    frame.absolutePts = pts;
                     m_videoQueue.pushFrame(frame);
                 }
             }
