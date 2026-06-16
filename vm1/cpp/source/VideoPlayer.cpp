@@ -77,6 +77,15 @@ void VideoPlayer::reset()
     m_foundKeyframe = false;
 }
 
+void VideoPlayer::pause(bool isPaused) {
+    if (isPaused && !m_isPaused)
+        m_pauseStartTime = SDL_GetTicks();
+    else if (!isPaused && m_isPaused)
+        m_startTime += SDL_GetTicks() - m_pauseStartTime;
+    m_isPaused = isPaused;
+}
+
+
 void VideoPlayer::loadShaders()
 {
     m_shader.load("shaders/video.vert", "shaders/video.frag");
@@ -343,7 +352,7 @@ void VideoPlayer::render()
 
 void VideoPlayer::update()
 {
-    if (!m_isRunning) return;
+    if (!m_isRunning || m_isPaused) return;
     
     EGLDisplay display = eglGetCurrentDisplay();
 
@@ -501,7 +510,11 @@ void VideoPlayer::run() {
     if (m_inPoint > 0.0f) seekToInPoint();
 
     while (m_isRunning) {
-        if (!m_isFlushing) {
+            if (m_isPaused) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+                continue;
+            }
+            if (!m_isFlushing) {
             // Read and decode frames
             int result = av_read_frame(m_formatContext, m_packet);
             if (result < 0) {

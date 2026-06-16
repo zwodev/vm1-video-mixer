@@ -56,6 +56,7 @@ public:
     void close() override;
     void setLooping(bool looping);
     void update() override;
+    void pause(bool isPaused) override;
     
 private:
     void reset() override;
@@ -77,6 +78,7 @@ private:
 
     // FFMpeg
     Uint64 m_startTime = 0;
+    Uint64 m_pauseStartTime = 0;
     int64_t m_duration = 0;
     double m_firstPts = -1.0;
     double m_firstAudioPts = -1.0;

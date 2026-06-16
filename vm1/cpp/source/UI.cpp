@@ -1167,8 +1167,8 @@ void UI::PlaybackControlWidget(VideoInputConfig& videoInputConfig)
     std::ostringstream currentPtsString;
     currentPtsString << std::fixed << std::setprecision(2) << videoInputConfig.currentPts;    
     std::string playLabel = "play : " + currentPtsString.str();
-    if (CheckBox(playLabel, videoInputConfig.isRunning)) { 
-        videoInputConfig.isRunning = !videoInputConfig.isRunning;
+    if (CheckBox(playLabel, !videoInputConfig.isPaused)) { 
+        videoInputConfig.isPaused = !videoInputConfig.isPaused;
     }
     SpinBoxFloat("in point   ", videoInputConfig.inPoint, 0.0f, videoInputConfig.outPoint, 0.01f);
     SpinBoxFloat("out point  ", videoInputConfig.outPoint, videoInputConfig.inPoint, 1.0f, 0.01f);
