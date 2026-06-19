@@ -98,18 +98,29 @@ void CameraController::setupDetached(bool useUvcCaptureDevice)
 bool CameraController::setupUVC()
 {
     auto captureDevices = getCaptureDevices("uvcvideo");
-    if (captureDevices.size() > 0) {
-        CaptureDevice captureDevice = captureDevices[0];
-        m_eventBus.enqueue(HdmiCaptureInitEvent(std::string("1920x1080/Auto"), captureDevice.devicePath));
-        return true;
+    for (auto& captureDevice : captureDevices) {
+        captureDevice.label = "1920x1080/Auto";
     }
+    if (captureDevices.size() < 2) {
+        captureDevices.resize(2, CaptureDevice());
+    }
+    m_eventBus.enqueue(HdmiCaptureInitEvent(captureDevices));
 
-    m_eventBus.enqueue(HdmiCaptureInitEvent(std::string("Not connected")));
+    // if (captureDevices.size() > 0) {
+    //     CaptureDevice captureDevice = captureDevices[0];
+    //     m_eventBus.enqueue(HdmiCaptureInitEvent(std::string("1920x1080/Auto"), captureDevice.devicePath));
+    //     return true;
+    // }
+    // m_eventBus.enqueue(HdmiCaptureInitEvent(std::string("Not connected")));
+    
+    
     return false;
 }
 
 bool CameraController::setupCSI() 
 {
+    std::vector<CaptureDevice> outputCaptureDevices(2, CaptureDevice());
+
     std::string devicePath;
     auto captureDevices = getCaptureDevices("rp1-cfe");
     if (captureDevices.size() > 0) {
@@ -159,29 +170,36 @@ bool CameraController::setupCSI()
     if (!m_mediaController.setFormat("csi2", 4, "UYVY8_1X16", 1920, 1080)) goto unknownerror;
     if (!m_mediaController.setFormat("tc358743", 0, "UYVY8_1X16", 1920, 1080)) goto unknownerror;
     
-    m_eventBus.enqueue(HdmiCaptureInitEvent(std::string("1920x1080/30Hz"), devicePath));
+    
+    outputCaptureDevices[0].label = "1920x1080/30Hz";
+    outputCaptureDevices[0].devicePath = devicePath;
+    m_eventBus.enqueue(HdmiCaptureInitEvent(outputCaptureDevices));
     return true;
 
     notconnected:
-    m_eventBus.enqueue(HdmiCaptureInitEvent(std::string("Not connected")));
+    outputCaptureDevices[0].label = "Not connected";
+    m_eventBus.enqueue(HdmiCaptureInitEvent(outputCaptureDevices));
     m_v4l2Controller.closeDevice();
     m_mediaController.closeDevice();
     return false;
 
     resmismatch:
-    m_eventBus.enqueue(HdmiCaptureInitEvent(std::string("RES mismatch"))); 
+    outputCaptureDevices[0].label = "RES mismatch";
+    m_eventBus.enqueue(HdmiCaptureInitEvent(outputCaptureDevices));
     m_v4l2Controller.closeDevice();
     m_mediaController.closeDevice();
     return false;
 
     fpsmismatch:
-    m_eventBus.enqueue(HdmiCaptureInitEvent(std::string("FPS mismatch")));   
+    outputCaptureDevices[0].label = "FPS mismatch";
+    m_eventBus.enqueue(HdmiCaptureInitEvent(outputCaptureDevices));  
     m_v4l2Controller.closeDevice();
     m_mediaController.closeDevice();
     return false;  
         
     unknownerror:
-    m_eventBus.enqueue(HdmiCaptureInitEvent(std::string("Error")));   
+    outputCaptureDevices[0].label = "Unknown error";
+    m_eventBus.enqueue(HdmiCaptureInitEvent(outputCaptureDevices));   
     m_v4l2Controller.closeDevice();
     m_mediaController.closeDevice();
     

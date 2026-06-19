@@ -88,7 +88,7 @@ void PlaybackOperator::initialize()
 {
     size_t planeCount = m_registry.planes().size();
     size_t videoPlayerCount = planeCount * 2;
-    size_t cameraPlayerCount = 1;
+    size_t cameraPlayerCount = 2;
     size_t shaderPlayerCount = planeCount * 2;
 
     for (size_t i = 0; i < planeCount; ++i) {
@@ -111,7 +111,9 @@ void PlaybackOperator::initialize()
     }
 
     for (size_t i = 0; i < cameraPlayerCount; ++i) {
-        m_webcamPlayers.push_back(new WebcamPlayer());
+        WebcamPlayer* webcamPlayer = new WebcamPlayer();
+        webcamPlayer->setPort(int(i));
+        m_webcamPlayers.push_back(webcamPlayer);
         MediaPlayer* mediaPlayer = m_webcamPlayers[i];
         m_mediaPlayers.push_back(mediaPlayer);
     }
@@ -310,15 +312,15 @@ void PlaybackOperator::showMedia(int mediaSlotId)
         }
 
         if (!m_registry.settings().useUvcCaptureDevice) {
-            if (m_registry.settings().hdmiInputs[hdmiInputConfig->hdmiPort] != "1920x1080/30Hz") {
+            if (m_registry.settings().hdmiInputs[hdmiInputConfig->hdmiPort].label != "1920x1080/30Hz") {
                 std::string message = "No HDMI-IN" + std::to_string(hdmiInputConfig->hdmiPort);
                 m_eventBus.publish(PlaybackEvent(PlaybackEvent::Type::NoDisplay, message));
                 return;
             }
         }
 
-        if (hdmiInputConfig->hdmiPort == 0)
-        {
+        //if (hdmiInputConfig->hdmiPort == 0)
+        //{
             if (!getWebcamPlayerIdFromPort(hdmiInputConfig->hdmiPort, playerId)) return;
 
             // Start capture if not already running
@@ -330,7 +332,9 @@ void PlaybackOperator::showMedia(int mediaSlotId)
                     }
                     webcamPlayer->setCaptureType(captureType);
                 }
-                m_mediaPlayers[playerId]->openFile(m_registry.settings().captureDevicePath);
+
+                CaptureDevice captureDevice = m_registry.settings().hdmiInputs[hdmiInputConfig->hdmiPort];
+                m_mediaPlayers[playerId]->openFile(captureDevice.devicePath);
                 m_mediaPlayers[playerId]->play(); 
             }
             
@@ -338,7 +342,7 @@ void PlaybackOperator::showMedia(int mediaSlotId)
             if (m_planeMixers[planeId].startFade(playerId))  {
                 hdmiInputConfig->playerId = playerId;
             }
-        }
+        //}
     }
     else if (ShaderInputConfig *shaderInputConfig = dynamic_cast<ShaderInputConfig *>(inputConfig))
     {

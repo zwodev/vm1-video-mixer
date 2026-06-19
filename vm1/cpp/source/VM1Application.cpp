@@ -61,9 +61,10 @@ void VM1Application::subscribeToEvents()
     });
 
     m_eventBus.subscribe<HdmiCaptureInitEvent>([this](const HdmiCaptureInitEvent& event) {
-        m_registry.settings().hdmiInputs[0] = event.configString;
         m_registry.settings().isHdmiInputReady = true;
-        m_registry.settings().captureDevicePath = event.devicePath;
+        m_registry.settings().hdmiInputs = event.captureDevices;
+        //m_registry.settings().hdmiInputs[0] = event.configString;
+        //m_registry.settings().captureDevicePath = event.devicePath;
     });
 
     m_eventBus.subscribe<SystemEvent>([this](const SystemEvent& event) {

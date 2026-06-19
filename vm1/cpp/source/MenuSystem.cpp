@@ -1459,8 +1459,7 @@ void MenuSystem::HardwareSetupMenu()
 
     auto& hdmiInputs = m_registry.settings().hdmiInputs;
     for (size_t i = 0; i < hdmiInputs.size(); ++i) {
-        std::string inputConfig = !(hdmiInputs[i].empty()) ? hdmiInputs[i] : "Not connected";
-        m_ui.Label(std::string("I") + std::to_string(i+1) + ": " + inputConfig);
+        m_ui.Label(std::string("I") + std::to_string(i+1) + ": " + hdmiInputs[i].label);
     }
 
     m_ui.EndList();

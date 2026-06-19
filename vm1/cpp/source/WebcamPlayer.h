@@ -43,7 +43,8 @@ public:
     void update() override;
 
     // TODO: Needs to be determined by HDMI port oder dev (/dev/video0)
-    int getPort() { return 0; } 
+    int getPort() { return m_port; }
+    void setPort(int port) { m_port = port; }  
     void setCaptureType(CaptureType captureType) { m_captureType = captureType; };
 
 private:
@@ -73,6 +74,7 @@ private:
     Shader m_nonZeroCopyWebcamShader;
     GLuint m_nonZeroCopyTextureId;
 
+    int m_port = -1;
     int m_fd = -1;
     int m_bufferIndex = -1;
 

@@ -36,6 +36,7 @@
 #include "MediaPool.h"
 #include "VM1DeviceDefinitions.h"
 #include "NetworkTools.h"
+#include "CaptureType.h"
 
 class InputConfig
 {
@@ -396,9 +397,13 @@ struct Settings
     bool isProVersion = true;
     bool isHdmiOutputReady = false;
     bool isHdmiInputReady = false;
-    std::string captureDevicePath = "";
+
+    //std::string captureDevicePath = "";
     std::vector<std::string> hdmiOutputs = std::vector<std::string>(2, std::string());
-    std::vector<std::string> hdmiInputs = std::vector<std::string>(2, std::string());
+
+    std::vector<CaptureDevice> hdmiInputs = std::vector<CaptureDevice>(2, CaptureDevice());
+    //std::vector<std::string> hdmiInputs = std::vector<std::string>(2, std::string());
+    
     NetworkTools::APCredentials apCredentials;
     
     float currentTime = 0.0f;

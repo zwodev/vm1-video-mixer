@@ -17,6 +17,7 @@ enum CaptureType {
 struct CaptureDevice
 {
     std::string name;
+    std::string label = "Not connected";
     std::string devicePath;
     std::string busInfo;
     std::string driver;

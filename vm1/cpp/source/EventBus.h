@@ -16,6 +16,8 @@
 #include <queue>
 #include <mutex>
 
+#include "CaptureType.h"
+
 // Each event type is defined as struct.
 // This way it can have several properties.
 struct SystemEvent {
@@ -30,11 +32,17 @@ struct SystemEvent {
     Type type;
 };
 
+// struct HdmiCaptureInitEvent {
+//     HdmiCaptureInitEvent() = delete;
+//     HdmiCaptureInitEvent(std::string configString, std::string devicePath = "") { this->configString = configString; this->devicePath = devicePath;}
+//     std::string configString;
+//     std::string devicePath;
+// };
+
 struct HdmiCaptureInitEvent {
     HdmiCaptureInitEvent() = delete;
-    HdmiCaptureInitEvent(std::string configString, std::string devicePath = "") { this->configString = configString; this->devicePath = devicePath;}
-    std::string configString;
-    std::string devicePath;
+    HdmiCaptureInitEvent(std::vector<CaptureDevice> captureDevices) { this->captureDevices = captureDevices; }
+    std::vector<CaptureDevice> captureDevices;
 };
 
 struct PlaybackEvent {
