@@ -858,9 +858,9 @@ void MenuSystem::FileSelection()
         };
         m_ui.setClearFrame(false);
     }
-    if(m_ui.Action("USB-Drive")) {
-        printf("Enter USB-Drive\n");
-    }
+    // if(m_ui.Action("USB-Drive")) {
+    //     printf("Enter USB-Drive\n");
+    // }
 
     m_ui.Spacer();
     if(videoPath!="") m_ui.Text(videoPath);
@@ -1304,24 +1304,34 @@ void MenuSystem::Mapping()
 // ##### NETWORK MENU #####
 void MenuSystem::NetworkMenu() 
 {
-    m_ui.MenuTitleWidget("Network", TextAlign::CENTER);
+    m_ui.MenuTitleWidget("Connect to VM-1", TextAlign::CENTER);
     m_ui.NewLine();
     m_ui.PushTranslate(0, 20);
 
-    std::string eth0;
-    std::string wlan0;
-    NetworkTools::getIPAddress("eth0", eth0);
-    NetworkTools::getIPAddress("wlan0", wlan0);
-
     m_ui.BeginList(&m_currentMenuPath.back().fIdx);
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
-    SubMenu("Wifi QR-Code", [this](){ WifiQrCode(); });
-    SubMenu("File Manager QR-Code", [this](){ TFMQrCode(); });
+    SubMenu("Wifi", [this](){ WifiQrCode(); });
+    SubMenu("File Manager", [this](){ TFMQrCode(); });
     m_ui.Spacer();
-    if (!eth0.empty()) m_ui.Label("Eth. IP: " + eth0);
-    if (!wlan0.empty()) m_ui.Label("Wifi IP: " + wlan0);
-    //m_ui.Label("SSID: VM-1");
-    //m_ui.Label("Pass: vmone12345");
+    SubMenu("Network Addresses", [this](){ 
+        m_ui.MenuTitleWidget("Connect to VM-1", TextAlign::CENTER);
+        m_ui.NewLine();
+        m_ui.PushTranslate(0, 20);
+
+        m_ui.BeginList(&m_currentMenuPath.back().fIdx);
+        m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
+        std::string eth0;
+        std::string wlan0;
+        NetworkTools::getIPAddress("eth0", eth0);
+        NetworkTools::getIPAddress("wlan0", wlan0);
+        if (!eth0.empty()) m_ui.Label("Eth. IP: " + eth0);
+        if (!wlan0.empty()) m_ui.Label("Wifi IP: " + wlan0);
+        //m_ui.Label("SSID: VM-1");
+        //m_ui.Label("Pass: vmone12345");
+        m_ui.EndList();
+
+        m_ui.PopTranslate();
+     });
     m_ui.EndList();
         
 
@@ -1349,8 +1359,15 @@ void MenuSystem::TFMQrCode()
     m_ui.MenuTitleWidget("File Manager", TextAlign::CENTER);
     const ImageBuffer& imageBuffer = m_registry.mediaPool().getQrCodeTFMImageBuffer();
     if (imageBuffer.isValid) {
-        m_ui.Image(imageBuffer, glm::uvec2(105, 65));
+        m_ui.Image(imageBuffer, glm::uvec2(105, 65-10));
     }
+    m_ui.PushTranslate(0, 170-10);
+    BDF::TextStyle textStyle = BDF::TEXTSTYLE::MENU_ITEM;
+    textStyle.align = TextAlign::CENTER;
+    m_ui.TextStyle(textStyle);
+    m_ui.Label("Connect to VM-1 WiFi");
+    m_ui.Label("Visit vm-1.local:8080");
+    m_ui.PopTranslate();
 }
 
 // GLOBAL SETTINGS MENU
@@ -1383,12 +1400,12 @@ void MenuSystem::SettingsMenu()
     m_ui.TextStyle(BDF::TEXTSTYLE::MENU_ITEM);
     m_ui.SpinBoxInt("Fade Time", settings.fadeTime, 0, 10);
     m_ui.SpinBoxInt("Volume", settings.volume, 0, 10);
-    if (m_ui.CheckBox("Show Dev UI", settings.showUI)) { settings.showUI = !settings.showUI; };
+    
     m_ui.Spacer();
-    SubMenu("Connected Devices", [this](){ HardwareSetupMenu(); });
     if(!m_registry.settings().kiosk.enabled) {
-        SubMenu("Network", [this](){ NetworkMenu(); });
+        SubMenu("Connect to VM-1", [this](){ NetworkMenu(); });
     }
+    SubMenu("External Hardware", [this](){ HardwareSetupMenu(); });
     m_ui.Spacer();
     SubMenu("About", [this](){ AboutMenu(); });
     
@@ -1419,7 +1436,7 @@ void MenuSystem::AboutMenu()
     if (settings.isProVersion) versionPostfix = " Pro";
     m_ui.Label("Version: " + VERSION + versionPostfix);
     // if (m_ui.CheckBox("Is Pro Version", settings.isProVersion)) { settings.isProVersion = !settings.isProVersion; };
-
+    if (m_ui.CheckBox("Show Dev UI", settings.showUI)) { settings.showUI = !settings.showUI; };
 
     m_ui.EndList();
     m_ui.PopTranslate();
@@ -1454,12 +1471,12 @@ void MenuSystem::HardwareSetupMenu()
     auto& hdmiOutputs = m_registry.settings().hdmiOutputs;
     for (size_t i = 0; i < hdmiOutputs.size(); ++i) {
         std::string displayConfig = !(hdmiOutputs[i].empty()) ? hdmiOutputs[i] : "Not connected";
-        m_ui.Label(std::string("O") + std::to_string(i+1) + ": " + displayConfig);
+        m_ui.Label(std::string("Output ") + std::to_string(i+1) + ": " + displayConfig);
     }
 
     auto& hdmiInputs = m_registry.settings().hdmiInputs;
     for (size_t i = 0; i < hdmiInputs.size(); ++i) {
-        m_ui.Label(std::string("I") + std::to_string(i+1) + ": " + hdmiInputs[i].label);
+        m_ui.Label(std::string("Input ") + std::to_string(i+1) + ": " + hdmiInputs[i].label);
     }
 
     m_ui.EndList();
