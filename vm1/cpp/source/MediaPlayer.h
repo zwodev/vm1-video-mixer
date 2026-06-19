@@ -30,8 +30,8 @@ struct VideoFrame {
     EGLImage image = EGL_NO_IMAGE;
 
     bool isFirstFrame = false;
-    double pts = 0.0;
-
+    double pts = 0.0;         // relative to first decoded frame, used for frame scheduling
+    double absolutePts = 0.0; // absolute position in the video file, used for display
     int index = -1;
     Buffer* buffer = nullptr;
     
@@ -62,6 +62,7 @@ public:
     virtual void close();
     void setDevicePath(const std::string& devicePath);
     bool isPlaying() const { return m_isRunning; }
+    virtual void pause(bool isPaused) { m_isPaused = isPaused; };
     virtual void update() = 0;
     virtual bool isFrameReady();
     GLuint texture();
@@ -80,6 +81,7 @@ private:
 
 protected:
     std::atomic<bool> m_isRunning = false;
+    std::atomic<bool> m_isPaused = false;
     int m_numberOfInputImages = 1;
 
     GLuint m_vao; 

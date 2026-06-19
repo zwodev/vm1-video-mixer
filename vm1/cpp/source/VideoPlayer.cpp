@@ -47,22 +47,22 @@ VideoPlayer::~VideoPlayer()
     close();
 }
 
-void VideoPlayer::setInPoint(float value)
+void VideoPlayer::setInPoint(double value)
 {
     m_inPoint = value;
 }
 
-float VideoPlayer::inPoint()
+double VideoPlayer::inPoint()
 {
     return m_inPoint;
 }
 
-void VideoPlayer::setOutPoint(float value)
+void VideoPlayer::setOutPoint(double value)
 {
     m_outPoint = value;
 }
 
-float VideoPlayer::outPoint()
+double VideoPlayer::outPoint()
 {
     return m_outPoint;
 }
@@ -75,7 +75,17 @@ void VideoPlayer::reset()
     m_firstAudioPts = -1.0;
     m_isFlushing = false;
     m_foundKeyframe = false;
+    m_currentTime = 0.0;
 }
+
+void VideoPlayer::pause(bool isPaused) {
+    if (isPaused && !m_isPaused)
+        m_pauseStartTime = SDL_GetTicks();
+    else if (!isPaused && m_isPaused)
+        m_startTime += SDL_GetTicks() - m_pauseStartTime;
+    m_isPaused = isPaused;
+}
+
 
 void VideoPlayer::loadShaders()
 {
@@ -130,6 +140,9 @@ bool VideoPlayer::openFile(const std::string& fileName, AudioStream* audioStream
 
     m_videoStream = av_find_best_stream(m_formatContext, AVMEDIA_TYPE_VIDEO, -1, -1, &m_videoCodec, 0);
     if (m_videoStream >= 0) {
+        m_fps = av_q2d(m_formatContext->streams[m_videoStream]->avg_frame_rate);
+        m_duration = m_formatContext->streams[m_videoStream]->duration * av_q2d(m_formatContext->streams[m_videoStream]->time_base);
+
         m_videoContext = openVideoStream();
         if (!m_videoContext) {
             return false;
@@ -343,7 +356,7 @@ void VideoPlayer::render()
 
 void VideoPlayer::update()
 {
-    if (!m_isRunning) return;
+    if (!m_isRunning || m_isPaused) return;
     
     EGLDisplay display = eglGetCurrentDisplay();
 
@@ -409,7 +422,8 @@ void VideoPlayer::update()
 
     if (processVideoFrame) {
         render();
-        m_currentPts = videoFrame.pts;
+        // m_currentTime = m_firstPts + videoFrame.pts;
+        m_currentTime = videoFrame.absolutePts;
         m_fence = eglCreateSync(display, EGL_SYNC_FENCE, NULL);
     }
 }
@@ -486,8 +500,9 @@ void VideoPlayer::handleAudioFrame(AVFrame *frame)
 
 void VideoPlayer::seekToInPoint(bool backward) {
     AVStream *stream = m_formatContext->streams[m_videoStream];
-    double dur_s = av_q2d(stream->time_base) * (double)stream->duration;
-    const double loop_start_s = dur_s * double(m_inPoint);
+    // double dur_s = av_q2d(stream->time_base) * (double)stream->duration;
+    // const double loop_start_s = dur_s * double(m_inPoint);
+    const double loop_start_s = double(m_inPoint);
     
     int64_t loop_start_pts = llround(loop_start_s / av_q2d(stream->time_base));
     
@@ -498,10 +513,14 @@ void VideoPlayer::seekToInPoint(bool backward) {
 }
 
 void VideoPlayer::run() {
-    if (m_inPoint > 0.0f) seekToInPoint();
+    if (m_inPoint > 0.0) seekToInPoint();
 
     while (m_isRunning) {
-        if (!m_isFlushing) {
+            if (m_isPaused) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+                continue;
+            }
+            if (!m_isFlushing) {
             // Read and decode frames
             int result = av_read_frame(m_formatContext, m_packet);
             if (result < 0) {
@@ -522,11 +541,11 @@ void VideoPlayer::run() {
                 }
             } else {
 
-                if (m_outPoint < 1.0f && m_packet->stream_index == m_videoStream) {
+                if (m_outPoint > 0.0 && m_packet->stream_index == m_videoStream) {
                     AVStream *stream = m_formatContext->streams[m_videoStream];
-                    double dur_s = av_q2d(stream->time_base) * (double)stream->duration;
+                    // double dur_s = av_q2d(stream->time_base) * (double)stream->duration;
                     //const double loop_start_s = dur_s * double(m_inPoint);
-                    const double loop_after_s = dur_s * double(m_outPoint);
+                    const double loop_after_s = m_outPoint;
                     
                     //int64_t loop_start_pts = llround(loop_start_s / av_q2d(stream->time_base));
                     int64_t loop_after_pts = llround(loop_after_s / av_q2d(stream->time_base));
@@ -615,6 +634,7 @@ void VideoPlayer::run() {
                 if (getTextureForDRMFrame(m_frame, frame)) {
                     frame.isFirstFrame = firstFrame;
                     frame.pts = pts - m_firstPts;
+                    frame.absolutePts = pts;
                     m_videoQueue.pushFrame(frame);
                 }
             }

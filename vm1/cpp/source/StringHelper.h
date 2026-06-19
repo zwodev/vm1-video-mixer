@@ -11,6 +11,7 @@
 #include <sstream>
 #include <iomanip> 
 #include <filesystem>
+#include <cmath>
 
 namespace strhlpr {
     inline std::string formatFloat(double value, int decimals) {
@@ -40,4 +41,19 @@ namespace strhlpr {
         std::filesystem::path filePath(path);
         return std::filesystem::exists(filePath) && std::filesystem::is_regular_file(filePath);
     }
+
+    inline std::string secondsToSmpte(double seconds, double fps) {
+        if (fps <= 0.0) return "00.00";
+        int nominalFps = (int)round(fps);
+        int64_t totalFrames = (int64_t)round(seconds * fps);
+        int secs   = (int)(totalFrames / nominalFps);
+        int frames = (int)(totalFrames % nominalFps);
+        return std::to_string(secs) + "." + (frames < 10 ? "0" : "") + std::to_string(frames);
+    }
+
+    inline double secondsToNormalized(double seconds, double totalDuration) {
+        if (totalDuration <= 0.0) return 0.0;
+        return seconds / totalDuration;
+    }
+
 };

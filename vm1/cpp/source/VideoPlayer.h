@@ -46,16 +46,19 @@ public:
     VideoPlayer();
     ~VideoPlayer();
 
-    void setInPoint(float value);
-    float inPoint();
-    void setOutPoint(float value);
-    float outPoint();
-    double currentPts() const { return m_currentPts; } 
+    void setInPoint(double value);
+    double inPoint();
+    void setOutPoint(double value);
+    double outPoint();
+    double currentTime() const { return m_currentTime; } 
+    double fps() const { return m_fps; }
+    double duration() const { return m_duration; }
 
     bool openFile(const std::string& fileName, AudioStream* audioStream = nullptr) override;
     void close() override;
     void setLooping(bool looping);
     void update() override;
+    void pause(bool isPaused) override;
     
 private:
     void reset() override;
@@ -72,15 +75,17 @@ private:
 
 
 private:
-    float m_inPoint = 0.0f;
-    float m_outPoint = 1.0f;
+    double m_inPoint = 0.0;    // in seconds
+    double m_outPoint = -1.0;  // in seconds
 
     // FFMpeg
     Uint64 m_startTime = 0;
-    int64_t m_duration = 0;
+    Uint64 m_pauseStartTime = 0;
+    double m_duration = 0.0;
     double m_firstPts = -1.0;
     double m_firstAudioPts = -1.0;
-    double m_currentPts = -1.0;
+    double m_fps = -1.0;
+    double m_currentTime = 0; // in seconds
     AVFormatContext* m_formatContext = nullptr;
     //AVDictionary* m_options = nullptr;
     const AVCodec* m_audioCodec = nullptr;

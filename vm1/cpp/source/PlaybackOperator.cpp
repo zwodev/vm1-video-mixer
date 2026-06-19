@@ -286,18 +286,22 @@ void PlaybackOperator::showMedia(int mediaSlotId)
             return;
         }
 
+        // Set outPoint from duration on first load
+        MediaPlayer* mediaPlayer = m_mediaPlayers[playerId];
+        VideoPlayer* videoPlayer = dynamic_cast<VideoPlayer*>(mediaPlayer);
+        if (videoPlayer && videoInputConfig->outPoint < 0.0)
+            videoInputConfig->outPoint = videoPlayer->duration();
+            
         // Start fade
         if (m_planeMixers[planeId].startFade(playerId)) {
-            MediaPlayer* mediaPlayer = m_mediaPlayers[playerId];
-            VideoPlayer* videoPlayer = dynamic_cast<VideoPlayer*>(mediaPlayer);
             if (videoPlayer)
             {
                 bool looping = videoInputConfig->looping;
                 videoPlayer->setLooping(looping);
-                float inPoint = videoInputConfig->inPoint;
+                double inPoint = videoInputConfig->inPoint;
                 videoPlayer->setInPoint(inPoint);
-                float outPoint = videoInputConfig->inPoint;
-                videoPlayer->setInPoint(outPoint);
+                double outPoint = videoInputConfig->outPoint;
+                videoPlayer->setOutPoint(outPoint);
                 videoPlayer->play();
             }
             
@@ -436,11 +440,17 @@ void PlaybackOperator::update(float deltaTime)
                     if (videoInputConfig && videoPlayer) {
                         //bool looping = videoInputConfig->looping;
                         //videoPlayer->setLooping(looping);
-                        float inPoint = videoInputConfig->inPoint;
+                        videoInputConfig->fps = videoPlayer->fps();
+                        videoInputConfig->currentTime = videoPlayer->currentTime();
+                        videoInputConfig->duration = videoPlayer->duration();
+                        
+                        double inPoint = videoInputConfig->inPoint;
                         videoPlayer->setInPoint(inPoint);
-                        float outPoint = videoInputConfig->outPoint;
+                        double outPoint = videoInputConfig->outPoint;
                         videoPlayer->setOutPoint(outPoint);
-                        videoInputConfig->currentPts = videoPlayer->currentPts();
+
+
+                        videoPlayer->pause(videoInputConfig->isPaused);
                     }
                 }
                 if (dynamic_cast<ShaderInputConfig*>(inputConfig))
