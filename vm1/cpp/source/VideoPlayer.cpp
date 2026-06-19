@@ -31,9 +31,6 @@
 #define DRM_FORMAT_RGBA8888 fourcc_code('R', 'A', '2', '4')
 #endif
 
-const int YUV_IMAGE_WIDTH = 2048;
-const int YUV_IMAGE_HEIGHT = 1530;
-
 VideoPlayer::VideoPlayer()
 {
     m_numberOfInputImages = 15;
@@ -126,6 +123,8 @@ bool VideoPlayer::openFile(const std::string& fileName, AudioStream* audioStream
         )
         {
             foundStream = true;
+            m_width = codecpar->width;
+            m_height = codecpar->height;
             std::cout << "***** CODEC: color_primaries: " << codecpar->color_primaries << std::endl;
             std::cout << "***** CODEC: color_trc: " << codecpar->color_trc << std::endl;
             std::cout << "***** CODEC: color_space: " << codecpar->color_space << std::endl;
@@ -321,12 +320,16 @@ AVCodecContext* VideoPlayer::openAudioStream()
 void VideoPlayer::render()
 {
     glViewport(0, 0, 1920, 1080);
+    // TODO: resize framebuffer if necessary
     glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    float stripCount = truncf((float(m_width) / 128.0f) + 0.5f); 
+    //float stripCount = 15.0f;
+
     m_shader.activate();
-    m_shader.setValue("stripWidthNDC", 2.0f/15.0f);
+    m_shader.setValue("stripWidthNDC", 2.0f/stripCount);
 
     glBindVertexArray(m_vao);
     for (size_t i = 0; i < m_yuvTextures.size(); ++i) {

@@ -75,6 +75,8 @@ private:
 
 
 private:
+    int m_width = 0;
+    int m_height = 0;
     double m_inPoint = 0.0;    // in seconds
     double m_outPoint = -1.0;  // in seconds
 
