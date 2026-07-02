@@ -438,8 +438,8 @@ void PlaybackOperator::update(float deltaTime)
                     }
                     VideoPlayer* videoPlayer = dynamic_cast<VideoPlayer*>(mediaPlayer);
                     if (videoInputConfig && videoPlayer) {
-                        //bool looping = videoInputConfig->looping;
-                        //videoPlayer->setLooping(looping);
+                        bool looping = videoInputConfig->looping;
+                        videoPlayer->setLooping(looping);
                         videoInputConfig->fps = videoPlayer->fps();
                         videoInputConfig->currentTime = videoPlayer->currentTime();
                         videoInputConfig->duration = videoPlayer->duration();
@@ -576,20 +576,20 @@ void PlaybackOperator::renderPlane(int hdmiId)
             int toId = planeMixer.toId();
 
             PlaneRenderer::InternalShaderParams internalShaderParams;
-            //float volume = float(m_registry.settings().volume) / 10.0f;
+            float volume = float(m_registry.settings().volume) / 10.0f;
             if (fromId >= 0) {
                 internalShaderParams.texture0 = m_mediaPlayers[fromId]->texture();
                 internalShaderParams.isTex0Valid = true;
                 AudioStream* audioStream = m_audioStreams[fromId];
-                //if (audioStream) audioStream->setVolume((1.0f - planeMixer.mixValue()) * volume);
-                if (audioStream) audioStream->setVolume(0.0f);
+                if (audioStream) audioStream->setVolume((1.0f - planeMixer.mixValue()) * volume);
+                // if (audioStream) audioStream->setVolume(0.0f);
             }
             if (toId >= 0) {
                 internalShaderParams.texture1 = m_mediaPlayers[toId]->texture();
                 internalShaderParams.isTex1Valid = true;
                 AudioStream* audioStream = m_audioStreams[toId];
-                //if (audioStream) audioStream->setVolume(planeMixer.mixValue() * volume);
-                if (audioStream) audioStream->setVolume(0.0f);
+                if (audioStream) audioStream->setVolume(planeMixer.mixValue() * volume);
+                // if (audioStream) audioStream->setVolume(0.0f);
             }
 ;
             

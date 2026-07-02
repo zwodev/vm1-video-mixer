@@ -560,12 +560,16 @@ void VideoPlayer::run() {
                         continue;
                     }
 
-                    // If we've reached loop point, perform seek back to loop_start and flush,
-                    // then discard packets until we reach valid packets after the seek.
+                    // If we've reached the out point, either loop back to the in point
+                    // or finish decoding, depending on the looping flag.
                     if (pkt_ts >= loop_after_pts) {
-                        m_firstPts = -1;
-                        seekToInPoint(true);
                         av_packet_unref(m_packet);
+                        if (m_isLooping) {
+                            m_firstPts = -1;
+                            seekToInPoint(true);
+                        } else {
+                            m_isFlushing = true;
+                        }
                         continue;
                     }
 
